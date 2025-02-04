@@ -6,7 +6,7 @@
   "module": "build/index.esm.js",
   "types": "build/index.d.ts",
   "author": "Carl Smith <5456533+CarlosNZ@users.noreply.github.com>",
-  "repository": "git+https://github.com/CarlosNZ/fig-tree-evaluator.git",
+  "repository": "git+https://github.com/CarlosNZ/fig-tree-editor-react.git",
   "files": [
     "build/**/*"
   ],

@@ -1,4 +1,4 @@
-# fig-tree-builder-react
+# fig-tree-editor-react
 
 ### [Demo/Playground](https://carlosnz.github.io/fig-tree-evaluator/)
 
