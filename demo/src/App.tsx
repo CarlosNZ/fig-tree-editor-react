@@ -72,11 +72,11 @@ function App() {
 
   const jsonEditorOptions = currentDemoData
     ? currentDemoData?.objectJsonEditorProps
-    : (getLocalStorage('jsonEditorOptions') ?? {})
+    : getLocalStorage('jsonEditorOptions') ?? {}
 
   const expressionCollapse = currentDemoData
-    ? (currentDemoData?.expressionCollapse ?? 2)
-    : (getLocalStorage('expressionCollapse') ?? 2)
+    ? currentDemoData?.expressionCollapse ?? 2
+    : getLocalStorage('expressionCollapse') ?? 2
 
   const {
     data: expression,
@@ -119,7 +119,7 @@ function App() {
           content={
             modalContent.current === 'main'
               ? defaultBlurb
-              : (currentDemoData?.content ?? defaultBlurb)
+              : currentDemoData?.content ?? defaultBlurb
           }
           modalState={{
             modalOpen: showInfo,
