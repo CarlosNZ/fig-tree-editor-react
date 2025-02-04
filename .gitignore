@@ -1,3 +1,6 @@
+#Build folder
+build/
+
 # Logs
 logs
 *.log
@@ -128,3 +131,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+.DS_Store
+
+# Temp working folder for demo
+demo/src/expression-builder
