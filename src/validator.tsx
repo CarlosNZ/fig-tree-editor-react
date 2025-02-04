@@ -46,8 +46,8 @@ export const validateExpression = (
   const currentMetaData = isOperator
     ? getCurrentOperator((expression as OperatorNode)?.operator, figTreeMetaData.operators)
     : isFragment
-      ? figTreeMetaData.fragments.find((frag) => frag.name === expression.fragment)
-      : undefined
+    ? figTreeMetaData.fragments.find((frag) => frag.name === expression.fragment)
+    : undefined
 
   const requiredProperties = (
     currentMetaData?.parameters
@@ -132,6 +132,9 @@ export const validateExpression = (
   newExpression.sort(([prop1], [prop2]) => {
     if (prop1 === 'operator') return -1
     if (prop2 === 'operator') return 1
+
+    if (prop1 === 'children') return 1
+    if (prop2 === 'children') return -1
 
     const prop1Position = allPropertyAliases.findIndex((prop) => prop === prop1)
     const prop2Position = allPropertyAliases.findIndex((prop) => prop === prop2)
