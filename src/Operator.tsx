@@ -12,7 +12,7 @@ import {
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { DisplayBar } from './DisplayBar'
-import { Select, SelectOption } from './Select'
+import { OptionGroup, Select, SelectOption } from './Select'
 import { getCurrentOperator, getDefaultValue } from './helpers'
 import { NodeTypeSelector } from './NodeTypeSelector'
 import { useCommon } from './useCommon'
@@ -144,11 +144,11 @@ const OperatorSelector: React.FC<{
 
   return (
     <Select
+      optionGroups={operatorOptions}
+      selected={value}
+      setSelected={(newValue) => changeOperator(newValue.value)}
       className="ft-operator-select"
-      options={operatorOptions}
-      value={{ value, label: value }}
-      onChange={(newValue) => changeOperator((newValue as SelectOption).value)}
-      // styles={{ control: { minWidth: '10em' } }}
+      placeholder="Search operators"
     />
   )
 }
@@ -170,11 +170,9 @@ export const PropertySelector: React.FC<{
     <Select
       className="ft-property-select"
       options={propertyOptions}
-      value={null}
       placeholder="Add property"
-      onChange={(selected) =>
-        handleAddProperty((selected as { label: string; value: OperatorParameterMetadata }).value)
-      }
+      selected={null}
+      setSelected={(selected) => handleAddProperty(selected.value as OperatorParameterMetadata)}
     />
   )
 }
@@ -190,7 +188,7 @@ export const FunctionSelector: React.FC<{
     value: name,
   }))
 
-  const handleFunctionSelect = (selected: SelectOption) => {
+  const handleFunctionSelect = (selected) => {
     const func = functions.find((f) => f.name === selected.value)
     if (func) updateNode(func)
   }
@@ -198,10 +196,10 @@ export const FunctionSelector: React.FC<{
   return (
     <div className="ft-function-select">
       <Select
-        value={functionOptions.find((option) => value === option.value)}
+        selected={functionOptions.find((option) => value === option.value)}
         options={functionOptions}
         placeholder="Select function"
-        onChange={handleFunctionSelect as (s: unknown) => void}
+        setSelected={handleFunctionSelect}
       />
     </div>
   )
@@ -213,7 +211,7 @@ export interface DropdownOption {
 }
 
 const getOperatorOptions = (operators: readonly OperatorMetadata[]) => {
-  const options: DropdownOption[] = []
+  const options: OptionGroup<string>[] = []
   for (const op of operators) {
     const operatorAliases = op.aliases.map((alias) => ({ value: alias, label: alias }))
     options.push({ label: op.name, options: operatorAliases })

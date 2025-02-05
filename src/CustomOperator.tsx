@@ -3,7 +3,6 @@ import { CustomFunctionMetadata, OperatorNode, OperatorParameterMetadata } from 
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { Select, SelectOption } from './Select'
 import { Icons } from './Icons'
-// import './styles.css'
 import { getButtonFontSize } from './helpers'
 import { OperatorProps, PropertySelector } from './Operator'
 import { DisplayBar } from './DisplayBar'
@@ -53,7 +52,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           />
           :
           <FunctionSelector
-            value={(parentData as OperatorNode)?.functionName as string}
+            value={(parentData as OperatorNode)?.operator as string}
             functions={figTree.getCustomFunctions()}
             updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
               const newNode = { operator: name, ...inputDefault } as Record<string, unknown>
@@ -154,20 +153,23 @@ export const FunctionSelector: React.FC<{
     value: name,
   }))
 
-  const handleFunctionSelect = (selected: SelectOption) => {
+  const handleFunctionSelect = (selected: SelectOption<string>) => {
     const func = functions.find((f) => f.name === selected.value)
+    console.log('Found func', func)
     if (func) updateNode(func)
   }
 
+  const selectedOption = functionOptions.find((option) => value === option.value)
+
   return (
-    <div className="ft-function-select">
-      <Select
-        value={functionOptions.find((option) => value === option.value)}
-        options={functionOptions}
-        placeholder="Select function"
-        onChange={handleFunctionSelect as (s: unknown) => void}
-      />
-    </div>
+    <Select
+      className="ft-function-select"
+      selected={selectedOption?.value ?? null}
+      options={functionOptions}
+      placeholder="Select function"
+      setSelected={handleFunctionSelect}
+      search
+    />
   )
 }
 

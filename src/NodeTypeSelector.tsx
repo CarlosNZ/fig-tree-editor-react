@@ -31,7 +31,7 @@ export const NodeTypeSelector: React.FC<{
   const defaultFunction = functions[0]
   const defaultFragment = fragments[0]
 
-  const handleChange = (selected: SelectOption) => {
+  const handleChange = (selected: SelectOption<string>) => {
     const newType = selected.value
     if (currentSelection?.value === newType) return
 
@@ -61,10 +61,10 @@ export const NodeTypeSelector: React.FC<{
   return (
     <Select
       className="ft-node-type-select"
-      value={currentSelection}
+      selected={currentSelection?.label ?? null}
       options={options}
-      onChange={handleChange as (s: unknown) => void}
-      onKeyDown={(e) => console.log('SELECT Key', e.key)}
+      setSelected={handleChange}
+      placeholder="Select Node Type"
     />
   )
 }

@@ -111,9 +111,11 @@ const FragmentSelector: React.FC<{
   return (
     <Select
       className="ft-fragment-select"
-      value={{ label: value, value }}
-      onChange={(selected) => changeFragment((selected as SelectOption).value)}
+      selected={value}
+      setSelected={(selected) => changeFragment(selected.value)}
       options={fragmentOptions}
+      search
+      placeholder="Select Fragment"
     />
   )
 }
