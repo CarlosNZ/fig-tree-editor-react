@@ -1,12 +1,11 @@
 import React from 'react'
-import { CustomFunctionMetadata, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
+import { OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
-import { Select, SelectOption } from './Select'
 import { Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
-import { OperatorProps, PropertySelector } from './Operator'
+import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
-import { NodeTypeSelector } from './NodeTypeSelector'
+import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { useCommon } from './useCommon'
 import { getAvailableProperties } from './validator'
 
@@ -140,39 +139,4 @@ export const EvaluateButton: React.FC<EvaluateButtonProps> = ({
       )}
     </div>
   )
-}
-
-export const FunctionSelector: React.FC<{
-  value: string
-  functions: readonly CustomFunctionMetadata[]
-  updateNode: (functionDefinition: CustomFunctionMetadata) => void
-}> = ({ value, functions, updateNode }) => {
-  const functionOptions = functions.map(({ name, numRequiredArgs }) => ({
-    key: name,
-    label: `${name} (${numRequiredArgs})`,
-    value: name,
-  }))
-
-  const handleFunctionSelect = (selected: SelectOption<string>) => {
-    const func = functions.find((f) => f.name === selected.value)
-    if (func) updateNode(func)
-  }
-
-  const selectedOption = functionOptions.find((option) => value === option.value)
-
-  return (
-    <Select
-      className="ft-function-select"
-      selected={selectedOption?.value ?? null}
-      options={functionOptions}
-      placeholder="Select function"
-      setSelected={handleFunctionSelect}
-      search
-    />
-  )
-}
-
-export interface DropdownOption {
-  label: string
-  options: { value: string; label: string }[]
 }

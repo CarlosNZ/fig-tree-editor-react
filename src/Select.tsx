@@ -30,31 +30,33 @@ export function Select<T>({
   placeholder,
   className,
 }: SelectProps<T>) {
+  const [docObject, setDocObject] = useState<HTMLElement>()
   const [open, setOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const containerRef = useRef<React.RefObject<HTMLDivElement>>(null)
-  const searchInputRef = useRef<React.RefObject<HTMLInputElement>>(null)
-  const optionsRef = useRef<React.RefObject<HTMLDivElement>>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const optionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const handleClickOutside = (event: React.MouseEvent) => {
-      // @ts-expect-error
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+    const root = document.documentElement
+    setDocObject(root)
+  }, [])
+
+  useEffect(() => {
+    if (!docObject) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current?.contains(event.target as Node)) {
         handleClose()
       }
     }
-    // TO-DO Remove Document
-    // @ts-expect-error
-    document.addEventListener('mousedown', handleClickOutside)
-    // @ts-expect-error
-    return () => document.removeEventListener('mousedown', handleClickOutside)
+    docObject.addEventListener('mousedown', handleClickOutside)
+    return () => docObject.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   // Puts focus on text input when drop-down opens up
   useEffect(() => {
     if (open && searchInputRef.current) {
-      // @ts-expect-error
       searchInputRef.current.focus()
     }
   }, [open])
@@ -67,8 +69,7 @@ export function Select<T>({
   // Keeps the highlighted item in view as user goes up and down list
   useEffect(() => {
     if (highlightedIndex >= 0 && optionsRef.current) {
-      // @ts-expect-error
-      const highlightedElement = optionsRef.current.querySelector(
+      const highlightedElement = optionsRef.current?.querySelector(
         `[data-index="${highlightedIndex}"]`
       )
       if (highlightedElement) {
@@ -179,11 +180,7 @@ export function Select<T>({
       ))
 
   return (
-    <div
-      className={`ft-select-container ${className}`}
-      // @ts-expect-error
-      ref={containerRef}
-    >
+    <div className={`ft-select-container ${className}`} ref={containerRef}>
       <div className="ft-select-select-wrapper">
         {!open ? (
           <div
@@ -207,7 +204,6 @@ export function Select<T>({
           <>
             {search ? (
               <input
-                // @ts-expect-error
                 ref={searchInputRef}
                 type="text"
                 className="ft-select-input"
@@ -221,11 +217,7 @@ export function Select<T>({
                 <span className="ft-select-placeholder">{placeholder}</span>
               </div>
             )}
-            <div
-              // @ts-expect-error
-              ref={optionsRef}
-              className="ft-select-dropdown"
-            >
+            <div ref={optionsRef} className="ft-select-dropdown">
               {DropdownJSX}
             </div>
           </>

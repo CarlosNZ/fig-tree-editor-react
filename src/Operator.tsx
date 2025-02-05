@@ -7,17 +7,15 @@ import {
   OperatorParameterMetadata,
   Operator as OperatorName,
   EvaluatorNode,
-  FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { DisplayBar } from './DisplayBar'
-import { OptionGroup, Select, SelectOption } from './Select'
-import { getCurrentOperator, getDefaultValue } from './helpers'
-import { NodeTypeSelector } from './NodeTypeSelector'
+import { OptionGroup, Select } from './Select'
+import { getCurrentOperator } from './helpers'
+import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { useCommon } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
-import { FunctionSelector } from './CustomOperator'
 
 export interface OperatorProps {
   figTree: FigTreeEvaluator
@@ -152,35 +150,6 @@ const OperatorSelector: React.FC<{
       search
     />
   )
-}
-
-export const PropertySelector: React.FC<{
-  availableProperties: OperatorParameterMetadata[] | FragmentParameterMetadata[]
-  updateNode: (newField: any) => void
-}> = ({ availableProperties, updateNode }) => {
-  const propertyOptions = availableProperties.map((property) => ({
-    label: property.name,
-    value: property,
-  }))
-
-  const handleAddProperty = (selected: OperatorParameterMetadata) => {
-    updateNode({ [selected.name]: selected.default ?? getDefaultValue(selected.type) })
-  }
-
-  return (
-    <Select
-      className="ft-property-select"
-      options={propertyOptions}
-      placeholder="Add property"
-      selected={null}
-      setSelected={(selected) => handleAddProperty(selected.value as OperatorParameterMetadata)}
-    />
-  )
-}
-
-export interface DropdownOption {
-  label: string
-  options: { value: string; label: string }[]
 }
 
 const getOperatorOptions = (operators: readonly OperatorMetadata[]) => {
