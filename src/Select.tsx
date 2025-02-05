@@ -33,24 +33,28 @@ export function Select<T>({
   const [open, setOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
-  const containerRef = useRef<React.MutableRefObject<HTMLDivElement>>(null)
-  const searchInputRef = useRef(null)
-  const optionsRef = useRef(null)
+  const containerRef = useRef<React.RefObject<HTMLDivElement>>(null)
+  const searchInputRef = useRef<React.RefObject<HTMLInputElement>>(null)
+  const optionsRef = useRef<React.RefObject<HTMLDivElement>>(null)
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: React.MouseEvent) => {
+      // @ts-expect-error
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         handleClose()
       }
     }
     // TO-DO Remove Document
+    // @ts-expect-error
     document.addEventListener('mousedown', handleClickOutside)
+    // @ts-expect-error
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   // Puts focus on text input when drop-down opens up
   useEffect(() => {
     if (open && searchInputRef.current) {
+      // @ts-expect-error
       searchInputRef.current.focus()
     }
   }, [open])
@@ -63,6 +67,7 @@ export function Select<T>({
   // Keeps the highlighted item in view as user goes up and down list
   useEffect(() => {
     if (highlightedIndex >= 0 && optionsRef.current) {
+      // @ts-expect-error
       const highlightedElement = optionsRef.current.querySelector(
         `[data-index="${highlightedIndex}"]`
       )
@@ -96,7 +101,7 @@ export function Select<T>({
     handleClose()
   }
 
-  const handleKeyDown = (e) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
@@ -145,7 +150,7 @@ export function Select<T>({
 
             return (
               <div
-                key={option.value}
+                key={option.label}
                 className={`ft-select-option${
                   highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
                 }`}
@@ -161,7 +166,7 @@ export function Select<T>({
       ))
     : filteredOptions.map((option, index) => (
         <div
-          key={option.value}
+          key={option.label}
           className={`ft-select-option${
             highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
           }`}
@@ -174,7 +179,11 @@ export function Select<T>({
       ))
 
   return (
-    <div className={`ft-select-container ${className}`} ref={containerRef}>
+    <div
+      className={`ft-select-container ${className}`}
+      // @ts-expect-error
+      ref={containerRef}
+    >
       <div className="ft-select-select-wrapper">
         {!open ? (
           <div
@@ -198,6 +207,7 @@ export function Select<T>({
           <>
             {search ? (
               <input
+                // @ts-expect-error
                 ref={searchInputRef}
                 type="text"
                 className="ft-select-input"
@@ -211,7 +221,11 @@ export function Select<T>({
                 <span className="ft-select-placeholder">{placeholder}</span>
               </div>
             )}
-            <div ref={optionsRef} className="ft-select-dropdown">
+            <div
+              // @ts-expect-error
+              ref={optionsRef}
+              className="ft-select-dropdown"
+            >
               {DropdownJSX}
             </div>
           </>

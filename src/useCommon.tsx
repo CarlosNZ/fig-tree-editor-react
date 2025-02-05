@@ -19,8 +19,6 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
 
   const expressionPath = nodeData.path.slice(0, -1)
 
-  console.log(nodeData.path, isEditing, initialEdit.current)
-
   const handleSubmit = () => {
     setPrevState(parentData)
     setIsEditing(false)
