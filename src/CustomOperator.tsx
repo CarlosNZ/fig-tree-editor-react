@@ -155,7 +155,6 @@ export const FunctionSelector: React.FC<{
 
   const handleFunctionSelect = (selected: SelectOption<string>) => {
     const func = functions.find((f) => f.name === selected.value)
-    console.log('Found func', func)
     if (func) updateNode(func)
   }
 

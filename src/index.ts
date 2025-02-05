@@ -1,4 +1,4 @@
 import FigTreeEditor from './FigTreeEditor'
-import { Select } from './ReactSelect'
+import { Select } from './Select'
 
 export { FigTreeEditor, Select }

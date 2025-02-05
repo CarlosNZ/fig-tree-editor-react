@@ -18,6 +18,7 @@ import { NodeTypeSelector } from './NodeTypeSelector'
 import { useCommon } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
+import { FunctionSelector } from './CustomOperator'
 
 export interface OperatorProps {
   figTree: FigTreeEvaluator
@@ -89,6 +90,22 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               onEdit(newNode, expressionPath)
             }}
           />
+          {isCustomFunction && isEditing && (
+            <FunctionSelector
+              value={(parentData as OperatorNode)?.functionName as string}
+              functions={figTree.getCustomFunctions()}
+              updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
+                const newNode = { ...parentData, functionName: name } as Record<string, unknown>
+                delete newNode.input
+                delete newNode.args
+                if (inputDefault) newNode.input = inputDefault
+                if (argsDefault) newNode.args = argsDefault
+                if (numRequiredArgs && !argsDefault && !inputDefault)
+                  newNode.args = new Array(numRequiredArgs).fill(null)
+                onEdit(newNode, expressionPath)
+              }}
+            />
+          )}
           {availableProperties.length > 0 && (
             <PropertySelector
               availableProperties={availableProperties as OperatorParameterMetadata[]}
@@ -115,22 +132,6 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           operatorDisplay={operatorDisplay?.[operatorData.name]}
         />
       )}
-      {isCustomFunction && isEditing && (
-        <FunctionSelector
-          value={(parentData as OperatorNode)?.functionName as string}
-          functions={figTree.getCustomFunctions()}
-          updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
-            const newNode = { ...parentData, functionName: name } as Record<string, unknown>
-            delete newNode.input
-            delete newNode.args
-            if (inputDefault) newNode.input = inputDefault
-            if (argsDefault) newNode.args = argsDefault
-            if (numRequiredArgs && !argsDefault && !inputDefault)
-              newNode.args = new Array(numRequiredArgs).fill(null)
-            onEdit(newNode, expressionPath)
-          }}
-        />
-      )}
     </div>
   )
 }
@@ -149,6 +150,7 @@ const OperatorSelector: React.FC<{
       setSelected={(newValue) => changeOperator(newValue.value)}
       className="ft-operator-select"
       placeholder="Search operators"
+      search
     />
   )
 }
@@ -174,34 +176,6 @@ export const PropertySelector: React.FC<{
       selected={null}
       setSelected={(selected) => handleAddProperty(selected.value as OperatorParameterMetadata)}
     />
-  )
-}
-
-export const FunctionSelector: React.FC<{
-  value: string
-  functions: readonly CustomFunctionMetadata[]
-  updateNode: (functionDefinition: CustomFunctionMetadata) => void
-}> = ({ value, functions, updateNode }) => {
-  const functionOptions = functions.map(({ name, numRequiredArgs }) => ({
-    key: name,
-    label: `${name} (${numRequiredArgs})`,
-    value: name,
-  }))
-
-  const handleFunctionSelect = (selected) => {
-    const func = functions.find((f) => f.name === selected.value)
-    if (func) updateNode(func)
-  }
-
-  return (
-    <div className="ft-function-select">
-      <Select
-        selected={functionOptions.find((option) => value === option.value)}
-        options={functionOptions}
-        placeholder="Select function"
-        setSelected={handleFunctionSelect}
-      />
-    </div>
   )
 }
 
