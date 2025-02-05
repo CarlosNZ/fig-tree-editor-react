@@ -1,6 +1,12 @@
 import React, { useMemo } from 'react'
-import { FigTreeEvaluator } from 'fig-tree-evaluator'
+import {
+  CustomFunctionMetadata,
+  FigTreeEvaluator,
+  FragmentParameterMetadata,
+  OperatorParameterMetadata,
+} from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
+import { getDefaultValue } from './helpers'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -31,7 +37,7 @@ export const NodeTypeSelector: React.FC<{
   const defaultFunction = functions[0]
   const defaultFragment = fragments[0]
 
-  const handleChange = (selected: SelectOption) => {
+  const handleChange = (selected: SelectOption<string>) => {
     const newType = selected.value
     if (currentSelection?.value === newType) return
 
@@ -61,10 +67,64 @@ export const NodeTypeSelector: React.FC<{
   return (
     <Select
       className="ft-node-type-select"
-      value={currentSelection}
+      selected={currentSelection?.label ?? null}
       options={options}
-      onChange={handleChange as (s: unknown) => void}
-      onKeyDown={(e) => console.log('SELECT Key', e.key)}
+      setSelected={handleChange}
+      placeholder="Select Node Type"
+    />
+  )
+}
+
+export const PropertySelector: React.FC<{
+  availableProperties: OperatorParameterMetadata[] | FragmentParameterMetadata[]
+  updateNode: (newField: any) => void
+}> = ({ availableProperties, updateNode }) => {
+  const propertyOptions = availableProperties.map((property) => ({
+    label: property.name,
+    value: property,
+  }))
+
+  const handleAddProperty = (selected: OperatorParameterMetadata) => {
+    updateNode({ [selected.name]: selected.default ?? getDefaultValue(selected.type) })
+  }
+
+  return (
+    <Select
+      className="ft-property-select"
+      options={propertyOptions}
+      placeholder="Add property"
+      selected={null}
+      setSelected={(selected) => handleAddProperty(selected.value as OperatorParameterMetadata)}
+    />
+  )
+}
+
+export const FunctionSelector: React.FC<{
+  value: string
+  functions: readonly CustomFunctionMetadata[]
+  updateNode: (functionDefinition: CustomFunctionMetadata) => void
+}> = ({ value, functions, updateNode }) => {
+  const functionOptions = functions.map(({ name, numRequiredArgs }) => ({
+    key: name,
+    label: `${name} (${numRequiredArgs})`,
+    value: name,
+  }))
+
+  const handleFunctionSelect = (selected: SelectOption<string>) => {
+    const func = functions.find((f) => f.name === selected.value)
+    if (func) updateNode(func)
+  }
+
+  const selectedOption = functionOptions.find((option) => value === option.value)
+
+  return (
+    <Select
+      className="ft-function-select"
+      selected={selectedOption?.value ?? null}
+      options={functionOptions}
+      placeholder="Select function"
+      setSelected={handleFunctionSelect}
+      search
     />
   )
 }

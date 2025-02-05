@@ -1,13 +1,11 @@
 import React from 'react'
-import { CustomFunctionMetadata, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
+import { OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
-import { Select, SelectOption } from './Select'
 import { Icons } from './Icons'
-// import './styles.css'
 import { getButtonFontSize } from './helpers'
-import { OperatorProps, PropertySelector } from './Operator'
+import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
-import { NodeTypeSelector } from './NodeTypeSelector'
+import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { useCommon } from './useCommon'
 import { getAvailableProperties } from './validator'
 
@@ -53,7 +51,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           />
           :
           <FunctionSelector
-            value={(parentData as OperatorNode)?.functionName as string}
+            value={(parentData as OperatorNode)?.operator as string}
             functions={figTree.getCustomFunctions()}
             updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
               const newNode = { operator: name, ...inputDefault } as Record<string, unknown>
@@ -141,37 +139,4 @@ export const EvaluateButton: React.FC<EvaluateButtonProps> = ({
       )}
     </div>
   )
-}
-
-export const FunctionSelector: React.FC<{
-  value: string
-  functions: readonly CustomFunctionMetadata[]
-  updateNode: (functionDefinition: CustomFunctionMetadata) => void
-}> = ({ value, functions, updateNode }) => {
-  const functionOptions = functions.map(({ name, numRequiredArgs }) => ({
-    key: name,
-    label: `${name} (${numRequiredArgs})`,
-    value: name,
-  }))
-
-  const handleFunctionSelect = (selected: SelectOption) => {
-    const func = functions.find((f) => f.name === selected.value)
-    if (func) updateNode(func)
-  }
-
-  return (
-    <div className="ft-function-select">
-      <Select
-        value={functionOptions.find((option) => value === option.value)}
-        options={functionOptions}
-        placeholder="Select function"
-        onChange={handleFunctionSelect as (s: unknown) => void}
-      />
-    </div>
-  )
-}
-
-export interface DropdownOption {
-  label: string
-  options: { value: string; label: string }[]
 }

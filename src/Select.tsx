@@ -1,87 +1,228 @@
-import React, { useEffect, useState } from 'react'
-import ReactSelect, { GroupBase, Props } from 'react-select'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { IconChevron } from 'json-edit-react'
 
-// Custom re-export of react-select
-
-interface SelectOption {
-  value: string
+export interface SelectOption<T> {
   label: string
+  value: T
 }
 
-const Select: React.FC<Props> = <
-  Option,
-  IsMulti extends boolean = false,
-  Group extends GroupBase<Option> = GroupBase<Option>,
->({
-  value,
-  styles = {},
-  ...props
-}: Props<Option, IsMulti, Group>) => {
-  const [docRoot, setDocRoot] = useState<HTMLElement>()
+export interface OptionGroup<T> {
+  label: string
+  options: SelectOption<T>[]
+}
 
-  // We want access to the global document.documentElement object, but can't
-  // access it directly when used with SSR. So we set it inside a `useEffect`,
-  // which won't run server-side (it'll just be undefined) until client
-  // hydration
+interface SelectProps<T> {
+  options?: SelectOption<T>[]
+  optionGroups?: OptionGroup<T>[]
+  selected: string | null
+  setSelected: (selection: SelectOption<T>) => void
+  search?: boolean
+  placeholder?: string
+  className: string
+}
+
+export function Select<T>({
+  options = [],
+  optionGroups,
+  selected,
+  setSelected,
+  search = false,
+  placeholder,
+  className,
+}: SelectProps<T>) {
+  const [docObject, setDocObject] = useState<HTMLElement>()
+  const [open, setOpen] = useState(false)
+  const [searchText, setSearchText] = useState('')
+  const [highlightedIndex, setHighlightedIndex] = useState(-1)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const searchInputRef = useRef<HTMLInputElement>(null)
+  const optionsRef = useRef<HTMLDivElement>(null)
+
   useEffect(() => {
     const root = document.documentElement
-    setDocRoot(root)
+    setDocObject(root)
   }, [])
 
-  const { control = {} } = styles as Record<string, React.CSSProperties>
+  useEffect(() => {
+    if (!docObject) return
+    const handleClickOutside = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current?.contains(event.target as Node)) {
+        handleClose()
+      }
+    }
+    docObject.addEventListener('mousedown', handleClickOutside)
+    return () => docObject.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Puts focus on text input when drop-down opens up
+  useEffect(() => {
+    if (open && searchInputRef.current) {
+      searchInputRef.current.focus()
+    }
+  }, [open])
+
+  // Un-highlights row when user types
+  useEffect(() => {
+    setHighlightedIndex(-1)
+  }, [searchText])
+
+  // Keeps the highlighted item in view as user goes up and down list
+  useEffect(() => {
+    if (highlightedIndex >= 0 && optionsRef.current) {
+      const highlightedElement = optionsRef.current?.querySelector(
+        `[data-index="${highlightedIndex}"]`
+      )
+      if (highlightedElement) {
+        highlightedElement.scrollIntoView({ block: 'nearest' })
+      }
+    }
+  }, [highlightedIndex])
+
+  const matchOption = useCallback(
+    <T,>(option: SelectOption<T>, group: OptionGroup<T> | null = null) => {
+      const searchTextLower = searchText.toLowerCase()
+      if (group && group.label.toLowerCase().includes(searchTextLower)) return true
+      return option.label.toLowerCase().includes(searchTextLower)
+    },
+    [searchText]
+  )
+
+  const handleOpen = () => {
+    setOpen(true)
+  }
+
+  const handleClose = () => {
+    setOpen(false)
+    setSearchText('')
+    setHighlightedIndex(-1)
+  }
+
+  const handleSelect = (option: SelectOption<T>) => {
+    setSelected(option)
+    handleClose()
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev < allVisibleOptions.length - 1 ? prev + 1 : prev))
+        break
+      case 'ArrowUp':
+        e.preventDefault()
+        setHighlightedIndex((prev) => (prev > 0 ? prev - 1 : prev))
+        break
+      case 'Enter':
+        e.preventDefault()
+        if (highlightedIndex >= 0 && highlightedIndex < allVisibleOptions.length) {
+          handleSelect(allVisibleOptions[highlightedIndex])
+        }
+        break
+      case 'Escape':
+        e.preventDefault()
+        handleClose()
+        break
+    }
+  }
+
+  const filteredGroups = optionGroups
+    ? optionGroups
+        .map((group) => ({
+          ...group,
+          options: group.options.filter((opt) => matchOption(opt, group)),
+        }))
+        .filter((group) => group.options.length > 0)
+    : []
+
+  const filteredOptions = !optionGroups ? options.filter((opt) => matchOption(opt)) : []
+
+  const allVisibleOptions = optionGroups
+    ? filteredGroups.flatMap((group) => group.options)
+    : filteredOptions
+
+  const DropdownJSX = optionGroups
+    ? filteredGroups.map((group, groupIndex) => (
+        <div key={group.label}>
+          <div className="ft-select-group-label">{group.label}</div>
+          {group.options.map((option, optionIndex) => {
+            const index =
+              filteredGroups.slice(0, groupIndex).reduce((acc, g) => acc + g.options.length, 0) +
+              optionIndex
+
+            return (
+              <div
+                key={option.label}
+                className={`ft-select-option${
+                  highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
+                }`}
+                onClick={() => handleSelect(option)}
+                data-index={index}
+                tabIndex={0}
+              >
+                {option.label}
+              </div>
+            )
+          })}
+        </div>
+      ))
+    : filteredOptions.map((option, index) => (
+        <div
+          key={option.label}
+          className={`ft-select-option${
+            highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
+          }`}
+          onClick={() => handleSelect(option)}
+          data-index={index}
+          tabIndex={0}
+        >
+          {option.label}
+        </div>
+      ))
+
   return (
-    <ReactSelect
-      value={value}
-      classNamePrefix="ft-rs"
-      // This fixes the bug where the selected item is not scrolled into view
-      // when first opening the menu:
-      onMenuOpen={() => {
-        setTimeout(() => {
-          if (!docRoot) return
-          const selectedEl = docRoot.getElementsByClassName('ft-rs__option--is-selected')[0]
-          if (selectedEl) {
-            selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' })
-          }
-        }, 15)
-      }}
-      styles={{
-        control: (base, _) => ({
-          ...base,
-          minHeight: '2em',
-          height: '2em',
-          minWidth: '8em',
-          maxWidth: '15em',
-          fontSize: '0.8em',
-          ...control,
-        }),
-        menu: (base, _) => ({
-          ...base,
-          width: 'fit-content',
-          zIndex: 100,
-        }),
-        groupHeading: (provided, _) => ({
-          ...provided,
-          fontSize: '1.2em',
-        }),
-        input: (provided, _) => ({
-          ...provided,
-          margin: '0px',
-        }),
-        indicatorSeparator: (_) => ({
-          display: 'none',
-        }),
-        indicatorsContainer: (provided, _) => ({
-          ...provided,
-          height: '2em',
-        }),
-        option: (provided) => ({
-          ...provided,
-          fontSize: '0.9em',
-        }),
-      }}
-      {...props}
-    />
+    <div className={`ft-select-container ${className}`} ref={containerRef}>
+      <div className="ft-select-select-wrapper">
+        {!open ? (
+          <div
+            className="ft-select-trigger ft-select-input"
+            onClick={handleOpen}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleOpen()
+              }
+            }}
+            tabIndex={0}
+          >
+            {selected ?? <span className="ft-select-placeholder">{placeholder}</span>}
+            <IconChevron
+              size="1em"
+              style={{ position: 'absolute', right: '0.4em', color: '#A5A5A5' }}
+            />
+          </div>
+        ) : (
+          <>
+            {search ? (
+              <input
+                ref={searchInputRef}
+                type="text"
+                className="ft-select-input"
+                placeholder={placeholder}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={handleKeyDown}
+              />
+            ) : (
+              <div className="ft-select-trigger ft-select-input">
+                <span className="ft-select-placeholder">{placeholder}</span>
+              </div>
+            )}
+            <div ref={optionsRef} className="ft-select-dropdown">
+              {DropdownJSX}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
-
-export { Select, type SelectOption }

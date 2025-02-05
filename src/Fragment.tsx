@@ -6,11 +6,11 @@ import {
   FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
-import { NodeTypeSelector } from './NodeTypeSelector'
-import { OperatorProps, PropertySelector } from './Operator'
+import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
+import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
 import { getAvailableProperties } from './validator'
-import { Select, SelectOption } from './Select'
+import { Select } from './Select'
 import { useCommon } from './useCommon'
 
 export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -111,9 +111,11 @@ const FragmentSelector: React.FC<{
   return (
     <Select
       className="ft-fragment-select"
-      value={{ label: value, value }}
-      onChange={(selected) => changeFragment((selected as SelectOption).value)}
+      selected={value}
+      setSelected={(selected) => changeFragment(selected.value)}
       options={fragmentOptions}
+      search
+      placeholder="Select Fragment"
     />
   )
 }

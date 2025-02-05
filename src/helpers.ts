@@ -8,7 +8,7 @@ import {
   EvaluatorNode,
 } from 'fig-tree-evaluator'
 import { NodeData } from './_imports'
-import { NodeType } from './NodeTypeSelector'
+import { NodeType } from './CommonSelectors'
 
 export const operatorStringRegex = /(\$[^()]+)\((.*)\)/
 
