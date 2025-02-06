@@ -13,7 +13,7 @@
   "license": "MIT",
   "scripts": {
     "build": "rimraf ./build && rollup -c && rimraf ./build/dts",
-    "lint": "npx eslint",
+    "lint": "yarn eslint",
     "demo": "cd demo && yarn start"
   },
   "peerDependencies": {
@@ -28,7 +28,7 @@
     "@rollup/plugin-typescript": "^11.1.6",
     "@types/node": "^20.5.1",
     "@types/react": "^18.2.20",
-    "eslint": "^9.4.0",
+    "eslint": "^9.19.0",
     "eslint-config-standard-with-typescript": "^43.0.1",
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-n": "^17.7.0",
