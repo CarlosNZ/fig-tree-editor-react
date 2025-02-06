@@ -89,12 +89,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const allFragments = useMemo(() => new Set(fragments.map((f) => f.name)), [])
   const allFunctions = useMemo(() => new Set(functions.map((f) => f.name)), [])
 
-  // Used when switching between different types of nodes (e.g. Operator ->
-  // Fragment) -- this allows us to know whether we should start in "editing"
-  // mode
-  const initialEdit = useRef(false)
-  const [currentlyEditing, setCurrentlyEditing] = useState<string | null>(null)
-
   const CurrentEdit = useCurrentlyEditing()
 
   // Deeper nodes don't have access to higher-level alias definitions when
@@ -245,9 +239,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
-              initialEdit,
-              currentlyEditing,
-              setCurrentlyEditing,
               CurrentEdit,
             },
             hideKey: true,
@@ -265,9 +256,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
-              initialEdit,
-              currentlyEditing,
-              setCurrentlyEditing,
               CurrentEdit,
             },
             hideKey: true,
@@ -285,9 +273,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
-              initialEdit,
-              currentlyEditing,
-              setCurrentlyEditing,
               CurrentEdit,
             },
             hideKey: true,
