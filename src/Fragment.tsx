@@ -23,7 +23,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     handleSubmit,
     expressionPath,
     isEditing,
-    setIsEditing,
+    startEditing,
     evaluate,
     loading,
     operatorDisplay,
@@ -34,7 +34,10 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     onEdit,
   })
 
-  const { figTree } = customNodeProps
+  const {
+    figTree,
+    CurrentEdit: { switchNodeType },
+  } = customNodeProps
 
   if (!figTree) return null
 
@@ -55,12 +58,13 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   return (
     <div className="ft-custom ft-fragment">
-      {isEditing ? (
+      {isEditing() ? (
         <div className="ft-toolbar ft-fragment-toolbar">
           <NodeTypeSelector
             value="fragment"
             changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
             figTree={figTree}
+            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
           />
           :
           <FragmentSelector
@@ -87,7 +91,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
         <DisplayBar
           name={thisFragment}
           description={fragmentData.description}
-          setIsEditing={() => setIsEditing(true)}
+          setIsEditing={startEditing}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName="FRAGMENT"

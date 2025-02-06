@@ -33,8 +33,8 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
     canonicalName === 'FRAGMENT'
       ? 'fragments'
       : canonicalName === 'CUSTOM_FUNCTIONS'
-        ? 'custom-functionsoperators'
-        : canonicalName.toLowerCase()
+      ? 'custom-functionsoperators'
+      : canonicalName.toLowerCase()
   const link = README_URL + linkSuffix
 
   return (
@@ -49,7 +49,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
           isShorthand={isShorthand}
         />
         {!isShorthand && (
-          <span onClick={() => setIsEditing()} className="ft-clickable ft-edit-icon">
+          <span onClick={setIsEditing} className="ft-clickable ft-edit-icon">
             <IconEdit size="1.5em" style={{ color: 'rgb(42, 161, 152)' }} />
           </span>
         )}

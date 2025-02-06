@@ -14,7 +14,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
-  const { handleCancel, handleSubmit, expressionPath, isEditing, setIsEditing, evaluate, loading } =
+  const { handleCancel, handleSubmit, expressionPath, isEditing, startEditing, evaluate, loading } =
     useCommon({
       customNodeProps,
       parentData,
@@ -22,7 +22,10 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
       onEdit,
     })
 
-  const { figTree } = customNodeProps
+  const {
+    figTree,
+    CurrentEdit: { switchNodeType },
+  } = customNodeProps
 
   if (!figTree) return null
 
@@ -41,13 +44,14 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
 
   return (
     <div className="ft-custom ft-operator">
-      {isEditing ? (
+      {isEditing() ? (
         <div className="ft-toolbar ft-operator-toolbar">
           <NodeTypeSelector
             value="customOperator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             figTree={figTree}
             currentExpression={parentData}
+            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
           />
           :
           <FunctionSelector
@@ -82,7 +86,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
         <DisplayBar
           name={functionData.name}
           description={functionData.description}
-          setIsEditing={() => setIsEditing(true)}
+          setIsEditing={startEditing}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={'CUSTOM_FUNCTIONS'}

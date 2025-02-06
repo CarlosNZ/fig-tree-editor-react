@@ -16,6 +16,7 @@ import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSe
 import { useCommon } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
+import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
 
 export interface OperatorProps {
   figTree: FigTreeEvaluator
@@ -23,6 +24,9 @@ export interface OperatorProps {
   topLevelAliases: Record<string, EvaluatorNode>
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
   initialEdit: React.MutableRefObject<boolean>
+  currentlyEditing: string | null
+  setCurrentlyEditing: (path: string | null) => void
+  CurrentEdit: CurrentlyEditingReturnType
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -35,7 +39,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     handleSubmit,
     expressionPath,
     isEditing,
-    setIsEditing,
+    startEditing,
     evaluate,
     loading,
     operatorDisplay,
@@ -46,7 +50,10 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     onEdit,
   })
 
-  const { figTree } = customNodeProps
+  const {
+    figTree,
+    CurrentEdit: { switchNodeType },
+  } = customNodeProps
 
   if (!figTree) return null
 
@@ -67,12 +74,13 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   return (
     <div className="ft-custom ft-operator">
-      {isEditing ? (
+      {isEditing() ? (
         <div className="ft-toolbar ft-operator-toolbar">
           <NodeTypeSelector
             value="operator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             figTree={figTree}
+            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
           />
           :
           <OperatorSelector
@@ -87,7 +95,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               onEdit(newNode, expressionPath)
             }}
           />
-          {isCustomFunction && isEditing && (
+          {isCustomFunction && isEditing() && (
             <FunctionSelector
               value={(parentData as OperatorNode)?.functionName as string}
               functions={figTree.getCustomFunctions()}
@@ -122,7 +130,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
         <DisplayBar
           name={thisOperator}
           description={operatorData.description}
-          setIsEditing={() => setIsEditing(true)}
+          setIsEditing={startEditing}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={operatorData.name}

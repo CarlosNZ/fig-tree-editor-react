@@ -1,4 +1,5 @@
-// Common functionality for Node components
+// Common functionality for FigTree Node components
+
 import { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
 import { NodeData } from 'json-edit-react'
@@ -12,24 +13,37 @@ interface Input {
 }
 
 export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
-  const { evaluateNode, topLevelAliases, operatorDisplay, initialEdit } = customNodeProps
-  const [prevState, setPrevState] = useState(parentData)
-  const [isEditing, setIsEditing] = useState(initialEdit.current)
+  const { evaluateNode, topLevelAliases, operatorDisplay, setCurrentlyEditing, CurrentEdit } =
+    customNodeProps
+  const {
+    currentEditPath,
+    setCurrentEditPath,
+    isEditing: isEditingTest,
+    toPathString,
+    prevState,
+    setPrevState,
+  } = CurrentEdit
   const [loading, setLoading] = useState(false)
 
   const expressionPath = nodeData.path.slice(0, -1)
+  const pathAsString = toPathString(nodeData.path)
 
   const handleSubmit = () => {
     setPrevState(parentData)
-    setIsEditing(false)
-    initialEdit.current = false
+    setCurrentEditPath(null)
   }
 
   const handleCancel = () => {
     onEdit(prevState, expressionPath)
-    setIsEditing(false)
-    initialEdit.current = false
+    setCurrentEditPath(null)
   }
+
+  const startEditing = () => {
+    setPrevState(parentData)
+    setCurrentEditPath(pathAsString)
+  }
+
+  const isEditing = () => isEditingTest(pathAsString)
 
   const listenForSubmit = (e: KeyboardEvent) => {
     if (e.key === 'Enter') handleSubmit()
@@ -37,12 +51,11 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
   }
 
   useEffect(() => {
-    if (isEditing) {
-      setPrevState(parentData)
+    if (isEditing()) {
       window.addEventListener('keydown', listenForSubmit)
     } else window.removeEventListener('keydown', listenForSubmit)
     return () => window.removeEventListener('keydown', listenForSubmit)
-  }, [isEditing])
+  }, [currentEditPath])
 
   const aliases = { ...topLevelAliases, ...getAliases(parentData) }
 
@@ -57,10 +70,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     handleSubmit,
     expressionPath,
     isEditing,
-    setIsEditing: (value: boolean) => {
-      setIsEditing(value)
-      initialEdit.current = value
-    },
+    startEditing,
     evaluate,
     loading,
     operatorDisplay,
