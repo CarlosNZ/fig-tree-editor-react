@@ -247,7 +247,7 @@
 .ft-select-input,
 input.ft-select-input {
   width: clamp(6em, 10em, 13em);
-  min-height: 2.4em;
+  min-height: 2.4rem;
   padding: 0.5em;
   border: 1px solid #ccc !important;
   border-radius: 4px !important;
@@ -258,12 +258,12 @@ input.ft-select-input {
   align-items: center;
 }
 
-/* input[type='text'] {
-  border: 1px solid brown !important;
-} */
+input.ft-select-input::placeholder {
+  color: #718096;
+  font-size: 0.9em;
+}
 
 .ft-select-placeholder {
-  color: #718096;
   caret-color: transparent;
 }
 
