@@ -20,8 +20,8 @@ export const NodeTypeSelector: React.FC<{
   changeNode: (type: unknown) => void
   figTree: FigTreeEvaluator
   currentExpression?: object | unknown[] | null
-  switchNode: () => void
-}> = ({ value, changeNode, figTree, currentExpression, switchNode }) => {
+  switchNodeType: (pathPart: string) => void
+}> = ({ value, changeNode, figTree, currentExpression, switchNodeType }) => {
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
   const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
 
@@ -39,17 +39,17 @@ export const NodeTypeSelector: React.FC<{
   const defaultFragment = fragments[0]
 
   const handleChange = (selected: SelectOption<string>) => {
-    switchNode()
-
     const newType = selected.value
     if (currentSelection?.value === newType) return
 
     switch (newType) {
       case 'operator':
         changeNode({ operator: '+' })
+        switchNodeType('operator')
         break
       case 'fragment':
         changeNode({ fragment: defaultFragment.name })
+        switchNodeType('fragment')
         break
       case 'customOperator':
         const { name, numRequiredArgs, argsDefault, inputDefault } = defaultFunction
@@ -61,6 +61,7 @@ export const NodeTypeSelector: React.FC<{
         if (numRequiredArgs && !argsDefault && !inputDefault)
           newNode.args = new Array(numRequiredArgs).fill(null)
         changeNode(newNode)
+        switchNodeType('operator')
         break
       case 'value':
         changeNode('DEFAULT STRING')

@@ -1,4 +1,5 @@
-// Common functionality for Node components
+// Common functionality for FigTree Node components
+
 import { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
 import { NodeData } from 'json-edit-react'
@@ -19,8 +20,9 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     setCurrentEditPath,
     isEditing: isEditingTest,
     toPathString,
+    prevState,
+    setPrevState,
   } = CurrentEdit
-  const [prevState, setPrevState] = useState(parentData)
   const [loading, setLoading] = useState(false)
 
   const expressionPath = nodeData.path.slice(0, -1)
@@ -37,6 +39,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
   }
 
   const startEditing = () => {
+    setPrevState(parentData)
     setCurrentEditPath(pathAsString)
   }
 
@@ -49,7 +52,6 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
 
   useEffect(() => {
     if (isEditing()) {
-      setPrevState(parentData)
       window.addEventListener('keydown', listenForSubmit)
     } else window.removeEventListener('keydown', listenForSubmit)
     return () => window.removeEventListener('keydown', listenForSubmit)
