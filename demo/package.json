@@ -22,7 +22,7 @@
     "ignore": [
       "../expression-builder/src/fig-tree-evaluator"
     ],
-    "ext": "js, json, ts, tsx, txt",
+    "ext": "js, json, ts, tsx, txt, css",
     "delay": 200
   },
   "dependencies": {
