@@ -2450,6 +2450,14 @@ fastq@^1.6.0:
   dependencies:
     reusify "^1.0.4"
 
+fig-tree-editor-react@^0.5.4:
+  version "0.5.4"
+  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.5.4.tgz#5366eaa5f0fff577e9545c67bd37fd7867e092be"
+  integrity sha512-2mitUJaGvYvz8v1LzsNabxCE2WUkapi3Tqcig1VgdU04fGzjitMOn6vp54KqtTXkd6TeGLI2CDsoQRg3gtiXXQ==
+  dependencies:
+    fig-tree-evaluator "^2.19.1"
+    json-edit-react "^1.22.1"
+
 fig-tree-evaluator@^2.19.1:
   version "2.19.1"
   resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.19.1.tgz#a9d5857aa8b0f5f8cb0f19d4b54d5c6b67cd0da2"
