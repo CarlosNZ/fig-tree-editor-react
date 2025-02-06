@@ -7,7 +7,7 @@
  */
 
 // Published
-// import { FigTreeEditor } from 'fig-tree-expression-builder'
+// import { FigTreeEditor } from 'fig-tree-editor-react'
 
 // Local
 import { FigTreeEditor } from './expression-builder/src'

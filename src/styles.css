@@ -21,6 +21,7 @@
   align-items: center;
   gap: 0.3em;
   flex-wrap: wrap;
+  margin-left: -1em; /* Offset JRE margin */
 }
 
 /* Operator/Fragment display interface */
@@ -35,7 +36,7 @@
 
 .ft-button-and-edit {
   display: flex;
-  align-items: end;
+  align-items: center;
   gap: 0.6em;
 }
 
@@ -229,16 +230,6 @@
   display: none;
 }
 
-/* For react-select */
-.ft-rs-control {
-  border: 2px solid red !important;
-}
-
-.ft-property-select {
-  font-size: '0.8em';
-  text-wrap: nowrap;
-}
-
 /* Select component */
 .ft-select-container {
   width: clamp(6em, 10em, 13em);
@@ -253,12 +244,13 @@
   cursor: pointer;
 }
 
-.ft-select-input {
+.ft-select-input,
+input.ft-select-input {
   width: clamp(6em, 10em, 13em);
   min-height: 2.4em;
   padding: 0.5em;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
   margin-bottom: 0.25rem;
   background-color: white;
   display: flex;
@@ -266,16 +258,21 @@
   align-items: center;
 }
 
+/* input[type='text'] {
+  border: 1px solid brown !important;
+} */
+
 .ft-select-placeholder {
   color: #718096;
-  font-size: 0.9em;
+  caret-color: transparent;
 }
 
 .ft-select-dropdown {
   position: absolute;
+  min-width: 100%;
   max-width: 20em;
-  margin-top: 0.25em;
   max-height: 15em;
+  margin-top: 0.25em;
   padding: 0.5em;
   overflow-y: auto;
   border: 1px solid #ccc;
@@ -283,17 +280,22 @@
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 50;
+  scrollbar-gutter: stable;
 }
 
 .ft-select-group-label {
-  padding: 0.5em 0.25em;
+  padding: 0.35em 0;
   font-size: 1.1em;
   font-weight: bold;
 }
 
 .ft-select-option {
-  padding: 0.5em 0.75em;
+  padding: 0.35em 0.75em;
   cursor: pointer;
+}
+
+.ft-select-no-options {
+  font-style: italic;
 }
 
 .ft-select-option:hover {

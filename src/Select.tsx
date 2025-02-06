@@ -30,7 +30,6 @@ export function Select<T>({
   placeholder,
   className,
 }: SelectProps<T>) {
-  const [docObject, setDocObject] = useState<HTMLElement>()
   const [open, setOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
@@ -39,19 +38,13 @@ export function Select<T>({
   const optionsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const root = document.documentElement
-    setDocObject(root)
-  }, [])
-
-  useEffect(() => {
-    if (!docObject) return
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current?.contains(event.target as Node)) {
+      if (optionsRef.current && !optionsRef.current?.contains(event.target as Node)) {
         handleClose()
       }
     }
-    docObject.addEventListener('mousedown', handleClickOutside)
-    return () => docObject.removeEventListener('mousedown', handleClickOutside)
+    window.addEventListener('mousedown', handleClickOutside)
+    return () => window.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   // Puts focus on text input when drop-down opens up
@@ -114,12 +107,14 @@ export function Select<T>({
         break
       case 'Enter':
         e.preventDefault()
+        e.stopPropagation()
         if (highlightedIndex >= 0 && highlightedIndex < allVisibleOptions.length) {
           handleSelect(allVisibleOptions[highlightedIndex])
         }
         break
       case 'Escape':
         e.preventDefault()
+        e.stopPropagation()
         handleClose()
         break
     }
@@ -140,8 +135,13 @@ export function Select<T>({
     ? filteredGroups.flatMap((group) => group.options)
     : filteredOptions
 
-  const DropdownJSX = optionGroups
-    ? filteredGroups.map((group, groupIndex) => (
+  const DropdownJSX =
+    allVisibleOptions.length === 0 ? (
+      <div className={`ft-select-option ft-select-no-options`} tabIndex={0}>
+        No results
+      </div>
+    ) : optionGroups ? (
+      filteredGroups.map((group, groupIndex) => (
         <div key={group.label}>
           <div className="ft-select-group-label">{group.label}</div>
           {group.options.map((option, optionIndex) => {
@@ -158,6 +158,7 @@ export function Select<T>({
                 onClick={() => handleSelect(option)}
                 data-index={index}
                 tabIndex={0}
+                style={search ? {} : { padding: '0.5em 0.75em' }}
               >
                 {option.label}
               </div>
@@ -165,7 +166,8 @@ export function Select<T>({
           })}
         </div>
       ))
-    : filteredOptions.map((option, index) => (
+    ) : (
+      filteredOptions.map((option, index) => (
         <div
           key={option.label}
           className={`ft-select-option${
@@ -174,26 +176,28 @@ export function Select<T>({
           onClick={() => handleSelect(option)}
           data-index={index}
           tabIndex={0}
+          style={search ? {} : { padding: '0.5em 0.75em' }}
         >
           {option.label}
         </div>
       ))
+    )
+
+  // Some additional props for the input area when "search" is disabled
+  const additionalInputProps = search
+    ? {}
+    : {
+        className: 'ft-select-input ft-select-placeholder',
+        value: '',
+        onChange: () => {},
+        style: { cursor: 'default' },
+      }
 
   return (
     <div className={`ft-select-container ${className}`} ref={containerRef}>
       <div className="ft-select-select-wrapper">
         {!open ? (
-          <div
-            className="ft-select-trigger ft-select-input"
-            onClick={handleOpen}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault()
-                handleOpen()
-              }
-            }}
-            tabIndex={0}
-          >
+          <div className="ft-select-trigger ft-select-input" onClick={handleOpen} tabIndex={0}>
             {selected ?? <span className="ft-select-placeholder">{placeholder}</span>}
             <IconChevron
               size="1em"
@@ -202,21 +206,16 @@ export function Select<T>({
           </div>
         ) : (
           <>
-            {search ? (
-              <input
-                ref={searchInputRef}
-                type="text"
-                className="ft-select-input"
-                placeholder={placeholder}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                onKeyDown={handleKeyDown}
-              />
-            ) : (
-              <div className="ft-select-trigger ft-select-input">
-                <span className="ft-select-placeholder">{placeholder}</span>
-              </div>
-            )}
+            <input
+              ref={searchInputRef}
+              type="text"
+              className="ft-select-input"
+              placeholder={placeholder}
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              {...additionalInputProps}
+            />
             <div ref={optionsRef} className="ft-select-dropdown">
               {DropdownJSX}
             </div>
