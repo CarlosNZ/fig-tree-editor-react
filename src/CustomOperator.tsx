@@ -22,7 +22,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
       onEdit,
     })
 
-  const { figTree } = customNodeProps
+  const { figTree, CurrentEdit } = customNodeProps
 
   if (!figTree) return null
 
@@ -48,7 +48,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             figTree={figTree}
             currentExpression={parentData}
-            switchNode={customNodeProps.editing.switchNodeType}
+            switchNode={CurrentEdit.switchNodeType}
           />
           :
           <FunctionSelector
@@ -83,7 +83,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
         <DisplayBar
           name={functionData.name}
           description={functionData.description}
-          setIsEditing={() => setIsEditing(true)}
+          setIsEditing={startEditing}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={'CUSTOM_FUNCTIONS'}

@@ -16,6 +16,7 @@ import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSe
 import { useCommon } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
+import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
 
 export interface OperatorProps {
   figTree: FigTreeEvaluator
@@ -25,7 +26,7 @@ export interface OperatorProps {
   initialEdit: React.MutableRefObject<boolean>
   currentlyEditing: string | null
   setCurrentlyEditing: (path: string | null) => void
-  editing: any
+  CurrentEdit: CurrentlyEditingReturnType
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -39,7 +40,6 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     expressionPath,
     isEditing,
     startEditing,
-    // setCurrentlyEditing,
     evaluate,
     loading,
     operatorDisplay,
@@ -50,7 +50,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     onEdit,
   })
 
-  const { figTree } = customNodeProps
+  const { figTree, CurrentEdit } = customNodeProps
 
   if (!figTree) return null
 
@@ -77,7 +77,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             value="operator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             figTree={figTree}
-            switchNode={customNodeProps.editing.switchNodeType}
+            switchNode={CurrentEdit.switchNodeType}
           />
           :
           <OperatorSelector
@@ -127,7 +127,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
         <DisplayBar
           name={thisOperator}
           description={operatorData.description}
-          setIsEditing={() => startEditing(nodeData.path.join('.'))}
+          setIsEditing={startEditing}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={operatorData.name}

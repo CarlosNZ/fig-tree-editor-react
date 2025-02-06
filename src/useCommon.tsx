@@ -12,40 +12,35 @@ interface Input {
 }
 
 export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
+  const { evaluateNode, topLevelAliases, operatorDisplay, setCurrentlyEditing, CurrentEdit } =
+    customNodeProps
   const {
-    evaluateNode,
-    topLevelAliases,
-    operatorDisplay,
-    initialEdit,
-    currentlyEditing,
-    setCurrentlyEditing,
-    editing,
-  } = customNodeProps
-  const { currentEditPath, startEditing, stopEditing, switchNodeType, isEditing, toPathString } =
-    editing
+    currentEditPath,
+    setCurrentEditPath,
+    isEditing: isEditingTest,
+    toPathString,
+  } = CurrentEdit
   const [prevState, setPrevState] = useState(parentData)
-  // const [isEditing, setIsEditing] = useState(initialEdit.current)
   const [loading, setLoading] = useState(false)
 
   const expressionPath = nodeData.path.slice(0, -1)
+  const pathAsString = toPathString(nodeData.path)
 
   const handleSubmit = () => {
     setPrevState(parentData)
-    stopEditing()
-    // initialEdit.current = false
-    setCurrentlyEditing(null)
+    setCurrentEditPath(null)
   }
 
   const handleCancel = () => {
     onEdit(prevState, expressionPath)
-    stopEditing()
-    // initialEdit.current = false
-    setCurrentlyEditing(null)
+    setCurrentEditPath(null)
   }
 
-  const setIsEditing = () => {
-    startEditing(nodeData.path, parentData)
+  const startEditing = () => {
+    setCurrentEditPath(pathAsString)
   }
+
+  const isEditing = () => isEditingTest(pathAsString)
 
   const listenForSubmit = (e: KeyboardEvent) => {
     if (e.key === 'Enter') handleSubmit()
@@ -58,7 +53,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
       window.addEventListener('keydown', listenForSubmit)
     } else window.removeEventListener('keydown', listenForSubmit)
     return () => window.removeEventListener('keydown', listenForSubmit)
-  }, [isEditing])
+  }, [currentEditPath])
 
   const aliases = { ...topLevelAliases, ...getAliases(parentData) }
 
@@ -72,18 +67,8 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     handleCancel,
     handleSubmit,
     expressionPath,
-    isEditing: () => isEditing(nodeData.path.join('.')),
-    // currentlyEditing === nodeData.path.join('.') || initialEdit.current,
-    setIsEditing,
-    // startEditing,
-    // setIsEditing: (value: boolean) => {
-    //   setIsEditing(value)
-    //   initialEdit.current = value
-    // },
-    // setCurrentlyEditing: (path: string | null) => {
-    //   setCurrentlyEditing(path)
-    //   if (path) setTimeout(() => (initialEdit.current = true), 500)
-    // },
+    isEditing,
+    startEditing,
     evaluate,
     loading,
     operatorDisplay,

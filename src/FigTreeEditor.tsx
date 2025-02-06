@@ -95,7 +95,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const initialEdit = useRef(false)
   const [currentlyEditing, setCurrentlyEditing] = useState<string | null>(null)
 
-  const editing = useCurrentlyEditing()
+  const CurrentEdit = useCurrentlyEditing()
 
   // Deeper nodes don't have access to higher-level alias definitions when
   // evaluating them on their own (only when evaluated from above), so we
@@ -248,7 +248,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               initialEdit,
               currentlyEditing,
               setCurrentlyEditing,
-              editing,
+              CurrentEdit,
             },
             hideKey: true,
             showOnEdit: false,
@@ -268,7 +268,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               initialEdit,
               currentlyEditing,
               setCurrentlyEditing,
-              editing,
+              CurrentEdit,
             },
             hideKey: true,
             showOnEdit: false,
@@ -288,7 +288,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               initialEdit,
               currentlyEditing,
               setCurrentlyEditing,
-              editing,
+              CurrentEdit,
             },
             hideKey: true,
             showOnEdit: false,
