@@ -119,11 +119,13 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               }
             />
           )}
-          <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-            <IconOk size="2em" style={{ color: 'green' }} />
-          </div>
-          <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-            <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} />
+          <div className="ft-edit-buttons">
+            <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
+              <IconOk size="2em" style={{ color: 'green' }} />
+            </div>
+            <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+              <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} />
+            </div>
           </div>
         </div>
       ) : (
