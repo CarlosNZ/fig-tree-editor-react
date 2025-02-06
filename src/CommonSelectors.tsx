@@ -20,7 +20,8 @@ export const NodeTypeSelector: React.FC<{
   changeNode: (type: unknown) => void
   figTree: FigTreeEvaluator
   currentExpression?: object | unknown[] | null
-}> = ({ value, changeNode, figTree, currentExpression }) => {
+  switchNode: () => void
+}> = ({ value, changeNode, figTree, currentExpression, switchNode }) => {
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
   const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
 
@@ -38,6 +39,8 @@ export const NodeTypeSelector: React.FC<{
   const defaultFragment = fragments[0]
 
   const handleChange = (selected: SelectOption<string>) => {
+    switchNode()
+
     const newType = selected.value
     if (currentSelection?.value === newType) return
 

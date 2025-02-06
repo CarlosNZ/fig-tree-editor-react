@@ -12,23 +12,39 @@ interface Input {
 }
 
 export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
-  const { evaluateNode, topLevelAliases, operatorDisplay, initialEdit } = customNodeProps
+  const {
+    evaluateNode,
+    topLevelAliases,
+    operatorDisplay,
+    initialEdit,
+    currentlyEditing,
+    setCurrentlyEditing,
+    editing,
+  } = customNodeProps
+  const { currentEditPath, startEditing, stopEditing, switchNodeType, isEditing, toPathString } =
+    editing
   const [prevState, setPrevState] = useState(parentData)
-  const [isEditing, setIsEditing] = useState(initialEdit.current)
+  // const [isEditing, setIsEditing] = useState(initialEdit.current)
   const [loading, setLoading] = useState(false)
 
   const expressionPath = nodeData.path.slice(0, -1)
 
   const handleSubmit = () => {
     setPrevState(parentData)
-    setIsEditing(false)
-    initialEdit.current = false
+    stopEditing()
+    // initialEdit.current = false
+    setCurrentlyEditing(null)
   }
 
   const handleCancel = () => {
     onEdit(prevState, expressionPath)
-    setIsEditing(false)
-    initialEdit.current = false
+    stopEditing()
+    // initialEdit.current = false
+    setCurrentlyEditing(null)
+  }
+
+  const setIsEditing = () => {
+    startEditing(nodeData.path, parentData)
   }
 
   const listenForSubmit = (e: KeyboardEvent) => {
@@ -37,7 +53,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
   }
 
   useEffect(() => {
-    if (isEditing) {
+    if (isEditing()) {
       setPrevState(parentData)
       window.addEventListener('keydown', listenForSubmit)
     } else window.removeEventListener('keydown', listenForSubmit)
@@ -56,11 +72,18 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     handleCancel,
     handleSubmit,
     expressionPath,
-    isEditing,
-    setIsEditing: (value: boolean) => {
-      setIsEditing(value)
-      initialEdit.current = value
-    },
+    isEditing: () => isEditing(nodeData.path.join('.')),
+    // currentlyEditing === nodeData.path.join('.') || initialEdit.current,
+    setIsEditing,
+    // startEditing,
+    // setIsEditing: (value: boolean) => {
+    //   setIsEditing(value)
+    //   initialEdit.current = value
+    // },
+    // setCurrentlyEditing: (path: string | null) => {
+    //   setCurrentlyEditing(path)
+    //   if (path) setTimeout(() => (initialEdit.current = true), 500)
+    // },
     evaluate,
     loading,
     operatorDisplay,

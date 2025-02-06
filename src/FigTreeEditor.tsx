@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react'
+import React, { useMemo, useEffect, useRef, useState } from 'react'
 import { JsonData, extract } from 'json-edit-react'
 import {
   type EvaluatorNode,
@@ -33,6 +33,7 @@ import {
   propertyCountReplace,
   getAliases,
 } from './helpers'
+import { useCurrentlyEditing } from './useCurrentlyEditing'
 import { ShorthandNodeWithSimpleValue, ShorthandNodeCollection } from './Shorthand'
 
 const nodeBaseStyles = {
@@ -92,6 +93,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // Fragment) -- this allows us to know whether we should start in "editing"
   // mode
   const initialEdit = useRef(false)
+  const [currentlyEditing, setCurrentlyEditing] = useState<string | null>(null)
+
+  const editing = useCurrentlyEditing()
 
   // Deeper nodes don't have access to higher-level alias definitions when
   // evaluating them on their own (only when evaluated from above), so we
@@ -242,6 +246,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               initialEdit,
+              currentlyEditing,
+              setCurrentlyEditing,
+              editing,
             },
             hideKey: true,
             showOnEdit: false,
@@ -259,6 +266,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               initialEdit,
+              currentlyEditing,
+              setCurrentlyEditing,
+              editing,
             },
             hideKey: true,
             showOnEdit: false,
@@ -276,6 +286,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               initialEdit,
+              currentlyEditing,
+              setCurrentlyEditing,
+              editing,
             },
             hideKey: true,
             showOnEdit: false,

@@ -23,6 +23,9 @@ export interface OperatorProps {
   topLevelAliases: Record<string, EvaluatorNode>
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
   initialEdit: React.MutableRefObject<boolean>
+  currentlyEditing: string | null
+  setCurrentlyEditing: (path: string | null) => void
+  editing: any
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -35,7 +38,8 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     handleSubmit,
     expressionPath,
     isEditing,
-    setIsEditing,
+    startEditing,
+    // setCurrentlyEditing,
     evaluate,
     loading,
     operatorDisplay,
@@ -67,12 +71,13 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   return (
     <div className="ft-custom ft-operator">
-      {isEditing ? (
+      {isEditing() ? (
         <div className="ft-toolbar ft-operator-toolbar">
           <NodeTypeSelector
             value="operator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             figTree={figTree}
+            switchNode={customNodeProps.editing.switchNodeType}
           />
           :
           <OperatorSelector
@@ -122,7 +127,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
         <DisplayBar
           name={thisOperator}
           description={operatorData.description}
-          setIsEditing={() => setIsEditing(true)}
+          setIsEditing={() => startEditing(nodeData.path.join('.'))}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={operatorData.name}
