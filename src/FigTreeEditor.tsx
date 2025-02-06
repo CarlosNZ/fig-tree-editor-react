@@ -32,6 +32,7 @@ import {
   isShorthandNodeWithSimpleValue as shorthandSimpleNodeTester,
   propertyCountReplace,
   getAliases,
+  getTypeFilter,
 } from './helpers'
 import { useCurrentlyEditing } from './useCurrentlyEditing'
 import { ShorthandNodeWithSimpleValue, ShorthandNodeCollection } from './Shorthand'
@@ -167,6 +168,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       // Prevent operator nodes being edited using this component, as they have
       // their own editing functionality
       restrictEdit={({ key }) => key === 'operator' || key === 'fragment'}
+      restrictTypeSelection={(nodeData) =>
+        getTypeFilter(nodeData, { operators, fragments, functions })
+      }
       showArrayIndices={false}
       indent={3}
       collapse={2}

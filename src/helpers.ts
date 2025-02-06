@@ -6,6 +6,11 @@ import {
   isAliasString,
   OperatorAlias,
   EvaluatorNode,
+  FigTreeEvaluator,
+  FragmentMetadata,
+  CustomFunctionMetadata,
+  Operator,
+  Fragment,
 } from 'fig-tree-evaluator'
 import { NodeData } from './_imports'
 import { NodeType } from './CommonSelectors'
@@ -200,4 +205,51 @@ export const isFirstAliasNode = (
     ? Object.keys(parentData).filter((k) => !isAliasString(k))
     : []
   return index === nonAliasProperties.length
+}
+
+export const getTypeFilter = (
+  { key, parentData }: NodeData,
+  {
+    operators,
+    fragments,
+    functions,
+  }: {
+    operators: readonly OperatorMetadata[]
+    fragments: readonly FragmentMetadata[]
+    functions: readonly CustomFunctionMetadata[]
+  }
+) => {
+  console.log(key, parentData)
+  let operator: Operator
+  let fragment: string
+  let functionName: string
+
+  switch (true) {
+    case isAliasString(String(key)): {
+      //
+    }
+    case 'operator' in (parentData ?? {}): {
+      //
+    }
+    case 'fragment' in (parentData ?? {}): {
+      //
+    }
+  }
+
+  // Determine what type of Node
+  // - Operator
+  // - Fragment
+  // - Function/Custom Operator
+  // - Value
+
+  // Get the operator/fragment from Parent data
+
+  // Get key/property
+
+  // Check if in Op/Frag properties and aliases -- match
+
+  // Return type list
+  // console.log(nodeData)
+
+  return false
 }
