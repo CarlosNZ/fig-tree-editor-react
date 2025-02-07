@@ -168,9 +168,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       // Prevent operator nodes being edited using this component, as they have
       // their own editing functionality
       restrictEdit={({ key }) => key === 'operator' || key === 'fragment'}
-      restrictTypeSelection={(nodeData) =>
-        getTypeFilter(nodeData, { operators, fragments, functions })
-      }
+      restrictTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
       showArrayIndices={false}
       indent={3}
       collapse={2}
@@ -240,6 +238,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             element: CustomOperator,
             customNodeProps: {
               figTree,
+              figTreeData: { operators, fragments, functions },
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
@@ -257,6 +256,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             name: 'Operator',
             customNodeProps: {
               figTree,
+              figTreeData: { operators, fragments, functions },
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
@@ -274,6 +274,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             name: 'Fragment',
             customNodeProps: {
               figTree,
+              figTreeData: { operators, fragments, functions },
               evaluateNode,
               operatorDisplay,
               topLevelAliases,

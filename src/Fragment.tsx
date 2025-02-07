@@ -1,10 +1,5 @@
 import React, { useMemo } from 'react'
-import {
-  FigTreeEvaluator,
-  FragmentMetadata,
-  FragmentNode,
-  FragmentParameterMetadata,
-} from 'fig-tree-evaluator'
+import { FigTreeEvaluator, FragmentNode, FragmentParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { OperatorProps } from './Operator'
@@ -12,6 +7,7 @@ import { DisplayBar } from './DisplayBar'
 import { getAvailableProperties } from './validator'
 import { Select } from './Select'
 import { useCommon } from './useCommon'
+import { getCurrentFragment } from './helpers'
 
 export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   const { data, parentData, nodeData, onEdit, customNodeProps } = props
@@ -36,12 +32,13 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTree,
+    figTreeData: { fragments },
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
   if (!figTree) return null
 
-  const fragmentData = getCurrentFragment(parentData as FragmentNode, figTree.getFragments())
+  const fragmentData = getCurrentFragment(parentData as FragmentNode, fragments)
   const thisFragment = data as string
 
   const availableProperties = getAvailableProperties(
@@ -124,11 +121,4 @@ const FragmentSelector: React.FC<{
       placeholder="Select Fragment"
     />
   )
-}
-
-const getCurrentFragment = (node: FragmentNode, fragments: readonly FragmentMetadata[]) => {
-  const fragmentName = node?.fragment
-  const fragment = fragments.find((frag) => frag.name === fragmentName)
-
-  return fragment ?? fragments[0]
 }
