@@ -134,6 +134,19 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       className="ft-editor"
       showCollectionCount="when-closed"
       data={expression as JsonData}
+      onUpdate={({ newData, ...rest }) => {
+        try {
+          const validated = validateExpression(newData, {
+            operators,
+            fragments,
+            functions,
+          }) as object
+          // setExpression(validated)
+          onUpdate({ newData: validated, ...rest })
+        } catch (err: any) {
+          return err.message
+        }
+      }}
       restrictDelete={({ key, path }) => {
         // Unable to delete required properties
         if (path.length === 0) return true
