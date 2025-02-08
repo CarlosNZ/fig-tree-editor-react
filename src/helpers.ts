@@ -211,7 +211,11 @@ export const isFirstAliasNode = (
   const { parentData, index } = nodeData
 
   const nonAliasProperties = isObject(parentData)
-    ? Object.keys(parentData).filter((k) => !isAliasString(k))
+    ? Object.keys(parentData).filter(
+        (k) =>
+          !isAliasString(k) ||
+          [...allOperatorAliases, ...allFragments, ...allFunctions].includes(k.replace('$', ''))
+      )
     : []
   return index === nonAliasProperties.length
 }

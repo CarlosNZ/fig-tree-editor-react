@@ -102,7 +102,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const topLevelAliases = getAliases(expression)
 
   useEffect(() => {
-    // initialEdit.current = false;
     try {
       const exp = validateExpression(expression, { operators, fragments, functions })
       setExpression(exp)
@@ -135,19 +134,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       className="ft-editor"
       showCollectionCount="when-closed"
       data={expression as JsonData}
-      onUpdate={({ newData, ...rest }) => {
-        try {
-          const validated = validateExpression(newData, {
-            operators,
-            fragments,
-            functions,
-          }) as object
-          // setExpression(validated)
-          onUpdate({ newData: validated, ...rest })
-        } catch (err: any) {
-          return err.message
-        }
-      }}
       restrictDelete={({ key, path }) => {
         // Unable to delete required properties
         if (path.length === 0) return true
@@ -294,14 +280,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           },
           {
             condition: (nodeData) =>
-              isShorthandNodeWithSimpleValue(nodeData) &&
-              !isCollection(Object.values(nodeData.value ?? {})[0]),
-            element: ShorthandNodeWithSimpleValue,
-            customNodeProps: { figTree, evaluateNode, operatorDisplay, topLevelAliases },
-            showEditTools: true,
-          },
-          {
-            condition: (nodeData) =>
               isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
             showOnEdit: true,
             wrapperElement: ({ children }) => (
@@ -312,6 +290,14 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
                 {children}
               </div>
             ),
+          },
+          {
+            condition: (nodeData) =>
+              isShorthandNodeWithSimpleValue(nodeData) &&
+              !isCollection(Object.values(nodeData.value ?? {})[0]),
+            element: ShorthandNodeWithSimpleValue,
+            customNodeProps: { figTree, evaluateNode, operatorDisplay, topLevelAliases },
+            showEditTools: true,
           },
           {
             condition: (nodeData: any) => nodeData.path.length === 0 && isCollection(nodeData.data),
