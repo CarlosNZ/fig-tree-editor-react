@@ -304,7 +304,8 @@ input.ft-select-input::placeholder {
   font-style: italic;
 }
 
-.ft-select-option:hover {
+.ft-select-option:hover,
+.ft-select-group-label:hover {
   background-color: #f3f4f6;
 }
 

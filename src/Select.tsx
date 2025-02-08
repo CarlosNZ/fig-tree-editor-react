@@ -8,6 +8,7 @@ export interface SelectOption<T> {
 
 export interface OptionGroup<T> {
   label: string
+  value: T
   options: SelectOption<T>[]
 }
 
@@ -143,7 +144,17 @@ export function Select<T>({
     ) : optionGroups ? (
       filteredGroups.map((group, groupIndex) => (
         <div key={group.label}>
-          <div className="ft-select-group-label">{group.label}</div>
+          <div
+            className={`ft-select-group-label ${
+              highlightedIndex === groupIndex ? 'ft-select-highlighted' : ''
+            }`}
+            onClick={() => {
+              console.log('Click options')
+              handleSelect(group)
+            }}
+          >
+            {group.label}
+          </div>
           {group.options.map((option, optionIndex) => {
             const index =
               filteredGroups.slice(0, groupIndex).reduce((acc, g) => acc + g.options.length, 0) +
