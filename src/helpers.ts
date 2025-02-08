@@ -6,8 +6,15 @@ import {
   isAliasString,
   OperatorAlias,
   EvaluatorNode,
+  FigTreeEvaluator,
+  FragmentMetadata,
+  CustomFunctionMetadata,
+  Operator,
+  Fragment,
+  OperatorNode,
+  FragmentNode,
 } from 'fig-tree-evaluator'
-import { NodeData } from './_imports'
+import { DataType, NodeData } from './_imports'
 import { NodeType } from './CommonSelectors'
 
 export const operatorStringRegex = /(\$[^()]+)\((.*)\)/
@@ -52,6 +59,13 @@ export const getCurrentOperator = (
   )
   if (!operator) return undefined
   return operator
+}
+
+export const getCurrentFragment = (node: FragmentNode, fragments: readonly FragmentMetadata[]) => {
+  const fragmentName = node?.fragment
+  const fragment = fragments.find((frag) => frag.name === fragmentName)
+
+  return fragment ?? fragments[0]
 }
 
 export const commonProperties = [
@@ -197,7 +211,66 @@ export const isFirstAliasNode = (
   const { parentData, index } = nodeData
 
   const nonAliasProperties = isObject(parentData)
-    ? Object.keys(parentData).filter((k) => !isAliasString(k))
+    ? Object.keys(parentData).filter(
+        (k) =>
+          !isAliasString(k) ||
+          [...allOperatorAliases, ...allFragments, ...allFunctions].includes(k.replace('$', ''))
+      )
     : []
   return index === nonAliasProperties.length
+}
+
+/**
+ * Provides a list of available types for values of Operator or Fragment nodes.
+ *
+ * Currently only very basic -- doesn't yet support Shorthand syntax or Custom
+ * Operators
+ */
+export const getTypeFilter = (
+  { key, parentData }: NodeData,
+  {
+    operators,
+    fragments,
+  }: {
+    operators: readonly OperatorMetadata[]
+    fragments: readonly FragmentMetadata[]
+  }
+) => {
+  let operatorData: OperatorMetadata | undefined
+  let fragmentData: FragmentMetadata | undefined
+
+  switch (true) {
+    case 'operator' in (parentData ?? {}) && key !== 'operator': {
+      operatorData = getCurrentOperator((parentData as OperatorNode)?.operator, operators)
+      break
+    }
+    case 'fragment' in (parentData ?? {}) && key !== 'fragment': {
+      fragmentData = getCurrentFragment(parentData as FragmentNode, fragments)
+      break
+    }
+  }
+
+  if (operatorData) {
+    const parameter = operatorData.parameters.find(
+      (p) => p.name === key || p.aliases.includes(String(key))
+    )
+    return getDataTypeList(parameter?.type)
+  }
+
+  if (fragmentData?.parameters) {
+    const parameter = fragmentData.parameters.find((p) => p.name === key)
+    return getDataTypeList(parameter?.type)
+  }
+
+  return false
+}
+
+const getDataTypeList = (
+  parameterType?: ExpectedType | string | string[]
+): boolean | DataType[] => {
+  if (!parameterType || parameterType === 'any') return false
+  if (Array.isArray(parameterType)) return [...parameterType, 'Operator', 'Fragment'] as DataType[]
+  if (isObject(parameterType) && 'literal' in parameterType)
+    return ['string', 'Operator', 'Fragment'] as DataType[]
+  return [parameterType, 'Operator', 'Fragment'] as DataType[]
 }

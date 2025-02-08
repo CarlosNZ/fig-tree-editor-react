@@ -1,24 +1,16 @@
 import useUndoHook from 'use-undo'
-import { dequal } from 'dequal'
 import { Button, HStack, VStack, Spacer } from '@chakra-ui/react'
-// import { BiReset } from 'react-icons/bi'
 import { ArrowBackIcon, ArrowForwardIcon } from '@chakra-ui/icons'
 import { JsonData } from 'json-edit-react'
 
 export const useUndo = (initialData: JsonData) => {
-  // const [resetPoint, setResetPoint] = useState(initialData)
   const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] =
     useUndoHook(initialData)
 
   const handleChange = (newData: JsonData) => {
-    if (dequal(newData, data)) return
+    if (JSON.stringify(newData) === JSON.stringify(data)) return
     setData(newData)
   }
-
-  // const externalReset = (newData: object) => {
-  //   reset(newData)
-  //   setResetPoint(newData)
-  // }
 
   const UndoRedo = (
     <VStack w="80%" maxW={500} align="flex-end" gap={4}>

@@ -24,12 +24,13 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
 
   const {
     figTree,
+    figTreeData: { functions },
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
   if (!figTree) return null
 
-  const functionData = figTree.getCustomFunctions().find((f) => f.name === data)
+  const functionData = functions.find((f) => f.name === data)
 
   if (!functionData) return null
 

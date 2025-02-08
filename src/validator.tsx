@@ -73,7 +73,9 @@ export const validateExpression = (
       ? operatorAcceptsArbitraryProperties(currentMetaData as OperatorMetadata)
       : false
 
-  const expressionEntries = Object.entries(expression)
+  const fragmentParameters = isFragment ? expression.parameters : undefined
+
+  const expressionEntries = Object.entries({ ...expression, ...fragmentParameters })
 
   const newExpression: [string, unknown][] = []
   const aliasEntries: [string, unknown][] = []
@@ -141,8 +143,21 @@ export const validateExpression = (
     return prop1Position - prop2Position
   })
 
+  const newExpressionObject = Object.fromEntries(newExpression)
+
+  // If Fragment originally had "parameters" property, put properties back in to
+  // it
+
+  if (fragmentParameters) {
+    newExpressionObject.parameters = {}
+    Object.entries(fragmentParameters).forEach(([key, value]) => {
+      ;(newExpressionObject?.parameters as Record<string, unknown>)[key] = value
+      delete newExpressionObject[key]
+    })
+  }
+
   return {
-    ...Object.fromEntries(newExpression),
+    ...newExpressionObject,
     ...Object.fromEntries(commonPropertyEntries),
     ...Object.fromEntries(aliasEntries),
   }

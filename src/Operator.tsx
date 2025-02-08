@@ -7,6 +7,8 @@ import {
   OperatorParameterMetadata,
   Operator as OperatorName,
   EvaluatorNode,
+  FragmentMetadata,
+  CustomFunctionMetadata,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { DisplayBar } from './DisplayBar'
@@ -20,6 +22,11 @@ import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
 
 export interface OperatorProps {
   figTree: FigTreeEvaluator
+  figTreeData: {
+    operators: OperatorMetadata[]
+    fragments: FragmentMetadata[]
+    functions: CustomFunctionMetadata[]
+  }
   evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   topLevelAliases: Record<string, EvaluatorNode>
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
@@ -52,15 +59,13 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTree,
+    figTreeData: { operators },
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
   if (!figTree) return null
 
-  const operatorData = getCurrentOperator(
-    (parentData as OperatorNode).operator,
-    figTree.getOperators()
-  ) as OperatorMetadata
+  const operatorData = getCurrentOperator((parentData as OperatorNode).operator, operators)
   const thisOperator = data as OperatorAlias
 
   if (!operatorData) return null
