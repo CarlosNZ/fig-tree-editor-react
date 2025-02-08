@@ -231,9 +231,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       customNodeDefinitions={
         [
           {
-            condition: ({ key, value }) => {
-              return key === 'operator' && allFunctions.has(String(value))
-            },
+            condition: ({ key, value }) => key === 'operator' && allFunctions.has(String(value)),
             element: CustomOperator,
             customNodeProps: {
               figTree,

@@ -6,7 +6,7 @@ import {
   EvaluatorNode,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps } from './_imports'
-import { getAliases, getCurrentOperator } from './helpers'
+import { getAliases, getCurrentFragment, getCurrentOperator } from './helpers'
 import { OperatorDisplay, operatorDisplay } from './operatorDisplay'
 import { DisplayBar, EvaluateButton } from './DisplayBar'
 
@@ -40,6 +40,13 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
 
   const operatorData = getCurrentOperator(operatorAlias, figTree.getOperators()) as OperatorMetadata
 
+  const fragmentData = getCurrentFragment({ fragment: operatorAlias }, figTree.getFragments())
+  const { textColor, backgroundColor } = fragmentData
+  const displayData =
+    textColor && backgroundColor
+      ? { textColor, backgroundColor, displayName: 'Fragment' }
+      : undefined
+
   const aliases = { ...topLevelAliases, ...getAliases(parentData) }
 
   return (
@@ -47,6 +54,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
       <div className="ft-shorthand-display-bar">
         <DisplayBar
           name={key as string}
+          description={operatorData?.description ?? fragmentData?.description}
           setIsEditing={() => {}}
           evaluate={async (e) => {
             setLoading(true)
@@ -54,7 +62,8 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
             setLoading(false)
           }}
           isLoading={loading}
-          canonicalName={operatorData?.name}
+          canonicalName={operatorData?.name ?? 'FRAGMENT'}
+          operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
         />
       </div>
       {children}
@@ -86,7 +95,9 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
 
   const operatorAlias = property.slice(1)
 
-  const operatorData = getCurrentOperator(operatorAlias, figTree.getOperators()) as OperatorMetadata
+  const operatorData = getCurrentOperator(operatorAlias, figTree.getOperators())
+
+  if (!operatorData) return <p>Invalid Shorthand node</p>
 
   const { backgroundColor, textColor, displayName } = operatorDisplay[operatorData.name]
 
