@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react'
-import { FigTreeEvaluator, FragmentNode, FragmentParameterMetadata } from 'fig-tree-evaluator'
+import React from 'react'
+import { FragmentMetadata, FragmentNode, FragmentParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { OperatorProps } from './Operator'
@@ -31,12 +31,11 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   })
 
   const {
-    figTree,
-    figTreeData: { fragments },
+    figTreeData,
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
-  if (!figTree) return null
+  const { fragments } = figTreeData
 
   const fragmentData = getCurrentFragment(parentData as FragmentNode, fragments)
   const thisFragment = data as string
@@ -60,14 +59,14 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           <NodeTypeSelector
             value="fragment"
             changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
-            figTree={figTree}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
+            figTreeData={figTreeData}
           />
           :
           <FragmentSelector
             value={thisFragment}
-            figTree={figTree}
             changeFragment={(fragment) => onEdit({ ...parentData, fragment }, expressionPath)}
+            fragments={fragments}
           />
           {availableProperties.length > 0 && (
             <PropertySelector
@@ -103,13 +102,10 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
 const FragmentSelector: React.FC<{
   value: string
-  figTree: FigTreeEvaluator
   changeFragment: (fragment: string) => void
-}> = ({ value, figTree, changeFragment }) => {
-  const fragmentOptions = useMemo(
-    () => figTree.getFragments().map(({ name }) => ({ label: name, value: name })),
-    [figTree]
-  )
+  fragments: FragmentMetadata[]
+}> = ({ value, changeFragment, fragments }) => {
+  const fragmentOptions = fragments.map(({ name }) => ({ label: name, value: name }))
 
   return (
     <Select

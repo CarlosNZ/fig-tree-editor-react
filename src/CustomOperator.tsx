@@ -23,12 +23,11 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
     })
 
   const {
-    figTree,
-    figTreeData: { functions },
+    figTreeData,
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
-  if (!figTree) return null
+  const { functions } = figTreeData
 
   const functionData = functions.find((f) => f.name === data)
 
@@ -50,14 +49,14 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           <NodeTypeSelector
             value="customOperator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            figTree={figTree}
             currentExpression={parentData}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
+            figTreeData={figTreeData}
           />
           :
           <FunctionSelector
             value={(parentData as OperatorNode)?.operator as string}
-            functions={figTree.getCustomFunctions()}
+            functions={functions}
             updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
               const newNode = { operator: name, ...inputDefault } as Record<string, unknown>
               delete newNode.input

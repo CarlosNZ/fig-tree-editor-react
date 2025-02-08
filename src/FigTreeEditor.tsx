@@ -83,6 +83,8 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
   const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
 
+  const figTreeData = { operators, fragments, functions }
+
   const allOpAliases = useMemo(() => {
     const all = operators.map((op) => [op.name, ...op.aliases]).flat()
     return new Set(all)
@@ -235,7 +237,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             element: CustomOperator,
             customNodeProps: {
               figTree,
-              figTreeData: { operators, fragments, functions },
+              figTreeData,
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
@@ -253,7 +255,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             name: 'Operator',
             customNodeProps: {
               figTree,
-              figTreeData: { operators, fragments, functions },
+              figTreeData,
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
@@ -271,7 +273,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             name: 'Fragment',
             customNodeProps: {
               figTree,
-              figTreeData: { operators, fragments, functions },
+              figTreeData,
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
@@ -307,7 +309,13 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               isShorthandNodeWithSimpleValue(nodeData) &&
               !isCollection(Object.values(nodeData.value ?? {})[0]),
             element: ShorthandNodeWithSimpleValue,
-            customNodeProps: { figTree, evaluateNode, operatorDisplay, topLevelAliases },
+            customNodeProps: {
+              figTree,
+              figTreeData,
+              evaluateNode,
+              operatorDisplay,
+              topLevelAliases,
+            },
             showEditTools: true,
           },
           {
@@ -315,9 +323,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             element: TopLevelContainer,
             customNodeProps: {
               figTree,
+              figTreeData,
               evaluateNode,
               isShorthandNode: isShorthandNodeWithSimpleValue,
-              // evaluateFullObject,
             },
           },
         ] as CustomNodeDefinition[]

@@ -4,6 +4,8 @@ import {
   Operator as OperatorName,
   OperatorMetadata,
   EvaluatorNode,
+  FragmentMetadata,
+  CustomFunctionMetadata,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps } from './_imports'
 import { getAliases, getCurrentFragment, getCurrentOperator } from './helpers'
@@ -17,6 +19,11 @@ export interface ShorthandProps {
   evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   operatorDisplay: Partial<Record<OperatorName, OperatorDisplay>>
   topLevelAliases: Record<string, EvaluatorNode>
+  figTreeData: {
+    operators: OperatorMetadata[]
+    fragments: FragmentMetadata[]
+    functions: CustomFunctionMetadata[]
+  }
 }
 
 /**
@@ -31,16 +38,17 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
   customNodeProps,
 }) => {
   const { key, parentData } = nodeData
-  const { figTree, evaluateNode, topLevelAliases } = customNodeProps ?? {}
-  if (!figTree || !evaluateNode) return null
+  const { figTree, evaluateNode, topLevelAliases, figTreeData } = customNodeProps ?? {}
+  if (!figTree || !evaluateNode || !figTreeData) return null
 
   const [loading, setLoading] = useState(false)
 
   const operatorAlias = (key as string).slice(1)
 
-  const operatorData = getCurrentOperator(operatorAlias, figTree.getOperators()) as OperatorMetadata
+  const { operators, fragments } = figTreeData
+  const operatorData = getCurrentOperator(operatorAlias, operators)
 
-  const fragmentData = getCurrentFragment({ fragment: operatorAlias }, figTree.getFragments())
+  const fragmentData = getCurrentFragment({ fragment: operatorAlias }, fragments)
   const { textColor, backgroundColor } = fragmentData
   const displayData =
     textColor && backgroundColor
@@ -86,16 +94,16 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
-  const { figTree, evaluateNode, topLevelAliases } = customNodeProps
+  const { figTree, evaluateNode, topLevelAliases, figTreeData } = customNodeProps
   const [loading, setLoading] = useState(false)
 
-  if (!figTree) return null
+  if (!figTree || !figTreeData) return null
 
   const property = Object.keys(data)[0]
 
   const operatorAlias = property.slice(1)
 
-  const operatorData = getCurrentOperator(operatorAlias, figTree.getOperators())
+  const operatorData = getCurrentOperator(operatorAlias, figTreeData.operators)
 
   if (!operatorData) return <p>Invalid Shorthand node</p>
 

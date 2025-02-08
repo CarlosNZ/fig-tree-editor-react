@@ -1,8 +1,9 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import {
   CustomFunctionMetadata,
-  FigTreeEvaluator,
+  FragmentMetadata,
   FragmentParameterMetadata,
+  OperatorMetadata,
   OperatorParameterMetadata,
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
@@ -18,12 +19,15 @@ const nodeTypeOptions = [
 export const NodeTypeSelector: React.FC<{
   value: NodeType
   changeNode: (type: unknown) => void
-  figTree: FigTreeEvaluator
   currentExpression?: object | unknown[] | null
   switchNodeType: (pathPart: string) => void
-}> = ({ value, changeNode, figTree, currentExpression, switchNodeType }) => {
-  const fragments = useMemo(() => figTree.getFragments(), [figTree])
-  const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
+  figTreeData: {
+    operators: OperatorMetadata[]
+    fragments: FragmentMetadata[]
+    functions: CustomFunctionMetadata[]
+  }
+}> = ({ value, changeNode, currentExpression, switchNodeType, figTreeData }) => {
+  const { fragments, functions } = figTreeData
 
   const options = [
     ...nodeTypeOptions,

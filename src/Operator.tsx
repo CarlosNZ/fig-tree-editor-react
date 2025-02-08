@@ -1,6 +1,5 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import {
-  FigTreeEvaluator,
   OperatorAlias,
   OperatorMetadata,
   OperatorNode,
@@ -21,7 +20,6 @@ import { OperatorDisplay } from './operatorDisplay'
 import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
 
 export interface OperatorProps {
-  figTree: FigTreeEvaluator
   figTreeData: {
     operators: OperatorMetadata[]
     fragments: FragmentMetadata[]
@@ -58,12 +56,11 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   })
 
   const {
-    figTree,
-    figTreeData: { operators },
+    figTreeData,
     CurrentEdit: { switchNodeType },
   } = customNodeProps
 
-  if (!figTree) return null
+  const { operators, functions } = figTreeData
 
   const operatorData = getCurrentOperator((parentData as OperatorNode).operator, operators)
   const thisOperator = data as OperatorAlias
@@ -84,13 +81,12 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           <NodeTypeSelector
             value="operator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            figTree={figTree}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
+            figTreeData={figTreeData}
           />
           :
           <OperatorSelector
             value={thisOperator}
-            figTree={figTree}
             changeOperator={(operator: OperatorAlias) => {
               // If we're just changing to another alias of the same operator
               // type, then don't clean the node
@@ -99,11 +95,12 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
                 : { ...cleanOperatorNode(parentData as OperatorNode), operator }
               onEdit(newNode, expressionPath)
             }}
+            operators={operators}
           />
           {isCustomFunction && isEditing() && (
             <FunctionSelector
               value={(parentData as OperatorNode)?.functionName as string}
-              functions={figTree.getCustomFunctions()}
+              functions={functions}
               updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
                 const newNode = { ...parentData, functionName: name } as Record<string, unknown>
                 delete newNode.input
@@ -150,10 +147,10 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
 const OperatorSelector: React.FC<{
   value: OperatorAlias
-  figTree: FigTreeEvaluator
   changeOperator: (operator: OperatorAlias) => void
-}> = ({ value, figTree, changeOperator }) => {
-  const operatorOptions = useMemo(() => getOperatorOptions(figTree.getOperators()), [figTree])
+  operators: OperatorMetadata[]
+}> = ({ value, changeOperator, operators }) => {
+  const operatorOptions = getOperatorOptions(operators)
 
   return (
     <Select
