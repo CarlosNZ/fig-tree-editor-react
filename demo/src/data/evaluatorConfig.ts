@@ -43,6 +43,8 @@ export const evaluatorConfig = {
       },
       description: 'Reverse a string, or array',
       argsDefault: ['Reverse Me'],
+      backgroundColor: 'orange',
+      textColor: 'blue',
     },
     changeCase: {
       function: ({ string, toCase }: { string: string; toCase: 'lower' | 'upper' }) =>

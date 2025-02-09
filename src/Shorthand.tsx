@@ -48,8 +48,11 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
   const { operators, fragments, allNonAliases } = figTreeData
   const operatorData = getCurrentOperator(operatorAlias, operators)
 
-  const fragmentData = getCurrentFragment({ fragment: operatorAlias }, fragments)
-  const { textColor, backgroundColor } = fragmentData
+  const fragmentData = !operatorData
+    ? getCurrentFragment({ fragment: operatorAlias }, fragments)
+    : undefined
+
+  const { textColor, backgroundColor } = fragmentData ?? {}
   const displayData =
     textColor && backgroundColor
       ? { textColor, backgroundColor, displayName: 'Fragment' }
@@ -71,7 +74,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
           }}
           isLoading={loading}
           canonicalName={operatorData?.name ?? 'FRAGMENT'}
-          operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
+          operatorDisplay={displayData}
         />
       </div>
       {children}
