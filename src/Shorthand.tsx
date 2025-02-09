@@ -22,6 +22,7 @@ export interface ShorthandProps {
     operators: OperatorMetadata[]
     fragments: FragmentMetadata[]
     functions: CustomFunctionMetadata[]
+    allNonAliases: Set<string>
   }
 }
 
@@ -44,7 +45,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
 
   const operatorAlias = (key as string).slice(1)
 
-  const { operators, fragments } = figTreeData
+  const { operators, fragments, allNonAliases } = figTreeData
   const operatorData = getCurrentOperator(operatorAlias, operators)
 
   const fragmentData = getCurrentFragment({ fragment: operatorAlias }, fragments)
@@ -54,7 +55,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
       ? { textColor, backgroundColor, displayName: 'Fragment' }
       : undefined
 
-  const aliases = { ...topLevelAliases, ...getAliases(parentData) }
+  const aliases = { ...topLevelAliases, ...getAliases(parentData, allNonAliases) }
 
   return (
     <div className="ft-shorthand-wrapper">
@@ -98,17 +99,19 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
 
   if (!figTreeData) return null
 
+  const { operators, allNonAliases } = figTreeData
+
   const property = Object.keys(data)[0]
 
   const operatorAlias = property.slice(1)
 
-  const operatorData = getCurrentOperator(operatorAlias, figTreeData.operators)
+  const operatorData = getCurrentOperator(operatorAlias, operators)
 
   if (!operatorData) return <p>Invalid Shorthand node</p>
 
   const { backgroundColor, textColor, displayName } = operatorDisplay[operatorData.name]
 
-  const aliases = { ...topLevelAliases, ...getAliases(data) }
+  const aliases = { ...topLevelAliases, ...getAliases(data, allNonAliases) }
 
   return (
     <div className="ft-shorthand-node">

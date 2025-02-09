@@ -114,9 +114,13 @@ export const operatorAcceptsArbitraryProperties = (opData: OperatorMetadata) => 
   return parameters.some((param) => isArbitraryPropertyMarker(param.name))
 }
 
-export const getAliases = (expression: EvaluatorNode) => {
+export const getAliases = (expression: EvaluatorNode, allNonAliases: Set<string>) => {
   if (!isObject(expression)) return {}
-  return Object.fromEntries(Object.entries(expression).filter(([key, _]) => isAliasString(key)))
+  return Object.fromEntries(
+    Object.entries(expression).filter(
+      ([key, _]) => isAliasString(key) && !allNonAliases.has(key.replace('$', ''))
+    )
+  )
 }
 
 export const getButtonFontSize = (operatorAlias: string) => {

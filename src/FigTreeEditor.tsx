@@ -83,14 +83,15 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
   const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
 
-  const figTreeData = { operators, fragments, functions }
-
   const allOpAliases = useMemo(() => {
     const all = operators.map((op) => [op.name, ...op.aliases]).flat()
     return new Set(all)
   }, [])
   const allFragments = useMemo(() => new Set(fragments.map((f) => f.name)), [])
   const allFunctions = useMemo(() => new Set(functions.map((f) => f.name)), [])
+  const allNonAliases = new Set([...allOpAliases, ...allFragments, ...allFunctions])
+
+  const figTreeData = { operators, fragments, functions, allNonAliases }
 
   const CurrentEdit = useCurrentlyEditing()
 
@@ -101,7 +102,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // root, but higher than where they're used, won't be picked up for evaluation
   // at the inner nodes. But this is not a common scenario, and isn't a big deal
   // for the editor)
-  const topLevelAliases = getAliases(expression)
+  const topLevelAliases = getAliases(expression, allNonAliases)
 
   useEffect(() => {
     try {
