@@ -305,10 +305,13 @@ input.ft-select-input::placeholder {
 }
 
 .ft-select-option:hover,
-.ft-select-group-label:hover {
-  background-color: #f3f4f6;
+.ft-select-group-label:hover,
+.ft-select-highlighted {
+  background-color: #dce4f5;
+  color: unset;
 }
 
-.ft-select-highlighted {
-  background-color: #f3f4f6;
+.ft-select-selected {
+  background-color: rgb(27, 38, 101);
+  color: white;
 }

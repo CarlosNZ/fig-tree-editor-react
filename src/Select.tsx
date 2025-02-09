@@ -37,6 +37,7 @@ export function Select<T>({
   const containerRef = useRef<HTMLDivElement>(null)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
+  const currentSelectionRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -52,6 +53,7 @@ export function Select<T>({
   useEffect(() => {
     if (open && searchInputRef.current) {
       searchInputRef.current.focus()
+      currentSelectionRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     }
   }, [open])
 
@@ -142,56 +144,65 @@ export function Select<T>({
         No results
       </div>
     ) : optionGroups ? (
-      filteredGroups.map((group, groupIndex) => (
-        <div key={group.label}>
-          <div
-            className={`ft-select-group-label ${
-              highlightedIndex === groupIndex ? 'ft-select-highlighted' : ''
-            }`}
-            onClick={() => {
-              console.log('Click options')
-              handleSelect(group)
-            }}
-          >
-            {group.label}
+      filteredGroups.map((group, groupIndex) => {
+        const isSelected = group.value === selected
+        return (
+          <div key={group.label}>
+            <div
+              ref={isSelected ? currentSelectionRef : undefined}
+              className={`ft-select-group-label ${
+                highlightedIndex === groupIndex || isSelected ? 'ft-select-highlighted' : ''
+              }${isSelected ? ' ft-select-selected' : ''}`}
+              onClick={() => {
+                console.log('Click options')
+                handleSelect(group)
+              }}
+            >
+              {group.label}
+            </div>
+            {group.options.map((option, optionIndex) => {
+              const index =
+                filteredGroups.slice(0, groupIndex).reduce((acc, g) => acc + g.options.length, 0) +
+                optionIndex
+              const isSelected = option.value === selected
+              return (
+                <div
+                  key={option.label}
+                  ref={isSelected ? currentSelectionRef : undefined}
+                  className={`ft-select-option${
+                    highlightedIndex === index ? ' ft-select-highlighted' : ''
+                  }${isSelected ? ' ft-select-selected' : ''}`}
+                  onClick={() => handleSelect(option)}
+                  data-index={index}
+                  tabIndex={0}
+                  style={search ? {} : { padding: '0.5em 0.75em' }}
+                >
+                  {option.label}
+                </div>
+              )
+            })}
           </div>
-          {group.options.map((option, optionIndex) => {
-            const index =
-              filteredGroups.slice(0, groupIndex).reduce((acc, g) => acc + g.options.length, 0) +
-              optionIndex
-
-            return (
-              <div
-                key={option.label}
-                className={`ft-select-option${
-                  highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
-                }`}
-                onClick={() => handleSelect(option)}
-                data-index={index}
-                tabIndex={0}
-                style={search ? {} : { padding: '0.5em 0.75em' }}
-              >
-                {option.label}
-              </div>
-            )
-          })}
-        </div>
-      ))
+        )
+      })
     ) : (
-      filteredOptions.map((option, index) => (
-        <div
-          key={option.label}
-          className={`ft-select-option${
-            highlightedIndex === index ? ' ' + 'ft-select-highlighted' : ''
-          }`}
-          onClick={() => handleSelect(option)}
-          data-index={index}
-          tabIndex={0}
-          style={search ? {} : { padding: '0.5em 0.75em' }}
-        >
-          {option.label}
-        </div>
-      ))
+      filteredOptions.map((option, index) => {
+        const isSelected = option.value === selected || option.label === selected
+        return (
+          <div
+            key={option.label}
+            ref={isSelected ? currentSelectionRef : undefined}
+            className={`ft-select-option${
+              highlightedIndex === index ? ' ft-select-highlighted' : ''
+            }${isSelected ? ' ft-select-selected' : ''}`}
+            onClick={() => handleSelect(option)}
+            data-index={index}
+            tabIndex={0}
+            style={search ? {} : { padding: '0.5em 0.75em' }}
+          >
+            {option.label}
+          </div>
+        )
+      })
     )
 
   // Some additional props for the input area when "search" is disabled
