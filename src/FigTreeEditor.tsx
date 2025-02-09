@@ -236,7 +236,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             condition: ({ key, value }) => key === 'operator' && allFunctions.has(String(value)),
             element: CustomOperator,
             customNodeProps: {
-              figTree,
               figTreeData,
               evaluateNode,
               operatorDisplay,
@@ -254,7 +253,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             element: Operator,
             name: 'Operator',
             customNodeProps: {
-              figTree,
               figTreeData,
               evaluateNode,
               operatorDisplay,
@@ -272,7 +270,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             element: Fragment,
             name: 'Fragment',
             customNodeProps: {
-              figTree,
               figTreeData,
               evaluateNode,
               operatorDisplay,
@@ -289,7 +286,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             condition: (nodeData) => isShorthandNodeCollection(nodeData),
             hideKey: true,
             wrapperElement: ShorthandNodeCollection,
-            wrapperProps: { figTree, evaluateNode, topLevelAliases },
+            wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData },
           },
           {
             condition: (nodeData) =>

@@ -15,7 +15,6 @@ import { DisplayBar, EvaluateButton } from './DisplayBar'
 const README_URL = 'https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#'
 
 export interface ShorthandProps {
-  figTree: FigTreeEvaluator
   evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   operatorDisplay: Partial<Record<OperatorName, OperatorDisplay>>
   topLevelAliases: Record<string, EvaluatorNode>
@@ -38,8 +37,8 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
   customNodeProps,
 }) => {
   const { key, parentData } = nodeData
-  const { figTree, evaluateNode, topLevelAliases, figTreeData } = customNodeProps ?? {}
-  if (!figTree || !evaluateNode || !figTreeData) return null
+  const { evaluateNode, topLevelAliases, figTreeData } = customNodeProps ?? {}
+  if (!evaluateNode || !figTreeData) return null
 
   const [loading, setLoading] = useState(false)
 
@@ -94,10 +93,10 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
-  const { figTree, evaluateNode, topLevelAliases, figTreeData } = customNodeProps
+  const { evaluateNode, topLevelAliases, figTreeData } = customNodeProps
   const [loading, setLoading] = useState(false)
 
-  if (!figTree || !figTreeData) return null
+  if (!figTreeData) return null
 
   const property = Object.keys(data)[0]
 
