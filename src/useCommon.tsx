@@ -13,7 +13,7 @@ interface Input {
 }
 
 export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
-  const { evaluateNode, topLevelAliases, operatorDisplay, setCurrentlyEditing, CurrentEdit } =
+  const { evaluateNode, topLevelAliases, operatorDisplay, CurrentEdit, figTreeData } =
     customNodeProps
   const {
     currentEditPath,
@@ -57,7 +57,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     return () => window.removeEventListener('keydown', listenForSubmit)
   }, [currentEditPath])
 
-  const aliases = { ...topLevelAliases, ...getAliases(parentData) }
+  const aliases = { ...topLevelAliases, ...getAliases(parentData, figTreeData.allNonAliases) }
 
   const evaluate = async (e: React.MouseEvent) => {
     setLoading(true)

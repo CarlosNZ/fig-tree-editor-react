@@ -24,6 +24,7 @@ export interface OperatorProps {
     operators: OperatorMetadata[]
     fragments: FragmentMetadata[]
     functions: CustomFunctionMetadata[]
+    allNonAliases: Set<string>
   }
   evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   topLevelAliases: Record<string, EvaluatorNode>
