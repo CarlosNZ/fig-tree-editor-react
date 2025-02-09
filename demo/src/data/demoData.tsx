@@ -355,7 +355,7 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
                     ifFalse: '$difficultyOlder',
                   },
                   operator: 'match',
-                  match: { operator: 'objProps', property: 'numberOfPlayers' },
+                  matchExpression: { operator: 'objProps', property: 'numberOfPlayers' },
                   fallback: '$difficultyOlder',
                 },
               },
