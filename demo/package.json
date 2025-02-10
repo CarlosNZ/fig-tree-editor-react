@@ -8,7 +8,7 @@
     "start": "rimraf ./src/fig-tree-evaluator && rimraf ./src/expression-builder && mkdir ./src/fig-tree-evaluator && mkdir ./src/fig-tree-evaluator/src && mkdir ./src/expression-builder && mkdir ./src/expression-builder/src && concurrently --kill-others-on-fail \"yarn serve\" \"yarn dev\" \"nodemon watch.js\"",
     "serve": "node ./src/express/server",
     "dev": "vite --host",
-    "build": "rimraf dist && tsc && vite build && cp -r img dist/",
+    "build": "rimraf dist && vite build && cp -r img dist/",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "yarn build",
@@ -32,7 +32,7 @@
     "@emotion/styled": "^11.11.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "fig-tree-editor-react": "^0.5.4",
+    "fig-tree-editor-react": "^0.6.0",
     "fig-tree-evaluator": "^2.20.0",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^1.22.2",
@@ -57,8 +57,10 @@
     "eslint-plugin-react-hooks": "^4.6.0",
     "eslint-plugin-react-refresh": "^0.4.4",
     "gh-pages": "^6.1.1",
+    "jest": "^29.7.0",
     "nodemon": "^3.0.1",
     "react-select": "^5.8.0",
+    "ts-jest": "^29.2.5",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
   }
