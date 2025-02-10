@@ -164,6 +164,7 @@
 
 .ft-convert-area .ft-convert-button {
   opacity: 0;
+  transition-duration: 0.2s;
 }
 
 .ft-convert-area:hover .ft-convert-button {
@@ -354,8 +355,4 @@ input.ft-select-input::placeholder {
 .ft-select-selected {
   background-color: rgb(27, 38, 101);
   color: white;
-}
-
-.jer-collection-component {
-  /* margin-left: 1em !important; */
 }
