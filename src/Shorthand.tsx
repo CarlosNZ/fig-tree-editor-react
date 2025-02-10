@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useCallback, useState } from 'react'
 import {
   FigTreeEvaluator,
   Operator as OperatorName,
@@ -10,7 +10,7 @@ import {
 import { CustomNodeProps } from './_imports'
 import { getAliases, getCurrentFragment, getCurrentOperator } from './helpers'
 import { OperatorDisplay, operatorDisplay } from './operatorDisplay'
-import { DisplayBar, EvaluateButton } from './DisplayBar'
+import { ConvertButton, DisplayBar, EvaluateButton } from './DisplayBar'
 
 const README_URL = 'https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#'
 
@@ -24,6 +24,11 @@ export interface ShorthandProps {
     functions: CustomFunctionMetadata[]
     allNonAliases: Set<string>
   }
+  converters: {
+    toShorthand: (expression: EvaluatorNode) => void
+    fromShorthand: (expression: EvaluatorNode) => void
+    toV2: (expression: EvaluatorNode) => void
+  }
 }
 
 /**
@@ -35,10 +40,11 @@ export interface ShorthandProps {
 export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> = ({
   children,
   nodeData,
+  onEdit,
   customNodeProps,
 }) => {
-  const { key, parentData } = nodeData
-  const { evaluateNode, topLevelAliases, figTreeData } = customNodeProps ?? {}
+  const { key, parentData, value, path } = nodeData
+  const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps ?? {}
   if (!evaluateNode || !figTreeData) return null
 
   const [loading, setLoading] = useState(false)
@@ -60,6 +66,12 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
 
   const aliases = { ...topLevelAliases, ...getAliases(parentData, allNonAliases) }
 
+  const convert = useCallback(async () => {
+    const converted = await converters?.fromShorthand(parentData)
+    const newPath = path.slice(0, -1)
+    onEdit(converted, newPath)
+  }, [parentData])
+
   return (
     <div className="ft-shorthand-wrapper">
       <div className="ft-shorthand-display-bar">
@@ -75,6 +87,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
           isLoading={loading}
           canonicalName={operatorData?.name ?? 'FRAGMENT'}
           operatorDisplay={displayData}
+          convertOptions={{ type: 'fromShorthand', onClick: convert }}
         />
       </div>
       {children}
@@ -92,12 +105,12 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
  */
 
 export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandProps>> = (props) => {
-  const { data: d, customNodeProps, children } = props
+  const { data: d, nodeData, customNodeProps, children, onEdit } = props
   const data = d as Record<string, string>
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
-  const { evaluateNode, topLevelAliases, figTreeData } = customNodeProps
+  const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps
   const [loading, setLoading] = useState(false)
 
   if (!figTreeData) return null
@@ -116,6 +129,11 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
 
   const aliases = { ...topLevelAliases, ...getAliases(data, allNonAliases) }
 
+  const convert = useCallback(async () => {
+    const converted = await converters.fromShorthand(data)
+    onEdit(converted, nodeData.path)
+  }, [data])
+
   return (
     <div className="ft-shorthand-node">
       <EvaluateButton
@@ -130,6 +148,7 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
         isLoading={loading}
         isShorthand
       />
+      <ConvertButton type="fromShorthand" onClick={convert} />
       {/* Negative margin to cancel out Json-Edit-React indent for this case */}
       <div style={{ marginLeft: '-1.7em' }}>{children}</div>
       <div className="ft-display-name">

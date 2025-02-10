@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { FragmentMetadata, FragmentNode, FragmentParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
@@ -33,6 +33,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   const {
     figTreeData,
     CurrentEdit: { switchNodeType },
+    converters,
   } = customNodeProps
 
   const { fragments } = figTreeData
@@ -51,6 +52,11 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     textColor && backgroundColor
       ? { textColor, backgroundColor, displayName: 'Fragment' }
       : undefined
+
+  const convert = useCallback(async () => {
+    const converted = await converters.toShorthand(parentData)
+    onEdit(converted, expressionPath)
+  }, [data])
 
   return (
     <div className="ft-custom ft-fragment">
@@ -94,6 +100,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           isLoading={loading}
           canonicalName="FRAGMENT"
           operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
+          convertOptions={{ type: 'toShorthand', onClick: convert }}
         />
       )}
     </div>

@@ -111,14 +111,14 @@
   position: absolute;
   right: -0.5em;
   top: -0.3em;
+  font-variant: small-caps;
+  font-size: 0.7em;
+  font-weight: 600;
 }
 
 .ft-display-name a {
   font-family: sans-serif;
   color: gray;
-  font-variant: small-caps;
-  font-size: 0.7em;
-  font-weight: 600;
   text-decoration: none;
 }
 
@@ -129,6 +129,46 @@
 .ft-display-name a:hover {
   text-decoration: underline;
   color: rgb(76, 76, 76);
+}
+
+/* Convert to V2/Shorthand */
+.ft-convert-area {
+  position: absolute;
+  top: 0.5rem;
+  right: -0.5rem;
+  /* Padding gives larger target area for hover */
+  padding: 0.5rem 0 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+  z-index: 20;
+}
+
+.ft-v1-badge {
+  font-size: 0.55em;
+  background-color: rgb(222, 26, 206);
+  color: white;
+  padding: 0.3em 0.7em;
+  border-radius: 0.3em;
+}
+
+.ft-convert-button {
+  white-space: nowrap;
+  font-size: 0.65em;
+  font-family: sans-serif;
+  font-weight: bold;
+  border-radius: 5px;
+  padding: 0.3em 0.5em;
+}
+
+.ft-convert-area .ft-convert-button {
+  opacity: 0;
+}
+
+.ft-convert-area:hover .ft-convert-button {
+  opacity: 1;
+  cursor: pointer;
 }
 
 /* Loading spinner */
@@ -168,25 +208,6 @@
   opacity: 0;
   padding-right: 1em; /* Gives wider hover target */
   /* display: flex; */
-}
-
-/* Convert to V2/Shorthand */
-.ft-convert-button {
-  margin-top: 0.2em;
-  white-space: nowrap;
-  font-size: 0.6em;
-  font-family: sans-serif;
-  color: grey;
-  border: 1px solid grey;
-  border-radius: 5px;
-  padding: 0.3em 0.5em;
-  opacity: 0;
-  z-index: 20;
-}
-
-.ft-convert-button:hover {
-  opacity: 1;
-  cursor: pointer;
 }
 
 .ft-edit-icon:hover {

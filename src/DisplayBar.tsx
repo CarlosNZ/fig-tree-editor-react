@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react'
+import React from 'react'
 import { OperatorAlias, Operator as OpType } from 'fig-tree-evaluator'
 import { IconEdit } from './_imports'
 import { Icons } from './Icons'
@@ -55,13 +55,13 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
             <IconEdit size="1.5em" style={{ color: 'rgb(42, 161, 152)' }} />
           </span>
         )}
-        <ConvertButton {...convertOptions} />
       </div>
       <div className="ft-display-name">
         <a href={link} target="_blank">
           {displayName}
         </a>
       </div>
+      <ConvertButton {...convertOptions} backgroundColor={backgroundColor} textColor={textColor} />
     </div>
   )
 }
@@ -120,17 +120,40 @@ export type ConversionType = 'toShorthand' | 'fromShorthand' | 'toV2'
 export interface ConvertProps {
   type?: ConversionType
   onClick?: () => void
+  backgroundColor: string
+  textColor: string
 }
-const typeMap: Record<ConversionType, string> = {
-  toShorthand: 'Convert to Shorthand',
-  fromShorthand: 'Convert to Full Node',
-  toV2: 'Convert to V2',
+const typeMap: Record<ConversionType, { button: string; tooltip: string }> = {
+  toShorthand: { button: 'To Shorthand', tooltip: 'Convert to "Shorthand" syntax' },
+  fromShorthand: { button: 'To Full Node', tooltip: 'Convert to the more verbose syntax' },
+  toV2: {
+    button: 'Convert to V2',
+    tooltip:
+      'This expression is in Version 1 syntax. Click the button to upgrade to the more modern syntax.',
+  },
 }
-const ConvertButton: React.FC<ConvertProps> = ({ type, onClick }) => {
+export const ConvertButton: React.FC<ConvertProps> = ({
+  type,
+  onClick,
+  textColor,
+  backgroundColor,
+}) => {
   if (!type) return null
+  const { button, tooltip } = typeMap[type]
   return (
-    <div className="ft-convert-button" onClick={onClick}>
-      {typeMap[type]}
+    <div className="ft-convert-area" title={tooltip}>
+      {type === 'toV2' && <p className={`ft-v1-badge`}>V1</p>}
+      <div
+        className="ft-convert-button"
+        onClick={onClick}
+        style={{
+          color: textColor,
+          backgroundColor,
+          marginTop: type !== 'toV2' ? '0.2rem' : undefined,
+        }}
+      >
+        {button}
+      </div>
     </div>
   )
 }
