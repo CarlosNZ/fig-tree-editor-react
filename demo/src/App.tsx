@@ -298,6 +298,12 @@ function App() {
               jsonParse={JSON5.parse}
               collapse={expressionCollapse}
             />
+            <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
+              Powered by{' '}
+              <Link href="https://github.com/CarlosNZ/fig-tree-editor-react/" isExternal>
+                fig-tree-editor-react
+              </Link>
+            </Text>
             {ExpressionUndoRedo}
           </Flex>
         </Flex>
