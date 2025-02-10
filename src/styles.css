@@ -283,6 +283,10 @@
   font-size: 0.8em;
 }
 
+.ft-select-container p {
+  margin: 0;
+}
+
 .ft-select-select-wrapper {
   position: relative;
 }
