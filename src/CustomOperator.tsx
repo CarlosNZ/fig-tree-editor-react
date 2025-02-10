@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import { OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { Icons } from './Icons'
@@ -25,6 +25,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
   const {
     figTreeData,
     CurrentEdit: { switchNodeType },
+    converters,
   } = customNodeProps
 
   const { functions } = figTreeData
@@ -41,6 +42,11 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
     textColor && backgroundColor
       ? { textColor, backgroundColor, displayName: 'Custom Operator' }
       : undefined
+
+  const convert = useCallback(async () => {
+    const converted = await converters.toShorthand(parentData)
+    onEdit(converted, expressionPath)
+  }, [data])
 
   return (
     <div className="ft-custom ft-operator">
@@ -93,6 +99,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           isLoading={loading}
           canonicalName={'CUSTOM_FUNCTIONS'}
           operatorDisplay={operatorData}
+          convertOptions={{ type: 'toShorthand', onClick: convert }}
         />
       )}
     </div>

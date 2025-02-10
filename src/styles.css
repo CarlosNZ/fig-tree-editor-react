@@ -355,3 +355,7 @@ input.ft-select-input::placeholder {
   background-color: rgb(27, 38, 101);
   color: white;
 }
+
+.jer-collection-component {
+  /* margin-left: 1em !important; */
+}

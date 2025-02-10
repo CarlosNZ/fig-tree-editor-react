@@ -223,6 +223,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             )
               return { fontSize: '1.1em' }
           },
+          // collection: { marginLeft: '1em' },
           collectionInner: [
             nodeBaseStyles,
             (nodeData) => {
