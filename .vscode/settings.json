@@ -1,4 +1,13 @@
 {
   "cSpell.words": ["PASSTHRU"],
-  "files.exclude": {}
+  "files.exclude": {},
+  "cSpell.customDictionaries": {
+    "custom-dictionary-workspace": {
+      "name": "custom-dictionary-workspace",
+      "path": "${workspaceFolder:fig-tree-editor-react}/.cspell/custom-dictionary-workspace.txt",
+      "addWords": true,
+      "scope": "workspace"
+    }
+  },
+  "cSpell.ignoreWords": ["functionsoperators"]
 }

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 import { OperatorAlias, Operator as OpType } from 'fig-tree-evaluator'
 import { IconEdit } from './_imports'
 import { Icons } from './Icons'
@@ -15,6 +15,7 @@ interface DisplayBarProps {
   isLoading: boolean
   canonicalName: OpType | 'FRAGMENT'
   operatorDisplay?: OperatorDisplay
+  convertOptions?: { type: 'toShorthand' | 'fromShorthand' | 'toV2'; onClick: () => void }
 }
 
 export const DisplayBar: React.FC<DisplayBarProps> = ({
@@ -25,6 +26,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
   isLoading,
   canonicalName = 'CUSTOM_FUNCTIONS',
   operatorDisplay: operatorDisplayOverride,
+  convertOptions,
 }) => {
   const { backgroundColor, textColor, displayName } =
     operatorDisplayOverride ?? operatorDisplay[canonicalName]
@@ -53,6 +55,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
             <IconEdit size="1.5em" style={{ color: 'rgb(42, 161, 152)' }} />
           </span>
         )}
+        <ConvertButton {...convertOptions} />
       </div>
       <div className="ft-display-name">
         <a href={link} target="_blank">
@@ -109,6 +112,25 @@ export const EvaluateButton: React.FC<EvaluateButtonProps> = ({
           ></span>
         </div>
       )}
+    </div>
+  )
+}
+
+export type ConversionType = 'toShorthand' | 'fromShorthand' | 'toV2'
+export interface ConvertProps {
+  type?: ConversionType
+  onClick?: () => void
+}
+const typeMap: Record<ConversionType, string> = {
+  toShorthand: 'Convert to Shorthand',
+  fromShorthand: 'Convert to Full Node',
+  toV2: 'Convert to V2',
+}
+const ConvertButton: React.FC<ConvertProps> = ({ type, onClick }) => {
+  if (!type) return null
+  return (
+    <div className="ft-convert-button" onClick={onClick}>
+      {typeMap[type]}
     </div>
   )
 }

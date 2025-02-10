@@ -166,8 +166,27 @@
 
 .ft-edit-icon {
   opacity: 0;
-  padding-right: 5em; /* Gives wider hover target */
+  padding-right: 1em; /* Gives wider hover target */
   /* display: flex; */
+}
+
+/* Convert to V2/Shorthand */
+.ft-convert-button {
+  margin-top: 0.2em;
+  white-space: nowrap;
+  font-size: 0.6em;
+  font-family: sans-serif;
+  color: grey;
+  border: 1px solid grey;
+  border-radius: 5px;
+  padding: 0.3em 0.5em;
+  opacity: 0;
+  z-index: 20;
+}
+
+.ft-convert-button:hover {
+  opacity: 1;
+  cursor: pointer;
 }
 
 .ft-edit-icon:hover {

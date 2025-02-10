@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 import {
   OperatorAlias,
   OperatorMetadata,
@@ -8,9 +8,10 @@ import {
   EvaluatorNode,
   FragmentMetadata,
   CustomFunctionMetadata,
+  isV1Node,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
-import { DisplayBar } from './DisplayBar'
+import { ConversionType, DisplayBar } from './DisplayBar'
 import { OptionGroup, Select } from './Select'
 import { getCurrentOperator } from './helpers'
 import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
@@ -33,6 +34,12 @@ export interface OperatorProps {
   currentlyEditing: string | null
   setCurrentlyEditing: (path: string | null) => void
   CurrentEdit: CurrentlyEditingReturnType
+  toShorthand: (expression: EvaluatorNode) => void
+  converters: {
+    toShorthand: (expression: EvaluatorNode) => void
+    fromShorthand: (expression: EvaluatorNode) => void
+    toV2: (expression: EvaluatorNode) => void
+  }
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -59,6 +66,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   const {
     figTreeData,
     CurrentEdit: { switchNodeType },
+    converters,
   } = customNodeProps
 
   const { operators, functions } = figTreeData
@@ -74,6 +82,15 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   )
 
   const isCustomFunction = operatorData.name === 'CUSTOM_FUNCTIONS'
+
+  const convertType: ConversionType = isV1Node(parentData) ? 'toV2' : 'toShorthand'
+
+  const convert = useCallback(async () => {
+    const { toV2, toShorthand } = converters
+    const converter = convertType === 'toV2' ? toV2 : toShorthand
+    const converted = await converter(parentData)
+    onEdit(converted, expressionPath)
+  }, [data])
 
   return (
     <div className="ft-custom ft-operator">
@@ -132,15 +149,18 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           </div>
         </div>
       ) : (
-        <DisplayBar
-          name={thisOperator}
-          description={operatorData.description}
-          setIsEditing={startEditing}
-          evaluate={evaluate}
-          isLoading={loading}
-          canonicalName={operatorData.name}
-          operatorDisplay={operatorDisplay?.[operatorData.name]}
-        />
+        <>
+          <DisplayBar
+            name={thisOperator}
+            description={operatorData.description}
+            setIsEditing={startEditing}
+            evaluate={evaluate}
+            isLoading={loading}
+            canonicalName={operatorData.name}
+            operatorDisplay={operatorDisplay?.[operatorData.name]}
+            convertOptions={{ type: convertType, onClick: convert }}
+          />
+        </>
       )}
     </div>
   )

@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef, useState } from 'react'
+import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
 import { JsonData, extract } from 'json-edit-react'
 import {
   type EvaluatorNode,
@@ -8,6 +8,9 @@ import {
   isAliasString,
   OperatorNode,
   isFigTreeError,
+  convertV1ToV2,
+  convertToShorthand,
+  convertFromShorthand,
 } from 'fig-tree-evaluator'
 import {
   // json-edit-react
@@ -132,6 +135,18 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const isShorthandNodeWithSimpleValue = (nodeData: NodeData) =>
     shorthandSimpleNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
 
+  const toShorthand = useCallback(
+    (expression: EvaluatorNode) => convertToShorthand(expression, figTree),
+    []
+  )
+  const fromShorthand = useCallback(
+    (expression: EvaluatorNode) => convertFromShorthand(expression, figTree),
+    []
+  )
+  const toV2 = useCallback((expression: EvaluatorNode) => convertV1ToV2(expression, figTree), [])
+
+  const converters = { toShorthand, fromShorthand, toV2 }
+
   return (
     <JsonEditor
       className="ft-editor"
@@ -242,6 +257,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               CurrentEdit,
+              converters,
             },
             hideKey: true,
             showOnEdit: false,
@@ -259,6 +275,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               CurrentEdit,
+              converters,
             },
             hideKey: true,
             showOnEdit: false,
@@ -276,6 +293,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               operatorDisplay,
               topLevelAliases,
               CurrentEdit,
+              converters,
             },
             hideKey: true,
             showOnEdit: false,
@@ -287,7 +305,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             condition: (nodeData) => isShorthandNodeCollection(nodeData),
             hideKey: true,
             wrapperElement: ShorthandNodeCollection,
-            wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData },
+            wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData, converters },
           },
           {
             condition: (nodeData) =>
@@ -313,6 +331,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               evaluateNode,
               operatorDisplay,
               topLevelAliases,
+              converters,
             },
             showEditTools: true,
           },
