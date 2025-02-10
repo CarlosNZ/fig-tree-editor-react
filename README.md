@@ -4,13 +4,12 @@
 
 A [React](https://github.com/facebook/react) component for constructing and editing [**FigTreeEvaluator**](https://github.com/CarlosNZ/fig-tree-evaluator) expressions.
 
-<!-- TO-DO: Screenshot -->
+<img src="images/fig-tree-basic-view.png" width="621" title="Screenshot"/>
 
 It's built on [**json-edit-react**](https://carlosnz.github.io/json-edit-react/) (a JSON/object data viewer/editor), so usage is basically the same as for that component. The main addition is the use of [Custom Nodes](https://github.com/CarlosNZ/json-edit-react?tab=readme-ov-file#custom-nodes) to handle the specifics of FigTree expressions, providing validation and custom UI to select and manipulate the various [operators](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#operator-reference).
 
-<!-- Add screenshot -->
+Your best bet is to have a play with the [Demo](https://carlosnz.github.io/fig-tree-evaluator/) to get a feel for it.
 
-<!-- Add basic info about what you can do -->
 
 ## Installation
 
@@ -51,12 +50,23 @@ The majority of props are those for [json-edit-react](https://carlosnz.github.io
 
 | Prop              | Type                       | Default | Description                                                                                                                                                          |
 | ----------------- | -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `objectData`      | `object`                   |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties)       |  |
+| `objectData`      | `object`                   |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).      |  |
 | `onEvaluate`      | `(value: unknown) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result. |
 | `onEvaluateStart` | `() => void`               |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.      |
 | `operatorDisplay` | `Operator Display Data`    |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                    |  |
 
 
-### Operator Details
+## Operator UI customisation
 
-*-- TO-DO*
+You can override the colour scheme for each operator in the UI by passing in an object to the `operatorDisplay` prop. Each operator can have the `backgroundColor`, `textColor` and `displayName` defined — see [defaults file](https://github.com/CarlosNZ/fig-tree-editor-react/blob/main/src/operatorDisplay.ts) for specific structure.
+
+You can also specify the colours for [Fragments](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#fragments) and [Custom Operators](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#custom-operators) in their [metadata definitions](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#metadata).
+
+## Help, Feedback, Suggestions
+
+Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
+
+
+## Changelog
+
+- **v0.5.0 – v0.6.0**: Initial release
