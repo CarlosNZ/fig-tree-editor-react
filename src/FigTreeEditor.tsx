@@ -56,7 +56,7 @@ const nodeRoundedBorder = {
   paddingRight: '1em',
 }
 
-interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
+export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
   figTree: FigTreeEvaluator
   expression: EvaluatorNode
   setExpression: (data: EvaluatorNode) => void
