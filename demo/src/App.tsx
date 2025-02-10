@@ -59,7 +59,7 @@ function App() {
     demoData.findIndex((data) => data.name === getLocalStorage('lastSelected'))
   )
   const modalContent = useRef('main')
-  const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main ?? true)
+  const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
 
   const {
     data: objectData,

@@ -103,7 +103,7 @@ we can just write:
 
 Note that you can toggle any node to and from Shorthand form with the hover button on the right of each node header:
 
-<img src="https://carlosnz.github.io/fig-tree-evaluator/img/shorthand-toggle.png" width="150"/>
+<img src="https://carlosnz.github.io/fig-tree-evaluator/img/shorthand-toggle.png" width="593"/>
 
 
 `,
