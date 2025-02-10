@@ -56,7 +56,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
   const convert = useCallback(async () => {
     const converted = await converters.toShorthand(parentData)
     onEdit(converted, expressionPath)
-  }, [data])
+  }, [parentData])
 
   return (
     <div className="ft-custom ft-fragment">

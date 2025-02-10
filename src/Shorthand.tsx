@@ -1,6 +1,5 @@
 import React, { useCallback, useState } from 'react'
 import {
-  FigTreeEvaluator,
   Operator as OperatorName,
   OperatorMetadata,
   EvaluatorNode,
@@ -43,7 +42,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
   onEdit,
   customNodeProps,
 }) => {
-  const { key, parentData, value, path } = nodeData
+  const { key, parentData, path } = nodeData
   const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps ?? {}
   if (!evaluateNode || !figTreeData) return null
 
@@ -51,14 +50,17 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
 
   const operatorAlias = (key as string).slice(1)
 
-  const { operators, fragments, allNonAliases } = figTreeData
+  const { operators, fragments, functions, allNonAliases } = figTreeData
   const operatorData = getCurrentOperator(operatorAlias, operators)
 
-  const fragmentData = !operatorData
-    ? getCurrentFragment({ fragment: operatorAlias }, fragments)
-    : undefined
+  const customOpData = !operatorData ? functions.find((f) => f.name === operatorAlias) : undefined
 
-  const { textColor, backgroundColor } = fragmentData ?? {}
+  const fragmentData =
+    !operatorData && !customOpData
+      ? getCurrentFragment({ fragment: operatorAlias }, fragments)
+      : undefined
+
+  const { textColor, backgroundColor } = customOpData ?? fragmentData ?? {}
   const displayData =
     textColor && backgroundColor
       ? { textColor, backgroundColor, displayName: 'Fragment' }
@@ -148,7 +150,12 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandPro
         isLoading={loading}
         isShorthand
       />
-      <ConvertButton type="fromShorthand" onClick={convert} />
+      <ConvertButton
+        type="fromShorthand"
+        onClick={convert}
+        backgroundColor={backgroundColor}
+        textColor={textColor}
+      />
       {/* Negative margin to cancel out Json-Edit-React indent for this case */}
       <div style={{ marginLeft: '-1.7em' }}>{children}</div>
       <div className="ft-display-name">

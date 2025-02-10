@@ -90,7 +90,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     const converter = convertType === 'toV2' ? toV2 : toShorthand
     const converted = await converter(parentData)
     onEdit(converted, expressionPath)
-  }, [data])
+  }, [parentData])
 
   return (
     <div className="ft-custom ft-operator">
