@@ -181,6 +181,7 @@ const OperatorSelector: React.FC<{
       className="ft-operator-select"
       placeholder="Search operators"
       search
+      border="group"
     />
   )
 }
@@ -189,7 +190,12 @@ const getOperatorOptions = (operators: readonly OperatorMetadata[]) => {
   const options: OptionGroup<string>[] = []
   for (const op of operators) {
     const operatorAliases = op.aliases.map((alias) => ({ value: alias, label: alias }))
-    options.push({ label: op.name, value: op.name, options: operatorAliases })
+    options.push({
+      label: op.name,
+      description: op.description,
+      value: op.name,
+      options: operatorAliases,
+    })
   }
 
   return options

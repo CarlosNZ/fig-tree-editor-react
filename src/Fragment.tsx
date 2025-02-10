@@ -112,7 +112,11 @@ const FragmentSelector: React.FC<{
   changeFragment: (fragment: string) => void
   fragments: FragmentMetadata[]
 }> = ({ value, changeFragment, fragments }) => {
-  const fragmentOptions = fragments.map(({ name }) => ({ label: name, value: name }))
+  const fragmentOptions = fragments.map(({ name, description }) => ({
+    label: name,
+    description,
+    value: name,
+  }))
 
   return (
     <Select
@@ -120,8 +124,9 @@ const FragmentSelector: React.FC<{
       selected={value}
       setSelected={(selected) => changeFragment(selected.value)}
       options={fragmentOptions}
-      search
+      search={fragmentOptions.length >= 5}
       placeholder="Select Fragment"
+      border="all"
     />
   )
 }

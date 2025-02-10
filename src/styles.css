@@ -317,28 +317,45 @@ input.ft-select-input::placeholder {
 .ft-select-dropdown {
   position: absolute;
   min-width: 100%;
-  max-width: 20em;
   max-height: 15em;
   margin-top: 0.25em;
-  padding: 0.5em;
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 4px;
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   z-index: 50;
-  scrollbar-gutter: stable;
 }
 
 .ft-select-group-label {
-  padding: 0.35em 0;
+  padding: 0.5em 0.5em 0.2em;
   font-size: 1.1em;
   font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2em;
+}
+
+.ft-select-group-label .ft-select-option-description {
+  font-weight: normal;
+  font-style: italic;
+  padding-left: 0.2em;
 }
 
 .ft-select-option {
   padding: 0.35em 0.75em;
   cursor: pointer;
+  min-width: 100%;
+  width: max-content;
+  max-width: 20em;
+  white-space: wrap;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4em;
+}
+
+.ft-option-border {
+  border-top: 1px solid rgb(227, 227, 227);
 }
 
 .ft-select-no-options {
@@ -350,6 +367,15 @@ input.ft-select-input::placeholder {
 .ft-select-highlighted {
   background-color: #dce4f5;
   color: unset;
+}
+
+.ft-select-option-title {
+  /*  */
+}
+
+.ft-select-option-description {
+  font-size: 90%;
+  font-family: sans-serif;
 }
 
 .ft-select-selected {

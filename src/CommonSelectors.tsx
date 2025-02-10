@@ -112,9 +112,10 @@ export const FunctionSelector: React.FC<{
   functions: readonly CustomFunctionMetadata[]
   updateNode: (functionDefinition: CustomFunctionMetadata) => void
 }> = ({ value, functions, updateNode }) => {
-  const functionOptions = functions.map(({ name, numRequiredArgs }) => ({
+  const functionOptions = functions.map(({ name, numRequiredArgs, description }) => ({
     key: name,
     label: `${name} (${numRequiredArgs})`,
+    description,
     value: name,
   }))
 
@@ -132,7 +133,8 @@ export const FunctionSelector: React.FC<{
       options={functionOptions}
       placeholder="Select function"
       setSelected={handleFunctionSelect}
-      search
+      search={functionOptions.length >= 5}
+      border="all"
     />
   )
 }

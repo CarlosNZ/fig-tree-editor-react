@@ -34,6 +34,75 @@ export const evaluatorConfig = {
         backgroundColor: 'black',
       },
     },
+    getCapital2: {
+      operator: 'GET',
+      url: {
+        operator: 'stringSubstitution',
+        string: 'https://restcountries.com/v3.1/name/%1',
+        replacements: ['$country'],
+      },
+      returnProperty: '[0].capital',
+      outputType: 'string',
+      metadata: {
+        description: 'A different version of getting the goddamn capital city okay?',
+        parameters: [{ name: '$country', type: 'string', required: true }],
+      },
+    },
+    getFlag2: {
+      operator: 'GET',
+      children: [
+        {
+          operator: 'stringSubstitution',
+          string: 'https://restcountries.com/v3.1/name/%1',
+          replacements: ['$country'],
+          default: 'New Zealand',
+        },
+        [],
+        'flag',
+      ],
+      outputType: 'string',
+      metadata: {
+        description:
+          "Get's a flag, same thing as before, this one has a really long blurb though just so you know",
+        parameters: [{ name: '$country', type: 'string', required: true, default: 'New Zealand' }],
+        textColor: 'white',
+        backgroundColor: 'black',
+      },
+    },
+    getCapital3: {
+      operator: 'GET',
+      url: {
+        operator: 'stringSubstitution',
+        string: 'https://restcountries.com/v3.1/name/%1',
+        replacements: ['$country'],
+      },
+      returnProperty: '[0].capital',
+      outputType: 'string',
+      metadata: {
+        // No description here
+        parameters: [{ name: '$country', type: 'string', required: true }],
+      },
+    },
+    getFlag3: {
+      operator: 'GET',
+      children: [
+        {
+          operator: 'stringSubstitution',
+          string: 'https://restcountries.com/v3.1/name/%1',
+          replacements: ['$country'],
+          default: 'New Zealand',
+        },
+        [],
+        'flag',
+      ],
+      outputType: 'string',
+      metadata: {
+        description: 'Little description',
+        parameters: [{ name: '$country', type: 'string', required: true, default: 'New Zealand' }],
+        textColor: 'white',
+        backgroundColor: 'black',
+      },
+    },
   },
   customFunctions: {
     reverse: {

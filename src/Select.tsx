@@ -3,11 +3,13 @@ import { IconChevron } from 'json-edit-react'
 
 export interface SelectOption<T> {
   label: string
+  description?: string
   value: T
 }
 
 export interface OptionGroup<T> {
   label: string
+  description?: string
   value: T
   options: SelectOption<T>[]
 }
@@ -20,6 +22,7 @@ interface SelectProps<T> {
   search?: boolean
   placeholder?: string
   className: string
+  border?: 'group' | 'all' | 'none'
 }
 
 export function Select<T>({
@@ -30,6 +33,7 @@ export function Select<T>({
   search = false,
   placeholder,
   className,
+  border = 'none',
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -152,13 +156,18 @@ export function Select<T>({
               ref={isSelected ? currentSelectionRef : undefined}
               className={`ft-select-group-label ${
                 highlightedIndex === groupIndex || isSelected ? 'ft-select-highlighted' : ''
-              }${isSelected ? ' ft-select-selected' : ''}`}
+              }${isSelected ? ' ft-select-selected' : ''}${
+                border === 'group' || border === 'all' ? ' ft-option-border' : ''
+              }`}
               onClick={() => {
                 console.log('Click options')
                 handleSelect(group)
               }}
             >
-              {group.label}
+              <p className="ft-select-option-title">{group.label}</p>
+              {group.description && (
+                <p className="ft-select-option-description">{group.description}</p>
+              )}
             </div>
             {group.options.map((option, optionIndex) => {
               const index =
@@ -171,13 +180,18 @@ export function Select<T>({
                   ref={isSelected ? currentSelectionRef : undefined}
                   className={`ft-select-option${
                     highlightedIndex === index ? ' ft-select-highlighted' : ''
-                  }${isSelected ? ' ft-select-selected' : ''}`}
+                  }${isSelected ? ' ft-select-selected' : ''}${
+                    border === 'all' ? ' ft-option-border' : ''
+                  }`}
                   onClick={() => handleSelect(option)}
                   data-index={index}
                   tabIndex={0}
                   style={search ? {} : { padding: '0.5em 0.75em' }}
                 >
-                  {option.label}
+                  <p className="ft-select-option-title">{option.label}</p>
+                  {option.description && (
+                    <p className="ft-select-option-description">{option.description}</p>
+                  )}
                 </div>
               )
             })}
@@ -193,13 +207,18 @@ export function Select<T>({
             ref={isSelected ? currentSelectionRef : undefined}
             className={`ft-select-option${
               highlightedIndex === index ? ' ft-select-highlighted' : ''
-            }${isSelected ? ' ft-select-selected' : ''}`}
+            }${isSelected ? ' ft-select-selected' : ''}${
+              border === 'all' ? ' ft-option-border' : ''
+            }`}
             onClick={() => handleSelect(option)}
             data-index={index}
             tabIndex={0}
             style={search ? {} : { padding: '0.5em 0.75em' }}
           >
-            {option.label}
+            <p className="ft-select-option-title">{option.label}</p>
+            {option.description && (
+              <p className="ft-select-option-description">{option.description}å</p>
+            )}
           </div>
         )
       })
