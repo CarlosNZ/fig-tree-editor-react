@@ -2466,10 +2466,10 @@ fig-tree-evaluator@^2.19.1:
     dequal "^2.0.3"
     object-property-extractor "^1.0.13"
 
-fig-tree-evaluator@^2.20.0-beta2:
-  version "2.20.0-beta2"
-  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.0-beta2.tgz#bc10dde65b11f3a0799194329aeb8b3c1780f631"
-  integrity sha512-crB4lLaQ7DeHS6n1ddpuXBwLz8OJHibYap8zLA9gbfCy3bRuIXLEz+bdNxiKCrYmqwlLYbIsu5PeylS0/nxRHQ==
+fig-tree-evaluator@^2.20.0:
+  version "2.20.0"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.0.tgz#3e7d04609d133d4b3413af6eb9f2946493711c23"
+  integrity sha512-eROF9XIBtXQwjanGb48dI+ULKyVtWV62Ma0Ot23rKhpNybyr20itxIeZx3tX0MxAtAevJeks+Sb5Iixf7wYcDg==
   dependencies:
     dequal "^2.0.3"
     object-property-extractor "^1.0.13"

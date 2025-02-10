@@ -100,6 +100,12 @@ we can just write:
 \`\`\`
 { "$getData": "patron.age" }
 \`\`\`
+
+Note that you can toggle any node to and from Shorthand form with the hover button on the right of each node header:
+
+<img src="https://carlosnz.github.io/fig-tree-evaluator/img/shorthand-toggle.png" width="150"/>
+
+
 `,
     objectJsonEditorProps: {
       restrictEdit: ({ level }) => level !== 2,
