@@ -11,11 +11,6 @@ import { getDefaultValue } from './helpers'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
-const nodeTypeOptions = [
-  { key: 'operator', label: 'Operator', value: 'operator' },
-  { key: 'value', label: 'Value', value: 'value' },
-]
-
 export const NodeTypeSelector: React.FC<{
   value: NodeType
   changeNode: (type: unknown) => void
@@ -30,11 +25,12 @@ export const NodeTypeSelector: React.FC<{
   const { fragments, functions } = figTreeData
 
   const options = [
-    ...nodeTypeOptions,
+    { key: 'operator', label: 'Operator', value: 'operator' },
     ...(fragments.length > 0 ? [{ key: 'fragment', label: 'Fragment', value: 'fragment' }] : []),
     ...(functions.length > 0
       ? [{ key: 'customOperator', label: 'Custom Operator', value: 'customOperator' }]
       : []),
+    { key: 'value', label: 'Value', value: 'value' },
   ]
 
   const currentSelection = options.find((option) => option.value === value)

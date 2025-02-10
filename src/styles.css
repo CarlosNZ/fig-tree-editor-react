@@ -328,12 +328,13 @@ input.ft-select-input::placeholder {
 }
 
 .ft-select-group-label {
-  padding: 0.5em 0.5em 0.2em;
+  padding: 0.5em 0.5em 0.5em;
   font-size: 1.1em;
   font-weight: bold;
   display: flex;
   flex-direction: column;
   gap: 0.2em;
+  background-color: #ededed;
 }
 
 .ft-select-group-label .ft-select-option-description {
@@ -355,7 +356,7 @@ input.ft-select-input::placeholder {
 }
 
 .ft-option-border {
-  border-top: 1px solid rgb(227, 227, 227);
+  border-top: 1px solid rgb(204, 204, 204);
 }
 
 .ft-select-no-options {

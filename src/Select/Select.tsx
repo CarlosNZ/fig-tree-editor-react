@@ -1,29 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { IconChevron } from 'json-edit-react'
-
-export interface SelectOption<T> {
-  label: string
-  description?: string
-  value: T
-}
-
-export interface OptionGroup<T> {
-  label: string
-  description?: string
-  value: T
-  options: SelectOption<T>[]
-}
-
-interface SelectProps<T> {
-  options?: SelectOption<T>[]
-  optionGroups?: OptionGroup<T>[]
-  selected: string | null
-  setSelected: (selection: SelectOption<T>) => void
-  search?: boolean
-  placeholder?: string
-  className: string
-  border?: 'group' | 'all' | 'none'
-}
+import { OptionGroup, SelectOption, type SelectProps } from './types'
+import { DropdownMenu } from './Menu'
 
 export function Select<T>({
   options = [],
@@ -33,7 +11,7 @@ export function Select<T>({
   search = false,
   placeholder,
   className,
-  border = 'none',
+  border,
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false)
   const [searchText, setSearchText] = useState('')
@@ -127,7 +105,9 @@ export function Select<T>({
     }
   }
 
-  const filteredGroups = optionGroups
+  const hasGroups = !!optionGroups
+
+  const filteredGroups = hasGroups
     ? optionGroups
         .map((group) => ({
           ...group,
@@ -136,93 +116,11 @@ export function Select<T>({
         .filter((group) => group.options.length > 0)
     : []
 
-  const filteredOptions = !optionGroups ? options.filter((opt) => matchOption(opt)) : []
+  const filteredOptions = !hasGroups ? options.filter((opt) => matchOption(opt)) : []
 
   const allVisibleOptions = optionGroups
     ? filteredGroups.flatMap((group) => group.options)
     : filteredOptions
-
-  const DropdownJSX =
-    allVisibleOptions.length === 0 ? (
-      <div className={`ft-select-option ft-select-no-options`} tabIndex={0}>
-        No results
-      </div>
-    ) : optionGroups ? (
-      filteredGroups.map((group, groupIndex) => {
-        const isSelected = group.value === selected
-        return (
-          <div key={group.label}>
-            <div
-              ref={isSelected ? currentSelectionRef : undefined}
-              className={`ft-select-group-label ${
-                highlightedIndex === groupIndex || isSelected ? 'ft-select-highlighted' : ''
-              }${isSelected ? ' ft-select-selected' : ''}${
-                border === 'group' || border === 'all' ? ' ft-option-border' : ''
-              }`}
-              onClick={() => {
-                console.log('Click options')
-                handleSelect(group)
-              }}
-            >
-              <p className="ft-select-option-title">{group.label}</p>
-              {group.description && (
-                <p className="ft-select-option-description">{group.description}</p>
-              )}
-            </div>
-            {group.options.map((option, optionIndex) => {
-              const index =
-                filteredGroups.slice(0, groupIndex).reduce((acc, g) => acc + g.options.length, 0) +
-                optionIndex
-              const isSelected = option.value === selected
-              return (
-                <div
-                  key={option.label}
-                  ref={isSelected ? currentSelectionRef : undefined}
-                  className={`ft-select-option${
-                    highlightedIndex === index ? ' ft-select-highlighted' : ''
-                  }${isSelected ? ' ft-select-selected' : ''}${
-                    border === 'all' ? ' ft-option-border' : ''
-                  }`}
-                  onClick={() => handleSelect(option)}
-                  data-index={index}
-                  tabIndex={0}
-                  style={search ? {} : { padding: '0.5em 0.75em' }}
-                >
-                  <p className="ft-select-option-title">{option.label}</p>
-                  {option.description && (
-                    <p className="ft-select-option-description">{option.description}</p>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        )
-      })
-    ) : (
-      filteredOptions.map((option, index) => {
-        const isSelected = option.value === selected || option.label === selected
-        return (
-          <div
-            key={option.label}
-            ref={isSelected ? currentSelectionRef : undefined}
-            className={`ft-select-option${
-              highlightedIndex === index ? ' ft-select-highlighted' : ''
-            }${isSelected ? ' ft-select-selected' : ''}${
-              border === 'all' ? ' ft-option-border' : ''
-            }`}
-            onClick={() => handleSelect(option)}
-            data-index={index}
-            tabIndex={0}
-            style={search ? {} : { padding: '0.5em 0.75em' }}
-          >
-            <p className="ft-select-option-title">{option.label}</p>
-            {option.description && (
-              <p className="ft-select-option-description">{option.description}å</p>
-            )}
-          </div>
-        )
-      })
-    )
 
   // Some additional props for the input area when "search" is disabled
   const additionalInputProps = search
@@ -257,9 +155,17 @@ export function Select<T>({
               onKeyDown={handleKeyDown}
               {...additionalInputProps}
             />
-            <div ref={optionsRef} className="ft-select-dropdown">
-              {DropdownJSX}
-            </div>
+            <DropdownMenu
+              optionsRef={optionsRef}
+              currentSelectionRef={currentSelectionRef}
+              optionGroups={hasGroups ? filteredGroups : undefined}
+              options={filteredOptions}
+              selected={selected}
+              handleSelect={handleSelect}
+              highlightedIndex={highlightedIndex}
+              border={border}
+              search={search}
+            />
           </>
         )}
       </div>
