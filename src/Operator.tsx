@@ -43,7 +43,7 @@ export interface OperatorProps {
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
-  const { data, parentData, nodeData, onEdit, customNodeProps } = props
+  const { data, parentData, nodeData, onEdit, restrictEditFilter, customNodeProps } = props
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
@@ -68,6 +68,8 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     CurrentEdit: { switchNodeType },
     converters,
   } = customNodeProps
+
+  const canEdit = !restrictEditFilter(nodeData)
 
   const { operators, functions } = figTreeData
 
@@ -159,6 +161,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             canonicalName={operatorData.name}
             operatorDisplay={operatorDisplay?.[operatorData.name]}
             convertOptions={{ type: convertType, onClick: convert }}
+            canEdit={canEdit}
           />
         </>
       )}

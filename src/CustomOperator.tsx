@@ -10,7 +10,7 @@ import { useCommon } from './useCommon'
 import { getAvailableProperties } from './validator'
 
 export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
-  const { data, parentData, nodeData, onEdit, customNodeProps } = props
+  const { data, parentData, nodeData, onEdit, restrictEditFilter, customNodeProps } = props
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
@@ -27,6 +27,8 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
     CurrentEdit: { switchNodeType },
     converters,
   } = customNodeProps
+
+  const canEdit = !restrictEditFilter(nodeData)
 
   const { functions } = figTreeData
 
@@ -100,6 +102,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           canonicalName={'CUSTOM_FUNCTIONS'}
           operatorDisplay={operatorData}
           convertOptions={{ type: 'toShorthand', onClick: convert }}
+          canEdit={canEdit}
         />
       )}
     </div>

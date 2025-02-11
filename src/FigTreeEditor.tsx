@@ -81,6 +81,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   onEvaluateError,
   operatorDisplay,
   styles = {},
+  restrictDelete,
   ...props
 }) => {
   const previousData = useRef<EvaluatorNode>(null)
@@ -172,8 +173,13 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           return err.message
         }
       }}
-      restrictDelete={({ key, path }) => {
-        // Unable to delete required properties
+      restrictDelete={(nodeData) => {
+        // First consider any passed-in restrictDelete
+        const { key, path } = nodeData
+        if (restrictDelete === true) return true
+        if (typeof restrictDelete === 'function' && restrictDelete(nodeData) === true) return true
+
+        // Prevent deleting of required properties
         if (path.length === 0) return true
         const parentPath = path.slice(0, -1)
         const parentData = extract(
@@ -189,9 +195,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
 
         return required?.includes(key as string) ?? false
       }}
-      // Prevent operator nodes being edited using this component, as they have
-      // their own editing functionality
-      restrictEdit={({ key }) => key === 'operator' || key === 'fragment'}
       restrictTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
       showArrayIndices={false}
       indent={3}

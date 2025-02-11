@@ -16,6 +16,7 @@ interface DisplayBarProps {
   canonicalName: OpType | 'FRAGMENT'
   operatorDisplay?: OperatorDisplay
   convertOptions?: { type: 'toShorthand' | 'fromShorthand' | 'toV2'; onClick: () => void }
+  canEdit: boolean
 }
 
 export const DisplayBar: React.FC<DisplayBarProps> = ({
@@ -27,6 +28,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
   canonicalName = 'CUSTOM_FUNCTIONS',
   operatorDisplay: operatorDisplayOverride,
   convertOptions,
+  canEdit,
 }) => {
   const { backgroundColor, textColor, displayName } =
     operatorDisplayOverride ?? operatorDisplay[canonicalName]
@@ -50,7 +52,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
           isLoading={isLoading}
           isShorthand={isShorthand}
         />
-        {!isShorthand && (
+        {!isShorthand && canEdit && (
           <div onClick={setIsEditing} className="ft-clickable ft-edit-icon">
             <IconEdit size="1.5em" style={{ color: 'rgb(42, 161, 152)' }} />
           </div>
@@ -61,7 +63,13 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
           {displayName}
         </a>
       </div>
-      <ConvertButton {...convertOptions} backgroundColor={backgroundColor} textColor={textColor} />
+      {canEdit && (
+        <ConvertButton
+          {...convertOptions}
+          backgroundColor={backgroundColor}
+          textColor={textColor}
+        />
+      )}
     </div>
   )
 }

@@ -10,7 +10,7 @@ import { useCommon } from './useCommon'
 import { getCurrentFragment } from './helpers'
 
 export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
-  const { data, parentData, nodeData, onEdit, customNodeProps } = props
+  const { data, parentData, nodeData, onEdit, restrictEditFilter, customNodeProps } = props
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
@@ -35,6 +35,8 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     CurrentEdit: { switchNodeType },
     converters,
   } = customNodeProps
+
+  const canEdit = !restrictEditFilter(nodeData)
 
   const { fragments } = figTreeData
 
@@ -101,6 +103,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           canonicalName="FRAGMENT"
           operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
           convertOptions={{ type: 'toShorthand', onClick: convert }}
+          canEdit={canEdit}
         />
       )}
     </div>

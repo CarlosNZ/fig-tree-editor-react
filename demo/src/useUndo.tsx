@@ -2,12 +2,13 @@ import useUndoHook from 'use-undo'
 import { Button, HStack, VStack, Spacer } from '@chakra-ui/react'
 import { ArrowBackIcon, ArrowForwardIcon } from '@chakra-ui/icons'
 import { JsonData } from 'json-edit-react'
+import { EvaluatorNode } from 'fig-tree-evaluator'
 
-export const useUndo = (initialData: JsonData) => {
+export const useUndo = (initialData: JsonData | EvaluatorNode) => {
   const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] =
     useUndoHook(initialData)
 
-  const handleChange = (newData: JsonData) => {
+  const handleChange = (newData: JsonData | EvaluatorNode) => {
     if (JSON.stringify(newData) === JSON.stringify(data)) return
     setData(newData)
   }

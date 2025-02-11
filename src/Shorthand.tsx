@@ -40,11 +40,14 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
   children,
   nodeData,
   onEdit,
+  restrictEditFilter,
   customNodeProps,
 }) => {
   const { key, parentData, path } = nodeData
   const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps ?? {}
   if (!evaluateNode || !figTreeData) return null
+
+  const canEdit = !restrictEditFilter(nodeData)
 
   const [loading, setLoading] = useState(false)
 
@@ -90,6 +93,7 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
           canonicalName={operatorData?.name ?? 'FRAGMENT'}
           operatorDisplay={displayData}
           convertOptions={{ type: 'fromShorthand', onClick: convert }}
+          canEdit={canEdit}
         />
       </div>
       {children}
