@@ -11,6 +11,7 @@ import {
   convertV1ToV2,
   convertToShorthand,
   convertFromShorthand,
+  dequal,
 } from 'fig-tree-evaluator'
 import {
   // json-edit-react
@@ -82,6 +83,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   styles = {},
   ...props
 }) => {
+  const previousData = useRef<EvaluatorNode>(null)
   const operators = useMemo(() => figTree.getOperators(), [figTree])
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
   const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
@@ -107,13 +109,17 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // for the editor)
   const topLevelAliases = getAliases(expression, allNonAliases)
 
+  // This effect is just for when the expression is changed by the parent
+  // component -- we need to re-validate and update the expression if validation
+  // has changed it. However, this is unnecessary for most changes to
+  // expression, as the `onUpdate` function has already validated before setting
+  // the state. So we do an equality check and early return if the data hasn't
+  // hasn't changed from its previous value.
   useEffect(() => {
-    try {
-      const exp = validateExpression(expression, { operators, fragments, functions })
-      setExpression(exp)
-    } catch {
-      // onUpdate('Invalid expression')
-    }
+    if (dequal(previousData.current, expression)) return
+
+    const exp = validateExpression(expression, { operators, fragments, functions })
+    setExpression(exp)
   }, [expression])
 
   if (!figTree) return null
@@ -159,8 +165,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             fragments,
             functions,
           }) as object
-          // setExpression(validated)
           onUpdate({ newData: validated, ...rest })
+          previousData.current = validated
+          return ['value', validated]
         } catch (err: any) {
           return err.message
         }

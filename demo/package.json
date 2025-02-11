@@ -33,7 +33,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fig-tree-editor-react": "^0.6.2",
-    "fig-tree-evaluator": "^2.20.0",
+    "fig-tree-evaluator": "^2.20.1",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^1.22.2",
     "json5": "^2.2.3",
