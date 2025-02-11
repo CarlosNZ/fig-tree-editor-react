@@ -51,9 +51,9 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
           isShorthand={isShorthand}
         />
         {!isShorthand && (
-          <span onClick={setIsEditing} className="ft-clickable ft-edit-icon">
+          <div onClick={setIsEditing} className="ft-clickable ft-edit-icon">
             <IconEdit size="1.5em" style={{ color: 'rgb(42, 161, 152)' }} />
-          </span>
+          </div>
         )}
       </div>
       <div className="ft-display-name">

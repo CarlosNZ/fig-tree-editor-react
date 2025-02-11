@@ -34,7 +34,7 @@ export const InfoModal = ({
         }}
       >
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent ml={5} mr={5}>
           <ModalCloseButton />
           <ModalBody pt={5} className="modal-content">
             <Stack spacing={3}>

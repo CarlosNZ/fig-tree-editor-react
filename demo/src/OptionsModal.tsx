@@ -123,7 +123,7 @@ export const OptionsModal = ({
         closeOnEsc={false}
       >
         <ModalOverlay />
-        <ModalContent>
+        <ModalContent ml={5} mr={5}>
           <ModalHeader pb={0}>Evaluator Configuration</ModalHeader>
           <ModalCloseButton />
           <form onSubmit={handleSubmit}>
@@ -160,7 +160,7 @@ export const OptionsModal = ({
                     collapse={Object.keys(formState.headers).length > 0 ? 1 : 0}
                     rootName="Other HTTP headers"
                     rootFontSize={12}
-                    maxWidth="100%"
+                    maxWidth="80vw"
                     theme={{
                       styles: {
                         container: {
@@ -228,7 +228,7 @@ export const OptionsModal = ({
                             collapse={Object.keys(formState.gqlHeaders).length > 0 ? 1 : 0}
                             rootName="Other headers"
                             rootFontSize={12}
-                            maxWidth="100%"
+                            maxWidth="80vw"
                             theme={{
                               styles: {
                                 container: {
@@ -268,7 +268,7 @@ export const OptionsModal = ({
                     collapse={0}
                     rootName="Fragments"
                     rootFontSize={12}
-                    maxWidth="100%"
+                    maxWidth="80vw"
                     theme={{
                       styles: {
                         container: {

@@ -66,36 +66,7 @@
   transition: 0.3s;
 }
 
-.ft-display-button:after {
-  content: '';
-  display: block;
-  position: absolute;
-  border-radius: 0.5em;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  transition: all 0.5s;
-  box-shadow: 0 0 15px 5px grey;
-}
-
-.ft-display-button:active:after {
-  box-shadow: 0 0 0 0 grey;
-  position: absolute;
-  border-radius: 0.5em;
-  left: 0;
-  top: 0;
-  opacity: 1;
-  transition: 0s;
-}
-
-.ft-display-button:active {
-  top: 0.07em;
-}
-
 .ft-operator-alias {
-  /* font-size: 2em; */
   min-width: 1em;
   text-align: center;
   font-weight: bold;
@@ -120,10 +91,6 @@
   font-family: sans-serif;
   color: gray;
   text-decoration: none;
-}
-
-.ft-display-name a:visited {
-  /* color: red !important; */
 }
 
 .ft-display-name a:hover {
@@ -193,22 +160,13 @@
   }
 }
 
-/* .ft-display-bar:hover > .ft-edit-icon {
-    opacity: 1;
-  } */
-
-/* .ft-button-and-edit:hover > .ft-edit-icon {
-    opacity: 1;
-  } */
-
 .ft-clickable {
   cursor: pointer;
 }
 
 .ft-edit-icon {
   opacity: 0;
-  padding-right: 1em; /* Gives wider hover target */
-  /* display: flex; */
+  padding-right: 3em; /* Gives wider hover target */
 }
 
 .ft-edit-icon:hover {
@@ -217,7 +175,6 @@
 
 .ft-okay-icon {
   margin-left: 0.5em;
-  /* margin-top: 0.3em; */
 }
 .ft-cancel-icon {
   /* margin-left: 0.5em; */
@@ -242,7 +199,6 @@
 /* Shorthands */
 
 .ft-shorthand-wrapper {
-  /* border: 1px solid red; */
   position: relative;
 }
 
@@ -251,7 +207,6 @@
 }
 
 .ft-shorthand-node {
-  /* border: 1px solid yellow; */
   position: relative;
   display: flex;
   align-items: center;
@@ -375,7 +330,6 @@ input.ft-select-input::placeholder {
 }
 
 .ft-select-option-title {
-  /*  */
 }
 
 .ft-select-option-description {
