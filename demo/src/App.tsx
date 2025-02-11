@@ -301,6 +301,9 @@ function App() {
               stringTruncate={500}
               jsonParse={JSON5.parse}
               collapse={expressionCollapse}
+              restrictEdit
+              restrictAdd
+              restrictDelete
             />
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}
