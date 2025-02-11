@@ -3259,10 +3259,10 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "2.1.1"
 
-fig-tree-editor-react@^0.6.5:
-  version "0.6.5"
-  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.6.5.tgz#904cab5aa84e95ae2f2aa75a0aa1798ec3a195bf"
-  integrity sha512-+NOY/yALkXl0H18eeNC5Hf+xuqilEjzLLz9AD0a+eIWHXGk9GghR/GEXMPQ3oUg9uICgkOsr2hC7FmEU+7ZDIg==
+fig-tree-editor-react@^0.6.6:
+  version "0.6.6"
+  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.6.6.tgz#1fa9f8ad5dbc5528392dbb1716de56121c9f71a2"
+  integrity sha512-E72EKOm8Lo80FX4xoORtJ2J41GiCxETCTXKVw28S8fT19F+vvEY0rkw9aFDGlFZzkCEXS6iMvxI6IhKwxlrSFA==
   dependencies:
     fig-tree-evaluator "^2.20.2"
     json-edit-react "^1.22.2"
