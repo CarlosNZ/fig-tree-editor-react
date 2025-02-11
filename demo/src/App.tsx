@@ -35,6 +35,7 @@ import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
+import { figTreeEditorReactVersion, timestamp } from './version'
 const pgConnection = new PostgresInterface() as Client
 
 const initOptions: FigTreeOptions = getInitOptions()
@@ -51,6 +52,9 @@ const savedCache = getInitCache()
 if (savedCache) {
   figTree.setCache(savedCache)
 }
+
+console.log(`fig-tree-editor-react v${figTreeEditorReactVersion}`)
+console.log('Site built:', timestamp)
 
 function App() {
   const [modalOpen, setModalOpen] = useState(false)
