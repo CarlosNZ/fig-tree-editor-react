@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react'
-import { OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
+import { isObject, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
@@ -66,8 +66,11 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
             value={(parentData as OperatorNode)?.operator as string}
             functions={functions}
             updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
-              const newNode = { operator: name, ...inputDefault } as Record<string, unknown>
-              delete newNode.input
+              const newNode = isObject(inputDefault)
+                ? ({ operator: name, ...inputDefault } as Record<string, unknown>)
+                : { operator: name }
+              if (inputDefault !== undefined && !isObject(inputDefault))
+                newNode.input = inputDefault
               delete newNode.args
               if (argsDefault) newNode.args = argsDefault
               if (numRequiredArgs && !argsDefault && !inputDefault)
