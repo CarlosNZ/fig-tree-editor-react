@@ -182,7 +182,6 @@
 }
 
 .ft-function-select {
-  font-size: 80%;
   text-wrap: nowrap;
 }
 
@@ -238,10 +237,6 @@
   font-size: 0.8em;
 }
 
-.ft-select-container p {
-  margin: 0;
-}
-
 .ft-select-select-wrapper {
   position: relative;
 }
@@ -253,7 +248,7 @@
 .ft-select-input,
 input.ft-select-input {
   width: clamp(6em, 10em, 13em);
-  min-height: 2.4rem;
+  min-height: 2.4em;
   padding: 0.5em;
   border: 1px solid #ccc !important;
   border-radius: 4px !important;

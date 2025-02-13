@@ -108,8 +108,10 @@ function DropdownOptionGroup<T>({
         }`}
         onClick={() => handleSelect(group)}
       >
-        <p className="ft-select-option-title">{group.label}</p>
-        {group.description && <p className="ft-select-option-description">{group.description}</p>}
+        <div className="ft-select-option-title">{group.label}</div>
+        {group.description && (
+          <div className="ft-select-option-description">{group.description}</div>
+        )}
       </div>
       {children}
     </div>
@@ -143,8 +145,10 @@ function DropdownOption<T>({
       tabIndex={0}
       style={search ? { paddingLeft: '1.5em' } : { padding: '0.5em 0.75em' }}
     >
-      <p className="ft-select-option-title">{option.label}</p>
-      {option.description && <p className="ft-select-option-description">{option.description}</p>}
+      <div className="ft-select-option-title">{option.label}</div>
+      {option.description && (
+        <div className="ft-select-option-description">{option.description}</div>
+      )}
     </div>
   )
 }
