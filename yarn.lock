@@ -2473,10 +2473,10 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "2.1.1"
 
-fig-tree-evaluator@^2.20.2:
-  version "2.20.2"
-  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.2.tgz#6e456f9454951b242bd3c5318e9111983ad56f0c"
-  integrity sha512-vSx6eK4h2lBP1ZwLf6pmyzs27NiscYvk1VjdeE1rw/wnEbSo9O8xQlodVWvbEfQx37tgdHhsg2h9PpBKclZuGQ==
+fig-tree-evaluator@^2.20.3:
+  version "2.20.3"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.3.tgz#1ed1d433c773935cb4656dd56ec2f9d0aee5d22c"
+  integrity sha512-q3ajWV8jHwVRQ5FidZxkLgR5ow32IbHMi1FcmyAp8nao4tlWXKsxlGaiEsl+zGRbTPt/CDZBdmQWd0eU01DKXQ==
   dependencies:
     dequal "^2.0.3"
     object-property-extractor "^1.0.13"

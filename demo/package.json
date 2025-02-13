@@ -5,7 +5,7 @@
   "homepage": "https://carlosnz.github.io/fig-tree-evaluator",
   "type": "module",
   "scripts": {
-    "start": "rimraf ./src/fig-tree-evaluator && rimraf ./src/expression-builder && mkdir ./src/fig-tree-evaluator && mkdir ./src/fig-tree-evaluator/src && mkdir ./src/expression-builder && mkdir ./src/expression-builder/src && concurrently --kill-others-on-fail \"yarn serve\" \"yarn dev\" \"nodemon watch.js\"",
+    "start": "rimraf ./src/expression-builder && mkdir ./src/expression-builder && mkdir ./src/expression-builder/src && concurrently --kill-others-on-fail \"yarn serve\" \"yarn dev\" \"nodemon watch.js\"",
     "serve": "node ./src/express/server",
     "dev": "vite --host",
     "prebuild": "node ./scripts/getVersion.cjs",
@@ -34,7 +34,6 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fig-tree-editor-react": "^0.6.6",
-    "fig-tree-evaluator": "^2.20.2",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^1.22.2",
     "json5": "^2.2.3",
