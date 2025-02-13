@@ -3259,18 +3259,18 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "2.1.1"
 
-fig-tree-editor-react@^0.6.6:
-  version "0.6.6"
-  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.6.6.tgz#1fa9f8ad5dbc5528392dbb1716de56121c9f71a2"
-  integrity sha512-E72EKOm8Lo80FX4xoORtJ2J41GiCxETCTXKVw28S8fT19F+vvEY0rkw9aFDGlFZzkCEXS6iMvxI6IhKwxlrSFA==
+fig-tree-editor-react@^0.6.7:
+  version "0.6.7"
+  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.6.7.tgz#cb17a9ca575c0661e05a07966cc4024437f33531"
+  integrity sha512-cKha35PHWnGqLyeLPepSmJudWOIp0dggjuBREIw6Wv/jBr1QjplNi1FSi6rXrUN6RZiLHdX0TV8iEIjwuUXfVA==
   dependencies:
-    fig-tree-evaluator "^2.20.2"
+    fig-tree-evaluator "^2.20.3"
     json-edit-react "^1.22.2"
 
-fig-tree-evaluator@^2.20.2:
-  version "2.20.2"
-  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.2.tgz#6e456f9454951b242bd3c5318e9111983ad56f0c"
-  integrity sha512-vSx6eK4h2lBP1ZwLf6pmyzs27NiscYvk1VjdeE1rw/wnEbSo9O8xQlodVWvbEfQx37tgdHhsg2h9PpBKclZuGQ==
+fig-tree-evaluator@^2.20.3:
+  version "2.20.4"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.20.4.tgz#f1e19f08c7a1f323801f77ec60545497a6570b29"
+  integrity sha512-Y99Xl+Z+F5qpBuIUqEX8WZ6itDTA1sjBtrNSzN6IY2gi1OQpKMYxwswMQ7jpuJY1joBYGaCEOZ1JILgzxnc/3g==
   dependencies:
     dequal "^2.0.3"
     object-property-extractor "^1.0.13"

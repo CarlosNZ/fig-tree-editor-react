@@ -7,7 +7,7 @@
  */
 
 // Published
-// export * from 'fig-tree-editor-react'
+export * from 'fig-tree-editor-react'
 
 // Local
-export * from './expression-builder/src'
+// export * from './expression-builder/src'

@@ -14,7 +14,8 @@
   "scripts": {
     "build": "rimraf ./build && rollup -c && rimraf ./build/dts",
     "lint": "yarn eslint",
-    "demo": "cd demo && yarn start"
+    "demo": "cd demo && yarn start",
+    "prepublishOnly": "yarn build"
   },
   "peerDependencies": {
     "react": ">=16.0.0"
