@@ -103,6 +103,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
+            nodeData={nodeData}
           />
           :
           <OperatorSelector

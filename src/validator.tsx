@@ -124,7 +124,7 @@ export const validateExpression = (
     )
     newExpression.push(
       ...missingRequired.map(
-        (prop) => [prop.name, prop.default ?? getDefaultValue(prop.type)] as [string, unknown]
+        (prop) => [prop.name, prop.default ?? getDefaultValue(prop)] as [string, unknown]
       )
     )
   }
@@ -177,7 +177,7 @@ const commonPropertyDetails = [
     description: 'Value to return if operator throws error',
     aliases: [],
     required: false,
-    // type: 'string',
+    type: 'any',
     default: null,
   },
   {

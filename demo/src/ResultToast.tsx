@@ -1,6 +1,6 @@
 import { Text, Flex, Button, HStack, Box, useToast } from '@chakra-ui/react'
 import { CheckCircleIcon, CloseIcon } from '@chakra-ui/icons'
-import { truncate } from 'json-edit-react'
+import { truncate } from './helpers'
 
 const RESULT_TEXT_LIMIT = 500
 

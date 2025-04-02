@@ -60,6 +60,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
             currentExpression={parentData}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
+            nodeData={nodeData}
           />
           :
           <FunctionSelector
