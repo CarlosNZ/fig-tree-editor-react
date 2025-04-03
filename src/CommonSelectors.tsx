@@ -7,7 +7,7 @@ import {
   OperatorParameterMetadata,
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
-import { getCurrentOperator, getDefaultValue } from './helpers'
+import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
 import { extract, NodeData } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
@@ -73,6 +73,15 @@ export const NodeTypeSelector: React.FC<{
         const path = [...nodeData.path]
         path.pop()
         const propertyName = path.slice(-1)[0]
+
+        // Check for the "common" properties
+        const commonProperty = commonProperties.find((p) => p.name === propertyName)
+        if (commonProperty) {
+          changeNode(commonProperty.default)
+          return
+        }
+
+        if (typeof propertyName === 'number') path.pop()
         path.pop()
 
         let property: OperatorParameterMetadata | FragmentParameterMetadata | undefined
@@ -85,19 +94,15 @@ export const NodeTypeSelector: React.FC<{
           property = operator?.parameters?.find(
             (p) => p.name === propertyName || p.aliases.includes(propertyName as string)
           )
-          console.log('property', property)
         }
 
         if (fragmentName) {
-          console.log('fragmentName', operatorName)
           const fragment = getCurrentOperator(operatorName, figTreeData.operators)
-          console.log('fragment', fragment)
           const property = fragment?.parameters?.find((p) => p.name === propertyName)
-          console.log('property', property)
         }
 
         if (property?.default) changeNode(property.default)
-        else changeNode('SOMETHING ELSE')
+        else changeNode('New Value')
     }
   }
 
@@ -116,14 +121,16 @@ export const PropertySelector: React.FC<{
   availableProperties: OperatorParameterMetadata[] | FragmentParameterMetadata[]
   updateNode: (newField: any) => void
 }> = ({ availableProperties, updateNode }) => {
-  console.log('availableProperties', availableProperties)
   const propertyOptions = availableProperties.map((property) => ({
     label: property.name,
     value: property,
   }))
 
   const handleAddProperty = (selected: OperatorParameterMetadata) => {
-    updateNode({ [selected.name]: selected.default ?? getDefaultValue(selected) })
+    updateNode({
+      [selected.name]:
+        selected.default !== undefined ? selected.default : getDefaultValue(selected),
+    })
   }
 
   return (

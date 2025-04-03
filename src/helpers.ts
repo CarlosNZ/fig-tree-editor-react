@@ -67,24 +67,16 @@ export const commonProperties = [
     aliases: [],
     required: false,
     type: 'any',
-    default: 'Returning fallback...',
+    default: null,
   },
   {
     name: 'outputType',
     description: 'Convert the evaluation result to this type',
     aliases: ['type'],
     required: false,
-    type: 'any',
+    type: 'string',
     default: 'string',
   },
-  // {
-  //   name: 'useCache',
-  //   description: 'Override the global useCache value fo this node only',
-  //   aliases: [],
-  //   required: false,
-  //   type: 'boolean',
-  //   default: false,
-  // },
 ]
 
 export const reservedProperties = [
