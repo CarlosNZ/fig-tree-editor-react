@@ -69,5 +69,8 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
+- **v0.7.0**:
+  - Use updated editor package ([json-edit-react](https://carlosnz.github.io/json-edit-react/)) in order to restrict to enum values when appropriate
+  - Correct defaults for all operator properties
 - **v0.6.6**: Respect editing restrictions in Custom Nodes
 - **v0.5.0 – v0.6.5**: Initial release
