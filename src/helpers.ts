@@ -1,37 +1,29 @@
 import {
-  ExpectedType,
   standardiseOperatorName,
   OperatorMetadata,
   isObject,
   isAliasString,
   OperatorAlias,
   EvaluatorNode,
-  FigTreeEvaluator,
   FragmentMetadata,
-  CustomFunctionMetadata,
-  Operator,
-  Fragment,
   OperatorNode,
   FragmentNode,
+  OperatorParameterMetadata,
+  FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
-import { DataType, NodeData } from './_imports'
-import { NodeType } from './CommonSelectors'
+import { DataType, EnumDefinition, extract, NodeData } from './_imports'
 
 export const operatorStringRegex = /(\$[^()]+)\((.*)\)/
 
 // Returns a valid default value for each (FigTree) data type
-export const getDefaultValue = (type: ExpectedType | NodeType) => {
+export const getDefaultValue = (property: OperatorParameterMetadata) => {
+  const { type } = property
+
   switch (type) {
-    case 'operator':
-      return { operator: '+', values: [1, 1] }
-    case 'fragment':
-      return { fragment: 'TO-DO' }
-    case 'value':
-      return 'TEMP' // TO-DO: Should generate default based on property type
-    case 'array':
-      return []
     case 'string':
       return 'New Value'
+    case 'array':
+      return []
     case 'boolean':
       return true
     case 'number':
@@ -75,24 +67,16 @@ export const commonProperties = [
     aliases: [],
     required: false,
     type: 'any',
-    default: 'Returning fallback...',
+    default: null,
   },
   {
     name: 'outputType',
     description: 'Convert the evaluation result to this type',
     aliases: ['type'],
     required: false,
-    type: 'any',
+    type: 'string',
     default: 'string',
   },
-  // {
-  //   name: 'useCache',
-  //   description: 'Override the global useCache value fo this node only',
-  //   aliases: [],
-  //   required: false,
-  //   type: 'boolean',
-  //   default: false,
-  // },
 ]
 
 export const reservedProperties = [
@@ -244,6 +228,19 @@ export const getTypeFilter = (
   let fragmentData: FragmentMetadata | undefined
 
   switch (true) {
+    case key === 'fallback': {
+      return false
+    }
+    case key === 'outputType': {
+      return [
+        { enum: 'outputType', values: ['string', 'number', 'boolean', 'array'], matchPriority: 1 },
+        'Operator',
+        'Fragment',
+      ]
+    }
+    case key === 'useCache': {
+      return ['boolean', 'Operator', 'Fragment']
+    }
     case 'operator' in (parentData ?? {}) && key !== 'operator': {
       operatorData = getCurrentOperator((parentData as OperatorNode)?.operator, operators)
       break
@@ -258,23 +255,29 @@ export const getTypeFilter = (
     const parameter = operatorData.parameters.find(
       (p) => p.name === key || p.aliases.includes(String(key))
     )
-    return getDataTypeList(parameter?.type)
+    return getDataTypeList(parameter)
   }
 
   if (fragmentData?.parameters) {
     const parameter = fragmentData.parameters.find((p) => p.name === key)
-    return getDataTypeList(parameter?.type)
+    return getDataTypeList(parameter)
   }
 
   return false
 }
 
 const getDataTypeList = (
-  parameterType?: ExpectedType | string | string[]
-): boolean | DataType[] => {
-  if (!parameterType || parameterType === 'any') return false
-  if (Array.isArray(parameterType)) return [...parameterType, 'Operator', 'Fragment'] as DataType[]
-  if (isObject(parameterType) && 'literal' in parameterType)
-    return ['string', 'Operator', 'Fragment'] as DataType[]
-  return [parameterType, 'Operator', 'Fragment'] as DataType[]
+  parameter?: OperatorParameterMetadata | FragmentParameterMetadata
+): boolean | Array<DataType | string | EnumDefinition> => {
+  if (!parameter) return false
+  const { name, type } = parameter
+  if (type === 'any') return false
+  if (Array.isArray(type)) return [...type, 'Operator', 'Fragment'] as DataType[]
+  if (isObject(type) && 'literal' in type)
+    return [
+      { enum: name, values: type.literal as string[], matchPriority: 1 },
+      'Operator',
+      'Fragment',
+    ]
+  return [type, 'Operator', 'Fragment'] as DataType[]
 }

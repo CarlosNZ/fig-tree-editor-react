@@ -88,3 +88,6 @@ export const getLocalStorage = (key: string) => {
 export const setLocalStorage = (key: string, value: object | string | number) => {
   localStorage.setItem(key, JSON.stringify(value))
 }
+
+export const truncate = (string: string, length = 200) =>
+  string.length < length ? string : `${string.slice(0, length - 2).trim()}...`

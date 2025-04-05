@@ -12,9 +12,14 @@ import {
   OperatorParameterMetadata,
   FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
-import { getCurrentOperator, getDefaultValue, operatorAcceptsArbitraryProperties } from './helpers'
+import {
+  commonProperties,
+  getCurrentOperator,
+  getDefaultValue,
+  operatorAcceptsArbitraryProperties,
+} from './helpers'
 
-export const commonProperties = ['fallback', 'outputType', 'type', 'useCache']
+export const commonPropertiesList = ['fallback', 'outputType', 'type', 'useCache']
 
 // Ensures that the current expression is valid:
 // - Any properties that don't belong to an operator/fragment are removed
@@ -106,7 +111,7 @@ export const validateExpression = (
       continue
     }
 
-    if (commonProperties.includes(key)) {
+    if (commonPropertiesList.includes(key)) {
       commonPropertyEntries.push(entry)
       continue
     }
@@ -124,7 +129,11 @@ export const validateExpression = (
     )
     newExpression.push(
       ...missingRequired.map(
-        (prop) => [prop.name, prop.default ?? getDefaultValue(prop.type)] as [string, unknown]
+        (prop) =>
+          [prop.name, prop.default !== undefined ? prop.default : getDefaultValue(prop)] as [
+            string,
+            unknown
+          ]
       )
     )
   }
@@ -167,28 +176,10 @@ export const validateExpression = (
 // switching node
 export const cleanOperatorNode = (node: OperatorNode) =>
   Object.fromEntries(
-    Object.entries(node).filter(([key, _]) => commonProperties.includes(key) || isAliasString(key))
+    Object.entries(node).filter(
+      ([key, _]) => commonPropertiesList.includes(key) || isAliasString(key)
+    )
   )
-
-// To add to list of available properties (drop-down)
-const commonPropertyDetails = [
-  {
-    name: 'fallback',
-    description: 'Value to return if operator throws error',
-    aliases: [],
-    required: false,
-    // type: 'string',
-    default: null,
-  },
-  {
-    name: 'outputType',
-    description: 'Convert output to another data type',
-    aliases: [],
-    required: false,
-    type: 'string',
-    default: 'string',
-  },
-]
 
 // Returns a list of available properties for Operator or Fragment, excluding
 // ones already in use
@@ -196,7 +187,7 @@ export const getAvailableProperties = (
   parameters: { name: string }[],
   node: OperatorNode | FragmentNode
 ) => {
-  const allProperties = [...parameters, ...commonPropertyDetails]
+  const allProperties = [...parameters, ...commonProperties]
   const currentProperties = Object.keys(node)
   return allProperties.filter((param) => !currentProperties.includes(param.name))
 }

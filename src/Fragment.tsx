@@ -69,6 +69,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
+            nodeData={nodeData}
           />
           :
           <FragmentSelector

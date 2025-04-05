@@ -41,6 +41,7 @@ export function DropdownMenu<T>({
       {optionGroups
         ? optionGroups.map((group, groupIndex) => (
             <DropdownOptionGroup
+              key={group.label}
               group={group}
               handleSelect={handleSelect}
               border={border}
@@ -50,6 +51,7 @@ export function DropdownMenu<T>({
             >
               {group.options.map((option, optionIndex) => (
                 <DropdownOption
+                  key={option.label}
                   option={option}
                   handleSelect={handleSelect}
                   border={border}
@@ -64,6 +66,7 @@ export function DropdownMenu<T>({
           ))
         : options.map((option, index) => (
             <DropdownOption
+              key={option.label}
               option={option}
               handleSelect={handleSelect}
               border={border}
@@ -98,7 +101,7 @@ function DropdownOptionGroup<T>({
   currentSelectionRef,
 }: GroupProps<T>) {
   return (
-    <div key={group.label}>
+    <div>
       <div
         ref={currentSelectionRef}
         className={`ft-select-group-label ${
@@ -135,7 +138,6 @@ function DropdownOption<T>({
 }: OptionProps<T>) {
   return (
     <div
-      key={option.label}
       ref={currentSelectionRef}
       className={`ft-select-option${isHighlighted ? ' ft-select-highlighted' : ''}${
         isSelected ? ' ft-select-selected' : ''

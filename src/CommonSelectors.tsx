@@ -7,7 +7,8 @@ import {
   OperatorParameterMetadata,
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
-import { getDefaultValue } from './helpers'
+import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
+import { extract, NodeData } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -21,7 +22,8 @@ export const NodeTypeSelector: React.FC<{
     fragments: FragmentMetadata[]
     functions: CustomFunctionMetadata[]
   }
-}> = ({ value, changeNode, currentExpression, switchNodeType, figTreeData }) => {
+  nodeData: NodeData
+}> = ({ value, changeNode, currentExpression, switchNodeType, figTreeData, nodeData }) => {
   const { fragments, functions } = figTreeData
 
   const options = [
@@ -64,7 +66,43 @@ export const NodeTypeSelector: React.FC<{
         switchNodeType('operator')
         break
       case 'value':
-        changeNode('DEFAULT STRING')
+        // When switching to "Value", the "nodeData" is the value of the node
+        // *before* switching, PLUS we need to get the name of the
+        // operator/fragment *above* the current node to figure out the
+        // appropriate default for this property
+        const path = [...nodeData.path]
+        path.pop()
+        const propertyName = path.slice(-1)[0]
+
+        // Check for the "common" properties
+        const commonProperty = commonProperties.find((p) => p.name === propertyName)
+        if (commonProperty) {
+          changeNode(commonProperty.default)
+          return
+        }
+
+        if (typeof propertyName === 'number') path.pop()
+        path.pop()
+
+        let property: OperatorParameterMetadata | FragmentParameterMetadata | undefined
+
+        const operatorName = extract(nodeData?.fullData, [...path, 'operator'], null)
+        const fragmentName = extract(nodeData?.fullData, [...path, 'fragment'], null)
+
+        if (operatorName) {
+          const operator = getCurrentOperator(operatorName, figTreeData.operators)
+          property = operator?.parameters?.find(
+            (p) => p.name === propertyName || p.aliases.includes(propertyName as string)
+          )
+        }
+
+        if (fragmentName) {
+          const fragment = getCurrentOperator(operatorName, figTreeData.operators)
+          const property = fragment?.parameters?.find((p) => p.name === propertyName)
+        }
+
+        if (property?.default) changeNode(property.default)
+        else changeNode('New Value')
     }
   }
 
@@ -89,7 +127,10 @@ export const PropertySelector: React.FC<{
   }))
 
   const handleAddProperty = (selected: OperatorParameterMetadata) => {
-    updateNode({ [selected.name]: selected.default ?? getDefaultValue(selected.type) })
+    updateNode({
+      [selected.name]:
+        selected.default !== undefined ? selected.default : getDefaultValue(selected),
+    })
   }
 
   return (

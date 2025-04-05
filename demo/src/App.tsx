@@ -221,7 +221,6 @@ function App() {
               rootName="data"
               collapse={jsonEditorOptions?.collapse ?? 2}
               onUpdate={(result) => {
-                console.log(result)
                 localStorage.setItem('objectData', JSON.stringify(result.newData))
                 if (jsonEditorOptions?.onUpdate) return jsonEditorOptions.onUpdate(result)
               }}
