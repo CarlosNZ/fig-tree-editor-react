@@ -392,7 +392,7 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
 # Alias Nodes
 If you have the same data referenced more than once in your expression, it can be a good idea to create an [Alias node](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#alias-nodes) so it's only evaluated once, particularly if it's a network request.
 
-In this case, the \`$character\` alias pulls a chunk of data from [https://swapi.dev](https://swapi.dev) and then values from it are substituted into the final expression, or used as inputs to further lookups.
+In this case, the \`$character\` alias pulls a chunk of data from [https://swapi.py4e.com/](https://swapi.py4e.com/) and then values from it are substituted into the final expression, or used as inputs to further lookups.
 
 Change the \`selected\` character name to look up a different Star Wars character.
 
@@ -529,7 +529,7 @@ Change the \`selected\` character name to look up a different Star Wars characte
         url: {
           operator: '+',
           values: [
-            'https://swapi.dev/api/people/',
+            'https://swapi.py4e.com/api/people/',
             {
               operator: 'getData',
               property: {

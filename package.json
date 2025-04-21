@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "fig-tree-evaluator": "^2.20.5",
-    "json-edit-react": "^1.25.0"
+    "json-edit-react": "^1.26.0"
   },
   "devDependencies": {
     "@rollup/plugin-terser": "^0.4.4",
