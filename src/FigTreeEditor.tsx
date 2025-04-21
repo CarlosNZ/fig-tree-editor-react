@@ -161,7 +161,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       data={expression as JsonData}
       onUpdate={({ newData, ...rest }) => {
         try {
-          const validated = validateExpression(newData, {
+          const validated = validateExpression(newData as EvaluatorNode, {
             operators,
             fragments,
             functions,
@@ -201,7 +201,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       collapse={2}
       stringTruncate={100}
       {...props}
-      setData={setExpression}
+      setData={setExpression as (data: unknown) => void}
       theme={[
         {
           container: {},
