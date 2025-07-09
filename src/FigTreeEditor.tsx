@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect, useRef, useState, useCallback } from 'react'
-import { JsonData, extract } from 'json-edit-react'
+import React, { useMemo, useEffect, useRef, useCallback } from 'react'
+import { JsonData, ThemeStyles, extract } from 'json-edit-react'
 import {
   type EvaluatorNode,
   type FigTreeEvaluator,
@@ -67,7 +67,7 @@ export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
   onEvaluateStart?: () => void
   onEvaluateError?: (err: unknown) => void
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
-  styles?: Partial<any>
+  styles?: Partial<ThemeStyles>
 }
 
 const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
