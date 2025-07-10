@@ -1,2 +1,2 @@
-export const figTreeEditorReactVersion = '0.7.1'
-export const timestamp = '4/21/2025, 10:24:58 PM'
+export const figTreeEditorReactVersion = '0.7.2'
+export const timestamp = '7/11/2025, 11:08:35 AM'
