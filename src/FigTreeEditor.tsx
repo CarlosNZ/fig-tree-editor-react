@@ -63,7 +63,7 @@ export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
   setExpression: (data: EvaluatorNode) => void
   objectData?: Record<string, unknown>
   onUpdate?: UpdateFunction
-  onEvaluate: (value: unknown) => void
+  onEvaluate: (value: unknown, e: React.MouseEvent) => void
   onEvaluateStart?: () => void
   onEvaluateError?: (err: unknown) => void
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
@@ -129,8 +129,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     onEvaluateStart && onEvaluateStart()
     try {
       const result = await figTree.evaluate(expression, { data: objectData })
-      if (e.getModifierState('Shift')) navigator.clipboard.writeText(String(result))
-      onEvaluate(result)
+      onEvaluate(result, e)
     } catch (err) {
       if (isFigTreeError(err)) console.error(err.prettyPrint)
       onEvaluateError && onEvaluateError(err)

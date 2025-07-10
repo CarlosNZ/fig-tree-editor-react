@@ -48,12 +48,12 @@ The majority of props are those for [json-edit-react](https://carlosnz.github.io
 
 ### Optional
 
-| Prop              | Type                       | Default | Description                                                                                                                                                          |
-| ----------------- | -------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `objectData`      | `object`                   |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).      |  |
-| `onEvaluate`      | `(value: unknown) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result. |
-| `onEvaluateStart` | `() => void`               |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.      |
-| `operatorDisplay` | `Operator Display Data`    |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                    |  |
+| Prop              | Type                                            | Default | Description                                                                                                                                                          |
+| ----------------- | ----------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `objectData`      | `object`                                        |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).      |  |
+| `onEvaluate`      | `(value: unknown, e: React.MouseEvent) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result. |
+| `onEvaluateStart` | `() => void`                                    |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.      |
+| `operatorDisplay` | `Operator Display Data`                         |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                    |  |
 
 
 ## Operator UI customisation
@@ -69,6 +69,9 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
+- **v0.7.1**:
+  - Improve type definitions for styles input
+  - Pass "event" to `onEvaluate` function
 - **v0.7.0**:
   - Use updated editor package ([json-edit-react](https://carlosnz.github.io/json-edit-react/)) in order to restrict to enum values when appropriate
   - Correct defaults for all operator properties
