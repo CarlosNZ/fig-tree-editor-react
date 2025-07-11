@@ -35,7 +35,7 @@
     "express": "^4.17.1",
     "fig-tree-editor-react": "^0.7.2",
     "framer-motion": "^10.15.1",
-    "json-edit-react": "^1.28.0",
+    "json-edit-react": "^1.28.1",
     "json5": "^2.2.3",
     "markdown-to-jsx": "^7.4.7",
     "pg": "^8.11.2",
