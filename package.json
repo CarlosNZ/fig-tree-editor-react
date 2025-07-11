@@ -1,6 +1,6 @@
 {
   "name": "fig-tree-editor-react",
-  "version": "0.7.3",
+  "version": "0.7.4",
   "description": "React component for constructing FigTree Evaluator expressions",
   "main": "build/index.cjs.js",
   "module": "build/index.esm.js",
@@ -21,7 +21,7 @@
     "react": ">=16.0.0"
   },
   "dependencies": {
-    "fig-tree-evaluator": "^2.20.5",
+    "fig-tree-evaluator": "^2.20.6",
     "json-edit-react": "^1.28.1"
   },
   "devDependencies": {
