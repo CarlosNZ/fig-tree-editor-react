@@ -120,6 +120,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     if (dequal(previousData.current, expression)) return
 
     const exp = validateExpression(expression, { operators, fragments, functions })
+    previousData.current = exp
     setExpression(exp)
   }, [expression])
 

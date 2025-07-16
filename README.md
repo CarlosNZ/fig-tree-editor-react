@@ -69,6 +69,8 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
+- **v0.7.5**:
+  - Fix possible infinite re-render when loading new expression
 - **v0.7.1**:
   - Improve type definitions for styles input
   - Pass "event" to `onEvaluate` function
