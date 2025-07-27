@@ -8,7 +8,7 @@ import {
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
 import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
-import { extract, NodeData } from 'json-edit-react'
+import { CustomNodeDefinition, extract, NodeData } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -23,7 +23,16 @@ export const NodeTypeSelector: React.FC<{
     functions: CustomFunctionMetadata[]
   }
   nodeData: NodeData
-}> = ({ value, changeNode, currentExpression, switchNodeType, figTreeData, nodeData }) => {
+  customNodeDefinitions?: CustomNodeDefinition[]
+}> = ({
+  value,
+  changeNode,
+  currentExpression,
+  switchNodeType,
+  figTreeData,
+  nodeData,
+  customNodeDefinitions,
+}) => {
   const { fragments, functions } = figTreeData
 
   const options = [
@@ -35,10 +44,12 @@ export const NodeTypeSelector: React.FC<{
     { key: 'value', label: 'Value', value: 'value' },
   ]
 
+  const { defaultNewOperatorExpression, defaultNewFragment, defaultNewCustomOperator } =
+    customNodeDefinitions?.[1].customNodeProps ?? {}
+
   const currentSelection = options.find((option) => option.value === value)
 
-  const defaultFunction = functions[0]
-  const defaultFragment = fragments[0]
+  const defaultFunction = functions.find((f) => f.name === defaultNewCustomOperator) ?? functions[0]
 
   const handleChange = (selected: SelectOption<string>) => {
     const newType = selected.value
@@ -46,11 +57,11 @@ export const NodeTypeSelector: React.FC<{
 
     switch (newType) {
       case 'operator':
-        changeNode({ operator: '+' })
+        changeNode(defaultNewOperatorExpression ?? { operator: '+' })
         switchNodeType('operator')
         break
       case 'fragment':
-        changeNode({ fragment: defaultFragment.name })
+        changeNode({ fragment: defaultNewFragment })
         switchNodeType('fragment')
         break
       case 'customOperator':

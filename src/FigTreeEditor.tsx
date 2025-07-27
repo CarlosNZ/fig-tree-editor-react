@@ -68,6 +68,9 @@ export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
   onEvaluateError?: (err: unknown) => void
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
   styles?: Partial<ThemeStyles>
+  defaultNewOperatorExpression?: EvaluatorNode
+  defaultNewFragment?: string
+  defaultNewCustomOperator?: string
 }
 
 const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
@@ -82,6 +85,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   operatorDisplay,
   styles = {},
   restrictDelete,
+  defaultNewOperatorExpression,
+  defaultNewFragment,
+  defaultNewCustomOperator,
   ...props
 }) => {
   const previousData = useRef<EvaluatorNode>(null)
@@ -153,6 +159,14 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const toV2 = useCallback((expression: EvaluatorNode) => convertV1ToV2(expression, figTree), [])
 
   const converters = { toShorthand, fromShorthand, toV2 }
+
+  const defaultFragment = useMemo(
+    () =>
+      fragments.find((frag) => frag.name === defaultNewFragment)?.name ??
+      fragments?.[0].name ??
+      null,
+    [fragments, defaultNewFragment]
+  )
 
   return (
     <JsonEditor
@@ -274,7 +288,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             showOnEdit: false,
             showEditTools: false,
             showInTypesSelector: true,
-            defaultValue: { operator: '+', values: [2, 2] },
+            // defaultValue: { operator: '+', values: [2, 2] },
           },
           {
             condition: ({ key }) => key === 'operator',
@@ -287,12 +301,17 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               topLevelAliases,
               CurrentEdit,
               converters,
+              // Only need to pass this to ONE custom node, as it will be used
+              // for ALL types when switching NodeType
+              defaultNewOperatorExpression,
+              defaultNewFragment: defaultFragment,
+              defaultNewCustomOperator,
             },
             hideKey: true,
             showOnEdit: false,
             showEditTools: false,
             showInTypesSelector: true,
-            defaultValue: { operator: '+', values: [2, 2] },
+            defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
           },
           {
             condition: ({ key }) => key === 'fragment',
@@ -310,7 +329,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             showOnEdit: false,
             showEditTools: false,
             showInTypesSelector: true,
-            defaultValue: fragments?.[0] ? { fragment: fragments?.[0].name } : null,
+            defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
           },
           {
             condition: (nodeData) => isShorthandNodeCollection(nodeData),

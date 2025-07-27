@@ -10,7 +10,15 @@ import { useCommon } from './useCommon'
 import { getCurrentFragment } from './helpers'
 
 export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
-  const { data, parentData, nodeData, onEdit, restrictEditFilter, customNodeProps } = props
+  const {
+    data,
+    parentData,
+    nodeData,
+    onEdit,
+    restrictEditFilter,
+    customNodeProps,
+    customNodeDefinitions,
+  } = props
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
@@ -70,6 +78,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
             nodeData={nodeData}
+            customNodeDefinitions={customNodeDefinitions}
           />
           :
           <FragmentSelector
