@@ -48,12 +48,15 @@ The majority of props are those for [json-edit-react](https://carlosnz.github.io
 
 ### Optional
 
-| Prop              | Type                                            | Default | Description                                                                                                                                                          |
-| ----------------- | ----------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `objectData`      | `object`                                        |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).      |  |
-| `onEvaluate`      | `(value: unknown, e: React.MouseEvent) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result. |
-| `onEvaluateStart` | `() => void`                                    |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.      |
-| `operatorDisplay` | `Operator Display Data`                         |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                    |  |
+| Prop                           | Type                                            | Default | Description                                                                                                                                                          |
+| ------------------------------ | ----------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `objectData`                   | `object`                                        |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).      |  |
+| `onEvaluate`                   | `(value: unknown, e: React.MouseEvent) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result. |
+| `onEvaluateStart`              | `() => void`                                    |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.      |
+| `operatorDisplay`              | `Operator Display Data`                         |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                    |  |
+| `defaultNewOperatorExpression` | `EvaluatorNode`                                 |         | Expression to populate the UI with when switching to a new "Operator" node                                                                                           |  |
+| `defaultNewFragment`           | `string`                                        |         | Name of the [Fragment](https://github.com/CarlosNZ/fig-tree-evaluator?#fragments) to default to when switching to new "Fragment" node                                |  |
+| `defaultNewCustomOperator`     | `string`                                        |         | Name of the [Custom Operator](https://github.com/CarlosNZ/fig-tree-evaluator?#custom-functionsoperators) to default to when switching to new "Custom Operator" node  |  |
 
 
 ## Operator UI customisation
@@ -69,6 +72,8 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
+- **v0.7.7**:
+  - props to set default expression, fragment and custom operator
 - **v0.7.5**:
   - Fix possible infinite re-render when loading new expression
 - **v0.7.1**:
