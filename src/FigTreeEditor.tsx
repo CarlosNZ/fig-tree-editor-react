@@ -163,7 +163,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const defaultFragment = useMemo(
     () =>
       fragments.find((frag) => frag.name === defaultNewFragment)?.name ??
-      fragments?.[0].name ??
+      fragments?.[0]?.name ??
       null,
     [fragments, defaultNewFragment]
   )
