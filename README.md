@@ -72,7 +72,7 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
-- **v0.7.6**:
+- **v0.7.8**:
   - props to set default expression, fragment and custom operator
 - **v0.7.5**:
   - Fix possible infinite re-render when loading new expression
