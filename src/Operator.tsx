@@ -74,7 +74,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType, prevState },
+    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
   } = customNodeProps
 
@@ -127,7 +127,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               onEdit(newNode, expressionPath)
             }}
             operators={operators}
-            startOpen={isObject(prevState) && !('operator' in prevState)}
+            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
           {isCustomFunction && isEditing() && (
             <FunctionSelector

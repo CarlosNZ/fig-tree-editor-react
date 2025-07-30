@@ -45,7 +45,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType, prevState },
+    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
   } = customNodeProps
 
@@ -90,7 +90,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             value={thisFragment}
             changeFragment={(fragment) => onEdit({ ...parentData, fragment }, expressionPath)}
             fragments={fragments}
-            startOpen={isObject(prevState) && !('fragment' in prevState)}
+            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
           {availableProperties.length > 0 && (
             <PropertySelector

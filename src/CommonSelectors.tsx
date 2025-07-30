@@ -159,7 +159,8 @@ export const FunctionSelector: React.FC<{
   value: string
   functions: readonly CustomFunctionMetadata[]
   updateNode: (functionDefinition: CustomFunctionMetadata) => void
-}> = ({ value, functions, updateNode }) => {
+  startOpen?: boolean
+}> = ({ value, functions, updateNode, startOpen }) => {
   const functionOptions = functions.map(({ name, numRequiredArgs, description }) => ({
     key: name,
     label: `${name} (${numRequiredArgs})`,
@@ -183,6 +184,7 @@ export const FunctionSelector: React.FC<{
       setSelected={handleFunctionSelect}
       search={functionOptions.length >= 5}
       border="all"
+      startOpen={startOpen}
     />
   )
 }

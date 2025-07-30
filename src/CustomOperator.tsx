@@ -32,7 +32,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType },
+    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
   } = customNodeProps
 
@@ -87,6 +87,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
                 newNode.args = new Array(numRequiredArgs).fill(null)
               onEdit(newNode, expressionPath)
             }}
+            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
           {availableProperties.length > 0 && (
             <PropertySelector
