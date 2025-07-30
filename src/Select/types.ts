@@ -20,4 +20,5 @@ export interface SelectProps<T> {
   placeholder?: string
   className: string
   border?: 'group' | 'all'
+  startOpen?: boolean
 }

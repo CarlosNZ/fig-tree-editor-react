@@ -9,6 +9,7 @@ import {
   FragmentMetadata,
   CustomFunctionMetadata,
   isV1Node,
+  isObject,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { ConversionType, DisplayBar } from './DisplayBar'
@@ -73,7 +74,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType },
+    CurrentEdit: { switchNodeType, prevState },
     converters,
   } = customNodeProps
 
@@ -126,6 +127,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               onEdit(newNode, expressionPath)
             }}
             operators={operators}
+            startOpen={isObject(prevState) && !('operator' in prevState)}
           />
           {isCustomFunction && isEditing() && (
             <FunctionSelector
@@ -183,7 +185,8 @@ const OperatorSelector: React.FC<{
   value: OperatorAlias
   changeOperator: (operator: OperatorAlias) => void
   operators: OperatorMetadata[]
-}> = ({ value, changeOperator, operators }) => {
+  startOpen?: boolean
+}> = ({ value, changeOperator, operators, startOpen }) => {
   const operatorOptions = getOperatorOptions(operators)
 
   return (
@@ -195,6 +198,7 @@ const OperatorSelector: React.FC<{
       placeholder="Search operators"
       search
       border="group"
+      startOpen={startOpen}
     />
   )
 }

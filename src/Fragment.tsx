@@ -1,5 +1,10 @@
 import React, { useCallback } from 'react'
-import { FragmentMetadata, FragmentNode, FragmentParameterMetadata } from 'fig-tree-evaluator'
+import {
+  FragmentMetadata,
+  FragmentNode,
+  FragmentParameterMetadata,
+  isObject,
+} from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { OperatorProps } from './Operator'
@@ -40,7 +45,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType },
+    CurrentEdit: { switchNodeType, prevState },
     converters,
   } = customNodeProps
 
@@ -85,6 +90,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
             value={thisFragment}
             changeFragment={(fragment) => onEdit({ ...parentData, fragment }, expressionPath)}
             fragments={fragments}
+            startOpen={isObject(prevState) && !('fragment' in prevState)}
           />
           {availableProperties.length > 0 && (
             <PropertySelector
@@ -124,7 +130,8 @@ const FragmentSelector: React.FC<{
   value: string
   changeFragment: (fragment: string) => void
   fragments: FragmentMetadata[]
-}> = ({ value, changeFragment, fragments }) => {
+  startOpen?: boolean
+}> = ({ value, changeFragment, fragments, startOpen }) => {
   const fragmentOptions = fragments.map(({ name, description }) => ({
     label: name,
     description,
@@ -140,6 +147,7 @@ const FragmentSelector: React.FC<{
       search={fragmentOptions.length >= 5}
       placeholder="Select Fragment"
       border="all"
+      startOpen={startOpen}
     />
   )
 }

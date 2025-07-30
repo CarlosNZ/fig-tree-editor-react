@@ -12,8 +12,9 @@ export function Select<T>({
   placeholder,
   className,
   border,
+  startOpen = false,
 }: SelectProps<T>) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(startOpen)
   const [searchText, setSearchText] = useState('')
   const [highlightedIndex, setHighlightedIndex] = useState(-1)
   const containerRef = useRef<HTMLDivElement>(null)
