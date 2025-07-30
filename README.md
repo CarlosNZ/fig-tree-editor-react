@@ -73,6 +73,8 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
+- **v0.7.10**:
+  - When switching Fragments, remove old fragment properties
 - **v0.7.9**:
   - Switching node type (operator/fragment/custom operator) auto-focuses the operator/fragment selector menu
   - Add `addTopLevelFallback` prop
