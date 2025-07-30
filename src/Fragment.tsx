@@ -3,6 +3,7 @@ import {
   FragmentMetadata,
   FragmentNode,
   FragmentParameterMetadata,
+  isAliasString,
   isObject,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
@@ -89,9 +90,14 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           :
           <FragmentSelector
             value={thisFragment}
-            changeFragment={(fragment) =>
-              onEdit({ ...maybeInsertFallback(parentData), fragment }, expressionPath)
-            }
+            changeFragment={(fragment) => {
+              const newNode = Object.fromEntries(
+                // Remove any properties that are parameters from other
+                // Fragments
+                Object.entries(parentData as FragmentNode).filter(([key]) => !isAliasString(key))
+              )
+              onEdit({ ...maybeInsertFallback(newNode), fragment }, expressionPath)
+            }}
             fragments={fragments}
             startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
