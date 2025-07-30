@@ -36,6 +36,7 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     evaluate,
     loading,
     operatorDisplay,
+    maybeInsertFallback,
   } = useCommon({
     customNodeProps,
     parentData,
@@ -88,7 +89,9 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           :
           <FragmentSelector
             value={thisFragment}
-            changeFragment={(fragment) => onEdit({ ...parentData, fragment }, expressionPath)}
+            changeFragment={(fragment) =>
+              onEdit({ ...maybeInsertFallback(parentData), fragment }, expressionPath)
+            }
             fragments={fragments}
             startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />

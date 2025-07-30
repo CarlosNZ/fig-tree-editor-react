@@ -71,6 +71,7 @@ export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
   defaultNewOperatorExpression?: EvaluatorNode
   defaultNewFragment?: string
   defaultNewCustomOperator?: string
+  addTopLevelFallback?: EvaluatorNode
 }
 
 const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
@@ -88,6 +89,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   defaultNewOperatorExpression,
   defaultNewFragment,
   defaultNewCustomOperator,
+  addTopLevelFallback,
   ...props
 }) => {
   const previousData = useRef<EvaluatorNode>(null)
@@ -283,6 +285,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               topLevelAliases,
               CurrentEdit,
               converters,
+              addTopLevelFallback,
             },
             hideKey: true,
             showOnEdit: false,
@@ -301,6 +304,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               topLevelAliases,
               CurrentEdit,
               converters,
+              addTopLevelFallback,
               // Only need to pass this to ONE custom node, as it will be used
               // for ALL types when switching NodeType
               defaultNewOperatorExpression,
@@ -324,6 +328,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               topLevelAliases,
               CurrentEdit,
               converters,
+              addTopLevelFallback,
             },
             hideKey: true,
             showOnEdit: false,

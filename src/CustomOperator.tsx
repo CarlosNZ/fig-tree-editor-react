@@ -22,13 +22,21 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
 
   if (!customNodeProps) throw new Error('Missing customNodeProps')
 
-  const { handleCancel, handleSubmit, expressionPath, isEditing, startEditing, evaluate, loading } =
-    useCommon({
-      customNodeProps,
-      parentData,
-      nodeData,
-      onEdit,
-    })
+  const {
+    handleCancel,
+    handleSubmit,
+    expressionPath,
+    isEditing,
+    startEditing,
+    evaluate,
+    loading,
+    maybeInsertFallback,
+  } = useCommon({
+    customNodeProps,
+    parentData,
+    nodeData,
+    onEdit,
+  })
 
   const {
     figTreeData,
@@ -85,7 +93,7 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
               if (argsDefault) newNode.args = argsDefault
               if (numRequiredArgs && !argsDefault && !inputDefault)
                 newNode.args = new Array(numRequiredArgs).fill(null)
-              onEdit(newNode, expressionPath)
+              onEdit(maybeInsertFallback(newNode), expressionPath)
             }}
             startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />

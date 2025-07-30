@@ -303,6 +303,7 @@ function App() {
               // defaultNewOperatorExpression={{ operator: 'getData', property: 'user.name' }}
               // defaultNewFragment="getFlag"
               // defaultNewCustomOperator="currentDate"
+              // addTopLevelFallback={null}
             />
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}

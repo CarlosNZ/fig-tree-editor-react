@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
 import { NodeData } from 'json-edit-react'
 import { getAliases } from './helpers'
+import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
 interface Input {
   customNodeProps: OperatorProps
@@ -13,8 +14,14 @@ interface Input {
 }
 
 export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
-  const { evaluateNode, topLevelAliases, operatorDisplay, CurrentEdit, figTreeData } =
-    customNodeProps
+  const {
+    evaluateNode,
+    topLevelAliases,
+    operatorDisplay,
+    CurrentEdit,
+    figTreeData,
+    addTopLevelFallback,
+  } = customNodeProps
   const {
     currentEditPath,
     setCurrentEditPath,
@@ -50,6 +57,22 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     if (e.key === 'Escape') handleCancel()
   }
 
+  /**
+   * If `addTopLevelFallback` is specified, the fallback value will be applied
+   * to top-level nodes that do not already have a fallback defined.
+   */
+  const maybeInsertFallback = <T,>(expression: T): T | (T & { fallback?: EvaluatorNode }) => {
+    if (
+      addTopLevelFallback !== undefined &&
+      nodeData.level === 1 &&
+      isObject(expression) &&
+      !('fallback' in expression)
+    ) {
+      return { ...expression, fallback: addTopLevelFallback }
+    }
+    return expression
+  }
+
   useEffect(() => {
     if (isEditing()) {
       window.addEventListener('keydown', listenForSubmit)
@@ -74,5 +97,6 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     evaluate,
     loading,
     operatorDisplay,
+    maybeInsertFallback,
   }
 }

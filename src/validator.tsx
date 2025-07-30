@@ -31,7 +31,8 @@ export const validateExpression = (
     operators: readonly OperatorMetadata[]
     fragments: readonly FragmentMetadata[]
     functions: readonly CustomFunctionMetadata[]
-  }
+  },
+  defaultFallback?: EvaluatorNode
 ): EvaluatorNode => {
   if (Array.isArray(expression))
     return expression.map((value) => validateExpression(value, figTreeMetaData))
@@ -164,6 +165,10 @@ export const validateExpression = (
       delete newExpressionObject[key]
     })
   }
+
+  // If a default fallback is provided, add it at the top level
+  if (defaultFallback && !('fallback' in newExpressionObject))
+    newExpressionObject.fallback = defaultFallback
 
   return {
     ...newExpressionObject,

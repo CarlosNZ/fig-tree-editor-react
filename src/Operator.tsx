@@ -9,7 +9,6 @@ import {
   FragmentMetadata,
   CustomFunctionMetadata,
   isV1Node,
-  isObject,
 } from 'fig-tree-evaluator'
 import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { ConversionType, DisplayBar } from './DisplayBar'
@@ -41,6 +40,7 @@ export interface OperatorProps {
     fromShorthand: (expression: EvaluatorNode) => void
     toV2: (expression: EvaluatorNode) => void
   }
+  addTopLevelFallback?: EvaluatorNode
 }
 
 export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
@@ -65,6 +65,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     evaluate,
     loading,
     operatorDisplay,
+    maybeInsertFallback,
   } = useCommon({
     customNodeProps,
     parentData,
@@ -76,6 +77,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     figTreeData,
     CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
+    addTopLevelFallback,
   } = customNodeProps
 
   const canEdit = !restrictEditFilter(nodeData)
@@ -124,7 +126,7 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
               const newNode = operatorData.aliases.includes(operator)
                 ? { ...parentData, operator }
                 : { ...cleanOperatorNode(parentData as OperatorNode), operator }
-              onEdit(newNode, expressionPath)
+              onEdit(maybeInsertFallback(newNode), expressionPath)
             }}
             operators={operators}
             startOpen={hasSwitchedFromOtherNodeType(parentData)}
