@@ -191,14 +191,20 @@ Try changing all these values and see the output differences.
         },
         country: 'Russia',
         friends: ['Steve', 'Bruce', 'Tony'],
-        gender: 'female',
+        gender: 'Female',
       },
     },
     objectJsonEditorProps: {
       restrictEdit: ({ value }) => typeof value !== 'string' && !Array.isArray(value),
       restrictDelete: true,
       restrictAdd: true,
-      restrictTypeSelection: true,
+      restrictTypeSelection: [
+        {
+          enum: 'gender',
+          values: ['Male', 'Female', 'Other'],
+          matchPriority: 1,
+        },
+      ],
       collapse: 3,
     },
     expression: {
@@ -219,13 +225,13 @@ Try changing all these values and see the output differences.
         genderLives: {
           operator: 'match',
           matchExpression: { $getData: 'user.gender' },
-          branches: { female: 'She lives', male: 'He lives' },
+          branches: { Female: 'She lives', Male: 'He lives' },
           fallback: 'They live',
         },
         genderHas: {
           operator: 'match',
           matchExpression: { $getData: 'user.gender' },
-          branches: { female: 'She has', male: 'He has' },
+          branches: { Female: 'She has', Male: 'He has' },
           fallback: 'They have',
         },
       },
@@ -290,7 +296,7 @@ A diagram of this particular tree can be found [here](https://user-images.github
 This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#alias-nodes), which reduces the amount of duplication required in this structure.
     `,
     objectData: {
-      Info: 'Change the following values to get a card game recommendation! (Difficulty can be either "easy" or "challenging")',
+      Info: 'Change the following values to get a card game recommendation!',
       numberOfPlayers: 1,
       ageOfYoungestPlayer: 12,
       preferredDifficulty: 'easy',
@@ -299,7 +305,13 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
       restrictEdit: ({ key }) => key === 'Info',
       restrictAdd: true,
       restrictDelete: true,
-      restrictTypeSelection: true,
+      restrictTypeSelection: [
+        {
+          enum: 'difficulty',
+          values: ['easy', 'challenging'],
+          matchPriority: 1,
+        },
+      ],
       onUpdate: ({ path, newValue }) => {
         if (
           path[0] === 'preferredDifficulty' &&
@@ -549,9 +561,9 @@ Change the \`selected\` character name to look up a different Star Wars characte
     content: `
 # Fragments
 
-If you expect your configurations to re-use a lot of common expressions (for example, looking up your site database), you can hard-code [Fragments](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#fragments) into your app, making subsequent expressions simpler.
+If you expect your configurations to re-use a lot of common expressions (for example, looking up your app's database), you pre-define some [Fragments](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#fragments), making subsequent expressions simpler.
 
-In this case, two Fragments are pre-defined, and can be explored in the "Configuration" panel:
+In this case, two Fragments are defined, and can be explored in the "Configuration" panel:
 
 - \`getCapital\`
 - \`getFlag\`

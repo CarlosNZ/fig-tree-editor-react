@@ -408,9 +408,9 @@
     "@emotion/memoize" "0.7.4"
 
 "@emotion/is-prop-valid@^1.3.0":
-  version "1.3.1"
-  resolved "https://registry.yarnpkg.com/@emotion/is-prop-valid/-/is-prop-valid-1.3.1.tgz#8d5cf1132f836d7adbe42cf0b49df7816fc88240"
-  integrity sha512-/ACwoqx7XQi9knQs/G0qKvv5teDMhD7bXYns9N/wM8ah8iNb8jZ2uNO0YOgiq2o2poIvVtJS2YALasQuMSQ7Kw==
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@emotion/is-prop-valid/-/is-prop-valid-1.4.0.tgz#e9ad47adff0b5c94c72db3669ce46de33edf28c0"
+  integrity sha512-QgD4fyscGcbbKwJmqNvUMSE02OsHUa+lAWKdEUIJKgqe5IwRSKd7+KhibEWdaKwgjLj0DRSHA9biAIqGBk05lw==
   dependencies:
     "@emotion/memoize" "^0.9.0"
 
@@ -1800,10 +1800,15 @@ cross-spawn@^7.0.2, cross-spawn@^7.0.3:
     shebang-command "^2.0.0"
     which "^2.0.1"
 
-csstype@^3.0.2, csstype@^3.1.2:
+csstype@^3.0.2:
   version "3.1.3"
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.1.3.tgz#d80ff294d114fb0e6ac500fbf85b60137d7eff81"
   integrity sha512-M1uQkMl8rQK/szD0LNhtqxIPLpimGm8sOBwU7lLnCpSbTyY3yeU1Vc7l4KT5zT4s/yOxHH5O7tIuuLOCnLADRw==
+
+csstype@^3.1.2:
+  version "3.2.3"
+  resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.2.3.tgz#ec48c0f3e993e50648c86da559e2610995cf989a"
+  integrity sha512-z1HGKcYy2xA8AGQfwrn0PAy+PB7X/GSj3UVJW9qKyn43xWa+gl5nXmU4qqLMRzWVLFC8KusUX8T/0kCiOYpAIQ==
 
 date-fns@^2.30.0:
   version "2.30.0"
@@ -2240,13 +2245,13 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "2.1.1"
 
-fig-tree-editor-react@^0.7.10:
-  version "0.7.10"
-  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.7.10.tgz#99999eadcfcd2d91ecd3363d37c323b0b235d46d"
-  integrity sha512-ZUtjuwZNxyKJqfhRynoV8NH/1rxthpI6vaHbT97zzL5+v1igtn/1ITNgMY/U7ZlSvORSdjA0OeCgTyKhWhIrWA==
+fig-tree-editor-react@^0.7.11:
+  version "0.7.11"
+  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-0.7.11.tgz#94ae5fe602863b4d77279ed72498302f8d4e6d47"
+  integrity sha512-NvdkxYbk/TYLi5a9VnBWmidiWP6uHqOXia9sgU/ol8o1V4dvuXgGGl17nl4SB53KlXn/rhBzCBiwt4bT7+iPjQ==
   dependencies:
     fig-tree-evaluator "^2.20.6"
-    json-edit-react "^1.28.2"
+    json-edit-react "^1.29.0"
 
 fig-tree-evaluator@^2.20.6:
   version "2.20.6"
@@ -3145,10 +3150,10 @@ json-buffer@3.0.1:
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
   integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
 
-json-edit-react@^1.28.2:
-  version "1.28.2"
-  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-1.28.2.tgz#5e36fd98e3706d7ea0ba4d9ec36bbed6f052d98f"
-  integrity sha512-+ZsVXwnuOvuyqeQBDOxMS63JmF3VwHDrA0TtjSEBSBtR+lteHN/QjQohqFzsam7AHPu75AabGXciVf0H6ne+/g==
+json-edit-react@^1.29.0:
+  version "1.29.0"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-1.29.0.tgz#4e9d7ef56477a02bab44bd5b1a5323f4480c24cd"
+  integrity sha512-qxho/m0w6GCaKLic6XsZgmCrKKwluMvoy92teRBRus1PRHJQiP4pkFQJ90lmrno1KNgSePYIG0mcscS0GjdH3A==
   dependencies:
     object-property-assigner "^1.3.5"
     object-property-extractor "^1.0.13"
@@ -3789,9 +3794,9 @@ react-fast-compare@3.2.2:
   integrity sha512-nsO+KSNgo1SbJqJEYRE9ERzo7YtYbou/OqjSQKxV7jcKox7+usiUVZOAC+XnDOABXggQTno0Y1CpVnuWEc1boQ==
 
 react-focus-lock@^2.9.6:
-  version "2.13.6"
-  resolved "https://registry.yarnpkg.com/react-focus-lock/-/react-focus-lock-2.13.6.tgz#29751bf2e4e30f6248673cd87a347c74ff2af672"
-  integrity sha512-ehylFFWyYtBKXjAO9+3v8d0i+cnc1trGS0vlTGhzFW1vbFXVUTmR8s2tt/ZQG8x5hElg6rhENlLG1H3EZK0Llg==
+  version "2.13.7"
+  resolved "https://registry.yarnpkg.com/react-focus-lock/-/react-focus-lock-2.13.7.tgz#2f51ad417e4212a9f7bdd87da092aa2ad0536d5a"
+  integrity sha512-20lpZHEQrXPb+pp1tzd4ULL6DyO5D2KnR0G69tTDdydrmNhU7pdFmbQUYVyHUgp+xN29IuFR0PVuhOmvaZL9Og==
   dependencies:
     "@babel/runtime" "^7.0.0"
     focus-lock "^1.3.6"
@@ -3829,9 +3834,9 @@ react-remove-scroll-bar@^2.3.7:
     tslib "^2.0.0"
 
 react-remove-scroll@^2.5.7:
-  version "2.7.1"
-  resolved "https://registry.yarnpkg.com/react-remove-scroll/-/react-remove-scroll-2.7.1.tgz#d2101d414f6d81d7d3bf033f3c1cb4785789f753"
-  integrity sha512-HpMh8+oahmIdOuS5aFKKY6Pyog+FNaZV/XyJOq7b4YFwsFHe5yYfdbIalI4k3vU2nSDql7YskmUseHsRrJqIPA==
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/react-remove-scroll/-/react-remove-scroll-2.7.2.tgz#6442da56791117661978ae99cd29be9026fecca0"
+  integrity sha512-Iqb9NjCCTt6Hf+vOdNIZGdTiH1QSqr27H/Ek9sv/a97gfueI/5h1s3yRi1nngzMUaOOToin5dI1dXKdXiF+u0Q==
   dependencies:
     react-remove-scroll-bar "^2.3.7"
     react-style-singleton "^2.2.3"
