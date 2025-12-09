@@ -21,7 +21,7 @@
     "react": ">=16.0.0"
   },
   "dependencies": {
-    "fig-tree-evaluator": "^2.20.6",
+    "fig-tree-evaluator": "^2.21.0",
     "json-edit-react": "^1.29.0"
   },
   "devDependencies": {
