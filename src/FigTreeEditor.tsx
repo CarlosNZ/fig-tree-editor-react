@@ -323,7 +323,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           // `showOnEdit` keeps the custom component (and its live child rows)
           // rendered while editing, instead of json-edit-react's JSON textarea.
           showOnEdit: true,
-          showEditTools: false,
+          showEditTools: true,
           showInTypeSelector: true,
         },
         {
@@ -347,7 +347,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             justSwitchedTo,
           },
           showOnEdit: true,
-          showEditTools: false,
+          showEditTools: true,
           showInTypeSelector: true,
           defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
         },
@@ -369,7 +369,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             justSwitchedTo,
           },
           showOnEdit: true,
-          showEditTools: false,
+          showEditTools: true,
           showInTypeSelector: true,
           defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
         },
