@@ -38,7 +38,6 @@ import {
   getAliases,
   getTypeFilter,
 } from './helpers'
-import { useCurrentlyEditing } from './useCurrentlyEditing'
 import { ShorthandNodeWithSimpleValue, ShorthandNodeCollection } from './Shorthand'
 
 const nodeBaseStyles = {
@@ -116,8 +115,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const allNonAliases = new Set([...allOpAliases, ...allFragments, ...allFunctions])
 
   const figTreeData = { operators, fragments, functions, allNonAliases }
-
-  const CurrentEdit = useCurrentlyEditing()
 
   // Deeper nodes don't have access to higher-level alias definitions when
   // evaluating them on their own (only when evaluated from above), so we
@@ -297,26 +294,37 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       ]}
       customNodeDefinitions={[
         {
-          condition: ({ key, value }) => key === 'operator' && allFunctions.has(String(value)),
+          // Anchored on the operator/fragment OBJECT (stable path), not the
+          // `operator`/`fragment` key, so editing survives a type switch and
+          // can use json-edit-react's built-in editing session.
+          condition: ({ value }) =>
+            isObject(value) &&
+            'operator' in value &&
+            allFunctions.has(String((value as OperatorNode).operator)),
           component: CustomOperator as unknown as CustomNodeDefinition['component'],
           componentProps: {
             figTreeData,
             evaluateNode,
             operatorDisplay,
             topLevelAliases,
-            CurrentEdit,
             converters,
             addTopLevelFallback,
             updateExpression,
+            defaultNewOperatorExpression,
+            defaultNewFragment: defaultFragment,
+            defaultNewCustomOperator,
           },
-          showKey: false,
-          showOnEdit: false,
+          // `showOnEdit` keeps the custom component (and its live child rows)
+          // rendered while editing, instead of json-edit-react's JSON textarea.
+          showOnEdit: true,
           showEditTools: false,
           showInTypeSelector: true,
-          // defaultValue: { operator: '+', values: [2, 2] },
         },
         {
-          condition: ({ key }) => key === 'operator',
+          condition: ({ value }) =>
+            isObject(value) &&
+            'operator' in value &&
+            !allFunctions.has(String((value as OperatorNode).operator)),
           component: Operator as unknown as CustomNodeDefinition['component'],
           name: 'Operator',
           componentProps: {
@@ -324,24 +332,20 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             evaluateNode,
             operatorDisplay,
             topLevelAliases,
-            CurrentEdit,
             converters,
             addTopLevelFallback,
             updateExpression,
-            // Only need to pass this to ONE custom node, as it will be used
-            // for ALL types when switching NodeType
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
           },
-          showKey: false,
-          showOnEdit: false,
+          showOnEdit: true,
           showEditTools: false,
           showInTypeSelector: true,
           defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
         },
         {
-          condition: ({ key }) => key === 'fragment',
+          condition: ({ value }) => isObject(value) && 'fragment' in value,
           component: Fragment as unknown as CustomNodeDefinition['component'],
           name: 'Fragment',
           componentProps: {
@@ -349,13 +353,14 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             evaluateNode,
             operatorDisplay,
             topLevelAliases,
-            CurrentEdit,
             converters,
             addTopLevelFallback,
             updateExpression,
+            defaultNewOperatorExpression,
+            defaultNewFragment: defaultFragment,
+            defaultNewCustomOperator,
           },
-          showKey: false,
-          showOnEdit: false,
+          showOnEdit: true,
           showEditTools: false,
           showInTypeSelector: true,
           defaultValue: defaultFragment ? { fragment: defaultFragment } : null,

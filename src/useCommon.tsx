@@ -1,18 +1,26 @@
 // Common functionality for FigTree Node components
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
-import { EditEvent, JsonData, NodeData, assign } from 'json-edit-react'
+import { JsonData, NodeData, assign } from 'json-edit-react'
 import { getAliases } from './helpers'
 import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
 interface Input {
   componentProps: OperatorProps
-  parentData: object | unknown[] | null
+  // The node object itself. The custom node is anchored on the operator/fragment
+  // object, so `value` IS the expression node (not the operator/fragment key's
+  // string value as before).
+  value: JsonData
   nodeData: NodeData
   // Live read of the full tree, used by `buildOnEdit` to compute the new data
   // for an edit at an arbitrary path.
   getLatestData: () => JsonData
+  // json-edit-react's editing session for this node: `isEditing` drives the
+  // toolbar, `closeEditing` ends the session (✓/✗ both just close, since the
+  // toolbar's edits are written live).
+  isEditing: boolean
+  closeEditing: () => void
 }
 
 /**
@@ -30,61 +38,60 @@ export const buildOnEdit =
     updateExpression(newData as EvaluatorNode)
   }
 
-export const useCommon = ({ componentProps, parentData, nodeData, getLatestData }: Input) => {
+/**
+ * Removes the operator/fragment key row from a node's rendered children. The
+ * object-anchored component represents that key in its header (DisplayBar /
+ * selectors), so showing the raw `operator: "+"` / `fragment: "x"` row too would
+ * be redundant. Other properties (values/args/input/parameters/fallback…) pass
+ * through untouched. Elements created via `keyValueArray.map` carry the data key
+ * as their React `key`, so we filter on that.
+ */
+export const filterChildren = (children: React.ReactNode): React.ReactNode => {
+  if (!Array.isArray(children)) return children
+  return children.filter(
+    (child) =>
+      !(React.isValidElement(child) && (child.key === 'operator' || child.key === 'fragment'))
+  )
+}
+
+export const useCommon = ({
+  componentProps,
+  value,
+  nodeData,
+  getLatestData,
+  isEditing,
+  closeEditing,
+}: Input) => {
   const {
     evaluateNode,
     topLevelAliases,
     operatorDisplay,
-    CurrentEdit,
     figTreeData,
     addTopLevelFallback,
     updateExpression,
   } = componentProps
-  const {
-    currentEditPath,
-    setCurrentEditPath,
-    isEditing: isEditingTest,
-    toPathString,
-    prevState,
-    setPrevState,
-  } = CurrentEdit
   const [loading, setLoading] = useState(false)
 
-  const expressionPath = nodeData.path.slice(0, -1)
-  const pathAsString = toPathString(nodeData.path)
+  // The custom node is the object itself, so its own path is the expression path.
+  const expressionPath = nodeData.path
 
   const onEdit = buildOnEdit(getLatestData, updateExpression)
 
-  const handleSubmit = () => {
-    setPrevState(parentData)
-    setCurrentEditPath(null)
-  }
-
-  const handleCancel = () => {
-    // onEditEvent(prevState, expressionPath)
-    setCurrentEditPath(null)
-  }
-
-  const startEditing = () => {
-    setPrevState(parentData)
-    setCurrentEditPath(pathAsString)
-  }
-
-  const isEditing = () => isEditingTest(pathAsString)
-
+  // Enter/Escape both just close the toolbar (edits are written live, so there's
+  // no buffer to commit or revert).
   const listenForSubmit = (e: KeyboardEvent) => {
-    if (e.key === 'Enter') handleSubmit()
-    if (e.key === 'Escape') handleCancel()
+    if (e.key === 'Enter' || e.key === 'Escape') closeEditing()
   }
 
   /**
    * If `addTopLevelFallback` is specified, the fallback value will be applied
-   * to top-level nodes that do not already have a fallback defined.
+   * to top-level nodes that do not already have a fallback defined. The
+   * top-level expression object is the root node (`level === 0`).
    */
   const maybeInsertFallback = <T,>(expression: T): T | (T & { fallback?: EvaluatorNode }) => {
     if (
       addTopLevelFallback !== undefined &&
-      nodeData.level === 1 &&
+      nodeData.level === 0 &&
       isObject(expression) &&
       !('fallback' in expression)
     ) {
@@ -94,26 +101,25 @@ export const useCommon = ({ componentProps, parentData, nodeData, getLatestData 
   }
 
   useEffect(() => {
-    if (isEditing()) {
+    if (isEditing) {
       window.addEventListener('keydown', listenForSubmit)
     } else window.removeEventListener('keydown', listenForSubmit)
     return () => window.removeEventListener('keydown', listenForSubmit)
-  }, [currentEditPath])
+  }, [isEditing])
 
-  const aliases = { ...topLevelAliases, ...getAliases(parentData, figTreeData.allNonAliases) }
+  const aliases = {
+    ...topLevelAliases,
+    ...getAliases(value as EvaluatorNode, figTreeData.allNonAliases),
+  }
 
   const evaluate = async (e: React.MouseEvent) => {
     setLoading(true)
-    await evaluateNode({ ...parentData, ...aliases }, e)
+    await evaluateNode({ ...(value as object), ...aliases }, e)
     setLoading(false)
   }
 
   return {
-    handleCancel,
-    handleSubmit,
     expressionPath,
-    isEditing,
-    startEditing,
     evaluate,
     loading,
     operatorDisplay,

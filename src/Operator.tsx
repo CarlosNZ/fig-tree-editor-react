@@ -10,17 +10,15 @@ import {
   CustomFunctionMetadata,
   isV1Node,
 } from 'fig-tree-evaluator'
-// import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { ConversionType, DisplayBar } from './DisplayBar'
 import { OptionGroup, Select } from './Select'
 import { getCurrentOperator } from './helpers'
 import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
-import { useCommon } from './useCommon'
+import { useCommon, filterChildren } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
-import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
-import { assign, CustomComponentProps } from './_imports'
-import { Icon, IconCancel, IconOk } from './Icons'
+import { CustomComponentProps } from './_imports'
+import { IconCancel, IconOk } from './Icons'
 
 export interface OperatorProps {
   figTreeData: {
@@ -32,11 +30,6 @@ export interface OperatorProps {
   evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   topLevelAliases: Record<string, EvaluatorNode>
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
-  initialEdit: React.MutableRefObject<boolean>
-  currentlyEditing: string | null
-  setCurrentlyEditing: (path: string | null) => void
-  CurrentEdit: CurrentlyEditingReturnType
-  toShorthand: (expression: EvaluatorNode) => void
   converters: {
     toShorthand: (expression: EvaluatorNode) => void
     fromShorthand: (expression: EvaluatorNode) => void
@@ -45,83 +38,80 @@ export interface OperatorProps {
   addTopLevelFallback?: EvaluatorNode
   // Validates and persists a complete expression (see `buildOnEdit`).
   updateExpression: (data: EvaluatorNode) => void
+  // Defaults used by the NodeTypeSelector when switching node type
+  defaultNewOperatorExpression?: EvaluatorNode
+  defaultNewFragment?: string | null
+  defaultNewCustomOperator?: string
 }
 
 export const Operator = (props: CustomComponentProps<OperatorProps>) => {
   const {
-    parentData,
+    value,
     nodeData,
-    handleEdit: jerHandleEdit,
-    handleCancel: jerHandleCancel,
     getLatestData,
     allowEditFilter,
     componentProps,
-    customNodeDefinitions,
+    isEditing,
+    setIsEditing,
+    handleCancel,
+    children,
   } = props
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const {
-    handleCancel,
-    handleSubmit,
-    expressionPath,
-    isEditing,
-    startEditing,
-    evaluate,
-    loading,
-    operatorDisplay,
-    maybeInsertFallback,
-    onEdit,
-  } = useCommon({
-    componentProps,
-    parentData,
-    nodeData,
-    getLatestData,
-  })
+  const { expressionPath, evaluate, loading, operatorDisplay, maybeInsertFallback, onEdit } =
+    useCommon({
+      componentProps,
+      value,
+      nodeData,
+      getLatestData,
+      isEditing,
+      closeEditing: handleCancel,
+    })
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
-    addTopLevelFallback,
+    defaultNewOperatorExpression,
+    defaultNewFragment,
+    defaultNewCustomOperator,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
 
   const { operators, functions } = figTreeData
 
-  const operatorData = getCurrentOperator((parentData as OperatorNode).operator, operators)
-  const thisOperator = nodeData.value as OperatorAlias
+  const node = value as OperatorNode
+  const thisOperator = node.operator as OperatorAlias
+  const operatorData = getCurrentOperator(node.operator, operators)
 
-  if (!operatorData) return null
-
-  const availableProperties = getAvailableProperties(
-    operatorData.parameters,
-    parentData as OperatorNode
-  )
-
-  const isCustomFunction = operatorData.name === 'CUSTOM_FUNCTIONS'
-
-  const convertType: ConversionType = isV1Node(parentData) ? 'toV2' : 'toShorthand'
+  const convertType: ConversionType = isV1Node(node) ? 'toV2' : 'toShorthand'
 
   const convert = useCallback(async () => {
     const { toV2, toShorthand } = converters
     const converter = convertType === 'toV2' ? toV2 : toShorthand
-    const converted = await converter(parentData)
+    const converted = await converter(node)
     onEdit(converted, expressionPath)
-  }, [parentData])
+  }, [value])
+
+  if (!operatorData) return null
+
+  const availableProperties = getAvailableProperties(operatorData.parameters, node)
+
+  const isCustomFunction = operatorData.name === 'CUSTOM_FUNCTIONS'
 
   return (
     <div className="ft-custom ft-operator">
-      {isEditing() ? (
+      {isEditing ? (
         <div className="ft-toolbar ft-operator-toolbar">
           <NodeTypeSelector
             value="operator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
             nodeData={nodeData}
-            customNodeDefinitions={customNodeDefinitions}
+            defaultNewOperatorExpression={defaultNewOperatorExpression}
+            defaultNewFragment={defaultNewFragment}
+            defaultNewCustomOperator={defaultNewCustomOperator}
           />
           :
           <OperatorSelector
@@ -130,19 +120,18 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
               // If we're just changing to another alias of the same operator
               // type, then don't clean the node
               const newNode = operatorData.aliases.includes(operator)
-                ? { ...parentData, operator }
-                : { ...cleanOperatorNode(parentData as OperatorNode), operator }
+                ? { ...node, operator }
+                : { ...cleanOperatorNode(node), operator }
               onEdit(maybeInsertFallback(newNode), expressionPath)
             }}
             operators={operators}
-            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
-          {isCustomFunction && isEditing() && (
+          {isCustomFunction && (
             <FunctionSelector
-              value={(parentData as OperatorNode)?.functionName as string}
+              value={(node as OperatorNode)?.functionName as string}
               functions={functions}
               updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
-                const newNode = { ...parentData, functionName: name } as Record<string, unknown>
+                const newNode = { ...node, functionName: name } as Record<string, unknown>
                 delete newNode.input
                 delete newNode.args
                 if (inputDefault) newNode.input = inputDefault
@@ -157,12 +146,12 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
             <PropertySelector
               availableProperties={availableProperties as OperatorParameterMetadata[]}
               updateNode={(newProperty) => {
-                onEdit({ ...parentData, ...newProperty }, expressionPath)
+                onEdit({ ...node, ...newProperty }, expressionPath)
               }}
             />
           )}
           <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
+            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
               {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
@@ -171,20 +160,19 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
           </div>
         </div>
       ) : (
-        <>
-          <DisplayBar
-            name={thisOperator}
-            description={operatorData.description}
-            setIsEditing={startEditing}
-            evaluate={evaluate}
-            isLoading={loading}
-            canonicalName={operatorData.name}
-            operatorDisplay={operatorDisplay?.[operatorData.name]}
-            convertOptions={{ type: convertType, onClick: convert }}
-            canEdit={canEdit}
-          />
-        </>
+        <DisplayBar
+          name={thisOperator}
+          description={operatorData.description}
+          setIsEditing={() => setIsEditing(true)}
+          evaluate={evaluate}
+          isLoading={loading}
+          canonicalName={operatorData.name}
+          operatorDisplay={operatorDisplay?.[operatorData.name]}
+          convertOptions={{ type: convertType, onClick: convert }}
+          canEdit={canEdit}
+        />
       )}
+      {filterChildren(children)}
     </div>
   )
 }
