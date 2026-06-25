@@ -165,6 +165,26 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
 
   const converters = { toShorthand, fromShorthand, toV2 }
 
+  // Validates and persists a complete expression. Custom node components build
+  // a new full expression (with `assign`, via `buildOnEdit`) and hand it here.
+  // Updates `previousData` so the re-validation effect doesn't fire again.
+  const updateExpression = useCallback(
+    (newData: EvaluatorNode) => {
+      try {
+        const validated = validateExpression(newData, {
+          operators,
+          fragments,
+          functions,
+        }) as EvaluatorNode
+        previousData.current = validated
+        setExpression(validated)
+      } catch (err) {
+        console.error('Invalid expression update:', err)
+      }
+    },
+    [operators, fragments, functions, setExpression]
+  )
+
   const defaultFragment = useMemo(
     () =>
       fragments.find((frag) => frag.name === defaultNewFragment)?.name ??
@@ -193,32 +213,33 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         }
       }}
       allowDelete={(nodeData) => {
-        // First consider any passed-in restrictDelete
         const { key, path } = nodeData
+
+        // Respect any caller-supplied allowDelete first (deny short-circuits)
         if (allowDelete === false) return false
         if (typeof allowDelete === 'function' && allowDelete(nodeData) === false) return false
 
-        // Prevent deleting of required properties
+        // The root node can't be deleted
         if (path.length === 0) return false
+
+        // Allow unless this is a required operator parameter
         const parentPath = path.slice(0, -1)
         const parentData = extract(
           expression,
           parentPath.length === 0 ? '' : parentPath,
           {}
         ) as OperatorNode
-        if (!isObject(parentData) || !('operator' in parentData)) return false
+        if (!isObject(parentData) || !('operator' in parentData)) return true
         const required = getCurrentOperator(parentData.operator, operators)
           ?.parameters.filter((param) => param.required)
           .map((param) => [param.name, ...param.aliases])
           .flat()
 
-        if (required?.includes(key as string)) return false
-
-        return true
+        return !(required?.includes(key as string) ?? false)
       }}
       allowTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
       showArrayIndexes={false}
-      indent={3}
+      indent={0}
       collapse={2}
       stringTruncateLength={100}
       {...props}
@@ -254,7 +275,6 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             )
               return { fontSize: '1.1em' }
           },
-          // collectionInner: { marginLeft: '1em' },
           collection: [
             nodeBaseStyles,
             (nodeData) => {
@@ -290,6 +310,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             CurrentEdit,
             converters,
             addTopLevelFallback,
+            updateExpression,
           },
           showKey: false,
           showOnEdit: false,
@@ -314,6 +335,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
+            updateExpression,
           },
           showKey: false,
           showOnEdit: false,
@@ -321,25 +343,25 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           showInTypeSelector: true,
           defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
         },
-        // {
-        //   condition: ({ key }) => key === 'fragment',
-        //   element: Fragment,
-        //   name: 'Fragment',
-        //   componentProps: {
-        //     figTreeData,
-        //     evaluateNode,
-        //     operatorDisplay,
-        //     topLevelAliases,
-        //     CurrentEdit,
-        //     converters,
-        //     addTopLevelFallback,
-        //   },
-        //   showKey: false,
-        //   showOnEdit: false,
-        //   showEditTools: false,
-        //   showInTypeSelector: true,
-        //   defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
-        // },
+        {
+          condition: ({ key }) => key === 'fragment',
+          component: Fragment as unknown as CustomNodeDefinition['component'],
+          name: 'Fragment',
+          componentProps: {
+            figTreeData,
+            evaluateNode,
+            operatorDisplay,
+            topLevelAliases,
+            CurrentEdit,
+            converters,
+            addTopLevelFallback,
+          },
+          showKey: false,
+          showOnEdit: false,
+          showEditTools: false,
+          showInTypeSelector: true,
+          defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
+        },
         // {
         //   condition: (nodeData) => isShorthandNodeCollection(nodeData),
         //   showKey: false,

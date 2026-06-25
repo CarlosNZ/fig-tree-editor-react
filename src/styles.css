@@ -213,9 +213,10 @@
   padding-left: 1em;
 }
 
+/* Per-level indentation: applied to the children container so the node's
+   header/display bar stays at the parent's left edge and child rows indent. */
 .ft-editor .jer-collection-inner {
-  margin-left: -1em;
-  padding-left: 0.5em;
+  margin-left: 1em;
 }
 
 .ft-editor .jer-collection-element {

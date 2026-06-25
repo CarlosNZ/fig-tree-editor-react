@@ -43,6 +43,8 @@ export interface OperatorProps {
     toV2: (expression: EvaluatorNode) => void
   }
   addTopLevelFallback?: EvaluatorNode
+  // Validates and persists a complete expression (see `buildOnEdit`).
+  updateExpression: (data: EvaluatorNode) => void
 }
 
 export const Operator = (props: CustomComponentProps<OperatorProps>) => {
@@ -51,7 +53,7 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
     nodeData,
     handleEdit: jerHandleEdit,
     handleCancel: jerHandleCancel,
-    onEdit,
+    getLatestData,
     allowEditFilter,
     componentProps,
     customNodeDefinitions,
@@ -69,10 +71,12 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
     loading,
     operatorDisplay,
     maybeInsertFallback,
+    onEdit,
   } = useCommon({
     componentProps,
     parentData,
     nodeData,
+    getLatestData,
   })
 
   const {
