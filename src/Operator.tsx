@@ -42,6 +42,9 @@ export interface OperatorProps {
   defaultNewOperatorExpression?: EvaluatorNode
   defaultNewFragment?: string | null
   defaultNewCustomOperator?: string
+  // Shared "a type switch just landed on this path" flag, so the new node
+  // auto-opens its picker (see `useCommon`'s `startOpen` / `NodeTypeSelector`).
+  justSwitchedTo?: React.MutableRefObject<string | null>
 }
 
 export const Operator = (props: CustomComponentProps<OperatorProps>) => {
@@ -59,15 +62,22 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const { expressionPath, evaluate, loading, operatorDisplay, maybeInsertFallback, onEdit } =
-    useCommon({
-      componentProps,
-      value,
-      nodeData,
-      getLatestData,
-      isEditing,
-      closeEditing: handleCancel,
-    })
+  const {
+    expressionPath,
+    evaluate,
+    loading,
+    operatorDisplay,
+    maybeInsertFallback,
+    onEdit,
+    startOpen,
+  } = useCommon({
+    componentProps,
+    value,
+    nodeData,
+    getLatestData,
+    isEditing,
+    closeEditing: handleCancel,
+  })
 
   const {
     figTreeData,
@@ -75,6 +85,7 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
     defaultNewOperatorExpression,
     defaultNewFragment,
     defaultNewCustomOperator,
+    justSwitchedTo,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
@@ -101,79 +112,83 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
   const isCustomFunction = operatorData.name === 'CUSTOM_FUNCTIONS'
 
   return (
-    <div className="ft-custom ft-operator">
-      {isEditing ? (
-        <div className="ft-toolbar ft-operator-toolbar">
-          <NodeTypeSelector
-            value="operator"
-            changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            figTreeData={figTreeData}
-            nodeData={nodeData}
-            defaultNewOperatorExpression={defaultNewOperatorExpression}
-            defaultNewFragment={defaultNewFragment}
-            defaultNewCustomOperator={defaultNewCustomOperator}
-          />
-          :
-          <OperatorSelector
-            value={thisOperator}
-            changeOperator={(operator: OperatorAlias) => {
-              // If we're just changing to another alias of the same operator
-              // type, then don't clean the node
-              const newNode = operatorData.aliases.includes(operator)
-                ? { ...node, operator }
-                : { ...cleanOperatorNode(node), operator }
-              onEdit(maybeInsertFallback(newNode), expressionPath)
-            }}
-            operators={operators}
-          />
-          {isCustomFunction && (
-            <FunctionSelector
-              value={(node as OperatorNode)?.functionName as string}
-              functions={functions}
-              updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
-                const newNode = { ...node, functionName: name } as Record<string, unknown>
-                delete newNode.input
-                delete newNode.args
-                if (inputDefault) newNode.input = inputDefault
-                if (argsDefault) newNode.args = argsDefault
-                if (numRequiredArgs && !argsDefault && !inputDefault)
-                  newNode.args = new Array(numRequiredArgs).fill(null)
-                onEdit(newNode, expressionPath)
-              }}
+    <>
+      <div className="ft-custom ft-operator">
+        {isEditing ? (
+          <div className="ft-toolbar ft-operator-toolbar">
+            <NodeTypeSelector
+              value="operator"
+              changeNode={(newValue) => onEdit(newValue, expressionPath)}
+              figTreeData={figTreeData}
+              nodeData={nodeData}
+              defaultNewOperatorExpression={defaultNewOperatorExpression}
+              defaultNewFragment={defaultNewFragment}
+              defaultNewCustomOperator={defaultNewCustomOperator}
+              justSwitchedTo={justSwitchedTo}
             />
-          )}
-          {availableProperties.length > 0 && (
-            <PropertySelector
-              availableProperties={availableProperties as OperatorParameterMetadata[]}
-              updateNode={(newProperty) => {
-                onEdit({ ...node, ...newProperty }, expressionPath)
+            :
+            <OperatorSelector
+              value={thisOperator}
+              changeOperator={(operator: OperatorAlias) => {
+                // If we're just changing to another alias of the same operator
+                // type, then don't clean the node
+                const newNode = operatorData.aliases.includes(operator)
+                  ? { ...node, operator }
+                  : { ...cleanOperatorNode(node), operator }
+                onEdit(maybeInsertFallback(newNode), expressionPath)
               }}
+              operators={operators}
+              startOpen={startOpen}
             />
-          )}
-          <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
-              {IconOk}
-            </div>
-            <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              {IconCancel}
+            {isCustomFunction && (
+              <FunctionSelector
+                value={(node as OperatorNode)?.functionName as string}
+                functions={functions}
+                updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
+                  const newNode = { ...node, functionName: name } as Record<string, unknown>
+                  delete newNode.input
+                  delete newNode.args
+                  if (inputDefault) newNode.input = inputDefault
+                  if (argsDefault) newNode.args = argsDefault
+                  if (numRequiredArgs && !argsDefault && !inputDefault)
+                    newNode.args = new Array(numRequiredArgs).fill(null)
+                  onEdit(newNode, expressionPath)
+                }}
+              />
+            )}
+            {availableProperties.length > 0 && (
+              <PropertySelector
+                availableProperties={availableProperties as OperatorParameterMetadata[]}
+                updateNode={(newProperty) => {
+                  onEdit({ ...node, ...newProperty }, expressionPath)
+                }}
+              />
+            )}
+            <div className="ft-edit-buttons">
+              <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
+                {IconOk}
+              </div>
+              <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+                {IconCancel}
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <DisplayBar
-          name={thisOperator}
-          description={operatorData.description}
-          setIsEditing={() => setIsEditing(true)}
-          evaluate={evaluate}
-          isLoading={loading}
-          canonicalName={operatorData.name}
-          operatorDisplay={operatorDisplay?.[operatorData.name]}
-          convertOptions={{ type: convertType, onClick: convert }}
-          canEdit={canEdit}
-        />
-      )}
+        ) : (
+          <DisplayBar
+            name={thisOperator}
+            description={operatorData.description}
+            setIsEditing={() => setIsEditing(true)}
+            evaluate={evaluate}
+            isLoading={loading}
+            canonicalName={operatorData.name}
+            operatorDisplay={operatorDisplay?.[operatorData.name]}
+            convertOptions={{ type: convertType, onClick: convert }}
+            canEdit={canEdit}
+          />
+        )}
+      </div>
       {filterChildren(children)}
-    </div>
+    </>
   )
 }
 

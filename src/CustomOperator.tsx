@@ -24,7 +24,7 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const { expressionPath, evaluate, loading, maybeInsertFallback, onEdit } = useCommon({
+  const { expressionPath, evaluate, loading, maybeInsertFallback, onEdit, startOpen } = useCommon({
     componentProps,
     value,
     nodeData,
@@ -39,6 +39,7 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
     defaultNewOperatorExpression,
     defaultNewFragment,
     defaultNewCustomOperator,
+    justSwitchedTo,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
@@ -66,66 +67,70 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
       : undefined
 
   return (
-    <div className="ft-custom ft-operator">
-      {isEditing ? (
-        <div className="ft-toolbar ft-operator-toolbar">
-          <NodeTypeSelector
-            value="customOperator"
-            changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            currentExpression={node}
-            figTreeData={figTreeData}
-            nodeData={nodeData}
-            defaultNewOperatorExpression={defaultNewOperatorExpression}
-            defaultNewFragment={defaultNewFragment}
-            defaultNewCustomOperator={defaultNewCustomOperator}
-          />
-          :
-          <FunctionSelector
-            value={node.operator as string}
-            functions={functions}
-            updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
-              const newNode = isObject(inputDefault)
-                ? ({ operator: name, ...inputDefault } as Record<string, unknown>)
-                : { operator: name }
-              if (inputDefault !== undefined && !isObject(inputDefault))
-                newNode.input = inputDefault
-              delete newNode.args
-              if (argsDefault) newNode.args = argsDefault
-              if (numRequiredArgs && !argsDefault && !inputDefault)
-                newNode.args = new Array(numRequiredArgs).fill(null)
-              onEdit(maybeInsertFallback(newNode), expressionPath)
-            }}
-          />
-          {availableProperties.length > 0 && (
-            <PropertySelector
-              availableProperties={availableProperties as OperatorParameterMetadata[]}
-              updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
+    <>
+      <div className="ft-custom ft-operator">
+        {isEditing ? (
+          <div className="ft-toolbar ft-operator-toolbar">
+            <NodeTypeSelector
+              value="customOperator"
+              changeNode={(newValue) => onEdit(newValue, expressionPath)}
+              currentExpression={node}
+              figTreeData={figTreeData}
+              nodeData={nodeData}
+              defaultNewOperatorExpression={defaultNewOperatorExpression}
+              defaultNewFragment={defaultNewFragment}
+              defaultNewCustomOperator={defaultNewCustomOperator}
+              justSwitchedTo={justSwitchedTo}
             />
-          )}
-          <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
-              {IconOk}
-            </div>
-            <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              {IconCancel}
+            :
+            <FunctionSelector
+              value={node.operator as string}
+              functions={functions}
+              updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
+                const newNode = isObject(inputDefault)
+                  ? ({ operator: name, ...inputDefault } as Record<string, unknown>)
+                  : { operator: name }
+                if (inputDefault !== undefined && !isObject(inputDefault))
+                  newNode.input = inputDefault
+                delete newNode.args
+                if (argsDefault) newNode.args = argsDefault
+                if (numRequiredArgs && !argsDefault && !inputDefault)
+                  newNode.args = new Array(numRequiredArgs).fill(null)
+                onEdit(maybeInsertFallback(newNode), expressionPath)
+              }}
+              startOpen={startOpen}
+            />
+            {availableProperties.length > 0 && (
+              <PropertySelector
+                availableProperties={availableProperties as OperatorParameterMetadata[]}
+                updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
+              />
+            )}
+            <div className="ft-edit-buttons">
+              <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
+                {IconOk}
+              </div>
+              <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+                {IconCancel}
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <DisplayBar
-          name={functionData.name}
-          description={functionData.description}
-          setIsEditing={() => setIsEditing(true)}
-          evaluate={evaluate}
-          isLoading={loading}
-          canonicalName={'CUSTOM_FUNCTIONS'}
-          operatorDisplay={operatorData}
-          convertOptions={{ type: 'toShorthand', onClick: convert }}
-          canEdit={canEdit}
-        />
-      )}
+        ) : (
+          <DisplayBar
+            name={functionData.name}
+            description={functionData.description}
+            setIsEditing={() => setIsEditing(true)}
+            evaluate={evaluate}
+            isLoading={loading}
+            canonicalName={'CUSTOM_FUNCTIONS'}
+            operatorDisplay={operatorData}
+            convertOptions={{ type: 'toShorthand', onClick: convert }}
+            canEdit={canEdit}
+          />
+        )}
+      </div>
       {filterChildren(children)}
-    </div>
+    </>
   )
 }
 

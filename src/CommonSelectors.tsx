@@ -9,7 +9,7 @@ import {
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
 import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
-import { extract, NodeData } from 'json-edit-react'
+import { extract, NodeData, toPathString } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -27,6 +27,9 @@ export const NodeTypeSelector: React.FC<{
   defaultNewOperatorExpression?: EvaluatorNode
   defaultNewFragment?: string | null
   defaultNewCustomOperator?: string
+  // Set to this node's path on a type switch, so the freshly-switched node
+  // auto-opens its picker (see `useCommon`'s `startOpen`).
+  justSwitchedTo?: React.MutableRefObject<string | null>
 }> = ({
   value,
   changeNode,
@@ -36,6 +39,7 @@ export const NodeTypeSelector: React.FC<{
   defaultNewOperatorExpression,
   defaultNewFragment,
   defaultNewCustomOperator,
+  justSwitchedTo,
 }) => {
   const { fragments, functions } = figTreeData
 
@@ -55,6 +59,10 @@ export const NodeTypeSelector: React.FC<{
   const handleChange = (selected: SelectOption<string>) => {
     const newType = selected.value
     if (currentSelection?.value === newType) return
+
+    // Flag the switch so the new node (same path) auto-opens its picker on mount
+    if (justSwitchedTo && newType !== 'value')
+      justSwitchedTo.current = toPathString(nodeData.path)
 
     switch (newType) {
       case 'operator':

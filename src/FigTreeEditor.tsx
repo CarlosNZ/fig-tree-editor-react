@@ -52,7 +52,7 @@ const nodeBaseStyles = {
 // its header row (which contains the DisplayBar)
 const innerCollectionSpacing = {
   marginLeft: '-1em',
-  paddingRight: '1em',
+  paddingRight: '0.5em',
   paddingLeft: '0.5em',
 }
 const innerCollectionRoundedBorder = {
@@ -115,6 +115,11 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const allNonAliases = new Set([...allOpAliases, ...allFragments, ...allFunctions])
 
   const figTreeData = { operators, fragments, functions, allNonAliases }
+
+  // When a node's type is switched (Operator↔Fragment↔Custom), this holds the
+  // path the switch landed on, so the freshly-rendered node auto-opens its
+  // picker. Consumed and cleared once by that node (see `useCommon`).
+  const justSwitchedTo = useRef<string | null>(null)
 
   // Deeper nodes don't have access to higher-level alias definitions when
   // evaluating them on their own (only when evaluated from above), so we
@@ -313,6 +318,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
+            justSwitchedTo,
           },
           // `showOnEdit` keeps the custom component (and its live child rows)
           // rendered while editing, instead of json-edit-react's JSON textarea.
@@ -338,6 +344,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
+            justSwitchedTo,
           },
           showOnEdit: true,
           showEditTools: false,
@@ -359,6 +366,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
+            justSwitchedTo,
           },
           showOnEdit: true,
           showEditTools: false,

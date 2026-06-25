@@ -5,7 +5,7 @@
 
 .ft-custom {
   min-height: 2.5em;
-  margin-left: -0.5em;
+  margin-left: 1em;
   display: flex;
   flex-direction: column;
 }
@@ -36,6 +36,9 @@
   width: 100%;
   justify-content: space-between;
   margin-left: -0.5em;
+  /* Positioning context for the absolutely-positioned display-name and convert
+     badges, so they anchor to the header row (not an outer collection block) */
+  position: relative;
 }
 
 .ft-button-and-edit {

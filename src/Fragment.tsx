@@ -30,15 +30,22 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const { expressionPath, evaluate, loading, operatorDisplay, maybeInsertFallback, onEdit } =
-    useCommon({
-      componentProps,
-      value,
-      nodeData,
-      getLatestData,
-      isEditing,
-      closeEditing: handleCancel,
-    })
+  const {
+    expressionPath,
+    evaluate,
+    loading,
+    operatorDisplay,
+    maybeInsertFallback,
+    onEdit,
+    startOpen,
+  } = useCommon({
+    componentProps,
+    value,
+    nodeData,
+    getLatestData,
+    isEditing,
+    closeEditing: handleCancel,
+  })
 
   const {
     figTreeData,
@@ -46,6 +53,7 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
     defaultNewOperatorExpression,
     defaultNewFragment,
     defaultNewCustomOperator,
+    justSwitchedTo,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
@@ -71,61 +79,65 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
   }, [value])
 
   return (
-    <div className="ft-custom ft-fragment">
-      {isEditing ? (
-        <div className="ft-toolbar ft-fragment-toolbar">
-          <NodeTypeSelector
-            value="fragment"
-            changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
-            figTreeData={figTreeData}
-            nodeData={nodeData}
-            defaultNewOperatorExpression={defaultNewOperatorExpression}
-            defaultNewFragment={defaultNewFragment}
-            defaultNewCustomOperator={defaultNewCustomOperator}
-          />
-          :
-          <FragmentSelector
-            value={thisFragment}
-            changeFragment={(fragment) => {
-              const newNode = Object.fromEntries(
-                // Remove any properties that are parameters from other
-                // Fragments
-                Object.entries(node).filter(([key]) => !isAliasString(key))
-              )
-              onEdit({ ...maybeInsertFallback(newNode), fragment }, expressionPath)
-            }}
-            fragments={fragments}
-          />
-          {availableProperties.length > 0 && (
-            <PropertySelector
-              availableProperties={availableProperties as FragmentParameterMetadata[]}
-              updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
+    <>
+      <div className="ft-custom ft-fragment">
+        {isEditing ? (
+          <div className="ft-toolbar ft-fragment-toolbar">
+            <NodeTypeSelector
+              value="fragment"
+              changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
+              figTreeData={figTreeData}
+              nodeData={nodeData}
+              defaultNewOperatorExpression={defaultNewOperatorExpression}
+              defaultNewFragment={defaultNewFragment}
+              defaultNewCustomOperator={defaultNewCustomOperator}
+              justSwitchedTo={justSwitchedTo}
             />
-          )}
-          <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
-              {IconOk}
-            </div>
-            <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              {IconCancel}
+            :
+            <FragmentSelector
+              value={thisFragment}
+              changeFragment={(fragment) => {
+                const newNode = Object.fromEntries(
+                  // Remove any properties that are parameters from other
+                  // Fragments
+                  Object.entries(node).filter(([key]) => !isAliasString(key))
+                )
+                onEdit({ ...maybeInsertFallback(newNode), fragment }, expressionPath)
+              }}
+              fragments={fragments}
+              startOpen={startOpen}
+            />
+            {availableProperties.length > 0 && (
+              <PropertySelector
+                availableProperties={availableProperties as FragmentParameterMetadata[]}
+                updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
+              />
+            )}
+            <div className="ft-edit-buttons">
+              <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
+                {IconOk}
+              </div>
+              <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+                {IconCancel}
+              </div>
             </div>
           </div>
-        </div>
-      ) : (
-        <DisplayBar
-          name={thisFragment}
-          description={fragmentData.description}
-          setIsEditing={() => setIsEditing(true)}
-          evaluate={evaluate}
-          isLoading={loading}
-          canonicalName="FRAGMENT"
-          operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
-          convertOptions={{ type: 'toShorthand', onClick: convert }}
-          canEdit={canEdit}
-        />
-      )}
+        ) : (
+          <DisplayBar
+            name={thisFragment}
+            description={fragmentData.description}
+            setIsEditing={() => setIsEditing(true)}
+            evaluate={evaluate}
+            isLoading={loading}
+            canonicalName="FRAGMENT"
+            operatorDisplay={displayData ?? operatorDisplay?.FRAGMENT}
+            convertOptions={{ type: 'toShorthand', onClick: convert }}
+            canEdit={canEdit}
+          />
+        )}
+      </div>
       {filterChildren(children)}
-    </div>
+    </>
   )
 }
 
