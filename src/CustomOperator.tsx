@@ -6,59 +6,57 @@ import { getButtonFontSize } from './helpers'
 import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
 import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
-import { useCommon } from './useCommon'
+import { useCommon, filterChildren } from './useCommon'
 import { getAvailableProperties } from './validator'
 
 export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
     value,
-    parentData,
     nodeData,
     getLatestData,
     allowEditFilter,
     componentProps,
-    customNodeDefinitions,
+    isEditing,
+    setIsEditing,
+    handleCancel,
+    children,
   } = props
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const {
-    handleCancel,
-    handleSubmit,
-    expressionPath,
-    isEditing,
-    startEditing,
-    evaluate,
-    loading,
-    maybeInsertFallback,
-    onEdit,
-  } = useCommon({
+  const { expressionPath, evaluate, loading, maybeInsertFallback, onEdit } = useCommon({
     componentProps,
-    parentData,
+    value,
     nodeData,
     getLatestData,
+    isEditing,
+    closeEditing: handleCancel,
   })
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
+    defaultNewOperatorExpression,
+    defaultNewFragment,
+    defaultNewCustomOperator,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
 
   const { functions } = figTreeData
 
-  const convert = useCallback(async () => {
-    const converted = await converters.toShorthand(parentData)
-    onEdit(converted, expressionPath)
-  }, [parentData])
+  const node = value as OperatorNode
 
-  const functionData = functions.find((f) => f.name === value)
+  const convert = useCallback(async () => {
+    const converted = await converters.toShorthand(node)
+    onEdit(converted, expressionPath)
+  }, [value])
+
+  const functionData = functions.find((f) => f.name === node.operator)
 
   if (!functionData) return null
 
-  const availableProperties = getAvailableProperties([], parentData as OperatorNode)
+  const availableProperties = getAvailableProperties([], node)
 
   const { textColor, backgroundColor } = functionData
 
@@ -69,20 +67,21 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
 
   return (
     <div className="ft-custom ft-operator">
-      {isEditing() ? (
+      {isEditing ? (
         <div className="ft-toolbar ft-operator-toolbar">
           <NodeTypeSelector
             value="customOperator"
             changeNode={(newValue) => onEdit(newValue, expressionPath)}
-            currentExpression={parentData}
-            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
+            currentExpression={node}
             figTreeData={figTreeData}
             nodeData={nodeData}
-            customNodeDefinitions={customNodeDefinitions}
+            defaultNewOperatorExpression={defaultNewOperatorExpression}
+            defaultNewFragment={defaultNewFragment}
+            defaultNewCustomOperator={defaultNewCustomOperator}
           />
           :
           <FunctionSelector
-            value={(parentData as OperatorNode)?.operator as string}
+            value={node.operator as string}
             functions={functions}
             updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
               const newNode = isObject(inputDefault)
@@ -96,18 +95,15 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
                 newNode.args = new Array(numRequiredArgs).fill(null)
               onEdit(maybeInsertFallback(newNode), expressionPath)
             }}
-            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
           {availableProperties.length > 0 && (
             <PropertySelector
               availableProperties={availableProperties as OperatorParameterMetadata[]}
-              updateNode={(newProperty) =>
-                onEdit({ ...parentData, ...newProperty }, expressionPath)
-              }
+              updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
             />
           )}
           <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
+            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
               {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
@@ -119,7 +115,7 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
         <DisplayBar
           name={functionData.name}
           description={functionData.description}
-          setIsEditing={startEditing}
+          setIsEditing={() => setIsEditing(true)}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName={'CUSTOM_FUNCTIONS'}
@@ -128,6 +124,7 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
           canEdit={canEdit}
         />
       )}
+      {filterChildren(children)}
     </div>
   )
 }

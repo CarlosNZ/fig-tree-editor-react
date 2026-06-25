@@ -1,6 +1,7 @@
 import React from 'react'
 import {
   CustomFunctionMetadata,
+  EvaluatorNode,
   FragmentMetadata,
   FragmentParameterMetadata,
   OperatorMetadata,
@@ -8,7 +9,7 @@ import {
 } from 'fig-tree-evaluator'
 import { Select, SelectOption } from './Select'
 import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
-import { CustomNodeDefinition, extract, NodeData } from 'json-edit-react'
+import { extract, NodeData } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -16,22 +17,25 @@ export const NodeTypeSelector: React.FC<{
   value: NodeType
   changeNode: (type: unknown) => void
   currentExpression?: object | unknown[] | null
-  switchNodeType: (pathPart: string) => void
   figTreeData: {
     operators: OperatorMetadata[]
     fragments: FragmentMetadata[]
     functions: CustomFunctionMetadata[]
   }
   nodeData: NodeData
-  customNodeDefinitions?: CustomNodeDefinition[]
+  // Defaults used when switching node type (provided by the calling component)
+  defaultNewOperatorExpression?: EvaluatorNode
+  defaultNewFragment?: string | null
+  defaultNewCustomOperator?: string
 }> = ({
   value,
   changeNode,
   currentExpression,
-  switchNodeType,
   figTreeData,
   nodeData,
-  customNodeDefinitions,
+  defaultNewOperatorExpression,
+  defaultNewFragment,
+  defaultNewCustomOperator,
 }) => {
   const { fragments, functions } = figTreeData
 
@@ -44,9 +48,6 @@ export const NodeTypeSelector: React.FC<{
     { key: 'value', label: 'Value', value: 'value' },
   ]
 
-  const { defaultNewOperatorExpression, defaultNewFragment, defaultNewCustomOperator } =
-    customNodeDefinitions?.[1].customNodeProps ?? {}
-
   const currentSelection = options.find((option) => option.value === value)
 
   const defaultFunction = functions.find((f) => f.name === defaultNewCustomOperator) ?? functions[0]
@@ -58,11 +59,9 @@ export const NodeTypeSelector: React.FC<{
     switch (newType) {
       case 'operator':
         changeNode(defaultNewOperatorExpression ?? { operator: '+' })
-        switchNodeType('operator')
         break
       case 'fragment':
         changeNode({ fragment: defaultNewFragment })
-        switchNodeType('fragment')
         break
       case 'customOperator':
         const { name, numRequiredArgs, argsDefault, inputDefault } = defaultFunction
@@ -74,15 +73,14 @@ export const NodeTypeSelector: React.FC<{
         if (numRequiredArgs && !argsDefault && !inputDefault)
           newNode.args = new Array(numRequiredArgs).fill(null)
         changeNode(newNode)
-        switchNodeType('operator')
         break
       case 'value':
-        // When switching to "Value", the "nodeData" is the value of the node
-        // *before* switching, PLUS we need to get the name of the
-        // operator/fragment *above* the current node to figure out the
-        // appropriate default for this property
+        // When switching to "Value", we need the name of the operator/fragment
+        // *above* the current node to figure out the appropriate default for
+        // this property. `nodeData.path` is now the node object's own path (the
+        // custom node is anchored on the object), so its last segment is the
+        // property/key holding this node in its parent.
         const path = [...nodeData.path]
-        path.pop()
         const propertyName = path.slice(-1)[0]
 
         // Check for the "common" properties

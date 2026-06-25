@@ -4,7 +4,6 @@ import {
   FragmentNode,
   FragmentParameterMetadata,
   isAliasString,
-  isObject,
 } from 'fig-tree-evaluator'
 import { CustomComponentProps } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
@@ -12,58 +11,52 @@ import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
 import { getAvailableProperties } from './validator'
 import { Select } from './Select'
-import { useCommon } from './useCommon'
+import { useCommon, filterChildren } from './useCommon'
 import { getCurrentFragment } from './helpers'
-import { Icon, IconCancel, IconOk } from './Icons'
+import { IconCancel, IconOk } from './Icons'
 
 export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
     value,
-    parentData,
     nodeData,
     getLatestData,
     allowEditFilter,
     componentProps,
-    customNodeDefinitions,
+    isEditing,
+    setIsEditing,
+    handleCancel,
+    children,
   } = props
 
   if (!componentProps) throw new Error('Missing componentProps')
 
-  const {
-    handleCancel,
-    handleSubmit,
-    expressionPath,
-    isEditing,
-    startEditing,
-    evaluate,
-    loading,
-    operatorDisplay,
-    maybeInsertFallback,
-    onEdit,
-  } = useCommon({
-    componentProps,
-    parentData,
-    nodeData,
-    getLatestData,
-  })
+  const { expressionPath, evaluate, loading, operatorDisplay, maybeInsertFallback, onEdit } =
+    useCommon({
+      componentProps,
+      value,
+      nodeData,
+      getLatestData,
+      isEditing,
+      closeEditing: handleCancel,
+    })
 
   const {
     figTreeData,
-    CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
+    defaultNewOperatorExpression,
+    defaultNewFragment,
+    defaultNewCustomOperator,
   } = componentProps
 
   const canEdit = allowEditFilter(nodeData)
 
   const { fragments } = figTreeData
 
-  const fragmentData = getCurrentFragment(parentData as FragmentNode, fragments)
-  const thisFragment = value as string
+  const node = value as FragmentNode
+  const thisFragment = node.fragment as string
+  const fragmentData = getCurrentFragment(node, fragments)
 
-  const availableProperties = getAvailableProperties(
-    fragmentData.parameters ?? [],
-    parentData as FragmentNode
-  )
+  const availableProperties = getAvailableProperties(fragmentData.parameters ?? [], node)
 
   const { textColor, backgroundColor } = fragmentData
 
@@ -73,21 +66,22 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
       : undefined
 
   const convert = useCallback(async () => {
-    const converted = await converters.toShorthand(parentData)
+    const converted = await converters.toShorthand(node)
     onEdit(converted, expressionPath)
-  }, [parentData])
+  }, [value])
 
   return (
     <div className="ft-custom ft-fragment">
-      {isEditing() ? (
+      {isEditing ? (
         <div className="ft-toolbar ft-fragment-toolbar">
           <NodeTypeSelector
             value="fragment"
             changeNode={(newValue: unknown) => onEdit(newValue, expressionPath)}
-            switchNodeType={(newPath: string) => switchNodeType([...expressionPath, newPath])}
             figTreeData={figTreeData}
             nodeData={nodeData}
-            customNodeDefinitions={customNodeDefinitions}
+            defaultNewOperatorExpression={defaultNewOperatorExpression}
+            defaultNewFragment={defaultNewFragment}
+            defaultNewCustomOperator={defaultNewCustomOperator}
           />
           :
           <FragmentSelector
@@ -96,23 +90,20 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
               const newNode = Object.fromEntries(
                 // Remove any properties that are parameters from other
                 // Fragments
-                Object.entries(parentData as FragmentNode).filter(([key]) => !isAliasString(key))
+                Object.entries(node).filter(([key]) => !isAliasString(key))
               )
               onEdit({ ...maybeInsertFallback(newNode), fragment }, expressionPath)
             }}
             fragments={fragments}
-            startOpen={hasSwitchedFromOtherNodeType(parentData)}
           />
           {availableProperties.length > 0 && (
             <PropertySelector
               availableProperties={availableProperties as FragmentParameterMetadata[]}
-              updateNode={(newProperty) =>
-                onEdit({ ...parentData, ...newProperty }, expressionPath)
-              }
+              updateNode={(newProperty) => onEdit({ ...node, ...newProperty }, expressionPath)}
             />
           )}
           <div className="ft-edit-buttons">
-            <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
+            <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
               {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
@@ -124,7 +115,7 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
         <DisplayBar
           name={thisFragment}
           description={fragmentData.description}
-          setIsEditing={startEditing}
+          setIsEditing={() => setIsEditing(true)}
           evaluate={evaluate}
           isLoading={loading}
           canonicalName="FRAGMENT"
@@ -133,6 +124,7 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
           canEdit={canEdit}
         />
       )}
+      {filterChildren(children)}
     </div>
   )
 }
