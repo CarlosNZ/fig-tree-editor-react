@@ -10,10 +10,9 @@
   flex-direction: column;
 }
 
-.jer-value-and-buttons,
+/* .jer-value-and-buttons,
 .jer-input-component {
-  /* width: 100%; */
-}
+} */
 
 /* Operator/Fragment node editing interface */
 .ft-toolbar {
@@ -21,7 +20,7 @@
   align-items: center;
   gap: 0.2em;
   flex-wrap: wrap;
-  margin-left: -1em; /* Offset JRE margin */
+  margin-left: -0.5em; /* Offset JRE margin */
 }
 
 .ft-edit-buttons {
