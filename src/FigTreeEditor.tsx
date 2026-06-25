@@ -333,12 +333,12 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             CurrentEdit,
             converters,
             addTopLevelFallback,
+            updateExpression,
             // Only need to pass this to ONE custom node, as it will be used
             // for ALL types when switching NodeType
             defaultNewOperatorExpression,
             defaultNewFragment: defaultFragment,
             defaultNewCustomOperator,
-            updateExpression,
           },
           showKey: false,
           showOnEdit: false,
@@ -358,6 +358,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             CurrentEdit,
             converters,
             addTopLevelFallback,
+            updateExpression,
           },
           showKey: false,
           showOnEdit: false,

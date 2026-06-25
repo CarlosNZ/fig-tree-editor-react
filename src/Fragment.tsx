@@ -14,7 +14,7 @@ import { getAvailableProperties } from './validator'
 import { Select } from './Select'
 import { useCommon } from './useCommon'
 import { getCurrentFragment } from './helpers'
-import { Icon } from './Icons'
+import { Icon, IconCancel, IconOk } from './Icons'
 
 export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
@@ -113,12 +113,10 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
           )}
           <div className="ft-edit-buttons">
             <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-              <Icon name="ok" style={{ color: 'green', fontSize: '2em' }} />
-              {/* <IconOk size="2em" style={{ color: 'green' }} /> */}
+              {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)', fontSize: '2.8em' }} />
-              {/* <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} /> */}
+              {IconCancel}
             </div>
           </div>
         </div>

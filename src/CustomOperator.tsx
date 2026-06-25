@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 import { isObject, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
 import { CustomComponentProps } from './_imports'
-import { Icons } from './Icons'
+import { IconCancel, IconOk, Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
 import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
@@ -49,6 +49,11 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
 
   const { functions } = figTreeData
 
+  const convert = useCallback(async () => {
+    const converted = await converters.toShorthand(parentData)
+    onEdit(converted, expressionPath)
+  }, [parentData])
+
   const functionData = functions.find((f) => f.name === value)
 
   if (!functionData) return null
@@ -61,11 +66,6 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
     textColor && backgroundColor
       ? { textColor, backgroundColor, displayName: 'Custom Operator' }
       : undefined
-
-  const convert = useCallback(async () => {
-    const converted = await converters.toShorthand(parentData)
-    onEdit(converted, expressionPath)
-  }, [parentData])
 
   return (
     <div className="ft-custom ft-operator">
@@ -108,10 +108,10 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
           )}
           <div className="ft-edit-buttons">
             <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-              {/* <IconOk size="2em" style={{ color: 'green' }} /> */}
+              {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              {/* <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} /> */}
+              {IconCancel}
             </div>
           </div>
         </div>
