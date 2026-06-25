@@ -5,7 +5,7 @@ export interface DemoData {
   name: string
   content: string // Markdown
   objectData?: Record<string, unknown>
-  objectJsonEditorProps?: Omit<JsonEditorProps, 'data'>
+  objectJsonEditorProps?: Omit<JsonEditorProps, 'data' | 'setData'>
   expression: EvaluatorNode
   expressionCollapse?: number
   figTreeOptions?: FigTreeOptions
@@ -108,9 +108,9 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
 
 `,
     objectJsonEditorProps: {
-      restrictEdit: ({ level }) => level !== 2,
-      restrictDelete: true,
-      restrictAdd: true,
+      allowEdit: ({ level }) => level === 2,
+      allowDelete: false,
+      allowAdd: false,
     },
     objectData: {
       film: { title: 'Deadpool & Wolverine', minAgeRating: 17 },
@@ -195,10 +195,10 @@ Try changing all these values and see the output differences.
       },
     },
     objectJsonEditorProps: {
-      restrictEdit: ({ value }) => typeof value !== 'string' && !Array.isArray(value),
-      restrictDelete: true,
-      restrictAdd: true,
-      restrictTypeSelection: [
+      allowEdit: ({ value }) => typeof value === 'string' || Array.isArray(value),
+      allowDelete: false,
+      allowAdd: false,
+      allowTypeSelection: [
         {
           enum: 'gender',
           values: ['Male', 'Female', 'Other'],
@@ -260,10 +260,10 @@ Note the \`fallback\` property used here — an array with a *"Loading..."* indi
 `,
     figTreeOptions: { useCache: true },
     objectJsonEditorProps: {
-      restrictAdd: true,
-      restrictDelete: true,
-      restrictEdit: ({ key }) => key !== 'name' && key !== 'country',
-      restrictTypeSelection: true,
+      allowAdd: false,
+      allowDelete: false,
+      allowEdit: ({ key }) => key === 'name' || key === 'country',
+      allowTypeSelection: false,
     },
     objectData: {
       userResponses: { name: 'Mohini', country: 'India' },
@@ -302,22 +302,25 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
       preferredDifficulty: 'easy',
     },
     objectJsonEditorProps: {
-      restrictEdit: ({ key }) => key === 'Info',
-      restrictAdd: true,
-      restrictDelete: true,
-      restrictTypeSelection: [
+      allowEdit: ({ key }) => key !== 'Info',
+      allowAdd: false,
+      allowDelete: false,
+      allowTypeSelection: [
         {
           enum: 'difficulty',
           values: ['easy', 'challenging'],
           matchPriority: 1,
         },
       ],
-      onUpdate: ({ path, newValue }) => {
+      onUpdate: (props) => {
+        const { path, event } = props
         if (
           path[0] === 'preferredDifficulty' &&
-          !['easy', 'challenging'].includes(newValue as string)
+          (event === 'edit' || event === 'add') &&
+          !['easy', 'challenging'].includes(props.newValue as string)
         )
-          return 'Invalid value'
+          return { error: 'Invalid value' }
+        return true
       },
     },
     expression: {
@@ -413,17 +416,19 @@ Change the \`selected\` character name to look up a different Star Wars characte
 </div>
     `,
     objectJsonEditorProps: {
-      restrictDelete: true,
-      restrictAdd: true,
-      restrictEdit: ({ key }) => key !== 'selected',
-      restrictTypeSelection: true,
-      onUpdate: ({ newData, newValue }) => {
+      allowDelete: false,
+      allowAdd: false,
+      allowEdit: ({ key }) => key === 'selected',
+      allowTypeSelection: false,
+      onUpdate: (props) => {
+        if (props.event !== 'edit' && props.event !== 'add') return
+        const { newData, newValue } = props
         if (
           !Object.keys((newData as Record<string, unknown>)?.characters ?? {}).includes(
             newValue as string
           )
         )
-          return 'Invalid input'
+          return { error: 'Invalid input' }
       },
     },
     objectData: {
@@ -574,10 +579,10 @@ They both require a \`$country\` parameter, which is substituted into the expres
       myFavouriteCountry: 'New Zealand',
     },
     objectJsonEditorProps: {
-      restrictDelete: true,
-      restrictAdd: true,
-      restrictEdit: ({ key }) => key !== 'myFavouriteCountry',
-      restrictTypeSelection: true,
+      allowEdit: ({ key }) => key === 'myFavouriteCountry',
+      allowAdd: false,
+      allowDelete: false,
+      allowTypeSelection: false,
     },
     expression: {
       operator: 'stringSubstitution',
@@ -671,10 +676,10 @@ There are three hard-coded into this FigTree instance:
       toCase: 'upper',
     },
     objectJsonEditorProps: {
-      restrictDelete: true,
-      restrictAdd: true,
-      restrictEdit: ({ value }) => typeof value !== 'string',
-      restrictTypeSelection: true,
+      allowDelete: false,
+      allowAdd: false,
+      allowEdit: ({ value }) => typeof value === 'string',
+      allowTypeSelection: false,
     },
     expression: {
       operator: 'changeCase',

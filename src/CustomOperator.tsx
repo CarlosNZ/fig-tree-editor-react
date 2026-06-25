@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 import { isObject, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
-import { CustomNodeProps, IconOk, IconCancel } from './_imports'
+import { CustomComponentProps } from './_imports'
 import { Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
 import { OperatorProps } from './Operator'
@@ -9,7 +9,7 @@ import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSe
 import { useCommon } from './useCommon'
 import { getAvailableProperties } from './validator'
 
-export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
+export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
     data,
     parentData,
@@ -107,10 +107,10 @@ export const CustomOperator: React.FC<CustomNodeProps<OperatorProps>> = (props) 
           )}
           <div className="ft-edit-buttons">
             <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-              <IconOk size="2em" style={{ color: 'green' }} />
+              {/* <IconOk size="2em" style={{ color: 'green' }} /> */}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} />
+              {/* <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} /> */}
             </div>
           </div>
         </div>

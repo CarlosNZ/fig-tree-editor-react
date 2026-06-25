@@ -24,6 +24,7 @@ import {
   FigTreeEditor,
   isFigTreeError,
   truncateString,
+  EvaluatorNode,
 } from './_imports'
 import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getInitCache, getLocalStorage, setLocalStorage } from './helpers'
@@ -76,11 +77,11 @@ function App() {
 
   const jsonEditorOptions = currentDemoData
     ? currentDemoData?.objectJsonEditorProps
-    : getLocalStorage('jsonEditorOptions') ?? {}
+    : (getLocalStorage('jsonEditorOptions') ?? {})
 
   const expressionCollapse = currentDemoData
-    ? currentDemoData?.expressionCollapse ?? 2
-    : getLocalStorage('expressionCollapse') ?? 2
+    ? (currentDemoData?.expressionCollapse ?? 2)
+    : (getLocalStorage('expressionCollapse') ?? 2)
 
   const {
     data: expression,
@@ -123,7 +124,7 @@ function App() {
           content={
             modalContent.current === 'main'
               ? defaultBlurb
-              : currentDemoData?.content ?? defaultBlurb
+              : (currentDemoData?.content ?? defaultBlurb)
           }
           modalState={{
             modalOpen: showInfo,
@@ -217,7 +218,7 @@ function App() {
             </Box>
             <JsonEditor
               data={objectData}
-              setData={setObjectData as (data: JsonData) => void}
+              setData={setObjectData}
               rootName="data"
               collapse={jsonEditorOptions?.collapse ?? 2}
               onUpdate={(result) => {
@@ -225,7 +226,7 @@ function App() {
                 if (jsonEditorOptions?.onUpdate) return jsonEditorOptions.onUpdate(result)
               }}
               minWidth="50%"
-              enableClipboard={({ stringValue, type }) => {
+              onCopy={({ stringValue, type }) => {
                 toast({
                   title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
                   description: truncateString(String(stringValue)),
@@ -258,7 +259,7 @@ function App() {
             </Box>
             <FigTreeEditor
               figTree={figTree}
-              expression={expression}
+              expression={expression as EvaluatorNode}
               setExpression={setExpression}
               objectData={objectData as Record<string, unknown>}
               onUpdate={({ newData }) => {
@@ -287,7 +288,7 @@ function App() {
                   })
               }}
               rootName="expression"
-              enableClipboard={({ stringValue, type }) =>
+              onCopy={({ stringValue, type }) =>
                 toast({
                   title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
                   description: truncateString(String(stringValue)),
@@ -297,7 +298,7 @@ function App() {
                 })
               }
               minWidth="90%"
-              stringTruncate={500}
+              stringTruncateLength={500}
               jsonParse={JSON5.parse}
               collapse={expressionCollapse}
               // defaultNewOperatorExpression={{ operator: 'getData', property: 'user.name' }}

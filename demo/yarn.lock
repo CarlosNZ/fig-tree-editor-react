@@ -3168,6 +3168,11 @@ json-edit-react@^1.29.1:
     object-property-assigner "^1.3.5"
     object-property-extractor "^1.0.14"
 
+json-edit-react@^2.0.0-beta.2:
+  version "2.0.0-beta.2"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.2.tgz#34489cd2d956c45bee27167eb5e1b37711975499"
+  integrity sha512-hPJf50qY3L5V5Rqosac9RkPM9acaFRyhS4pIeVe2/a+1RfUFszfoe2l50iCaRp15VNF5osRmHqug5Os5ed1zIw==
+
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/json-parse-even-better-errors/-/json-parse-even-better-errors-2.3.1.tgz#7c47805a94319928e05777405dc12e1f7a4ee02d"

@@ -10,7 +10,7 @@ import {
   CustomFunctionMetadata,
   isV1Node,
 } from 'fig-tree-evaluator'
-import { CustomNodeProps, IconOk, IconCancel } from './_imports'
+// import { CustomNodeProps, IconOk, IconCancel } from './_imports'
 import { ConversionType, DisplayBar } from './DisplayBar'
 import { OptionGroup, Select } from './Select'
 import { getCurrentOperator } from './helpers'
@@ -19,6 +19,8 @@ import { useCommon } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
 import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
+import { assign, CustomComponentProps } from './_imports'
+import { Icon } from './Icons'
 
 export interface OperatorProps {
   figTreeData: {
@@ -43,18 +45,19 @@ export interface OperatorProps {
   addTopLevelFallback?: EvaluatorNode
 }
 
-export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
+export const Operator = (props: CustomComponentProps<OperatorProps>) => {
   const {
-    data,
     parentData,
     nodeData,
+    handleEdit: jerHandleEdit,
+    handleCancel: jerHandleCancel,
     onEdit,
-    restrictEditFilter,
-    customNodeProps,
+    allowEditFilter,
+    componentProps,
     customNodeDefinitions,
   } = props
 
-  if (!customNodeProps) throw new Error('Missing customNodeProps')
+  if (!componentProps) throw new Error('Missing componentProps')
 
   const {
     handleCancel,
@@ -67,10 +70,9 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     operatorDisplay,
     maybeInsertFallback,
   } = useCommon({
-    customNodeProps,
+    componentProps,
     parentData,
     nodeData,
-    onEdit,
   })
 
   const {
@@ -78,14 +80,14 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
     addTopLevelFallback,
-  } = customNodeProps
+  } = componentProps
 
-  const canEdit = !restrictEditFilter(nodeData)
+  const canEdit = allowEditFilter(nodeData)
 
   const { operators, functions } = figTreeData
 
   const operatorData = getCurrentOperator((parentData as OperatorNode).operator, operators)
-  const thisOperator = data as OperatorAlias
+  const thisOperator = nodeData.value as OperatorAlias
 
   if (!operatorData) return null
 
@@ -150,17 +152,17 @@ export const Operator: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
           {availableProperties.length > 0 && (
             <PropertySelector
               availableProperties={availableProperties as OperatorParameterMetadata[]}
-              updateNode={(newProperty) =>
+              updateNode={(newProperty) => {
                 onEdit({ ...parentData, ...newProperty }, expressionPath)
-              }
+              }}
             />
           )}
           <div className="ft-edit-buttons">
             <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-              <IconOk size="2em" style={{ color: 'green' }} />
+              <Icon name="ok" style={{ color: 'green' }} scale={1.4} />
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              <IconCancel size="2.8em" style={{ color: 'rgb(203, 75, 22)' }} />
+              <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)' }} scale={2} />
             </div>
           </div>
         </div>

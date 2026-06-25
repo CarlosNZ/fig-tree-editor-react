@@ -57,7 +57,7 @@ const nodeRoundedBorder = {
   paddingRight: '1em',
 }
 
-export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data'> {
+export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data' | 'setData'> {
   figTree: FigTreeEvaluator
   expression: EvaluatorNode
   setExpression: (data: EvaluatorNode) => void
@@ -85,7 +85,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   onEvaluateError,
   operatorDisplay,
   styles = {},
-  restrictDelete,
+  allowDelete,
+  allowAdd,
+  allowEdit,
+  allowTypeSelection,
   defaultNewOperatorExpression,
   defaultNewFragment,
   defaultNewCustomOperator,
@@ -173,30 +176,30 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   return (
     <JsonEditor
       className="ft-editor"
-      showCollectionCount="when-closed"
+      showCollectionCount="when-collapsed"
       data={expression as JsonData}
-      onUpdate={({ newData, ...rest }) => {
+      onUpdate={({ newData, ...rest }, control) => {
         try {
           const validated = validateExpression(newData as EvaluatorNode, {
             operators,
             fragments,
             functions,
           }) as object
-          onUpdate({ newData: validated, ...rest })
+          onUpdate({ newData: validated, ...rest }, control)
           previousData.current = validated
           return ['value', validated]
         } catch (err: any) {
           return err.message
         }
       }}
-      restrictDelete={(nodeData) => {
+      allowDelete={(nodeData) => {
         // First consider any passed-in restrictDelete
         const { key, path } = nodeData
-        if (restrictDelete === true) return true
-        if (typeof restrictDelete === 'function' && restrictDelete(nodeData) === true) return true
+        if (allowDelete === false) return false
+        if (typeof allowDelete === 'function' && allowDelete(nodeData) === false) return false
 
         // Prevent deleting of required properties
-        if (path.length === 0) return true
+        if (path.length === 0) return false
         const parentPath = path.slice(0, -1)
         const parentData = extract(
           expression,
@@ -209,13 +212,15 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           .map((param) => [param.name, ...param.aliases])
           .flat()
 
-        return required?.includes(key as string) ?? false
+        if (required?.includes(key as string)) return false
+
+        return true
       }}
-      restrictTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
-      showArrayIndices={false}
+      allowTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
+      showArrayIndexes={false}
       indent={3}
       collapse={2}
-      stringTruncate={100}
+      stringTruncateLength={100}
       {...props}
       setData={setExpression as (data: unknown) => void}
       theme={[
@@ -249,8 +254,8 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             )
               return { fontSize: '1.1em' }
           },
-          // collection: { marginLeft: '1em' },
-          collectionInner: [
+          // collectionInner: { marginLeft: '1em' },
+          collection: [
             nodeBaseStyles,
             (nodeData) => {
               const { value, collapsed } = nodeData
@@ -269,119 +274,117 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
               }
             },
           ],
-          iconEdit: { color: 'rgb(42, 161, 152)' },
+          // iconEdit: { color: 'rgb(42, 161, 152)' },
         },
         styles,
       ]}
-      customNodeDefinitions={
-        [
-          {
-            condition: ({ key, value }) => key === 'operator' && allFunctions.has(String(value)),
-            element: CustomOperator,
-            customNodeProps: {
-              figTreeData,
-              evaluateNode,
-              operatorDisplay,
-              topLevelAliases,
-              CurrentEdit,
-              converters,
-              addTopLevelFallback,
-            },
-            hideKey: true,
-            showOnEdit: false,
-            showEditTools: false,
-            showInTypesSelector: true,
-            // defaultValue: { operator: '+', values: [2, 2] },
+      customNodeDefinitions={[
+        {
+          condition: ({ key, value }) => key === 'operator' && allFunctions.has(String(value)),
+          component: CustomOperator as unknown as CustomNodeDefinition['component'],
+          componentProps: {
+            figTreeData,
+            evaluateNode,
+            operatorDisplay,
+            topLevelAliases,
+            CurrentEdit,
+            converters,
+            addTopLevelFallback,
           },
-          {
-            condition: ({ key }) => key === 'operator',
-            element: Operator,
-            name: 'Operator',
-            customNodeProps: {
-              figTreeData,
-              evaluateNode,
-              operatorDisplay,
-              topLevelAliases,
-              CurrentEdit,
-              converters,
-              addTopLevelFallback,
-              // Only need to pass this to ONE custom node, as it will be used
-              // for ALL types when switching NodeType
-              defaultNewOperatorExpression,
-              defaultNewFragment: defaultFragment,
-              defaultNewCustomOperator,
-            },
-            hideKey: true,
-            showOnEdit: false,
-            showEditTools: false,
-            showInTypesSelector: true,
-            defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
+          showKey: false,
+          showOnEdit: false,
+          showEditTools: false,
+          showInTypeSelector: true,
+          // defaultValue: { operator: '+', values: [2, 2] },
+        },
+        {
+          condition: ({ key }) => key === 'operator',
+          component: Operator as unknown as CustomNodeDefinition['component'],
+          name: 'Operator',
+          componentProps: {
+            figTreeData,
+            evaluateNode,
+            operatorDisplay,
+            topLevelAliases,
+            CurrentEdit,
+            converters,
+            addTopLevelFallback,
+            // Only need to pass this to ONE custom node, as it will be used
+            // for ALL types when switching NodeType
+            defaultNewOperatorExpression,
+            defaultNewFragment: defaultFragment,
+            defaultNewCustomOperator,
           },
-          {
-            condition: ({ key }) => key === 'fragment',
-            element: Fragment,
-            name: 'Fragment',
-            customNodeProps: {
-              figTreeData,
-              evaluateNode,
-              operatorDisplay,
-              topLevelAliases,
-              CurrentEdit,
-              converters,
-              addTopLevelFallback,
-            },
-            hideKey: true,
-            showOnEdit: false,
-            showEditTools: false,
-            showInTypesSelector: true,
-            defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
-          },
-          {
-            condition: (nodeData) => isShorthandNodeCollection(nodeData),
-            hideKey: true,
-            wrapperElement: ShorthandNodeCollection,
-            wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData, converters },
-          },
-          {
-            condition: (nodeData) =>
-              isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
-            showOnEdit: true,
-            wrapperElement: ({ children }) => (
-              <div>
-                <p className="ft-alias-header-text">
-                  <strong>Alias definitions:</strong>
-                </p>
-                {children}
-              </div>
-            ),
-          },
-          {
-            condition: (nodeData) =>
-              isShorthandNodeWithSimpleValue(nodeData) &&
-              !isCollection(Object.values(nodeData.value ?? {})[0]),
-            element: ShorthandNodeWithSimpleValue,
-            customNodeProps: {
-              figTree,
-              figTreeData,
-              evaluateNode,
-              operatorDisplay,
-              topLevelAliases,
-              converters,
-            },
-            showEditTools: true,
-          },
-          {
-            condition: (nodeData: any) => nodeData.path.length === 0 && isCollection(nodeData.data),
-            element: TopLevelContainer,
-            customNodeProps: {
-              figTree,
-              figTreeData,
-              evaluateNode,
-              isShorthandNode: isShorthandNodeWithSimpleValue,
-            },
-          },
-        ] as CustomNodeDefinition[]
-      }
+          showKey: false,
+          showOnEdit: false,
+          showEditTools: false,
+          showInTypeSelector: true,
+          defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
+        },
+        // {
+        //   condition: ({ key }) => key === 'fragment',
+        //   element: Fragment,
+        //   name: 'Fragment',
+        //   componentProps: {
+        //     figTreeData,
+        //     evaluateNode,
+        //     operatorDisplay,
+        //     topLevelAliases,
+        //     CurrentEdit,
+        //     converters,
+        //     addTopLevelFallback,
+        //   },
+        //   showKey: false,
+        //   showOnEdit: false,
+        //   showEditTools: false,
+        //   showInTypeSelector: true,
+        //   defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
+        // },
+        // {
+        //   condition: (nodeData) => isShorthandNodeCollection(nodeData),
+        //   showKey: false,
+        //   wrapperComponent: ShorthandNodeCollection,
+        //   wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData, converters },
+        // },
+        // {
+        //   condition: (nodeData) =>
+        //     isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
+        //   showOnEdit: true,
+        //   wrapperComponent: ({ children }) => (
+        //     <div>
+        //       <p className="ft-alias-header-text">
+        //         <strong>Alias definitions:</strong>
+        //       </p>
+        //       {children}
+        //     </div>
+        //   ),
+        // },
+        // {
+        //   condition: (nodeData) =>
+        //     isShorthandNodeWithSimpleValue(nodeData) &&
+        //     !isCollection(Object.values(nodeData.value ?? {})[0]),
+        //   element: ShorthandNodeWithSimpleValue,
+        //   componentProps: {
+        //     figTree,
+        //     figTreeData,
+        //     evaluateNode,
+        //     operatorDisplay,
+        //     topLevelAliases,
+        //     converters,
+        //   },
+        //   showEditTools: true,
+        // },
+        // {
+        //   condition: (nodeData: any) => nodeData.path.length === 0 && isCollection(nodeData.data),
+        //   element: TopLevelContainer,
+        //   componentProps: {
+        //     figTree,
+        //     figTreeData,
+        //     evaluateNode,
+        //     isShorthandNode: isShorthandNodeWithSimpleValue,
+        //   },
+        // },
+      ]}
       customText={{
         ITEMS_MULTIPLE: (nodeData) =>
           propertyCountReplace(nodeData, allOpAliases, allFragments, allFunctions),
