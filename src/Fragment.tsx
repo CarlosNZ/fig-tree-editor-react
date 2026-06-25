@@ -6,7 +6,7 @@ import {
   isAliasString,
   isObject,
 } from 'fig-tree-evaluator'
-// import { CustomNodeProps, IconOk, IconCancel } from './_imports'
+import { CustomComponentProps } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
@@ -16,18 +16,18 @@ import { useCommon } from './useCommon'
 import { getCurrentFragment } from './helpers'
 import { Icon } from './Icons'
 
-export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
+export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
-    data,
+    value,
     parentData,
     nodeData,
-    onEdit,
-    restrictEditFilter,
-    customNodeProps,
+    getLatestData,
+    allowEditFilter,
+    componentProps,
     customNodeDefinitions,
   } = props
 
-  if (!customNodeProps) throw new Error('Missing customNodeProps')
+  if (!componentProps) throw new Error('Missing componentProps')
 
   const {
     handleCancel,
@@ -39,25 +39,26 @@ export const Fragment: React.FC<CustomNodeProps<OperatorProps>> = (props) => {
     loading,
     operatorDisplay,
     maybeInsertFallback,
+    onEdit,
   } = useCommon({
-    customNodeProps,
+    componentProps,
     parentData,
     nodeData,
-    onEdit,
+    getLatestData,
   })
 
   const {
     figTreeData,
     CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
-  } = customNodeProps
+  } = componentProps
 
-  const canEdit = !restrictEditFilter(nodeData)
+  const canEdit = allowEditFilter(nodeData)
 
   const { fragments } = figTreeData
 
   const fragmentData = getCurrentFragment(parentData as FragmentNode, fragments)
-  const thisFragment = data as string
+  const thisFragment = value as string
 
   const availableProperties = getAvailableProperties(
     fragmentData.parameters ?? [],

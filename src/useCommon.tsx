@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
-import { EditEvent, NodeData } from 'json-edit-react'
+import { EditEvent, JsonData, NodeData, assign } from 'json-edit-react'
 import { getAliases } from './helpers'
 import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
@@ -10,11 +10,27 @@ interface Input {
   componentProps: OperatorProps
   parentData: object | unknown[] | null
   nodeData: NodeData
-  // onEditEvent: (e: EditEvent<unknown>) => void
-  // (value: unknown, path: (string | number)[]) => Promise<string | void>
+  // Live read of the full tree, used by `buildOnEdit` to compute the new data
+  // for an edit at an arbitrary path.
+  getLatestData: () => JsonData
 }
 
-export const useCommon = ({ componentProps, parentData, nodeData /* onEditEvent */ }: Input) => {
+/**
+ * Writes `newValue` to any path in the tree: reads the live data, swaps in the
+ * new value at `path` with `assign`, then validates and persists via
+ * `updateExpression`. Shared by `useCommon` and the Shorthand nodes (which
+ * don't use `useCommon`).
+ */
+export const buildOnEdit =
+  (getLatestData: () => JsonData, updateExpression: (data: EvaluatorNode) => void) =>
+  (newValue: unknown, path: (string | number)[]) => {
+    // `assign` is a no-op on an empty path, so replace the root explicitly
+    const newData =
+      path.length === 0 ? newValue : assign(getLatestData() as any, path, newValue)
+    updateExpression(newData as EvaluatorNode)
+  }
+
+export const useCommon = ({ componentProps, parentData, nodeData, getLatestData }: Input) => {
   const {
     evaluateNode,
     topLevelAliases,
@@ -22,6 +38,7 @@ export const useCommon = ({ componentProps, parentData, nodeData /* onEditEvent 
     CurrentEdit,
     figTreeData,
     addTopLevelFallback,
+    updateExpression,
   } = componentProps
   const {
     currentEditPath,
@@ -35,6 +52,8 @@ export const useCommon = ({ componentProps, parentData, nodeData /* onEditEvent 
 
   const expressionPath = nodeData.path.slice(0, -1)
   const pathAsString = toPathString(nodeData.path)
+
+  const onEdit = buildOnEdit(getLatestData, updateExpression)
 
   const handleSubmit = () => {
     setPrevState(parentData)
@@ -99,5 +118,6 @@ export const useCommon = ({ componentProps, parentData, nodeData /* onEditEvent 
     loading,
     operatorDisplay,
     maybeInsertFallback,
+    onEdit,
   }
 }

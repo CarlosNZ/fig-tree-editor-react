@@ -6,7 +6,8 @@ import {
   FragmentMetadata,
   CustomFunctionMetadata,
 } from 'fig-tree-evaluator'
-import { CustomNodeProps } from './_imports'
+import { CustomComponentProps, CustomWrapperProps } from './_imports'
+import { buildOnEdit } from './useCommon'
 import { getAliases, getCurrentFragment, getCurrentOperator } from './helpers'
 import { OperatorDisplay, operatorDisplay } from './operatorDisplay'
 import { ConvertButton, DisplayBar, EvaluateButton } from './DisplayBar'
@@ -28,6 +29,8 @@ export interface ShorthandProps {
     fromShorthand: (expression: EvaluatorNode) => void
     toV2: (expression: EvaluatorNode) => void
   }
+  // Validates and persists a complete expression (see `buildOnEdit`).
+  updateExpression: (data: EvaluatorNode) => void
 }
 
 /**
@@ -36,18 +39,21 @@ export interface ShorthandProps {
  * or
  * { $getData: ["simple.property.path"]}
  */
-export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> = ({
+export const ShorthandNodeCollection: React.FC<CustomWrapperProps<ShorthandProps>> = ({
   children,
   nodeData,
-  onEdit,
-  restrictEditFilter,
-  customNodeProps,
+  getLatestData,
+  allowEditFilter,
+  wrapperProps,
 }) => {
   const { key, parentData, path } = nodeData
-  const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps ?? {}
-  if (!evaluateNode || !figTreeData) return null
+  const { evaluateNode, topLevelAliases, figTreeData, converters, updateExpression } =
+    wrapperProps ?? {}
+  if (!evaluateNode || !figTreeData || !updateExpression) return null
 
-  const canEdit = !restrictEditFilter(nodeData)
+  const onEdit = buildOnEdit(getLatestData, updateExpression)
+
+  const canEdit = allowEditFilter(nodeData)
 
   const [loading, setLoading] = useState(false)
 
@@ -110,13 +116,18 @@ export const ShorthandNodeCollection: React.FC<CustomNodeProps<ShorthandProps>> 
  * "wrapper" (i.e. the parentData)
  */
 
-export const ShorthandNodeWithSimpleValue: React.FC<CustomNodeProps<ShorthandProps>> = (props) => {
-  const { data: d, nodeData, customNodeProps, children, onEdit } = props
+export const ShorthandNodeWithSimpleValue: React.FC<CustomComponentProps<ShorthandProps>> = (
+  props
+) => {
+  const { value: d, nodeData, componentProps, children, getLatestData } = props
   const data = d as Record<string, string>
 
-  if (!customNodeProps) throw new Error('Missing customNodeProps')
+  if (!componentProps) throw new Error('Missing componentProps')
 
-  const { evaluateNode, topLevelAliases, figTreeData, converters } = customNodeProps
+  const { evaluateNode, topLevelAliases, figTreeData, converters, updateExpression } =
+    componentProps
+
+  const onEdit = buildOnEdit(getLatestData, updateExpression)
   const [loading, setLoading] = useState(false)
 
   if (!figTreeData) return null

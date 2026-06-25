@@ -11,16 +11,16 @@ import { getAvailableProperties } from './validator'
 
 export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (props) => {
   const {
-    data,
+    value,
     parentData,
     nodeData,
-    onEdit,
-    restrictEditFilter,
-    customNodeProps,
+    getLatestData,
+    allowEditFilter,
+    componentProps,
     customNodeDefinitions,
   } = props
 
-  if (!customNodeProps) throw new Error('Missing customNodeProps')
+  if (!componentProps) throw new Error('Missing componentProps')
 
   const {
     handleCancel,
@@ -31,24 +31,25 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
     evaluate,
     loading,
     maybeInsertFallback,
+    onEdit,
   } = useCommon({
-    customNodeProps,
+    componentProps,
     parentData,
     nodeData,
-    onEdit,
+    getLatestData,
   })
 
   const {
     figTreeData,
     CurrentEdit: { switchNodeType, hasSwitchedFromOtherNodeType },
     converters,
-  } = customNodeProps
+  } = componentProps
 
-  const canEdit = !restrictEditFilter(nodeData)
+  const canEdit = allowEditFilter(nodeData)
 
   const { functions } = figTreeData
 
-  const functionData = functions.find((f) => f.name === data)
+  const functionData = functions.find((f) => f.name === value)
 
   if (!functionData) return null
 
