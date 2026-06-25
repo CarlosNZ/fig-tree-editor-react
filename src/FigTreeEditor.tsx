@@ -49,12 +49,19 @@ const nodeBaseStyles = {
   borderRadius: '0.75em',
 }
 
-const nodeRoundedBorder = {
+// This is the block with the grey border. Basically an operator node without
+// its header row (which contains the DisplayBar)
+const innerCollectionSpacing = {
+  marginLeft: '-1em',
+  paddingRight: '1em',
+  paddingLeft: '0.5em',
+}
+const innerCollectionRoundedBorder = {
   borderColor: '#dbdbdb',
   paddingTop: '0.5em',
   paddingBottom: '0.5em',
   marginBottom: '0.5em',
-  paddingRight: '1em',
+  ...innerCollectionSpacing,
 }
 
 export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data' | 'setData'> {
@@ -195,6 +202,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
 
   return (
     <JsonEditor
+      // collapseAnimationTime={1000}
       className="ft-editor"
       showCollectionCount="when-collapsed"
       data={expression as JsonData}
@@ -239,7 +247,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       }}
       allowTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
       showArrayIndexes={false}
-      indent={0}
+      indent={2}
       collapse={2}
       stringTruncateLength={100}
       {...props}
@@ -275,7 +283,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             )
               return { fontSize: '1.1em' }
           },
-          collection: [
+          collectionInner: [
             nodeBaseStyles,
             (nodeData) => {
               const { value, collapsed } = nodeData
@@ -286,15 +294,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
                   'fragment' in value ||
                   isShorthandNodeWithSimpleValue(nodeData))
               ) {
-                const style = {
-                  // paddingLeft: '0.5em',
-                  paddingRight: '1em',
-                }
-                return collapsed ? style : nodeRoundedBorder
+                return collapsed ? innerCollectionSpacing : innerCollectionRoundedBorder
               }
             },
           ],
-          // iconEdit: { color: 'rgb(42, 161, 152)' },
         },
         styles,
       ]}
