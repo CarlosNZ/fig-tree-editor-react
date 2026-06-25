@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
-import { IconChevron } from 'json-edit-react'
+// import { IconChevron } from 'json-edit-react'
 import { OptionGroup, SelectOption, type SelectProps } from './types'
 import { DropdownMenu } from './Menu'
 
@@ -139,10 +139,10 @@ export function Select<T>({
         {!open ? (
           <div className="ft-select-trigger ft-select-input" onClick={handleOpen} tabIndex={0}>
             {selected ?? <span className="ft-select-placeholder">{placeholder}</span>}
-            <IconChevron
+            {/* <IconChevron
               size="1em"
               style={{ position: 'absolute', right: '0.4em', color: '#A5A5A5' }}
-            />
+            /> */}
           </div>
         ) : (
           <>

@@ -1,3 +1,6 @@
+import { defaultTheme, ThemeIcons } from 'json-edit-react'
+import { SVGProps } from 'react'
+
 export const Icons = {
   evaluate: (
     // https://thenounproject.com/icon/play-6552224/
@@ -16,4 +19,54 @@ export const Icons = {
       </svg>
     </div>
   ),
+}
+
+/**
+ * Copied (and modified) from json-edit-react's Icons.tsx, so we can render the
+ * theme icons in here
+ */
+
+const ICON_TEXT_SIZE_RATIO = 1.4
+export const IconSvg = ({
+  scale = 1,
+  viewBox = '0 0 24 24',
+  fill = 'currentColor',
+  children,
+  ...props
+  // `scale` is our size multiplier — omit SVG's own (rarely-used) `scale`
+  // attribute so spreading a definition's `svgProps` can't shadow it.
+}: { scale?: number } & Omit<SVGProps<SVGSVGElement>, 'scale'>): JSX.Element => {
+  const size = `${ICON_TEXT_SIZE_RATIO * scale}em`
+  return (
+    <svg viewBox={viewBox} fill={fill} width={size} height={size} {...props}>
+      {children}
+    </svg>
+  )
+}
+
+export const Icon = ({
+  name,
+  style,
+  scale,
+}: {
+  name: keyof ThemeIcons
+  style?: React.CSSProperties
+  scale?: number
+}): JSX.Element => {
+  const icons = defaultTheme.icons
+  const def = icons?.[name]
+  if (!def) return <p>NO ICON</p>
+  return (
+    <IconSvg
+      viewBox={def.viewBox}
+      {...def.svgProps}
+      scale={scale ?? def.scale}
+      // The collapse chevron (`collection`) is positioned and animated by its
+      // wrapper; it doesn't take the action icons' :hover affordance.
+      className={name === 'collection' ? undefined : 'jer-icon'}
+      style={style}
+    >
+      {def.content}
+    </IconSvg>
+  )
 }

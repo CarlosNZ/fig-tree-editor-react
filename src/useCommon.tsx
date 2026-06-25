@@ -2,18 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
-import { NodeData } from 'json-edit-react'
+import { EditEvent, NodeData } from 'json-edit-react'
 import { getAliases } from './helpers'
 import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
 interface Input {
-  customNodeProps: OperatorProps
+  componentProps: OperatorProps
   parentData: object | unknown[] | null
   nodeData: NodeData
-  onEdit: (value: unknown, path: (string | number)[]) => Promise<string | void>
+  // onEditEvent: (e: EditEvent<unknown>) => void
+  // (value: unknown, path: (string | number)[]) => Promise<string | void>
 }
 
-export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Input) => {
+export const useCommon = ({ componentProps, parentData, nodeData /* onEditEvent */ }: Input) => {
   const {
     evaluateNode,
     topLevelAliases,
@@ -21,7 +22,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
     CurrentEdit,
     figTreeData,
     addTopLevelFallback,
-  } = customNodeProps
+  } = componentProps
   const {
     currentEditPath,
     setCurrentEditPath,
@@ -41,7 +42,7 @@ export const useCommon = ({ customNodeProps, parentData, nodeData, onEdit }: Inp
   }
 
   const handleCancel = () => {
-    onEdit(prevState, expressionPath)
+    // onEditEvent(prevState, expressionPath)
     setCurrentEditPath(null)
   }
 
