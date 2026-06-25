@@ -20,7 +20,7 @@ import { cleanOperatorNode, getAvailableProperties } from './validator'
 import { OperatorDisplay } from './operatorDisplay'
 import { CurrentlyEditingReturnType } from './useCurrentlyEditing'
 import { assign, CustomComponentProps } from './_imports'
-import { Icon } from './Icons'
+import { Icon, IconCancel, IconOk } from './Icons'
 
 export interface OperatorProps {
   figTreeData: {
@@ -163,10 +163,10 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
           )}
           <div className="ft-edit-buttons">
             <div className="ft-clickable ft-okay-icon" onClick={handleSubmit}>
-              <Icon name="ok" style={{ color: 'green' }} scale={1.4} />
+              {IconOk}
             </div>
             <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
-              <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)' }} scale={2} />
+              {IconCancel}
             </div>
           </div>
         </div>

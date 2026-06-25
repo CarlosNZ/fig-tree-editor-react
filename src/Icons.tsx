@@ -70,3 +70,6 @@ export const Icon = ({
     </IconSvg>
   )
 }
+
+export const IconOk = <Icon name="ok" style={{ color: 'green' }} scale={1.4} />
+export const IconCancel = <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)' }} scale={2} />
