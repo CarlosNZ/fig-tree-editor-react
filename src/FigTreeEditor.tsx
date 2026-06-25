@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useRef, useCallback } from 'react'
-import { JsonData, ThemeStyles, extract } from 'json-edit-react'
+import { JsonData, ThemeStyles } from 'json-edit-react'
 import {
   type EvaluatorNode,
   type FigTreeEvaluator,
@@ -221,7 +221,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         }
       }}
       allowDelete={(nodeData) => {
-        const { key, path } = nodeData
+        const { key, path, parentData } = nodeData
 
         // Respect any caller-supplied allowDelete first (deny short-circuits)
         if (allowDelete === false) return false
@@ -231,14 +231,8 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         if (path.length === 0) return false
 
         // Allow unless this is a required operator parameter
-        const parentPath = path.slice(0, -1)
-        const parentData = extract(
-          expression,
-          parentPath.length === 0 ? '' : parentPath,
-          {}
-        ) as OperatorNode
         if (!isObject(parentData) || !('operator' in parentData)) return true
-        const required = getCurrentOperator(parentData.operator, operators)
+        const required = getCurrentOperator((parentData as OperatorNode).operator, operators)
           ?.parameters.filter((param) => param.required)
           .map((param) => [param.name, ...param.aliases])
           .flat()
