@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { OperatorProps } from './Operator'
-import { JsonData, NodeData, assign } from 'json-edit-react'
+import { JsonData, NodeData, assign, toPathString } from 'json-edit-react'
 import { getAliases } from './helpers'
 import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
@@ -69,13 +69,23 @@ export const useCommon = ({
     figTreeData,
     addTopLevelFallback,
     updateExpression,
+    justSwitchedTo,
   } = componentProps
   const [loading, setLoading] = useState(false)
 
   // The custom node is the object itself, so its own path is the expression path.
   const expressionPath = nodeData.path
+  const pathString = toPathString(nodeData.path)
 
   const onEdit = buildOnEdit(getLatestData, updateExpression)
+
+  // When a NodeTypeSelector switch lands on this path, auto-open this node's
+  // operator/fragment/function picker (the freshly-switched node mounts here).
+  // The flag is consumed once, then cleared.
+  const startOpen = justSwitchedTo?.current === pathString
+  useEffect(() => {
+    if (justSwitchedTo?.current === pathString) justSwitchedTo.current = null
+  }, [])
 
   // Enter/Escape both just close the toolbar (edits are written live, so there's
   // no buffer to commit or revert).
@@ -125,5 +135,6 @@ export const useCommon = ({
     operatorDisplay,
     maybeInsertFallback,
     onEdit,
+    startOpen,
   }
 }
