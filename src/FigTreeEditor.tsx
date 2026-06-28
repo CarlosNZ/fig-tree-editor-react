@@ -5,6 +5,8 @@ import {
   type FigTreeEvaluator,
   type Operator as OperatorName,
   isObject,
+  isOperatorNode,
+  isFragmentNode,
   isAliasString,
   OperatorNode,
   isFigTreeError,
@@ -22,6 +24,7 @@ import {
   UpdateFunction,
   isCollection,
 } from './_imports'
+import { and, collections, not, root, type FilterPredicate } from '@json-edit-react/utils/filters'
 import './styles.css'
 import { Operator } from './Operator'
 import { Fragment } from './Fragment'
@@ -162,6 +165,15 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const isShorthandNodeWithSimpleValue = (nodeData: NodeData) =>
     shorthandSimpleNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
 
+  // fig-tree's `isOperatorNode` guard tests a node's value; wrap it as a
+  // NodeData predicate so it composes with the filter helpers. An operator node
+  // whose name is a registered custom function uses the dedicated CustomOperator
+  // component; all other operators use the standard Operator component.
+  const isOperator: FilterPredicate = ({ value }) => isOperatorNode(value as EvaluatorNode)
+  const isCustomFunctionNode = and(isOperator, ({ value }) =>
+    allFunctions.has(String((value as OperatorNode).operator))
+  )
+
   const toShorthand = useCallback(
     (expression: EvaluatorNode) => convertToShorthand(expression, figTree),
     []
@@ -223,14 +235,14 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         }
       }}
       allowDelete={(nodeData) => {
-        const { key, path, parentData } = nodeData
+        const { key, parentData } = nodeData
 
         // Respect any caller-supplied allowDelete first (deny short-circuits)
         if (allowDelete === false) return false
         if (typeof allowDelete === 'function' && allowDelete(nodeData) === false) return false
 
         // The root node can't be deleted
-        if (path.length === 0) return false
+        if (root(nodeData)) return false
 
         // Allow unless this is a required operator parameter
         if (!isObject(parentData) || !('operator' in parentData)) return true
@@ -302,10 +314,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           // Anchored on the operator/fragment OBJECT (stable path), not the
           // `operator`/`fragment` key, so editing survives a type switch and
           // can use json-edit-react's built-in editing session.
-          condition: ({ value }) =>
-            isObject(value) &&
-            'operator' in value &&
-            allFunctions.has(String((value as OperatorNode).operator)),
+          condition: isCustomFunctionNode,
           component: CustomOperator as unknown as CustomNodeDefinition['component'],
           componentProps: {
             figTreeData,
@@ -327,10 +336,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           showInTypeSelector: true,
         },
         {
-          condition: ({ value }) =>
-            isObject(value) &&
-            'operator' in value &&
-            !allFunctions.has(String((value as OperatorNode).operator)),
+          condition: and(isOperator, not(isCustomFunctionNode)),
           component: Operator as unknown as CustomNodeDefinition['component'],
           name: 'Operator',
           componentProps: {
@@ -352,7 +358,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
         },
         {
-          condition: ({ value }) => isObject(value) && 'fragment' in value,
+          condition: ({ value }) => isFragmentNode(value as EvaluatorNode),
           component: Fragment as unknown as CustomNodeDefinition['component'],
           name: 'Fragment',
           componentProps: {
@@ -373,50 +379,58 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           showInTypeSelector: true,
           defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
         },
-        // {
-        //   condition: (nodeData) => isShorthandNodeCollection(nodeData),
-        //   showKey: false,
-        //   wrapperComponent: ShorthandNodeCollection,
-        //   wrapperProps: { figTree, evaluateNode, topLevelAliases, figTreeData, converters },
-        // },
-        // {
-        //   condition: (nodeData) =>
-        //     isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
-        //   showOnEdit: true,
-        //   wrapperComponent: ({ children }) => (
-        //     <div>
-        //       <p className="ft-alias-header-text">
-        //         <strong>Alias definitions:</strong>
-        //       </p>
-        //       {children}
-        //     </div>
-        //   ),
-        // },
-        // {
-        //   condition: (nodeData) =>
-        //     isShorthandNodeWithSimpleValue(nodeData) &&
-        //     !isCollection(Object.values(nodeData.value ?? {})[0]),
-        //   element: ShorthandNodeWithSimpleValue,
-        //   componentProps: {
-        //     figTree,
-        //     figTreeData,
-        //     evaluateNode,
-        //     operatorDisplay,
-        //     topLevelAliases,
-        //     converters,
-        //   },
-        //   showEditTools: true,
-        // },
-        // {
-        //   condition: (nodeData: any) => nodeData.path.length === 0 && isCollection(nodeData.data),
-        //   element: TopLevelContainer,
-        //   componentProps: {
-        //     figTree,
-        //     figTreeData,
-        //     evaluateNode,
-        //     isShorthandNode: isShorthandNodeWithSimpleValue,
-        //   },
-        // },
+        {
+          condition: (nodeData) => isShorthandNodeCollection(nodeData),
+          showKey: false,
+          wrapperComponent: ShorthandNodeCollection as unknown as CustomNodeDefinition['component'],
+          wrapperProps: {
+            figTree,
+            evaluateNode,
+            topLevelAliases,
+            figTreeData,
+            converters,
+            updateExpression,
+          },
+        },
+        {
+          condition: (nodeData) =>
+            isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
+          showOnEdit: true,
+          wrapperComponent: ({ children }) => (
+            <div>
+              <p className="ft-alias-header-text">
+                <strong>Alias definitions:</strong>
+              </p>
+              {children}
+            </div>
+          ),
+        },
+        {
+          condition: (nodeData) =>
+            isShorthandNodeWithSimpleValue(nodeData) &&
+            !isCollection(Object.values(nodeData.value ?? {})[0]),
+          component: ShorthandNodeWithSimpleValue as unknown as CustomNodeDefinition['component'],
+          componentProps: {
+            figTree,
+            figTreeData,
+            evaluateNode,
+            operatorDisplay,
+            topLevelAliases,
+            converters,
+            updateExpression,
+          },
+          showEditTools: true,
+        },
+        {
+          condition: and(root, collections),
+          component: TopLevelContainer as unknown as CustomNodeDefinition['component'],
+          componentProps: {
+            figTree,
+            figTreeData,
+            evaluateNode,
+            isShorthandNode: isShorthandNodeWithSimpleValue,
+          },
+        },
       ]}
       customText={{
         ITEMS_MULTIPLE: (nodeData) =>
