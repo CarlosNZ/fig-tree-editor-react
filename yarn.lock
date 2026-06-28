@@ -645,6 +645,11 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
+"@json-edit-react/utils@^0.9.0-beta.1":
+  version "0.9.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.1.tgz#7beae8f53633d62f2d89abfd6414b0eb1644dcf3"
+  integrity sha512-Vp6KR6Jrb58JfasVwEfgVEifwgl6GMs/e3dszY0UDJe5rqvsPITrfIG54b1b6j1NiYM7er/1iDBhVwVLFA82PQ==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -3477,10 +3482,10 @@ json-buffer@3.0.1:
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
   integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
 
-json-edit-react@^2.0.0-beta.6:
-  version "2.0.0-beta.6"
-  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.6.tgz#8e29dce19ba5008bde59d65e6a6a1ca3ebae21e5"
-  integrity sha512-H48lkt/VZ3e9US2zafQR5VV3ozFOS2wis1f81jBOAHmnOMQuwVP5VHbH1f2Nr4p/MH8n6kYwWtAHWF2y/Rcs/w==
+json-edit-react@^2.0.0-beta.7:
+  version "2.0.0-beta.7"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.7.tgz#bd4b11312cb17f1d6bba68fc805f0e8b64c5ceb8"
+  integrity sha512-Q0V635s1M82OQR6b3UIBJvP1X1mYHN5rYblP56W74ENyuxdCBova2ppwo6fY+4lDLBuqNpDXfDxuUKSVGqvPmA==
 
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
