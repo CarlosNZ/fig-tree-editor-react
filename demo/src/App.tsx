@@ -30,7 +30,7 @@ import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getInitCache, getLocalStorage, setLocalStorage } from './helpers'
 // @ts-expect-error No declaration
 import { PostgresInterface } from './postgresInterface.js'
-import { JsonData, JsonEditor } from 'json-edit-react'
+import { JsonEditor } from 'json-edit-react'
 import { Client } from 'pg'
 import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'

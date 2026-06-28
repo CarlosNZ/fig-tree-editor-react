@@ -36,7 +36,13 @@ export default defineConfig({
     // hooks/context, and a second fig-tree-evaluator / json-edit-react breaks
     // instanceof checks and editor context. Force a single copy from demo's
     // deps.
-    dedupe: ['react', 'react-dom', 'fig-tree-evaluator', 'json-edit-react'],
+    dedupe: [
+      'react',
+      'react-dom',
+      'fig-tree-evaluator',
+      'json-edit-react',
+      '@json-edit-react/utils',
+    ],
   },
   server: {
     // Allow serving the library source / build / packed output that lives one

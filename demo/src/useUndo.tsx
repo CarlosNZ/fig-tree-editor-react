@@ -1,16 +1,18 @@
-import useUndoHook from 'use-undo'
+import { useState } from 'react'
+import { useUndo as useUndoHook } from '@json-edit-react/utils'
 import { Button, HStack, VStack, Spacer } from '@chakra-ui/react'
 import { ArrowBackIcon, ArrowForwardIcon } from '@chakra-ui/icons'
 import { JsonData } from 'json-edit-react'
 import { EvaluatorNode } from 'fig-tree-evaluator'
 
 export const useUndo = (initialData: JsonData | EvaluatorNode) => {
-  const [{ present: data }, { set: setData, undo, redo, canUndo, canRedo }] =
-    useUndoHook(initialData)
+  // The hook is controlled — we own the live data, it keeps the snapshot stacks.
+  const [data, setData] = useState<JsonData | EvaluatorNode>(initialData)
+  const { set, undo, redo, canUndo, canRedo } = useUndoHook(data, setData)
 
   const handleChange = (newData: JsonData | EvaluatorNode) => {
     if (JSON.stringify(newData) === JSON.stringify(data)) return
-    setData(newData)
+    set(newData)
   }
 
   const UndoRedo = (
