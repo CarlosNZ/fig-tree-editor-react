@@ -38,13 +38,16 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
     maybeInsertFallback,
     onEdit,
     startOpen,
+    startEditing,
+    closeEditing,
   } = useCommon({
     componentProps,
     value,
     nodeData,
     getLatestData,
     isEditing,
-    closeEditing: handleCancel,
+    setIsEditing,
+    handleCancel,
   })
 
   const {
@@ -114,10 +117,10 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
               />
             )}
             <div className="ft-edit-buttons">
-              <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
+              <div className="ft-clickable ft-okay-icon" onClick={closeEditing}>
                 {IconOk}
               </div>
-              <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+              <div className="ft-clickable ft-cancel-icon" onClick={closeEditing}>
                 {IconCancel}
               </div>
             </div>
@@ -126,7 +129,7 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
           <DisplayBar
             name={thisFragment}
             description={fragmentData.description}
-            setIsEditing={() => setIsEditing(true)}
+            setIsEditing={startEditing}
             evaluate={evaluate}
             isLoading={loading}
             canonicalName="FRAGMENT"

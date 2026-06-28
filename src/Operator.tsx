@@ -45,6 +45,10 @@ export interface OperatorProps {
   // Shared "a type switch just landed on this path" flag, so the new node
   // auto-opens its picker (see `useCommon`'s `startOpen` / `NodeTypeSelector`).
   justSwitchedTo?: React.MutableRefObject<string | null>
+  // The path currently being edited via a DisplayBar pencil (selects the
+  // node's `showOnEdit` toolbar variant). Set/cleared in `useCommon`.
+  displayBarEditPath: string | null
+  setDisplayBarEditPath: (path: string | null) => void
 }
 
 export const Operator = (props: CustomComponentProps<OperatorProps>) => {
@@ -70,13 +74,16 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
     maybeInsertFallback,
     onEdit,
     startOpen,
+    startEditing,
+    closeEditing,
   } = useCommon({
     componentProps,
     value,
     nodeData,
     getLatestData,
     isEditing,
-    closeEditing: handleCancel,
+    setIsEditing,
+    handleCancel,
   })
 
   const {
@@ -165,10 +172,10 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
               />
             )}
             <div className="ft-edit-buttons">
-              <div className="ft-clickable ft-okay-icon" onClick={handleCancel}>
+              <div className="ft-clickable ft-okay-icon" onClick={closeEditing}>
                 {IconOk}
               </div>
-              <div className="ft-clickable ft-cancel-icon" onClick={handleCancel}>
+              <div className="ft-clickable ft-cancel-icon" onClick={closeEditing}>
                 {IconCancel}
               </div>
             </div>
@@ -177,7 +184,7 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
           <DisplayBar
             name={thisOperator}
             description={operatorData.description}
-            setIsEditing={() => setIsEditing(true)}
+            setIsEditing={startEditing}
             evaluate={evaluate}
             isLoading={loading}
             canonicalName={operatorData.name}
