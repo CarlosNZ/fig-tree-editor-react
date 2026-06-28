@@ -5,26 +5,21 @@
   "homepage": "https://carlosnz.github.io/fig-tree-evaluator",
   "type": "module",
   "scripts": {
-    "start": "rimraf ./src/expression-builder && mkdir ./src/expression-builder && mkdir ./src/expression-builder/src && concurrently --kill-others-on-fail \"yarn serve\" \"yarn dev\" \"nodemon watch.js\"",
     "serve": "node ./src/express/server",
-    "dev": "vite --host",
+    "start": "concurrently --kill-others-on-fail \"yarn serve\" \"vite --host\"",
+    "start:local": "concurrently --kill-others-on-fail \"yarn serve\" \"VITE_FIG_SOURCE=local vite --host\"",
+    "start:build": "concurrently --kill-others-on-fail \"yarn serve\" \"VITE_FIG_SOURCE=build vite --host\"",
+    "start:pack": "concurrently --kill-others-on-fail \"yarn serve\" \"VITE_FIG_SOURCE=pack vite --host\"",
+    "dev": "yarn start:local",
     "prebuild": "node ./scripts/getVersion.cjs",
     "build": "rimraf dist && vite build && cp -r img dist/",
+    "build:local": "VITE_FIG_SOURCE=local yarn build",
+    "build:build": "VITE_FIG_SOURCE=build yarn build",
+    "build:pack": "VITE_FIG_SOURCE=pack yarn build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "yarn build",
     "deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"
-  },
-  "nodemonConfig": {
-    "watch": [
-      "../src",
-      "../expression-builder/src"
-    ],
-    "ignore": [
-      "../expression-builder/src/fig-tree-evaluator"
-    ],
-    "ext": "js, json, ts, tsx, txt, css",
-    "delay": 200
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
@@ -59,7 +54,6 @@
     "eslint-plugin-react-refresh": "^0.4.4",
     "gh-pages": "^6.1.1",
     "jest": "^29.7.0",
-    "nodemon": "^3.0.1",
     "react-select": "^5.8.0",
     "ts-jest": "^29.2.5",
     "typescript": "^5.2.2",

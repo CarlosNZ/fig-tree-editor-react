@@ -26,7 +26,7 @@ import {
   VStack,
 } from '@chakra-ui/react'
 import { filterObjectRecursive, setLocalStorage } from './helpers'
-import { FigTreeEvaluator, FigTreeOptions } from './_imports'
+import { FigTreeEvaluator, FigTreeOptions } from '@fig-tree-editor-react'
 import { JsonData, JsonEditor } from 'json-edit-react'
 
 const resetFormState = (options: FigTreeOptions) => {
