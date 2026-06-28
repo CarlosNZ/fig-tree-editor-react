@@ -171,6 +171,27 @@ export const isShorthandNodeWithSimpleValue = (
   return allOperatorAliases.has(alias) || allFragments.has(alias) || allFunctions.has(alias)
 }
 
+// True if the node is a shorthand operator/fragment/function node — i.e. it has
+// a key like `$plus`/`$getData` whose name is a registered alias. Unlike the two
+// testers above, this tolerates additional alias-definition keys (e.g. a
+// `$character` alias sitting alongside the operator key), so a shorthand node
+// that also defines aliases is still recognised as a FigTree node.
+export const isShorthandNode = (
+  nodeData: NodeData,
+  allOperatorAliases: Set<OperatorAlias>,
+  allFragments: Set<string>,
+  allFunctions: Set<string>
+) => {
+  const { value } = nodeData
+  if (!isObject(value)) return false
+
+  return Object.keys(value).some((key) => {
+    if (!isAliasString(key)) return false
+    const alias = key.slice(1)
+    return allOperatorAliases.has(alias) || allFragments.has(alias) || allFunctions.has(alias)
+  })
+}
+
 export const isAliasNode = (
   { key, parentData }: NodeData,
   allOperatorAliases: Set<OperatorAlias>,
