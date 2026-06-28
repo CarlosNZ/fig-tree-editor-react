@@ -1,13 +1,13 @@
 import React, { useCallback } from 'react'
 import {
-  FragmentMetadata,
-  FragmentNode,
-  FragmentParameterMetadata,
+  type FragmentMetadata,
+  type FragmentNode,
+  type FragmentParameterMetadata,
   isAliasString,
 } from 'fig-tree-evaluator'
-import { CustomComponentProps } from './_imports'
+import type { CustomComponentProps } from './_imports'
 import { NodeTypeSelector, PropertySelector } from './CommonSelectors'
-import { OperatorProps } from './Operator'
+import type { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
 import { getAvailableProperties } from './validator'
 import { Select } from './Select'
@@ -64,7 +64,7 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
   const { fragments } = figTreeData
 
   const node = value as FragmentNode
-  const thisFragment = node.fragment as string
+  const thisFragment = node.fragment
   const fragmentData = getCurrentFragment(node, fragments)
 
   const availableProperties = getAvailableProperties(fragmentData.parameters ?? [], node)
@@ -76,8 +76,8 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
       ? { textColor, backgroundColor, displayName: 'Fragment' }
       : undefined
 
-  const convert = useCallback(async () => {
-    const converted = await converters.toShorthand(node)
+  const convert = useCallback(() => {
+    const converted = converters.toShorthand(node)
     onEdit(converted, expressionPath)
   }, [value])
 

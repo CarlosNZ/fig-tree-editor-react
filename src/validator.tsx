@@ -1,16 +1,16 @@
-import { CustomFunctionMetadata } from 'fig-tree-evaluator'
+import { type CustomFunctionMetadata } from 'fig-tree-evaluator'
 import {
-  EvaluatorNode,
-  FragmentMetadata,
-  OperatorMetadata,
+  type EvaluatorNode,
+  type FragmentMetadata,
+  type OperatorMetadata,
   isOperatorNode,
   isFragmentNode,
   isObject,
   isAliasString,
-  OperatorNode,
-  FragmentNode,
-  OperatorParameterMetadata,
-  FragmentParameterMetadata,
+  type OperatorNode,
+  type FragmentNode,
+  type OperatorParameterMetadata,
+  type FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
 import {
   commonProperties,
@@ -42,18 +42,15 @@ export const validateExpression = (
   const isOperator = isOperatorNode(expression)
   const isFragment = isFragmentNode(expression)
   const isFunctionOperator =
-    isOperator &&
-    figTreeMetaData.functions
-      .map(({ name }) => name)
-      .includes((expression as OperatorNode)?.operator)
+    isOperator && figTreeMetaData.functions.map(({ name }) => name).includes(expression?.operator)
 
   if (isFunctionOperator) return expression
 
   const currentMetaData = isOperator
-    ? getCurrentOperator((expression as OperatorNode)?.operator, figTreeMetaData.operators)
+    ? getCurrentOperator(expression?.operator, figTreeMetaData.operators)
     : isFragment
-    ? figTreeMetaData.fragments.find((frag) => frag.name === expression.fragment)
-    : undefined
+      ? figTreeMetaData.fragments.find((frag) => frag.name === expression.fragment)
+      : undefined
 
   const requiredProperties = (
     currentMetaData?.parameters
@@ -133,7 +130,7 @@ export const validateExpression = (
         (prop) =>
           [prop.name, prop.default !== undefined ? prop.default : getDefaultValue(prop)] as [
             string,
-            unknown
+            unknown,
           ]
       )
     )

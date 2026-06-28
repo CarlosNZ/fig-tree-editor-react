@@ -1,10 +1,10 @@
 // Common functionality for FigTree Node components
 
 import React, { useEffect, useRef, useState } from 'react'
-import { OperatorProps } from './Operator'
-import { JsonData, NodeData, assign, toPathString } from 'json-edit-react'
+import { type OperatorProps } from './Operator'
+import { type JsonData, type NodeData, assign, toPathString } from 'json-edit-react'
 import { getAliases } from './helpers'
-import { EvaluatorNode, isObject } from 'fig-tree-evaluator'
+import { type EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
 interface Input {
   componentProps: OperatorProps
@@ -35,8 +35,7 @@ export const buildOnEdit =
   (getLatestData: () => JsonData, updateExpression: (data: EvaluatorNode) => void) =>
   (newValue: unknown, path: (string | number)[]) => {
     // `assign` is a no-op on an empty path, so replace the root explicitly
-    const newData =
-      path.length === 0 ? newValue : assign(getLatestData() as any, path, newValue)
+    const newData = path.length === 0 ? newValue : assign(getLatestData() as any, path, newValue)
     updateExpression(newData as EvaluatorNode)
   }
 

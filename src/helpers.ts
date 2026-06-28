@@ -1,17 +1,17 @@
 import {
+  type OperatorMetadata,
+  type OperatorAlias,
+  type EvaluatorNode,
+  type FragmentMetadata,
+  type OperatorNode,
+  type FragmentNode,
+  type OperatorParameterMetadata,
+  type FragmentParameterMetadata,
   standardiseOperatorName,
-  OperatorMetadata,
   isObject,
   isAliasString,
-  OperatorAlias,
-  EvaluatorNode,
-  FragmentMetadata,
-  OperatorNode,
-  FragmentNode,
-  OperatorParameterMetadata,
-  FragmentParameterMetadata,
 } from 'fig-tree-evaluator'
-import { DataType, EnumDefinition, extract, NodeData } from './_imports'
+import type { DataType, EnumDefinition, NodeData } from './_imports'
 
 export const operatorStringRegex = /(\$[^()]+)\((.*)\)/
 
@@ -125,8 +125,8 @@ export const propertyCountReplace = (
 ) => {
   const { value } = nodeData
   if (!(value instanceof Object)) return null
-  if ('operator' in value) return `Operator: ${value.operator}`
-  if ('fragment' in value) return `Fragment: ${value.fragment}`
+  if ('operator' in value) return `Operator: ${String(value.operator)}`
+  if ('fragment' in value) return `Fragment: ${String(value.fragment)}`
   if (isShorthandNodeWithSimpleValue(nodeData, allOperatorAliases, allFragments, allFunctions)) {
     const shorthandOperator = Object.keys(value)[0]
     return `Shorthand: ${shorthandOperator}`
@@ -289,7 +289,7 @@ export const getTypeFilter = (
 
 const getDataTypeList = (
   parameter?: OperatorParameterMetadata | FragmentParameterMetadata
-): boolean | Array<DataType | string | EnumDefinition> => {
+): boolean | Array<string | EnumDefinition> => {
   if (!parameter) return false
   const { name, type } = parameter
   if (type === 'any') return false

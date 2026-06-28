@@ -1,6 +1,11 @@
 import React, { useState } from 'react'
-import { FigTreeEvaluator, EvaluatorNode, isOperatorNode, isFragmentNode } from 'fig-tree-evaluator'
-import { CustomComponentProps, NodeData } from './_imports'
+import {
+  type FigTreeEvaluator,
+  type EvaluatorNode,
+  isOperatorNode,
+  isFragmentNode,
+} from 'fig-tree-evaluator'
+import { type CustomComponentProps, type NodeData } from './_imports'
 import { EvaluateButton } from './DisplayBar'
 
 interface TopLevelProps {

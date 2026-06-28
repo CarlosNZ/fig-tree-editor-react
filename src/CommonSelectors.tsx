@@ -1,5 +1,5 @@
 import React from 'react'
-import {
+import type {
   CustomFunctionMetadata,
   EvaluatorNode,
   FragmentMetadata,
@@ -7,9 +7,14 @@ import {
   OperatorMetadata,
   OperatorParameterMetadata,
 } from 'fig-tree-evaluator'
-import { Select, SelectOption } from './Select'
-import { commonProperties, getCurrentOperator, getDefaultValue } from './helpers'
-import { extract, NodeData, toPathString } from 'json-edit-react'
+import { Select, type SelectOption } from './Select'
+import {
+  commonProperties,
+  getCurrentFragment,
+  getCurrentOperator,
+  getDefaultValue,
+} from './helpers'
+import { extract, toPathString, type NodeData } from 'json-edit-react'
 
 export type NodeType = 'operator' | 'fragment' | 'value' | 'customOperator'
 
@@ -61,8 +66,7 @@ export const NodeTypeSelector: React.FC<{
     if (currentSelection?.value === newType) return
 
     // Flag the switch so the new node (same path) auto-opens its picker on mount
-    if (justSwitchedTo && newType !== 'value')
-      justSwitchedTo.current = toPathString(nodeData.path)
+    if (justSwitchedTo && newType !== 'value') justSwitchedTo.current = toPathString(nodeData.path)
 
     switch (newType) {
       case 'operator':
@@ -71,7 +75,7 @@ export const NodeTypeSelector: React.FC<{
       case 'fragment':
         changeNode({ fragment: defaultNewFragment })
         break
-      case 'customOperator':
+      case 'customOperator': {
         const { name, numRequiredArgs, argsDefault, inputDefault } = defaultFunction
         const newNode = { ...currentExpression, operator: name } as Record<string, unknown>
         delete newNode.input
@@ -82,7 +86,8 @@ export const NodeTypeSelector: React.FC<{
           newNode.args = new Array(numRequiredArgs).fill(null)
         changeNode(newNode)
         break
-      case 'value':
+      }
+      case 'value': {
         // When switching to "Value", we need the name of the operator/fragment
         // *above* the current node to figure out the appropriate default for
         // this property. `nodeData.path` is now the node object's own path (the
@@ -114,12 +119,14 @@ export const NodeTypeSelector: React.FC<{
         }
 
         if (fragmentName) {
-          const fragment = getCurrentOperator(operatorName, figTreeData.operators)
-          const property = fragment?.parameters?.find((p) => p.name === propertyName)
+          const fragment = getCurrentFragment({ fragment: fragmentName }, figTreeData.fragments)
+          property = fragment?.parameters?.find((p) => p.name === propertyName)
         }
 
         if (property?.default) changeNode(property.default)
         else changeNode('New Value')
+        break
+      }
     }
   }
 
