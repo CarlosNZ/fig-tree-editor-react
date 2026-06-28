@@ -37,6 +37,7 @@ import {
   isFirstAliasNode,
   isShorthandNodeCollection as shorthandWithCollectionTester,
   isShorthandNodeWithSimpleValue as shorthandSimpleNodeTester,
+  isShorthandNode as shorthandNodeTester,
   propertyCountReplace,
   getAliases,
   getTypeFilter,
@@ -164,6 +165,8 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     shorthandWithCollectionTester(nodeData, allOpAliases, allFragments, allFunctions)
   const isShorthandNodeWithSimpleValue = (nodeData: NodeData) =>
     shorthandSimpleNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
+  const isShorthandNode = (nodeData: NodeData) =>
+    shorthandNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
 
   // fig-tree's `isOperatorNode` guard tests a node's value; wrap it as a
   // NodeData predicate so it composes with the filter helpers. An operator node
@@ -428,7 +431,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             figTree,
             figTreeData,
             evaluateNode,
-            isShorthandNode: isShorthandNodeWithSimpleValue,
+            isShorthandNode,
           },
         },
       ]}

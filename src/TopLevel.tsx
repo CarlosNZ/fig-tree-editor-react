@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { FigTreeEvaluator, EvaluatorNode, isOperatorNode, isFragmentNode } from 'fig-tree-evaluator'
-import { CustomNodeProps, NodeData } from './_imports'
+import { CustomComponentProps, NodeData } from './_imports'
 import { EvaluateButton } from './DisplayBar'
 
 interface TopLevelProps {
@@ -11,14 +11,14 @@ interface TopLevelProps {
   evaluateFullObject: boolean
 }
 
-export const TopLevelContainer: React.FC<CustomNodeProps<TopLevelProps>> = ({
-  customNodeProps,
-  data,
+export const TopLevelContainer: React.FC<CustomComponentProps<TopLevelProps>> = ({
+  componentProps,
+  value,
   nodeData,
   children,
 }) => {
   const [loading, setLoading] = useState(false)
-  const { evaluateNode, isShorthandNode } = customNodeProps ?? {}
+  const { evaluateNode, isShorthandNode } = componentProps ?? {}
 
   if (!evaluateNode || !isShorthandNode) return null
 
@@ -41,7 +41,7 @@ export const TopLevelContainer: React.FC<CustomNodeProps<TopLevelProps>> = ({
           textColor="white"
           evaluate={async () => {
             setLoading(true)
-            await evaluateNode(data as object)
+            await evaluateNode(value as object)
             setLoading(false)
           }}
           isLoading={loading}
