@@ -25,7 +25,7 @@ import {
   isFigTreeError,
   truncateString,
   EvaluatorNode,
-} from './_imports'
+} from '@fig-tree-editor-react'
 import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getInitCache, getLocalStorage, setLocalStorage } from './helpers'
 // @ts-expect-error No declaration
@@ -36,6 +36,7 @@ import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
+import { SourceIndicator } from './SourceIndicator'
 import { figTreeEditorReactVersion, timestamp } from './version'
 const pgConnection = new PostgresInterface() as Client
 
@@ -357,6 +358,7 @@ function App() {
           </Button>
         </HStack>
       </HStack>
+      <SourceIndicator />
     </Flex>
   )
 }

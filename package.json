@@ -15,6 +15,10 @@
     "build": "rimraf ./build && rollup -c && rimraf ./build/dts",
     "lint": "yarn eslint",
     "demo": "cd demo && yarn start",
+    "demo:local": "cd demo && yarn dev",
+    "dev": "yarn demo:local",
+    "pack-demo": "node scripts/pack.mjs",
+    "demo:pack": "yarn pack-demo && cd demo && yarn start:pack",
     "prepublishOnly": "yarn build"
   },
   "peerDependencies": {

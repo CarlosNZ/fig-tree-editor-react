@@ -73,20 +73,4 @@ Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
 
 ## Changelog
 
-- **v0.7.10**:
-  - When switching Fragments, remove old fragment properties
-- **v0.7.9**:
-  - Switching node type (operator/fragment/custom operator) auto-focuses the operator/fragment selector menu
-  - Add `addTopLevelFallback` prop
-- **v0.7.8**:
-  - props to set default expression, fragment and custom operator
-- **v0.7.5**:
-  - Fix possible infinite re-render when loading new expression
-- **v0.7.1**:
-  - Improve type definitions for styles input
-  - Pass "event" to `onEvaluate` function
-- **v0.7.0**:
-  - Use updated editor package ([json-edit-react](https://carlosnz.github.io/json-edit-react/)) in order to restrict to enum values when appropriate
-  - Correct defaults for all operator properties
-- **v0.6.6**: Respect editing restrictions in Custom Nodes
-- **v0.5.0 – v0.6.5**: Initial release
+See [here](https://github.com/CarlosNZ/fig-tree-editor-react/blob/main/CHANGELOG.md)

@@ -1,6 +1,9 @@
 #Build folder
 build/
 
+# Extracted `npm pack` output for the demo's `pack` mode
+pack-output/
+
 # Logs
 logs
 *.log
@@ -132,6 +135,3 @@ dist
 .yarn/install-state.gz
 .pnp.*
 .DS_Store
-
-# Temp working folder for demo
-demo/src/expression-builder
