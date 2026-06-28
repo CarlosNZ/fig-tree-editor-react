@@ -18,9 +18,11 @@ import {
 import {
   // json-edit-react
   CustomNodeDefinition,
+  CustomTextDefinitions,
   JsonEditor,
   JsonEditorProps,
   NodeData,
+  ThemeInput,
   UpdateFunction,
   isCollection,
 } from './_imports'
@@ -67,6 +69,27 @@ const innerCollectionRoundedBorder = {
   ...innerCollectionSpacing,
 }
 
+// Stable empty defaults for optional object props. An inline `= {}` default
+// allocates a fresh object each render, which would churn the deps of the
+// memoised `evaluateNode` / `theme` and defeat the node memo downstream.
+const EMPTY_OBJECT: Record<string, unknown> = {}
+const EMPTY_STYLES: Partial<ThemeStyles> = {}
+
+// Wrap a consumer callback so its identity stays STABLE across renders (so the
+// memoised `evaluateNode` — and the json-edit-react node memo downstream — can
+// bail out) while always invoking the LATEST implementation, even when the
+// consumer passes it inline (as the demo does). Mirrors json-edit-react's own
+// `useStableCallback`. Returns `undefined` when no callback is supplied, so the
+// optional-callback guards (`onEvaluateStart && ...`) still hold.
+const useStableCallback = <Args extends unknown[], R>(
+  cb: ((...args: Args) => R) | undefined
+): ((...args: Args) => R) | undefined => {
+  const ref = useRef(cb)
+  if (cb) ref.current = cb
+  const stable = useRef((...args: Args): R => ref.current!(...args))
+  return cb ? stable.current : undefined
+}
+
 export interface FigTreeEditorProps extends Omit<JsonEditorProps, 'data' | 'setData'> {
   figTree: FigTreeEvaluator
   expression: EvaluatorNode
@@ -88,13 +111,13 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   figTree,
   expression,
   setExpression,
-  objectData = {},
+  objectData = EMPTY_OBJECT,
   onUpdate = () => {},
   onEvaluate,
   onEvaluateStart,
   onEvaluateError,
   operatorDisplay,
-  styles = {},
+  styles = EMPTY_STYLES,
   allowDelete,
   allowAdd,
   allowEdit,
@@ -105,6 +128,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   addTopLevelFallback,
   ...props
 }) => {
+  // Guard before any hook so the hook order stays stable (a conditional return
+  // placed *between* hooks would violate the Rules of Hooks).
+  if (!figTree) return null
+
   const previousData = useRef<EvaluatorNode>(null)
   const operators = useMemo(() => figTree.getOperators(), [figTree])
   const fragments = useMemo(() => figTree.getFragments(), [figTree])
@@ -113,12 +140,18 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   const allOpAliases = useMemo(() => {
     const all = operators.map((op) => [op.name, ...op.aliases]).flat()
     return new Set(all)
-  }, [])
-  const allFragments = useMemo(() => new Set(fragments.map((f) => f.name)), [])
-  const allFunctions = useMemo(() => new Set(functions.map((f) => f.name)), [])
-  const allNonAliases = new Set([...allOpAliases, ...allFragments, ...allFunctions])
+  }, [operators])
+  const allFragments = useMemo(() => new Set(fragments.map((f) => f.name)), [fragments])
+  const allFunctions = useMemo(() => new Set(functions.map((f) => f.name)), [functions])
+  const allNonAliases = useMemo(
+    () => new Set([...allOpAliases, ...allFragments, ...allFunctions]),
+    [allOpAliases, allFragments, allFunctions]
+  )
 
-  const figTreeData = { operators, fragments, functions, allNonAliases }
+  const figTreeData = useMemo(
+    () => ({ operators, fragments, functions, allNonAliases }),
+    [operators, fragments, functions, allNonAliases]
+  )
 
   // When a node's type is switched (Operator↔Fragment↔Custom), this holds the
   // path the switch landed on, so the freshly-rendered node auto-opens its
@@ -139,7 +172,16 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // root, but higher than where they're used, won't be picked up for evaluation
   // at the inner nodes. But this is not a common scenario, and isn't a big deal
   // for the editor)
-  const topLevelAliases = getAliases(expression, allNonAliases)
+  // `getAliases` allocates a fresh object each render, and `expression` changes
+  // identity on every commit. Stabilise the *identity* with a dequal guard so
+  // the reference only changes when the alias content actually changes —
+  // otherwise it would churn `customNodeDefinitions` on every edit. Safe to
+  // write a ref during render here: `topLevelAliases` is read only at evaluate
+  // time (never during render), so there is no value to tear.
+  const nextAliases = getAliases(expression, allNonAliases)
+  const aliasesRef = useRef(nextAliases)
+  if (!dequal(aliasesRef.current, nextAliases)) aliasesRef.current = nextAliases
+  const topLevelAliases = aliasesRef.current
 
   // This effect is just for when the expression is changed by the parent
   // component -- we need to re-validate and update the expression if validation
@@ -155,33 +197,40 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     setExpression(exp)
   }, [expression])
 
-  if (!figTree) return null
+  // Stable identities for the (often inline) consumer callbacks, so
+  // `evaluateNode` below doesn't change identity on every render.
+  const onEvaluateStable = useStableCallback(onEvaluate)
+  const onEvaluateStartStable = useStableCallback(onEvaluateStart)
+  const onEvaluateErrorStable = useStableCallback(onEvaluateError)
 
-  const evaluateNode = async (expression: EvaluatorNode, e: React.MouseEvent) => {
-    onEvaluateStart && onEvaluateStart()
-    try {
-      const result = await figTree.evaluate(expression, { data: objectData })
-      onEvaluate(result, e)
-    } catch (err) {
-      if (isFigTreeError(err)) console.error(err.prettyPrint)
-      onEvaluateError && onEvaluateError(err)
-    }
-  }
+  const evaluateNode = useCallback(
+    async (expression: EvaluatorNode, e: React.MouseEvent) => {
+      onEvaluateStartStable && onEvaluateStartStable()
+      try {
+        const result = await figTree.evaluate(expression, { data: objectData })
+        onEvaluateStable?.(result, e)
+      } catch (err) {
+        if (isFigTreeError(err)) console.error(err.prettyPrint)
+        onEvaluateErrorStable && onEvaluateErrorStable(err)
+      }
+    },
+    [figTree, objectData, onEvaluateStable, onEvaluateStartStable, onEvaluateErrorStable]
+  )
 
-  const isShorthandNodeCollection = (nodeData: NodeData) =>
-    shorthandWithCollectionTester(nodeData, allOpAliases, allFragments, allFunctions)
-  const isShorthandNodeWithSimpleValue = (nodeData: NodeData) =>
-    shorthandSimpleNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
-  const isShorthandNode = (nodeData: NodeData) =>
-    shorthandNodeTester(nodeData, allOpAliases, allFragments, allFunctions)
-
-  // fig-tree's `isOperatorNode` guard tests a node's value; wrap it as a
-  // NodeData predicate so it composes with the filter helpers. An operator node
-  // whose name is a registered custom function uses the dedicated CustomOperator
-  // component; all other operators use the standard Operator component.
-  const isOperator: FilterPredicate = ({ value }) => isOperatorNode(value as EvaluatorNode)
-  const isCustomFunctionNode = and(isOperator, ({ value }) =>
-    allFunctions.has(String((value as OperatorNode).operator))
+  const isShorthandNodeCollection = useCallback(
+    (nodeData: NodeData) =>
+      shorthandWithCollectionTester(nodeData, allOpAliases, allFragments, allFunctions),
+    [allOpAliases, allFragments, allFunctions]
+  )
+  const isShorthandNodeWithSimpleValue = useCallback(
+    (nodeData: NodeData) =>
+      shorthandSimpleNodeTester(nodeData, allOpAliases, allFragments, allFunctions),
+    [allOpAliases, allFragments, allFunctions]
+  )
+  const isShorthandNode = useCallback(
+    (nodeData: NodeData) =>
+      shorthandNodeTester(nodeData, allOpAliases, allFragments, allFunctions),
+    [allOpAliases, allFragments, allFunctions]
   )
 
   const toShorthand = useCallback(
@@ -194,7 +243,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   )
   const toV2 = useCallback((expression: EvaluatorNode) => convertV1ToV2(expression, figTree), [])
 
-  const converters = { toShorthand, fromShorthand, toV2 }
+  const converters = useMemo(
+    () => ({ toShorthand, fromShorthand, toV2 }),
+    [toShorthand, fromShorthand, toV2]
+  )
 
   // Validates and persists a complete expression. Custom node components build
   // a new full expression (with `assign`, via `buildOnEdit`) and hand it here.
@@ -225,22 +277,107 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   )
 
   // Shared props for the Operator/Fragment/CustomOperator node components.
-  const nodeComponentProps = {
-    figTreeData,
-    evaluateNode,
-    operatorDisplay,
-    topLevelAliases,
-    converters,
-    addTopLevelFallback,
-    updateExpression,
-    defaultNewOperatorExpression,
-    defaultNewFragment: defaultFragment,
-    defaultNewCustomOperator,
-    justSwitchedTo,
-    displayBarEditPath,
-    setDisplayBarEditPath,
-  }
+  const nodeComponentProps = useMemo(
+    () => ({
+      figTreeData,
+      evaluateNode,
+      operatorDisplay,
+      topLevelAliases,
+      converters,
+      addTopLevelFallback,
+      updateExpression,
+      defaultNewOperatorExpression,
+      defaultNewFragment: defaultFragment,
+      defaultNewCustomOperator,
+      justSwitchedTo,
+      displayBarEditPath,
+      setDisplayBarEditPath,
+    }),
+    [
+      figTreeData,
+      evaluateNode,
+      operatorDisplay,
+      topLevelAliases,
+      converters,
+      addTopLevelFallback,
+      updateExpression,
+      defaultNewOperatorExpression,
+      defaultFragment,
+      defaultNewCustomOperator,
+      justSwitchedTo,
+      displayBarEditPath,
+      setDisplayBarEditPath,
+    ]
+  )
 
+  const customText = useMemo<CustomTextDefinitions>(
+    () => ({
+      ITEMS_MULTIPLE: (nodeData) =>
+        propertyCountReplace(nodeData, allOpAliases, allFragments, allFunctions),
+      ITEM_SINGLE: (nodeData) =>
+        propertyCountReplace(nodeData, allOpAliases, allFragments, allFunctions),
+    }),
+    [allOpAliases, allFragments, allFunctions]
+  )
+
+  const theme = useMemo<ThemeInput>(
+    () => [
+      {
+        container: {},
+        property: (nodeData) => {
+          if (isAliasString(String(nodeData.key))) return { fontStyle: 'italic' }
+        },
+        string: ({ value }) => {
+          if (isAliasString(String(value))) return { fontStyle: 'italic' }
+        },
+        bracket: (nodeData) => {
+          const { value, collapsed } = nodeData
+          if (
+            !(
+              isObject(value) &&
+              ('operator' in value ||
+                'fragment' in value ||
+                isShorthandNodeWithSimpleValue(nodeData))
+            )
+          )
+            return { display: 'inline' }
+          if (!collapsed) return { display: 'none' }
+        },
+        itemCount: (nodeData) => {
+          if (
+            isObject(nodeData.value) &&
+            ('operator' in nodeData.value ||
+              'fragment' in nodeData.value ||
+              isShorthandNodeWithSimpleValue(nodeData))
+          )
+            return { fontSize: '1.1em' }
+        },
+        collectionInner: [
+          nodeBaseStyles,
+          (nodeData) => {
+            const { value, collapsed } = nodeData
+            // Rounded border for Operator/Fragment nodes
+            if (
+              isObject(value) &&
+              ('operator' in value ||
+                'fragment' in value ||
+                isShorthandNodeWithSimpleValue(nodeData))
+            ) {
+              return collapsed ? innerCollectionSpacing : innerCollectionRoundedBorder
+            }
+          },
+        ],
+      },
+      styles,
+    ],
+    [styles, isShorthandNodeWithSimpleValue]
+  )
+
+  // fig-tree's `isOperatorNode` guard tests a node's value; wrap it as a
+  // NodeData predicate so it composes with the filter helpers. An operator node
+  // whose name is a registered custom function uses the dedicated CustomOperator
+  // component; all other operators use the standard Operator component.
+  //
   // Each operator/fragment/custom-operator node is registered as a PAIR of
   // definitions:
   //  - a "toolbar" variant (`showOnEdit: true`) that matches ONLY while this
@@ -251,17 +388,126 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // The per-node path match is what lets both editors coexist without a flicker.
   // Type-selector identity (`name`/`defaultValue`/`showInTypeSelector`) lives
   // only on the default variant, so the type selector lists each type once.
-  const editVariants = (def: CustomNodeDefinition): CustomNodeDefinition[] => {
-    const { condition, name, defaultValue, showInTypeSelector, ...shared } = def
+  const customNodeDefinitions = useMemo<CustomNodeDefinition[]>(() => {
+    const isOperator: FilterPredicate = ({ value }) => isOperatorNode(value as EvaluatorNode)
+    const isCustomFunctionNode = and(isOperator, ({ value }) =>
+      allFunctions.has(String((value as OperatorNode).operator))
+    )
+
+    const editVariants = (def: CustomNodeDefinition): CustomNodeDefinition[] => {
+      const { condition, name, defaultValue, showInTypeSelector, ...shared } = def
+      return [
+        {
+          ...shared,
+          condition: and(condition, ({ path }) => toPathString(path) === displayBarEditPath),
+          showOnEdit: true,
+        },
+        { ...shared, condition, name, defaultValue, showInTypeSelector, showOnEdit: false },
+      ]
+    }
+
     return [
+      // Operator / Fragment / CustomOperator are anchored on the OBJECT
+      // (stable path), and each expands to a toolbar + default variant pair
+      // (see `editVariants`) so the DisplayBar pencil opens the structured
+      // toolbar while the edit-tools pencil opens the raw-JSON editor.
+      ...editVariants({
+        condition: isCustomFunctionNode,
+        component: CustomOperator as unknown as CustomNodeDefinition['component'],
+        componentProps: nodeComponentProps,
+        showEditTools: true,
+        showInTypeSelector: true,
+      }),
+      ...editVariants({
+        condition: and(isOperator, not(isCustomFunctionNode)),
+        component: Operator as unknown as CustomNodeDefinition['component'],
+        name: 'Operator',
+        componentProps: nodeComponentProps,
+        showEditTools: true,
+        showInTypeSelector: true,
+        defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
+      }),
+      ...editVariants({
+        condition: ({ value }) => isFragmentNode(value as EvaluatorNode),
+        component: Fragment as unknown as CustomNodeDefinition['component'],
+        name: 'Fragment',
+        componentProps: nodeComponentProps,
+        showEditTools: true,
+        showInTypeSelector: true,
+        defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
+      }),
       {
-        ...shared,
-        condition: and(condition, ({ path }) => toPathString(path) === displayBarEditPath),
-        showOnEdit: true,
+        condition: (nodeData) => isShorthandNodeCollection(nodeData),
+        showKey: false,
+        wrapperComponent: ShorthandNodeCollection as unknown as CustomNodeDefinition['component'],
+        wrapperProps: {
+          figTree,
+          evaluateNode,
+          topLevelAliases,
+          figTreeData,
+          converters,
+          updateExpression,
+        },
       },
-      { ...shared, condition, name, defaultValue, showInTypeSelector, showOnEdit: false },
+      {
+        condition: (nodeData) =>
+          isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
+        showOnEdit: true,
+        wrapperComponent: ({ children }) => (
+          <div>
+            <p className="ft-alias-header-text">
+              <strong>Alias definitions:</strong>
+            </p>
+            {children}
+          </div>
+        ),
+      },
+      {
+        condition: (nodeData) =>
+          isShorthandNodeWithSimpleValue(nodeData) &&
+          !isCollection(Object.values(nodeData.value ?? {})[0]),
+        component: ShorthandNodeWithSimpleValue as unknown as CustomNodeDefinition['component'],
+        componentProps: {
+          figTree,
+          figTreeData,
+          evaluateNode,
+          operatorDisplay,
+          topLevelAliases,
+          converters,
+          updateExpression,
+        },
+        showEditTools: true,
+      },
+      {
+        condition: and(root, collections),
+        component: TopLevelContainer as unknown as CustomNodeDefinition['component'],
+        componentProps: {
+          figTree,
+          figTreeData,
+          evaluateNode,
+          isShorthandNode,
+        },
+      },
     ]
-  }
+  }, [
+    nodeComponentProps,
+    displayBarEditPath,
+    allFunctions,
+    allOpAliases,
+    allFragments,
+    defaultNewOperatorExpression,
+    defaultFragment,
+    figTree,
+    figTreeData,
+    evaluateNode,
+    topLevelAliases,
+    converters,
+    updateExpression,
+    operatorDisplay,
+    isShorthandNodeCollection,
+    isShorthandNodeWithSimpleValue,
+    isShorthandNode,
+  ])
 
   return (
     <JsonEditor
@@ -309,144 +555,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       stringTruncateLength={100}
       {...props}
       setData={setExpression as (data: unknown) => void}
-      theme={[
-        {
-          container: {},
-          property: (nodeData) => {
-            if (isAliasString(String(nodeData.key))) return { fontStyle: 'italic' }
-          },
-          string: ({ value }) => {
-            if (isAliasString(String(value))) return { fontStyle: 'italic' }
-          },
-          bracket: (nodeData) => {
-            const { value, collapsed } = nodeData
-            if (
-              !(
-                isObject(value) &&
-                ('operator' in value ||
-                  'fragment' in value ||
-                  isShorthandNodeWithSimpleValue(nodeData))
-              )
-            )
-              return { display: 'inline' }
-            if (!collapsed) return { display: 'none' }
-          },
-          itemCount: (nodeData) => {
-            if (
-              isObject(nodeData.value) &&
-              ('operator' in nodeData.value ||
-                'fragment' in nodeData.value ||
-                isShorthandNodeWithSimpleValue(nodeData))
-            )
-              return { fontSize: '1.1em' }
-          },
-          collectionInner: [
-            nodeBaseStyles,
-            (nodeData) => {
-              const { value, collapsed } = nodeData
-              // Rounded border for Operator/Fragment nodes
-              if (
-                isObject(value) &&
-                ('operator' in value ||
-                  'fragment' in value ||
-                  isShorthandNodeWithSimpleValue(nodeData))
-              ) {
-                return collapsed ? innerCollectionSpacing : innerCollectionRoundedBorder
-              }
-            },
-          ],
-        },
-        styles,
-      ]}
-      customNodeDefinitions={[
-        // Operator / Fragment / CustomOperator are anchored on the OBJECT
-        // (stable path), and each expands to a toolbar + default variant pair
-        // (see `editVariants`) so the DisplayBar pencil opens the structured
-        // toolbar while the edit-tools pencil opens the raw-JSON editor.
-        ...editVariants({
-          condition: isCustomFunctionNode,
-          component: CustomOperator as unknown as CustomNodeDefinition['component'],
-          componentProps: nodeComponentProps,
-          showEditTools: true,
-          showInTypeSelector: true,
-        }),
-        ...editVariants({
-          condition: and(isOperator, not(isCustomFunctionNode)),
-          component: Operator as unknown as CustomNodeDefinition['component'],
-          name: 'Operator',
-          componentProps: nodeComponentProps,
-          showEditTools: true,
-          showInTypeSelector: true,
-          defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
-        }),
-        ...editVariants({
-          condition: ({ value }) => isFragmentNode(value as EvaluatorNode),
-          component: Fragment as unknown as CustomNodeDefinition['component'],
-          name: 'Fragment',
-          componentProps: nodeComponentProps,
-          showEditTools: true,
-          showInTypeSelector: true,
-          defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
-        }),
-        {
-          condition: (nodeData) => isShorthandNodeCollection(nodeData),
-          showKey: false,
-          wrapperComponent: ShorthandNodeCollection as unknown as CustomNodeDefinition['component'],
-          wrapperProps: {
-            figTree,
-            evaluateNode,
-            topLevelAliases,
-            figTreeData,
-            converters,
-            updateExpression,
-          },
-        },
-        {
-          condition: (nodeData) =>
-            isFirstAliasNode(nodeData, allOpAliases, allFragments, allFunctions),
-          showOnEdit: true,
-          wrapperComponent: ({ children }) => (
-            <div>
-              <p className="ft-alias-header-text">
-                <strong>Alias definitions:</strong>
-              </p>
-              {children}
-            </div>
-          ),
-        },
-        {
-          condition: (nodeData) =>
-            isShorthandNodeWithSimpleValue(nodeData) &&
-            !isCollection(Object.values(nodeData.value ?? {})[0]),
-          component: ShorthandNodeWithSimpleValue as unknown as CustomNodeDefinition['component'],
-          componentProps: {
-            figTree,
-            figTreeData,
-            evaluateNode,
-            operatorDisplay,
-            topLevelAliases,
-            converters,
-            updateExpression,
-          },
-          showEditTools: true,
-        },
-        {
-          condition: and(root, collections),
-          component: TopLevelContainer as unknown as CustomNodeDefinition['component'],
-          componentProps: {
-            figTree,
-            figTreeData,
-            evaluateNode,
-            isShorthandNode,
-          },
-        },
-      ]}
-      customText={{
-        ITEMS_MULTIPLE: (nodeData) =>
-          propertyCountReplace(nodeData, allOpAliases, allFragments, allFunctions),
-        ITEM_SINGLE: (nodeData) =>
-          propertyCountReplace(nodeData, allOpAliases, allFragments, allFunctions),
-      }}
+      theme={theme}
+      customNodeDefinitions={customNodeDefinitions}
+      customText={customText}
     />
   )
 }
