@@ -1,5 +1,5 @@
-import React, { useMemo, useEffect, useRef, useCallback } from 'react'
-import { JsonData, ThemeStyles } from 'json-edit-react'
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
+import { JsonData, ThemeStyles, toPathString } from 'json-edit-react'
 import {
   type EvaluatorNode,
   type FigTreeEvaluator,
@@ -125,6 +125,13 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // picker. Consumed and cleared once by that node (see `useCommon`).
   const justSwitchedTo = useRef<string | null>(null)
 
+  // The path of the node currently being edited via its DisplayBar pencil (set
+  // in `useCommon`). It selects the "toolbar" variant of that node's definition
+  // (`showOnEdit: true`); every other node — including one opened via the
+  // generic edit-tools pencil — falls through to the default variant
+  // (`showOnEdit: false`), which gives the raw-JSON editor.
+  const [displayBarEditPath, setDisplayBarEditPath] = useState<string | null>(null)
+
   // Deeper nodes don't have access to higher-level alias definitions when
   // evaluating them on their own (only when evaluated from above), so we
   // collect all top-level aliases and pass them down to all child components
@@ -216,6 +223,45 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       null,
     [fragments, defaultNewFragment]
   )
+
+  // Shared props for the Operator/Fragment/CustomOperator node components.
+  const nodeComponentProps = {
+    figTreeData,
+    evaluateNode,
+    operatorDisplay,
+    topLevelAliases,
+    converters,
+    addTopLevelFallback,
+    updateExpression,
+    defaultNewOperatorExpression,
+    defaultNewFragment: defaultFragment,
+    defaultNewCustomOperator,
+    justSwitchedTo,
+    displayBarEditPath,
+    setDisplayBarEditPath,
+  }
+
+  // Each operator/fragment/custom-operator node is registered as a PAIR of
+  // definitions:
+  //  - a "toolbar" variant (`showOnEdit: true`) that matches ONLY while this
+  //    exact node is being edited via its DisplayBar pencil (path match), so
+  //    editing renders our structured toolbar; and
+  //  - a default variant (`showOnEdit: false`) for every other case, so the
+  //    generic edit-tools pencil opens json-edit-react's raw-JSON editor.
+  // The per-node path match is what lets both editors coexist without a flicker.
+  // Type-selector identity (`name`/`defaultValue`/`showInTypeSelector`) lives
+  // only on the default variant, so the type selector lists each type once.
+  const editVariants = (def: CustomNodeDefinition): CustomNodeDefinition[] => {
+    const { condition, name, defaultValue, showInTypeSelector, ...shared } = def
+    return [
+      {
+        ...shared,
+        condition: and(condition, ({ path }) => toPathString(path) === displayBarEditPath),
+        showOnEdit: true,
+      },
+      { ...shared, condition, name, defaultValue, showInTypeSelector, showOnEdit: false },
+    ]
+  }
 
   return (
     <JsonEditor
@@ -313,75 +359,35 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         styles,
       ]}
       customNodeDefinitions={[
-        {
-          // Anchored on the operator/fragment OBJECT (stable path), not the
-          // `operator`/`fragment` key, so editing survives a type switch and
-          // can use json-edit-react's built-in editing session.
+        // Operator / Fragment / CustomOperator are anchored on the OBJECT
+        // (stable path), and each expands to a toolbar + default variant pair
+        // (see `editVariants`) so the DisplayBar pencil opens the structured
+        // toolbar while the edit-tools pencil opens the raw-JSON editor.
+        ...editVariants({
           condition: isCustomFunctionNode,
           component: CustomOperator as unknown as CustomNodeDefinition['component'],
-          componentProps: {
-            figTreeData,
-            evaluateNode,
-            operatorDisplay,
-            topLevelAliases,
-            converters,
-            addTopLevelFallback,
-            updateExpression,
-            defaultNewOperatorExpression,
-            defaultNewFragment: defaultFragment,
-            defaultNewCustomOperator,
-            justSwitchedTo,
-          },
-          // `showOnEdit` keeps the custom component (and its live child rows)
-          // rendered while editing, instead of json-edit-react's JSON textarea.
-          showOnEdit: true,
+          componentProps: nodeComponentProps,
           showEditTools: true,
           showInTypeSelector: true,
-        },
-        {
+        }),
+        ...editVariants({
           condition: and(isOperator, not(isCustomFunctionNode)),
           component: Operator as unknown as CustomNodeDefinition['component'],
           name: 'Operator',
-          componentProps: {
-            figTreeData,
-            evaluateNode,
-            operatorDisplay,
-            topLevelAliases,
-            converters,
-            addTopLevelFallback,
-            updateExpression,
-            defaultNewOperatorExpression,
-            defaultNewFragment: defaultFragment,
-            defaultNewCustomOperator,
-            justSwitchedTo,
-          },
-          showOnEdit: true,
+          componentProps: nodeComponentProps,
           showEditTools: true,
           showInTypeSelector: true,
           defaultValue: defaultNewOperatorExpression ?? { operator: '+', values: [2, 2] },
-        },
-        {
+        }),
+        ...editVariants({
           condition: ({ value }) => isFragmentNode(value as EvaluatorNode),
           component: Fragment as unknown as CustomNodeDefinition['component'],
           name: 'Fragment',
-          componentProps: {
-            figTreeData,
-            evaluateNode,
-            operatorDisplay,
-            topLevelAliases,
-            converters,
-            addTopLevelFallback,
-            updateExpression,
-            defaultNewOperatorExpression,
-            defaultNewFragment: defaultFragment,
-            defaultNewCustomOperator,
-            justSwitchedTo,
-          },
-          showOnEdit: true,
+          componentProps: nodeComponentProps,
           showEditTools: true,
           showInTypeSelector: true,
           defaultValue: defaultFragment ? { fragment: defaultFragment } : null,
-        },
+        }),
         {
           condition: (nodeData) => isShorthandNodeCollection(nodeData),
           showKey: false,

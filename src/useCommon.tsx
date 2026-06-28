@@ -1,6 +1,6 @@
 // Common functionality for FigTree Node components
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { OperatorProps } from './Operator'
 import { JsonData, NodeData, assign, toPathString } from 'json-edit-react'
 import { getAliases } from './helpers'
@@ -16,11 +16,13 @@ interface Input {
   // Live read of the full tree, used by `buildOnEdit` to compute the new data
   // for an edit at an arbitrary path.
   getLatestData: () => JsonData
-  // json-edit-react's editing session for this node: `isEditing` drives the
-  // toolbar, `closeEditing` ends the session (✓/✗ both just close, since the
-  // toolbar's edits are written live).
+  // json-edit-react's editing session for this node. `isEditing` drives the
+  // toolbar; `setIsEditing`/`handleCancel` open/close the session. `useCommon`
+  // wraps these as `startEditing`/`closeEditing` to also set/clear
+  // `displayBarEditPath` (which selects this node's toolbar variant).
   isEditing: boolean
-  closeEditing: () => void
+  setIsEditing: (value: boolean) => void
+  handleCancel: () => void
 }
 
 /**
@@ -60,7 +62,8 @@ export const useCommon = ({
   nodeData,
   getLatestData,
   isEditing,
-  closeEditing,
+  setIsEditing,
+  handleCancel,
 }: Input) => {
   const {
     evaluateNode,
@@ -70,6 +73,8 @@ export const useCommon = ({
     addTopLevelFallback,
     updateExpression,
     justSwitchedTo,
+    displayBarEditPath,
+    setDisplayBarEditPath,
   } = componentProps
   const [loading, setLoading] = useState(false)
 
@@ -78,6 +83,31 @@ export const useCommon = ({
   const pathString = toPathString(nodeData.path)
 
   const onEdit = buildOnEdit(getLatestData, updateExpression)
+
+  // Edit via the DisplayBar pencil: mark this path as display-bar-edited (which
+  // selects this node's `showOnEdit` toolbar variant), then open the session.
+  const startEditing = () => {
+    setDisplayBarEditPath(pathString)
+    setIsEditing(true)
+  }
+  // Close (✓/✗/Esc): clear the mark first so a subsequent edit-tools edit of
+  // this node opens raw JSON, then end the session. Edits are written live, so
+  // there's nothing to commit/revert here.
+  const closeEditing = () => {
+    setDisplayBarEditPath(null)
+    handleCancel()
+  }
+
+  // Safety net for when a display-bar edit ends WITHOUT `closeEditing` — e.g.
+  // displaced by opening another node. Clear our mark (guarded to this path so
+  // we never clobber another node's just-set mark) so a later edit-tools edit
+  // here opens raw JSON rather than the toolbar.
+  const wasEditing = useRef(false)
+  useEffect(() => {
+    if (wasEditing.current && !isEditing && displayBarEditPath === pathString)
+      setDisplayBarEditPath(null)
+    wasEditing.current = isEditing
+  }, [isEditing])
 
   // When a NodeTypeSelector switch lands on this path, auto-open this node's
   // operator/fragment/function picker (the freshly-switched node mounts here).
@@ -136,5 +166,7 @@ export const useCommon = ({
     maybeInsertFallback,
     onEdit,
     startOpen,
+    startEditing,
+    closeEditing,
   }
 }
