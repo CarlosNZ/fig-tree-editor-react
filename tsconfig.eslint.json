@@ -1,0 +1,10 @@
+{
+  // Lint-only project: the build tsconfig uses `files: ["src/index.ts"]`, which
+  // is too narrow for type-aware linting. This widens the program to every
+  // source file while inheriting the same strict compiler options.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

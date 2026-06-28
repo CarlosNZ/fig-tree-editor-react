@@ -23,7 +23,7 @@ export default [
     plugins: [
       styles({ minimize: true }),
       peerDepsExternal({ includeDependencies: true }),
-      typescript({ module: 'ESNext', target: 'es6' }),
+      typescript({ module: 'ESNext', target: 'es2020' }),
       // sizes(),
       terser({ mangle: false }),
       bundleSize(),

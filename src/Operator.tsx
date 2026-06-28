@@ -1,23 +1,23 @@
 import React, { useCallback } from 'react'
 import {
-  OperatorAlias,
-  OperatorMetadata,
-  OperatorNode,
-  OperatorParameterMetadata,
-  Operator as OperatorName,
-  EvaluatorNode,
-  FragmentMetadata,
-  CustomFunctionMetadata,
+  type OperatorAlias,
+  type OperatorMetadata,
+  type OperatorNode,
+  type OperatorParameterMetadata,
+  type Operator as OperatorName,
+  type EvaluatorNode,
+  type FragmentMetadata,
+  type CustomFunctionMetadata,
   isV1Node,
 } from 'fig-tree-evaluator'
-import { ConversionType, DisplayBar } from './DisplayBar'
-import { OptionGroup, Select } from './Select'
+import { DisplayBar, type ConversionType } from './DisplayBar'
+import { Select, type OptionGroup } from './Select'
 import { getCurrentOperator } from './helpers'
 import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { useCommon, filterChildren } from './useCommon'
 import { cleanOperatorNode, getAvailableProperties } from './validator'
-import { OperatorDisplay } from './operatorDisplay'
-import { CustomComponentProps } from './_imports'
+import type { OperatorDisplay } from './operatorDisplay'
+import type { CustomComponentProps } from './_imports'
 import { IconCancel, IconOk } from './Icons'
 
 export interface OperatorProps {
@@ -31,9 +31,9 @@ export interface OperatorProps {
   topLevelAliases: Record<string, EvaluatorNode>
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
   converters: {
-    toShorthand: (expression: EvaluatorNode) => void
-    fromShorthand: (expression: EvaluatorNode) => void
-    toV2: (expression: EvaluatorNode) => void
+    toShorthand: (expression: EvaluatorNode) => EvaluatorNode
+    fromShorthand: (expression: EvaluatorNode) => Promise<EvaluatorNode>
+    toV2: (expression: EvaluatorNode) => Promise<EvaluatorNode>
   }
   addTopLevelFallback?: EvaluatorNode
   // Validates and persists a complete expression (see `buildOnEdit`).
@@ -100,7 +100,7 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
   const { operators, functions } = figTreeData
 
   const node = value as OperatorNode
-  const thisOperator = node.operator as OperatorAlias
+  const thisOperator = node.operator
   const operatorData = getCurrentOperator(node.operator, operators)
 
   const convertType: ConversionType = isV1Node(node) ? 'toV2' : 'toShorthand'
@@ -108,7 +108,9 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
   const convert = useCallback(async () => {
     const { toV2, toShorthand } = converters
     const converter = convertType === 'toV2' ? toV2 : toShorthand
-    const converted = await converter(node)
+    // `toShorthand` is synchronous, `toV2` returns a Promise — normalise so the
+    // `await` is always valid.
+    const converted = await Promise.resolve(converter(node))
     onEdit(converted, expressionPath)
   }, [value])
 
@@ -149,7 +151,7 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
             />
             {isCustomFunction && (
               <FunctionSelector
-                value={(node as OperatorNode)?.functionName as string}
+                value={node?.functionName as string}
                 functions={functions}
                 updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
                   const newNode = { ...node, functionName: name } as Record<string, unknown>

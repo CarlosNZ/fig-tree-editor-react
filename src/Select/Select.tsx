@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 // import { IconChevron } from 'json-edit-react'
-import { OptionGroup, SelectOption, type SelectProps } from './types'
+import { type OptionGroup, type SelectOption, type SelectProps } from './types'
 import { DropdownMenu } from './Menu'
 
 export function Select<T>({

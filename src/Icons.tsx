@@ -1,5 +1,5 @@
-import { defaultTheme, ThemeIcons } from 'json-edit-react'
-import { SVGProps } from 'react'
+import { defaultTheme, type ThemeIcons } from 'json-edit-react'
+import { type SVGProps } from 'react'
 
 export const Icons = {
   evaluate: (

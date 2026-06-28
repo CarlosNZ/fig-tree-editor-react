@@ -1,10 +1,10 @@
 import React from 'react'
-import { OperatorAlias, Operator as OpType } from 'fig-tree-evaluator'
+import { type OperatorAlias, type Operator as OpType } from 'fig-tree-evaluator'
 import { Icon } from './Icons'
 // import { IconEdit } from './_imports'
 import { Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
-import { OperatorDisplay, operatorDisplay } from './operatorDisplay'
+import { type OperatorDisplay, operatorDisplay } from './operatorDisplay'
 
 const README_URL = 'https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#'
 
@@ -60,7 +60,7 @@ export const DisplayBar: React.FC<DisplayBarProps> = ({
         )}
       </div>
       <div className="ft-display-name">
-        <a href={link} target="_blank">
+        <a href={link} target="_blank" rel="noreferrer">
           {displayName}
         </a>
       </div>

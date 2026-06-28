@@ -1,9 +1,9 @@
 import React, { useCallback } from 'react'
-import { isObject, OperatorNode, OperatorParameterMetadata } from 'fig-tree-evaluator'
-import { CustomComponentProps } from './_imports'
+import { type OperatorNode, type OperatorParameterMetadata, isObject } from 'fig-tree-evaluator'
+import type { CustomComponentProps } from './_imports'
 import { IconCancel, IconOk, Icons } from './Icons'
 import { getButtonFontSize } from './helpers'
-import { OperatorProps } from './Operator'
+import type { OperatorProps } from './Operator'
 import { DisplayBar } from './DisplayBar'
 import { FunctionSelector, NodeTypeSelector, PropertySelector } from './CommonSelectors'
 import { useCommon, filterChildren } from './useCommon'
@@ -58,8 +58,8 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
 
   const node = value as OperatorNode
 
-  const convert = useCallback(async () => {
-    const converted = await converters.toShorthand(node)
+  const convert = useCallback(() => {
+    const converted = converters.toShorthand(node)
     onEdit(converted, expressionPath)
   }, [value])
 
@@ -94,7 +94,7 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
             />
             :
             <FunctionSelector
-              value={node.operator as string}
+              value={node.operator}
               functions={functions}
               updateNode={({ name, numRequiredArgs, argsDefault, inputDefault }) => {
                 const newNode = isObject(inputDefault)

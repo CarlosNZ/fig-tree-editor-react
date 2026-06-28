@@ -1,15 +1,15 @@
-import React, { useCallback, useState } from 'react'
-import {
+import React, { useState } from 'react'
+import type {
   Operator as OperatorName,
   OperatorMetadata,
   EvaluatorNode,
   FragmentMetadata,
   CustomFunctionMetadata,
 } from 'fig-tree-evaluator'
-import { CustomComponentProps, CustomWrapperProps } from './_imports'
+import type { CustomComponentProps, CustomWrapperProps } from './_imports'
 import { buildOnEdit } from './useCommon'
 import { getAliases, getCurrentFragment, getCurrentOperator } from './helpers'
-import { OperatorDisplay, operatorDisplay } from './operatorDisplay'
+import { operatorDisplay, type OperatorDisplay } from './operatorDisplay'
 import { ConvertButton, DisplayBar, EvaluateButton } from './DisplayBar'
 
 const README_URL = 'https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#'
@@ -25,9 +25,9 @@ export interface ShorthandProps {
     allNonAliases: Set<string>
   }
   converters: {
-    toShorthand: (expression: EvaluatorNode) => void
-    fromShorthand: (expression: EvaluatorNode) => void
-    toV2: (expression: EvaluatorNode) => void
+    toShorthand: (expression: EvaluatorNode) => EvaluatorNode
+    fromShorthand: (expression: EvaluatorNode) => Promise<EvaluatorNode>
+    toV2: (expression: EvaluatorNode) => Promise<EvaluatorNode>
   }
   // Validates and persists a complete expression (see `buildOnEdit`).
   updateExpression: (data: EvaluatorNode) => void
@@ -49,13 +49,15 @@ export const ShorthandNodeCollection: React.FC<CustomWrapperProps<ShorthandProps
   const { key, parentData, path } = nodeData
   const { evaluateNode, topLevelAliases, figTreeData, converters, updateExpression } =
     wrapperProps ?? {}
-  if (!evaluateNode || !figTreeData || !updateExpression) return null
+
+  // The only hook here; must run before any early return (Rules of Hooks).
+  const [loading, setLoading] = useState(false)
+
+  if (!evaluateNode || !figTreeData || !updateExpression || !converters) return null
 
   const onEdit = buildOnEdit(getLatestData, updateExpression)
 
   const canEdit = allowEditFilter(nodeData)
-
-  const [loading, setLoading] = useState(false)
 
   const operatorAlias = (key as string).slice(1)
 
@@ -77,11 +79,11 @@ export const ShorthandNodeCollection: React.FC<CustomWrapperProps<ShorthandProps
 
   const aliases = { ...topLevelAliases, ...getAliases(parentData, allNonAliases) }
 
-  const convert = useCallback(async () => {
-    const converted = await converters?.fromShorthand(parentData)
+  const convert = async () => {
+    const converted = await converters.fromShorthand(parentData)
     const newPath = path.slice(0, -1)
     onEdit(converted, newPath)
-  }, [parentData])
+  }
 
   return (
     <div className="ft-shorthand-wrapper">
@@ -146,10 +148,10 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomComponentProps<Shortha
 
   const aliases = { ...topLevelAliases, ...getAliases(data, allNonAliases) }
 
-  const convert = useCallback(async () => {
+  const convert = async () => {
     const converted = await converters.fromShorthand(data)
     onEdit(converted, nodeData.path)
-  }, [data])
+  }
 
   return (
     <div className="ft-shorthand-node">
@@ -174,7 +176,7 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomComponentProps<Shortha
       {/* Negative margin to cancel out Json-Edit-React indent for this case */}
       <div style={{ marginLeft: '-1.7em' }}>{children}</div>
       <div className="ft-display-name">
-        <a href={README_URL + operatorData.name.toLowerCase()} target="_blank">
+        <a href={README_URL + operatorData.name.toLowerCase()} target="_blank" rel="noreferrer">
           {displayName}
         </a>
       </div>

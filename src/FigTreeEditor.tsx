@@ -1,14 +1,14 @@
 import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
-import { JsonData, ThemeStyles, toPathString } from 'json-edit-react'
+import { toPathString, type ThemeStyles } from 'json-edit-react'
 import {
   type EvaluatorNode,
   type FigTreeEvaluator,
   type Operator as OperatorName,
+  type OperatorNode,
   isObject,
   isOperatorNode,
   isFragmentNode,
   isAliasString,
-  OperatorNode,
   isFigTreeError,
   convertV1ToV2,
   convertToShorthand,
@@ -17,13 +17,13 @@ import {
 } from 'fig-tree-evaluator'
 import {
   // json-edit-react
-  CustomNodeDefinition,
-  CustomTextDefinitions,
+  type CustomNodeDefinition,
+  type CustomTextDefinitions,
   JsonEditor,
-  JsonEditorProps,
-  NodeData,
-  ThemeInput,
-  UpdateFunction,
+  type JsonEditorProps,
+  type NodeData,
+  type ThemeInput,
+  type UpdateFunction,
   isCollection,
 } from './_imports'
 import { and, collections, not, root, type FilterPredicate } from '@json-edit-react/utils/filters'
@@ -128,14 +128,14 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   addTopLevelFallback,
   ...props
 }) => {
-  // Guard before any hook so the hook order stays stable (a conditional return
-  // placed *between* hooks would violate the Rules of Hooks).
-  if (!figTree) return null
-
   const previousData = useRef<EvaluatorNode>(null)
-  const operators = useMemo(() => figTree.getOperators(), [figTree])
-  const fragments = useMemo(() => figTree.getFragments(), [figTree])
-  const functions = useMemo(() => figTree.getCustomFunctions(), [figTree])
+  // `figTree` is a required prop, but guard defensively in case a consumer
+  // passes it before it's constructed. Render-phase hooks therefore tolerate a
+  // missing `figTree`; the `if (!figTree) return null` guard lives AFTER all
+  // hooks (just before the render), per the Rules of Hooks.
+  const operators = useMemo(() => figTree?.getOperators() ?? [], [figTree])
+  const fragments = useMemo(() => figTree?.getFragments() ?? [], [figTree])
+  const functions = useMemo(() => figTree?.getCustomFunctions() ?? [], [figTree])
 
   const allOpAliases = useMemo(() => {
     const all = operators.map((op) => [op.name, ...op.aliases]).flat()
@@ -190,6 +190,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // the state. So we do an equality check and early return if the data hasn't
   // hasn't changed from its previous value.
   useEffect(() => {
+    if (!figTree) return
     if (dequal(previousData.current, expression)) return
 
     const exp = validateExpression(expression, { operators, fragments, functions })
@@ -228,20 +229,22 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     [allOpAliases, allFragments, allFunctions]
   )
   const isShorthandNode = useCallback(
-    (nodeData: NodeData) =>
-      shorthandNodeTester(nodeData, allOpAliases, allFragments, allFunctions),
+    (nodeData: NodeData) => shorthandNodeTester(nodeData, allOpAliases, allFragments, allFunctions),
     [allOpAliases, allFragments, allFunctions]
   )
 
   const toShorthand = useCallback(
     (expression: EvaluatorNode) => convertToShorthand(expression, figTree),
-    []
+    [figTree]
   )
   const fromShorthand = useCallback(
     (expression: EvaluatorNode) => convertFromShorthand(expression, figTree),
-    []
+    [figTree]
   )
-  const toV2 = useCallback((expression: EvaluatorNode) => convertV1ToV2(expression, figTree), [])
+  const toV2 = useCallback(
+    (expression: EvaluatorNode) => convertV1ToV2(expression, figTree),
+    [figTree]
+  )
 
   const converters = useMemo(
     () => ({ toShorthand, fromShorthand, toV2 }),
@@ -258,7 +261,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
           operators,
           fragments,
           functions,
-        }) as EvaluatorNode
+        })
         previousData.current = validated
         setExpression(validated)
       } catch (err) {
@@ -332,14 +335,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         },
         bracket: (nodeData) => {
           const { value, collapsed } = nodeData
-          if (
-            !(
-              isObject(value) &&
-              ('operator' in value ||
-                'fragment' in value ||
-                isShorthandNodeWithSimpleValue(nodeData))
-            )
-          )
+          if (!(
+            isObject(value) &&
+            ('operator' in value || 'fragment' in value || isShorthandNodeWithSimpleValue(nodeData))
+          ))
             return { display: 'inline' }
           if (!collapsed) return { display: 'none' }
         },
@@ -509,20 +508,23 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     isShorthandNode,
   ])
 
+  // Defensive guard, placed after every hook so hook order stays stable.
+  if (!figTree) return null
+
   return (
     <JsonEditor
       // collapseAnimationTime={1000}
       className="ft-editor"
       showCollectionCount="when-collapsed"
-      data={expression as JsonData}
+      data={expression}
       onUpdate={({ newData, ...rest }, control) => {
         try {
-          const validated = validateExpression(newData as EvaluatorNode, {
+          const validated = validateExpression(newData, {
             operators,
             fragments,
             functions,
           }) as object
-          onUpdate({ newData: validated, ...rest }, control)
+          void onUpdate({ newData: validated, ...rest }, control)
           previousData.current = validated
           return ['value', validated]
         } catch (err: any) {
@@ -554,7 +556,7 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
       collapse={2}
       stringTruncateLength={100}
       {...props}
-      setData={setExpression as (data: unknown) => void}
+      setData={setExpression}
       theme={theme}
       customNodeDefinitions={customNodeDefinitions}
       customText={customText}
