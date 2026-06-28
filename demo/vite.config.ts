@@ -49,4 +49,19 @@ export default defineConfig({
     // level up from the demo (../src, ../build, ../pack-output).
     fs: { allow: [path.resolve(__dirname, '..')] },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Split the heaviest, rarely-changing vendors into their own chunks so
+        // they stay cached across app-code edits (and to drop the single
+        // >500 kB chunk warning). These don't reduce total download — the demo
+        // is a single view that needs all of them on first paint.
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom'],
+          'chakra-vendor': ['@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion'],
+          'editor-vendor': ['json-edit-react', 'fig-tree-evaluator', 'fig-tree-editor-react'],
+        },
+      },
+    },
+  },
 })
