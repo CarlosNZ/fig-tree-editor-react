@@ -85,7 +85,8 @@ export const useCommon = ({
   } = componentProps
   const [loading, setLoading] = useState(false)
 
-  // The custom node is the object itself, so its own path is the expression path.
+  // The custom node is the object itself, so its own path is the expression
+  // path.
   const expressionPath = nodeData.path
   const pathString = toPathString(nodeData.path)
 

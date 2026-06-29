@@ -65,7 +65,8 @@ export const NodeTypeSelector: React.FC<{
     const newType = selected.value
     if (currentSelection?.value === newType) return
 
-    // Flag the switch so the new node (same path) auto-opens its picker on mount
+    // Flag the switch so the new node (same path) auto-opens its picker on
+    // mount
     if (justSwitchedTo && newType !== 'value') justSwitchedTo.current = toPathString(nodeData.path)
 
     switch (newType) {
