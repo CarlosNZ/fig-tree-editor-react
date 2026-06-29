@@ -1,5 +1,6 @@
 import { EvaluatorNode, FigTreeOptions } from '@fig-tree-editor-react'
 import { JsonEditorProps } from 'json-edit-react'
+import { and, byKey, byLevel, byType, not, root } from '@json-edit-react/utils/filters'
 
 export interface DemoData {
   name: string
@@ -108,7 +109,7 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
 
 `,
     objectJsonEditorProps: {
-      allowEdit: ({ level }) => level === 2,
+      allowEdit: byLevel(2),
       allowDelete: false,
       allowAdd: false,
     },
@@ -195,7 +196,7 @@ Try changing all these values and see the output differences.
       },
     },
     objectJsonEditorProps: {
-      allowEdit: ({ value }) => typeof value === 'string' || Array.isArray(value),
+      allowEdit: byType('string', 'array'),
       allowDelete: false,
       allowAdd: false,
       allowTypeSelection: [
@@ -262,7 +263,7 @@ Note the \`fallback\` property used here — an array with a *"Loading..."* indi
     objectJsonEditorProps: {
       allowAdd: false,
       allowDelete: false,
-      allowEdit: ({ key }) => key === 'name' || key === 'country',
+      allowEdit: byKey('name', 'country'),
       allowTypeSelection: false,
     },
     objectData: {
@@ -302,7 +303,7 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
       preferredDifficulty: 'easy',
     },
     objectJsonEditorProps: {
-      allowEdit: ({ key }) => key !== 'Info',
+      allowEdit: and(not(byKey('Info')), not(root)),
       allowAdd: false,
       allowDelete: false,
       allowTypeSelection: [
@@ -418,7 +419,7 @@ Change the \`selected\` character name to look up a different Star Wars characte
     objectJsonEditorProps: {
       allowDelete: false,
       allowAdd: false,
-      allowEdit: ({ key }) => key === 'selected',
+      allowEdit: byKey('selected'),
       allowTypeSelection: false,
       onUpdate: (props) => {
         if (props.event !== 'edit' && props.event !== 'add') return
@@ -579,7 +580,7 @@ They both require a \`$country\` parameter, which is substituted into the expres
       myFavouriteCountry: 'New Zealand',
     },
     objectJsonEditorProps: {
-      allowEdit: ({ key }) => key === 'myFavouriteCountry',
+      allowEdit: byKey('myFavouriteCountry'),
       allowAdd: false,
       allowDelete: false,
       allowTypeSelection: false,
@@ -678,7 +679,7 @@ There are three hard-coded into this FigTree instance:
     objectJsonEditorProps: {
       allowDelete: false,
       allowAdd: false,
-      allowEdit: ({ value }) => typeof value === 'string',
+      allowEdit: byType('string'),
       allowTypeSelection: false,
     },
     expression: {
