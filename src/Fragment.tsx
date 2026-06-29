@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 import {
   type FragmentMetadata,
   type FragmentNode,
@@ -76,10 +76,10 @@ export const Fragment: React.FC<CustomComponentProps<OperatorProps>> = (props) =
       ? { textColor, backgroundColor, displayName: 'Fragment' }
       : undefined
 
-  const convert = useCallback(() => {
+  const convert = () => {
     const converted = converters.toShorthand(node)
     onEdit(converted, expressionPath)
-  }, [value])
+  }
 
   return (
     <>

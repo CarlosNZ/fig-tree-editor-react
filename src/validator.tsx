@@ -35,7 +35,9 @@ export const validateExpression = (
   defaultFallback?: EvaluatorNode
 ): EvaluatorNode => {
   if (Array.isArray(expression))
-    return expression.map((value) => validateExpression(value, figTreeMetaData))
+    return (expression as EvaluatorNode[]).map((value) =>
+      validateExpression(value, figTreeMetaData)
+    )
 
   if (!isObject(expression)) return expression
 
@@ -93,7 +95,7 @@ export const validateExpression = (
       entry[1] = validateExpression(value, figTreeMetaData)
 
     if (Array.isArray(value))
-      entry[1] = value.map((item) => validateExpression(item, figTreeMetaData))
+      entry[1] = (value as EvaluatorNode[]).map((item) => validateExpression(item, figTreeMetaData))
 
     if (!isOperator && !isFragment) {
       newExpression.push(entry)

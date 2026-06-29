@@ -196,6 +196,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
     const exp = validateExpression(expression, { operators, fragments, functions })
     previousData.current = exp
     setExpression(exp)
+    // Intentionally runs only on `expression` changes (re-validate input from
+    // the parent); the other referenced values are stable or would re-trigger
+    // this sync effect needlessly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [expression])
 
   // Stable identities for the (often inline) consumer callbacks, so
@@ -523,12 +527,12 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
             operators,
             fragments,
             functions,
-          }) as object
+          })
           void onUpdate({ newData: validated, ...rest }, control)
           previousData.current = validated
-          return ['value', validated]
-        } catch (err: any) {
-          return err.message
+          return { data: validated }
+        } catch (err) {
+          return { error: err instanceof Error ? err.message : String(err) }
         }
       }}
       allowDelete={(nodeData) => {
