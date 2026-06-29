@@ -26,7 +26,7 @@ import {
   type UpdateFunction,
   isCollection,
 } from './_imports'
-import { and, collections, not, root, type FilterPredicate } from '@json-edit-react/utils/filters'
+import { and, collections, not, or, root, type FilterPredicate } from '@json-edit-react/utils/filters'
 import './styles.css'
 import { Operator } from './Operator'
 import { Fragment } from './Fragment'
@@ -521,6 +521,15 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   // Defensive guard, placed after every hook so hook order stays stable.
   if (!figTree) return null
 
+  // A required parameter of its parent operator — these can't be deleted.
+  const isRequiredParam: FilterPredicate = ({ key, parentData }) => {
+    if (!isObject(parentData) || !('operator' in parentData)) return false
+    const required = getCurrentOperator((parentData as OperatorNode).operator, operators)
+      ?.parameters.filter((param) => param.required)
+      .flatMap((param) => [param.name, ...param.aliases])
+    return required?.includes(key as string) ?? false
+  }
+
   return (
     <JsonEditor
       // collapseAnimationTime={1000}
@@ -542,23 +551,12 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         }
       }}
       allowDelete={(nodeData) => {
-        const { key, parentData } = nodeData
-
         // Respect any caller-supplied allowDelete first (deny short-circuits)
         if (allowDelete === false) return false
         if (typeof allowDelete === 'function' && allowDelete(nodeData) === false) return false
 
-        // The root node can't be deleted
-        if (root(nodeData)) return false
-
-        // Allow unless this is a required operator parameter
-        if (!isObject(parentData) || !('operator' in parentData)) return true
-        const required = getCurrentOperator((parentData as OperatorNode).operator, operators)
-          ?.parameters.filter((param) => param.required)
-          .map((param) => [param.name, ...param.aliases])
-          .flat()
-
-        return !(required?.includes(key as string) ?? false)
+        // The root node and required operator parameters can't be deleted
+        return not(or(root, isRequiredParam))(nodeData)
       }}
       allowTypeSelection={(nodeData) => getTypeFilter(nodeData, { operators, fragments })}
       showArrayIndexes={false}
