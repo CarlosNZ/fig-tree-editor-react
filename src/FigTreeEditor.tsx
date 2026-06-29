@@ -43,6 +43,7 @@ import {
   propertyCountReplace,
   getAliases,
   getTypeFilter,
+  containsFigTreeNode,
 } from './helpers'
 import { ShorthandNodeWithSimpleValue, ShorthandNodeCollection } from './Shorthand'
 
@@ -484,7 +485,10 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
         showEditTools: true,
       },
       {
-        condition: and(root, collections),
+        // Only a root that actually contains FigTree nodes (somewhere) gets the
+        // top-level Evaluate button; a pure-data root (e.g. `{ one: 1 }`) falls
+        // through to plain json-edit-react with no custom node.
+        condition: and(root, collections, ({ value }) => containsFigTreeNode(value)),
         component: TopLevelContainer as unknown as CustomNodeDefinition['component'],
         componentProps: {
           figTree,

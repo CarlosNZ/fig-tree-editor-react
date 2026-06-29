@@ -73,9 +73,36 @@ This is the central design decision and the easiest thing to get wrong:
 - Custom node components are **anchored on the operator/fragment object itself** (a stable path),
   not on the `operator`/`fragment` *key*. So `value` inside a component **is** the whole expression
   node. This is what lets an edit survive a node-type switch and reuse JER's built-in editing
-  session (`showOnEdit: true` keeps the custom component rendered while editing instead of JER's raw
-  JSON textarea). `useCommon.filterChildren` then hides the redundant `operator:`/`fragment:` child
-  row, since the header (`DisplayBar`/selectors) already represents it.
+  session. `useCommon.filterChildren` then hides the redundant `operator:`/`fragment:` child row,
+  since the header (`DisplayBar`/selectors) already represents it.
+
+### Two editors per node: the variant pair + `displayBarEditPath`
+
+Each operator/fragment/custom node intentionally supports **two** editors, and they must not collide:
+
+- the **structured toolbar** (operator/type/property selectors), opened by the node's own DisplayBar
+  pencil; and
+- JER's **raw-JSON textarea**, opened by the generic collection edit-tools pencil.
+
+Both go through the same JER editing session (`isEditing` on the same path), so the *only* lever that
+distinguishes them is **which variant of the node definition matches**. `FigTreeEditor`'s
+`editVariants(def)` helper expands every node def into a pair:
+
+- a **toolbar variant** — `showOnEdit: true`, whose `condition` additionally requires
+  `toPathString(path) === displayBarEditPath`; and
+- a **default variant** — `showOnEdit: false` (so editing falls back to JER's raw-JSON textarea).
+  Type-selector identity (`name`/`defaultValue`/`showInTypeSelector`) lives only here, so each type
+  is listed once.
+
+`displayBarEditPath` is `FigTreeEditor` state, set/cleared per-node in `useCommon` (see below). The
+DisplayBar pencil sets it to that node's path → the toolbar variant matches → structured toolbar.
+The edit-tools pencil never sets it → that node stays on the default variant → raw JSON. Because the
+discriminator is the node's *path* (not a global boolean), a node opened via edit-tools never
+momentarily matches the toolbar variant, so there's no flicker.
+
+(Known minor wart: while the toolbar is open, JER hides *that* node's own edit-tools row
+(`showEditButtons = !isEditing`), since the object is the node being edited. Fixing it cleanly would
+need a JER opt-in; left as-is for now.)
 - Edits never mutate in place. Components call **`onEdit(newValue, path)`** (from
   `buildOnEdit` in `src/useCommon.tsx`), which reads the latest full tree (`getLatestData`),
   `assign`s the new value at `path`, then runs it through **`updateExpression`** →
@@ -83,7 +110,10 @@ This is the central design decision and the easiest thing to get wrong:
   expression.
 - **`src/useCommon.tsx`** holds the shared logic for the Operator/Fragment/CustomOperator components
   (evaluate button, loading state, alias collection, `maybeInsertFallback`, the live-edit toolbar
-  keyboard handling, and `startOpen`). The Shorthand components do *not* use `useCommon` but reuse
+  keyboard handling, and `startOpen`). It also wraps the JER `setIsEditing`/`handleCancel` props as
+  `startEditing`/`closeEditing`, which set/clear `displayBarEditPath` (so the DisplayBar pencil
+  selects the toolbar variant above); a transition-guarded effect clears it if the edit ends without
+  `closeEditing` (e.g. displacement). The Shorthand components do *not* use `useCommon` but reuse
   `buildOnEdit` directly.
 
 ### Validation: `src/validator.tsx`
