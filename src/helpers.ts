@@ -172,8 +172,8 @@ export const isShorthandNodeWithSimpleValue = (
 }
 
 // True if the node is a shorthand operator/fragment/function node — i.e. it has
-// a key like `$plus`/`$getData` whose name is a registered alias. Unlike the two
-// testers above, this tolerates additional alias-definition keys (e.g. a
+// a key like `$plus`/`$getData` whose name is a registered alias. Unlike the
+// two testers above, this tolerates additional alias-definition keys (e.g. a
 // `$character` alias sitting alongside the operator key), so a shorthand node
 // that also defines aliases is still recognised as a FigTree node.
 export const isShorthandNode = (

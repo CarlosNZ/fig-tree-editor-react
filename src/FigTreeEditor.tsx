@@ -378,8 +378,9 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
 
   // fig-tree's `isOperatorNode` guard tests a node's value; wrap it as a
   // NodeData predicate so it composes with the filter helpers. An operator node
-  // whose name is a registered custom function uses the dedicated CustomOperator
-  // component; all other operators use the standard Operator component.
+  // whose name is a registered custom function uses the dedicated
+  // CustomOperator component; all other operators use the standard Operator
+  // component.
   //
   // Each operator/fragment/custom-operator node is registered as a PAIR of
   // definitions:
@@ -387,10 +388,11 @@ const FigTreeEditor: React.FC<FigTreeEditorProps> = ({
   //    exact node is being edited via its DisplayBar pencil (path match), so
   //    editing renders our structured toolbar; and
   //  - a default variant (`showOnEdit: false`) for every other case, so the
-  //    generic edit-tools pencil opens json-edit-react's raw-JSON editor.
-  // The per-node path match is what lets both editors coexist without a flicker.
-  // Type-selector identity (`name`/`defaultValue`/`showInTypeSelector`) lives
-  // only on the default variant, so the type selector lists each type once.
+  //    generic edit-tools pencil opens json-edit-react's raw-JSON editor. The
+  //    per-node path match is what lets both editors coexist without a flicker.
+  //    Type-selector identity (`name`/`defaultValue`/`showInTypeSelector`)
+  //    lives only on the default variant, so the type selector lists each type
+  //    once.
   const customNodeDefinitions = useMemo<CustomNodeDefinition[]>(() => {
     const isOperator: FilterPredicate = ({ value }) => isOperatorNode(value as EvaluatorNode)
     const isCustomFunctionNode = and(isOperator, ({ value }) =>
