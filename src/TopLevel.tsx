@@ -10,7 +10,7 @@ import { EvaluateButton } from './DisplayBar'
 
 interface TopLevelProps {
   figTree: FigTreeEvaluator
-  evaluateNode: (expression: EvaluatorNode) => Promise<void>
+  evaluateNode: (expression: EvaluatorNode, e: React.MouseEvent) => Promise<void>
   isEvaluating: boolean
   isShorthandNode: (nodeData: NodeData) => boolean
   evaluateFullObject: boolean
@@ -44,9 +44,9 @@ export const TopLevelContainer: React.FC<CustomComponentProps<TopLevelProps>> = 
           name="Evaluate"
           backgroundColor="#454545"
           textColor="white"
-          evaluate={async () => {
+          evaluate={async (e: React.MouseEvent) => {
             setLoading(true)
-            await evaluateNode(value as object)
+            await evaluateNode(value as object, e)
             setLoading(false)
           }}
           isLoading={loading}
