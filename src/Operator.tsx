@@ -32,8 +32,8 @@ export interface OperatorProps {
   operatorDisplay?: Partial<Record<OperatorName | 'FRAGMENT', OperatorDisplay>>
   converters: {
     toShorthand: (expression: EvaluatorNode) => EvaluatorNode
-    fromShorthand: (expression: EvaluatorNode) => Promise<EvaluatorNode>
-    toV2: (expression: EvaluatorNode) => Promise<EvaluatorNode>
+    fromShorthand: (expression: EvaluatorNode) => EvaluatorNode
+    toV2: (expression: EvaluatorNode) => EvaluatorNode
   }
   addTopLevelFallback?: EvaluatorNode
   // Validates and persists a complete expression (see `buildOnEdit`).
@@ -105,12 +105,10 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
 
   const convertType: ConversionType = isV1Node(node) ? 'toV2' : 'toShorthand'
 
-  const convert = async () => {
+  const convert = () => {
     const { toV2, toShorthand } = converters
     const converter = convertType === 'toV2' ? toV2 : toShorthand
-    // `toShorthand` is synchronous, `toV2` returns a Promise — normalise so the
-    // `await` is always valid.
-    const converted = await Promise.resolve(converter(node))
+    const converted = converter(node)
     onEdit(converted, expressionPath)
   }
 

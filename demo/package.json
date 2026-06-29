@@ -30,7 +30,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "fig-tree-editor-react": "^0.8.4",
-    "fig-tree-evaluator": "^2.21.6",
+    "fig-tree-evaluator": "^2.22.0",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^2.0.0-beta.7",
     "json5": "^2.2.3",
