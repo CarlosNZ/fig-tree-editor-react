@@ -250,7 +250,8 @@ export const isFirstAliasNode = (
  * Drives json-edit-react's type selector (`allowTypeSelection`) per node:
  *  - Operator/Fragment parameters get the parameter's declared type(s) plus
  *    `Operator`/`Fragment`.
- *  - `fallback` gets no selector; `outputType`/`useCache` get their enums.
+ *  - `fallback` is unrestricted (any standard type plus `Operator`/`Fragment`);
+ *    `outputType`/`useCache` get their enums.
  *  - Any other value node — a primitive root, or a plain value not belonging to
  *    an operator/fragment — returns `true`, so the selector lists all standard
  *    types plus `Operator`/`Fragment`. This lets any plain value be turned into
@@ -274,7 +275,11 @@ export const getTypeFilter = (
 
   switch (true) {
     case key === 'fallback': {
-      return false
+      // A fallback can be any type — including a nested operator/fragment — so
+      // it gets the full list. (It's not a declared operator parameter, so
+      // without this it would match the `'operator' in parentData` branch
+      // below, find nothing, and yield no selector.)
+      return true
     }
     case key === 'outputType': {
       return [
