@@ -26,8 +26,8 @@ export interface ShorthandProps {
   }
   converters: {
     toShorthand: (expression: EvaluatorNode) => EvaluatorNode
-    fromShorthand: (expression: EvaluatorNode) => Promise<EvaluatorNode>
-    toV2: (expression: EvaluatorNode) => Promise<EvaluatorNode>
+    fromShorthand: (expression: EvaluatorNode) => EvaluatorNode
+    toV2: (expression: EvaluatorNode) => EvaluatorNode
   }
   // Validates and persists a complete expression (see `buildOnEdit`).
   updateExpression: (data: EvaluatorNode) => void
@@ -79,8 +79,8 @@ export const ShorthandNodeCollection: React.FC<CustomWrapperProps<ShorthandProps
 
   const aliases = { ...topLevelAliases, ...getAliases(parentData, allNonAliases) }
 
-  const convert = async () => {
-    const converted = await converters.fromShorthand(parentData)
+  const convert = () => {
+    const converted = converters.fromShorthand(parentData)
     const newPath = path.slice(0, -1)
     onEdit(converted, newPath)
   }
@@ -148,8 +148,8 @@ export const ShorthandNodeWithSimpleValue: React.FC<CustomComponentProps<Shortha
 
   const aliases = { ...topLevelAliases, ...getAliases(data, allNonAliases) }
 
-  const convert = async () => {
-    const converted = await converters.fromShorthand(data)
+  const convert = () => {
+    const converted = converters.fromShorthand(data)
     onEdit(converted, nodeData.path)
   }
 
