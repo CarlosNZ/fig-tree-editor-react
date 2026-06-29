@@ -17,6 +17,6 @@
     "allowSyntheticDefaultImports": true
   },
   // "include": ["src"]
-  "files": ["src/index.ts"]
+  "files": ["src/index.ts", "src/global.d.ts"]
   // "include": ["src/types.ts"]
 }
