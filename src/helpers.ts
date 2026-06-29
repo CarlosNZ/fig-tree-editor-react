@@ -10,6 +10,7 @@ import {
   standardiseOperatorName,
   isObject,
   isAliasString,
+  isFigTreeExpression,
 } from 'fig-tree-evaluator'
 import type { DataType, EnumDefinition, NodeData } from './_imports'
 
@@ -192,6 +193,22 @@ export const isShorthandNode = (
   })
 }
 
+/**
+ * Recursively determines whether `value` contains a FigTree node — operator
+ * node, operator-string, fragment node, or shorthand — at any depth.
+ * `isFigTreeExpression` does the per-node test (top-level only); this walks the
+ * tree so a plain object/array that merely *wraps* FigTree nodes also counts.
+ * Drives whether a plain object/array root warrants the top-level "Evaluate"
+ * button: a pure-data root (e.g. `{ one: 1, two: 2 }`) has nothing to evaluate,
+ * so it gets none.
+ */
+export const containsFigTreeNode = (value: unknown): boolean => {
+  if (isFigTreeExpression(value as EvaluatorNode)) return true
+  if (Array.isArray(value)) return value.some(containsFigTreeNode)
+  if (isObject(value)) return Object.values(value).some(containsFigTreeNode)
+  return false
+}
+
 export const isAliasNode = (
   { key, parentData }: NodeData,
   allOperatorAliases: Set<OperatorAlias>,
@@ -230,10 +247,17 @@ export const isFirstAliasNode = (
 }
 
 /**
- * Provides a list of available types for values of Operator or Fragment nodes.
+ * Drives json-edit-react's type selector (`allowTypeSelection`) per node:
+ *  - Operator/Fragment parameters get the parameter's declared type(s) plus
+ *    `Operator`/`Fragment`.
+ *  - `fallback` gets no selector; `outputType`/`useCache` get their enums.
+ *  - Any other value node — a primitive root, or a plain value not belonging to
+ *    an operator/fragment — returns `true`, so the selector lists all standard
+ *    types plus `Operator`/`Fragment`. This lets any plain value be turned into
+ *    a FigTree node.
  *
- * Currently only very basic -- doesn't yet support Shorthand syntax or Custom
- * Operators
+ * Note: collection (object/array) nodes have no type selector in
+ * json-edit-react, so a plain object/array can't be converted via this list.
  */
 export const getTypeFilter = (
   { key, parentData }: NodeData,
@@ -284,7 +308,10 @@ export const getTypeFilter = (
     return getDataTypeList(parameter)
   }
 
-  return false
+  // Any other value node (a primitive root, or a plain value not belonging to
+  // an operator/fragment): allow all standard types plus Operator/Fragment, so
+  // it can be converted into a FigTree node.
+  return true
 }
 
 const getDataTypeList = (
