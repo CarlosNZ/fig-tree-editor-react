@@ -108,8 +108,10 @@ export const NodeTypeSelector: React.FC<{
 
         let property: OperatorParameterMetadata | FragmentParameterMetadata | undefined
 
-        const operatorName = extract(nodeData?.fullData, [...path, 'operator'], null)
-        const fragmentName = extract(nodeData?.fullData, [...path, 'fragment'], null)
+        const operatorName = extract(nodeData?.fullData, [...path, 'operator'], null) as
+          string | null
+        const fragmentName = extract(nodeData?.fullData, [...path, 'fragment'], null) as
+          string | null
 
         if (operatorName) {
           const operator = getCurrentOperator(operatorName, figTreeData.operators)
@@ -143,7 +145,7 @@ export const NodeTypeSelector: React.FC<{
 
 export const PropertySelector: React.FC<{
   availableProperties: OperatorParameterMetadata[] | FragmentParameterMetadata[]
-  updateNode: (newField: any) => void
+  updateNode: (newField: Record<string, unknown>) => void
 }> = ({ availableProperties, updateNode }) => {
   const propertyOptions = availableProperties.map((property) => ({
     label: property.name,

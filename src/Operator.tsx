@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 import {
   type OperatorAlias,
   type OperatorMetadata,
@@ -105,14 +105,14 @@ export const Operator = (props: CustomComponentProps<OperatorProps>) => {
 
   const convertType: ConversionType = isV1Node(node) ? 'toV2' : 'toShorthand'
 
-  const convert = useCallback(async () => {
+  const convert = async () => {
     const { toV2, toShorthand } = converters
     const converter = convertType === 'toV2' ? toV2 : toShorthand
     // `toShorthand` is synchronous, `toV2` returns a Promise — normalise so the
     // `await` is always valid.
     const converted = await Promise.resolve(converter(node))
     onEdit(converted, expressionPath)
-  }, [value])
+  }
 
   if (!operatorData) return null
 

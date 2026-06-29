@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React from 'react'
 import { type OperatorNode, type OperatorParameterMetadata, isObject } from 'fig-tree-evaluator'
 import type { CustomComponentProps } from './_imports'
 import { IconCancel, IconOk, Icons } from './Icons'
@@ -58,10 +58,10 @@ export const CustomOperator: React.FC<CustomComponentProps<OperatorProps>> = (pr
 
   const node = value as OperatorNode
 
-  const convert = useCallback(() => {
+  const convert = () => {
     const converted = converters.toShorthand(node)
     onEdit(converted, expressionPath)
-  }, [value])
+  }
 
   const functionData = functions.find((f) => f.name === node.operator)
 

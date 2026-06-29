@@ -2,15 +2,22 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import { type OperatorProps } from './Operator'
-import { type JsonData, type NodeData, assign, toPathString } from 'json-edit-react'
+import {
+  type AssignInput,
+  type JsonData,
+  type NodeData,
+  assign,
+  toPathString,
+  useKeyboardListener,
+} from 'json-edit-react'
 import { getAliases } from './helpers'
 import { type EvaluatorNode, isObject } from 'fig-tree-evaluator'
 
 interface Input {
   componentProps: OperatorProps
-  // The node object itself. The custom node is anchored on the operator/fragment
-  // object, so `value` IS the expression node (not the operator/fragment key's
-  // string value as before).
+  // The node object itself. The custom node is anchored on the
+  // operator/fragment object, so `value` IS the expression node (not the
+  // operator/fragment key's string value as before).
   value: JsonData
   nodeData: NodeData
   // Live read of the full tree, used by `buildOnEdit` to compute the new data
@@ -35,21 +42,22 @@ export const buildOnEdit =
   (getLatestData: () => JsonData, updateExpression: (data: EvaluatorNode) => void) =>
   (newValue: unknown, path: (string | number)[]) => {
     // `assign` is a no-op on an empty path, so replace the root explicitly
-    const newData = path.length === 0 ? newValue : assign(getLatestData() as any, path, newValue)
+    const newData =
+      path.length === 0 ? newValue : assign(getLatestData() as AssignInput, path, newValue)
     updateExpression(newData as EvaluatorNode)
   }
 
 /**
  * Removes the operator/fragment key row from a node's rendered children. The
  * object-anchored component represents that key in its header (DisplayBar /
- * selectors), so showing the raw `operator: "+"` / `fragment: "x"` row too would
- * be redundant. Other properties (values/args/input/parameters/fallback…) pass
- * through untouched. Elements created via `keyValueArray.map` carry the data key
- * as their React `key`, so we filter on that.
+ * selectors), so showing the raw `operator: "+"` / `fragment: "x"` row too
+ * would be redundant. Other properties (values/args/input/parameters/fallback…)
+ * pass through untouched. Elements created via `keyValueArray.map` carry the
+ * data key as their React `key`, so we filter on that.
  */
 export const filterChildren = (children: React.ReactNode): React.ReactNode => {
   if (!Array.isArray(children)) return children
-  return children.filter(
+  return (children as React.ReactNode[]).filter(
     (child) =>
       !(React.isValidElement(child) && (child.key === 'operator' || child.key === 'fragment'))
   )
@@ -106,6 +114,9 @@ export const useCommon = ({
     if (wasEditing.current && !isEditing && displayBarEditPath === pathString)
       setDisplayBarEditPath(null)
     wasEditing.current = isEditing
+    // Intentionally keyed on the `isEditing` transition; the other values are
+    // read only during that transition (always current) or are stable.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditing])
 
   // When a NodeTypeSelector switch lands on this path, auto-open this node's
@@ -114,13 +125,18 @@ export const useCommon = ({
   const startOpen = justSwitchedTo?.current === pathString
   useEffect(() => {
     if (justSwitchedTo?.current === pathString) justSwitchedTo.current = null
+    // Consume the "just switched to this path" flag once, on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Enter/Escape both just close the toolbar (edits are written live, so there's
-  // no buffer to commit or revert).
-  const listenForSubmit = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === 'Escape') closeEditing()
+  // Enter/Escape close the toolbar (edits are written live — nothing to
+  // commit/revert). `useKeyboardListener` (from json-edit-react) attaches the
+  // listener while editing and always invokes the latest handler.
+  const listenForSubmit = (e: unknown) => {
+    const { key } = e as KeyboardEvent
+    if (key === 'Enter' || key === 'Escape') closeEditing()
   }
+  useKeyboardListener(isEditing, listenForSubmit)
 
   /**
    * If `addTopLevelFallback` is specified, the fallback value will be applied
@@ -138,13 +154,6 @@ export const useCommon = ({
     }
     return expression
   }
-
-  useEffect(() => {
-    if (isEditing) {
-      window.addEventListener('keydown', listenForSubmit)
-    } else window.removeEventListener('keydown', listenForSubmit)
-    return () => window.removeEventListener('keydown', listenForSubmit)
-  }, [isEditing])
 
   const aliases = {
     ...topLevelAliases,
