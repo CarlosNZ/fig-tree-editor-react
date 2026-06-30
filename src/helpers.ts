@@ -195,15 +195,22 @@ export const isShorthandNode = (
 
 /**
  * Recursively determines whether `value` contains a FigTree node — operator
- * node, operator-string, fragment node, or shorthand — at any depth.
- * `isFigTreeExpression` does the per-node test (top-level only); this walks the
- * tree so a plain object/array that merely *wraps* FigTree nodes also counts.
- * Drives whether a plain object/array root warrants the top-level "Evaluate"
- * button: a pure-data root (e.g. `{ one: 1, two: 2 }`) has nothing to evaluate,
- * so it gets none.
+ * node, operator-string, fragment node, or shorthand — at any depth. This walks
+ * the tree so a plain object/array that merely *wraps* FigTree nodes also
+ * counts. Drives whether a plain object/array root warrants the top-level
+ * "Evaluate" button: a pure-data root (e.g. `{ one: 1, two: 2 }`) has nothing
+ * to evaluate, so it gets none.
+ *
+ * `isFigTreeExpression` is only consulted for objects (operator/fragment/
+ * shorthand nodes). For strings we test the stricter operator-string shape
+ * (`$operator(args)`) rather than reusing `isFigTreeExpression`, which treats
+ * *any* `$`-prefixed string as an expression — a bare alias reference
+ * (`$myAlias`) or a substitution-style template (`${name}`) starts with `$`
+ * but is not, on its own, an evaluable node.
  */
 export const containsFigTreeNode = (value: unknown): boolean => {
-  if (isFigTreeExpression(value as EvaluatorNode)) return true
+  if (typeof value === 'string') return operatorStringRegex.test(value)
+  if (isObject(value) && isFigTreeExpression(value)) return true
   if (Array.isArray(value)) return value.some(containsFigTreeNode)
   if (isObject(value)) return Object.values(value).some(containsFigTreeNode)
   return false
@@ -249,9 +256,14 @@ export const isFirstAliasNode = (
 /**
  * Drives json-edit-react's type selector (`allowTypeSelection`) per node:
  *  - Operator/Fragment parameters get the parameter's declared type(s) plus
- *    `Operator`/`Fragment`.
+ *    `Operator`/`Fragment`. An `any`-typed parameter (e.g. the conditional
+ *    operator's `condition`/`valueIfTrue`/`valueIfFalse`) is unrestricted, so
+ *    it gets the full list.
  *  - `fallback` is unrestricted (any standard type plus `Operator`/`Fragment`);
  *    `outputType`/`useCache` get their enums.
+ *  - A key on an operator/fragment node that isn't a declared parameter — an
+ *    alias definition (`$one`) or an arbitrary property — has no known expected
+ *    type, so it also gets the full list.
  *  - Any other value node — a primitive root, or a plain value not belonging to
  *    an operator/fragment — returns `true`, so the selector lists all standard
  *    types plus `Operator`/`Fragment`. This lets any plain value be turned into
@@ -322,9 +334,16 @@ export const getTypeFilter = (
 const getDataTypeList = (
   parameter?: OperatorParameterMetadata | FragmentParameterMetadata
 ): boolean | Array<string | EnumDefinition> => {
-  if (!parameter) return false
+  // No declared parameter for this key — e.g. an alias definition (`$one`) or
+  // an arbitrary property on an operator that allows them. We don't know an
+  // expected type, so default to the full list (all standard types plus
+  // `Operator`/`Fragment`) rather than suppressing the selector.
+  if (!parameter) return true
   const { name, type } = parameter
-  if (type === 'any') return false
+  // An `any`-typed parameter (whether the bare type or one option of a type
+  // union) accepts any value, so offer the full type list — all standard types
+  // plus `Operator`/`Fragment` — rather than no selector at all.
+  if (type === 'any' || (Array.isArray(type) && type.includes('any'))) return true
   if (Array.isArray(type)) return [...type, 'Operator', 'Fragment'] as DataType[]
   if (isObject(type) && 'literal' in type)
     return [
