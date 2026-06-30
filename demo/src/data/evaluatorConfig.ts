@@ -1,32 +1,25 @@
 export const evaluatorConfig = {
   fragments: {
     getCapital: {
-      operator: 'GET',
-      url: {
-        operator: 'stringSubstitution',
-        string: 'https://restcountries.com/v3.1/name/%1',
-        replacements: ['$country'],
+      operator: 'POST',
+      url: 'https://countriesnow.space/api/v0.1/countries/capital',
+      returnProperty: 'data.capital',
+      parameters: {
+        country: '$country',
       },
-      returnProperty: '[0].capital',
-      outputType: 'string',
       metadata: {
         description: "Gets a country's capital city",
         parameters: [{ name: '$country', type: 'string', required: true }],
       },
     },
     getFlag: {
-      operator: 'GET',
-      children: [
-        {
-          operator: 'stringSubstitution',
-          string: 'https://restcountries.com/v3.1/name/%1',
-          replacements: ['$country'],
-          default: 'New Zealand',
-        },
-        [],
-        'flag',
-      ],
-      outputType: 'string',
+      operator: 'POST',
+      url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
+      returnProperty: 'data.unicodeFlag',
+      parameters: {
+        country: '$country',
+      },
+      default: 'New Zealand',
       metadata: {
         description: "Gets a country's flag",
         parameters: [{ name: '$country', type: 'string', required: true, default: 'New Zealand' }],

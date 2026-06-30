@@ -2296,7 +2296,7 @@ fdir@^6.5.0:
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
 
-fig-tree-editor-react@^1.0.0-beta.5:
+fig-tree-editor-react@^1.0.0-beta.6:
   version "1.0.0-beta-4"
   resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-1.0.0-beta-4.tgz#3cf4f8278980d3d4207d17c51c76e00fbd2360c3"
   integrity sha512-XAtleknH4awMJFdNdODPeHlBwuIZc0KsJtrxbqQHgsJ/Xsr9Nu1/1YBiD7mlW2y6ggUep4neg/3VyFZySOi9eA==
