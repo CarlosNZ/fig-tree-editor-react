@@ -1,6 +1,6 @@
 import { EvaluatorNode, FigTreeOptions } from '@fig-tree-editor-react'
 import { JsonEditorProps } from 'json-edit-react'
-import { and, byKey, byLevel, byType, not, root } from '@json-edit-react/utils/filters'
+import { and, byKey, byLevel, byType, inArray, not, root } from '@json-edit-react/utils/filters'
 
 export interface DemoData {
   name: string
@@ -197,8 +197,8 @@ Try changing all these values and see the output differences.
     },
     objectJsonEditorProps: {
       allowEdit: byType('string', 'array'),
-      allowDelete: false,
-      allowAdd: false,
+      allowDelete: inArray,
+      allowAdd: byKey('friends'),
       allowTypeSelection: [
         {
           enum: 'gender',
@@ -206,6 +206,7 @@ Try changing all these values and see the output differences.
           matchPriority: 1,
         },
       ],
+      defaultValue: 'Clint',
       collapse: 3,
     },
     expression: {
@@ -214,12 +215,12 @@ Try changing all these values and see the output differences.
         "This applicant's name is {{user.name.first}} {{user.name.last}}. {{genderLives}} in {{user.country}}, where the capital city is {{capital}}. {{genderHas}} {{friendCount}}.",
       replacements: {
         capital: {
-          operator: 'GET',
-          url: {
-            operator: '+',
-            values: ['https://restcountries.com/v3.1/name/', { $getData: 'user.country' }],
+          operator: 'POST',
+          url: 'https://countriesnow.space/api/v0.1/countries/capital',
+          parameters: {
+            country: { $getData: 'user.country' },
           },
-          returnProperty: '[0].capital[0]',
+          returnProperty: 'data.capital',
           fallback: 'unknown',
         },
         friendCount: { operator: 'count', values: { $getData: 'user.friends' }, fallback: 0 },
@@ -605,40 +606,40 @@ They both require a \`$country\` parameter, which is substituted into the expres
       useCache: true,
       fragments: {
         getCapital: {
-          operator: 'GET',
-          url: {
-            operator: 'stringSubstitution',
-            string: 'https://restcountries.com/v3.1/name/%1',
-            replacements: ['$country'],
+          operator: 'POST',
+          url: 'https://countriesnow.space/api/v0.1/countries/capital',
+          returnProperty: 'data.capital',
+          parameters: {
+            country: '$country',
           },
-          returnProperty: '[0].capital',
-          outputType: 'string',
           metadata: {
             description: "Gets a country's capital city",
             parameters: [{ name: '$country', type: 'string', required: true }],
           },
         },
         getFlag: {
-          operator: 'GET',
-          children: [
-            {
-              operator: 'stringSubstitution',
-              string: 'https://restcountries.com/v3.1/name/%1',
-              replacements: ['$country'],
-              default: 'New Zealand',
-            },
-            [],
-            'flag',
-          ],
-          outputType: 'string',
+          operator: 'POST',
+          url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
+          returnProperty: 'data.unicodeFlag',
+          parameters: {
+            country: '$country',
+          },
           metadata: {
             description: "Gets a country's flag",
-            textColor: 'white',
-            backgroundColor: 'black',
             parameters: [
               { name: '$country', type: 'string', required: true, default: 'New Zealand' },
             ],
+            textColor: 'white',
+            backgroundColor: 'black',
           },
+        },
+        metadata: {
+          description: "Gets a country's flag",
+          textColor: 'white',
+          backgroundColor: 'black',
+          parameters: [
+            { name: '$country', type: 'string', required: true, default: 'New Zealand' },
+          ],
         },
       },
     },
