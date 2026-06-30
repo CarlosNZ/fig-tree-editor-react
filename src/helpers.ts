@@ -10,11 +10,8 @@ import {
   standardiseOperatorName,
   isObject,
   isAliasString,
-  isFigTreeExpression,
 } from 'fig-tree-evaluator'
 import type { DataType, EnumDefinition, NodeData } from './_imports'
-
-export const operatorStringRegex = /(\$[^()]+)\((.*)\)/
 
 // Returns a valid default value for each (FigTree) data type
 export const getDefaultValue = (property: OperatorParameterMetadata) => {
@@ -191,29 +188,6 @@ export const isShorthandNode = (
     const alias = key.slice(1)
     return allOperatorAliases.has(alias) || allFragments.has(alias) || allFunctions.has(alias)
   })
-}
-
-/**
- * Recursively determines whether `value` contains a FigTree node — operator
- * node, operator-string, fragment node, or shorthand — at any depth. This walks
- * the tree so a plain object/array that merely *wraps* FigTree nodes also
- * counts. Drives whether a plain object/array root warrants the top-level
- * "Evaluate" button: a pure-data root (e.g. `{ one: 1, two: 2 }`) has nothing
- * to evaluate, so it gets none.
- *
- * `isFigTreeExpression` is only consulted for objects (operator/fragment/
- * shorthand nodes). For strings we test the stricter operator-string shape
- * (`$operator(args)`) rather than reusing `isFigTreeExpression`, which treats
- * *any* `$`-prefixed string as an expression — a bare alias reference
- * (`$myAlias`) or a substitution-style template (`${name}`) starts with `$`
- * but is not, on its own, an evaluable node.
- */
-export const containsFigTreeNode = (value: unknown): boolean => {
-  if (typeof value === 'string') return operatorStringRegex.test(value)
-  if (isObject(value) && isFigTreeExpression(value)) return true
-  if (Array.isArray(value)) return value.some(containsFigTreeNode)
-  if (isObject(value)) return Object.values(value).some(containsFigTreeNode)
-  return false
 }
 
 export const isAliasNode = (
