@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.0.0-beta.6] - 2026-06-30
+
+### Removed
+
+- Removed the standalone `containsFigTreeNode` export. Use the registry- and
+  settings-aware `FigTreeEvaluator.isFigTreeExpression()` instance method
+  (requires `fig-tree-evaluator` ≥ 2.23.0) instead.
+
+### Changed
+
+- The top-level "Evaluate" button now appears only when the configured evaluator
+  would actually consume the root expression — registry- and
+  `evaluateFullObject`-aware, via `FigTreeEvaluator.isFigTreeExpression()`.
+
 ## [1.0.0-beta.5] - 2026-06-30
 
 ### Added

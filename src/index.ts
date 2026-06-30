@@ -1,6 +1,5 @@
 import FigTreeEditor, { type FigTreeEditorProps } from './FigTreeEditor'
-import { containsFigTreeNode } from './helpers'
 import { Select } from './Select'
 
-export { FigTreeEditor, Select, containsFigTreeNode, FigTreeEditorProps }
+export { FigTreeEditor, Select, FigTreeEditorProps }
 export * from 'fig-tree-evaluator'
