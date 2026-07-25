@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.0.0-beta.7] - 2026-07-25
+
+### Changed
+
+- Update FigTree Evaluator to 2.23.1
+
 ## [1.0.0-beta.6] - 2026-06-30
 
 ### Removed
