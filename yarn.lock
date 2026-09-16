@@ -662,10 +662,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@json-edit-react/utils@^0.9.0-beta.2":
-  version "0.9.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.2.tgz#c6812c2b5ea26b3cc5322dbfcbc63dfce6740ca8"
-  integrity sha512-tYADe8NZ326KychobKQNiYss8/LxITd11I+HxTL7PRbBVgbaQKWd8H9lzglSCcX9+d/nYaGYCeIjK8OD/q/VVQ==
+"@json-edit-react/utils@^0.9.0-beta.3":
+  version "0.9.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.3.tgz#d4f071dd16987129a8dac17f4c8998d4c6ee9358"
+  integrity sha512-UCkxxk+5O113LhqH6AaGUnzBOShCMdwGSEF3zfvpFCvz+8NeXm/uQSb8/yqaq/5hzRpTupNjQ9qP8JCcvW3ypg==
 
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
@@ -2358,10 +2358,10 @@ fdir@^6.5.0:
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
 
-fig-tree-evaluator@^2.23.1:
-  version "2.23.1"
-  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.23.1.tgz#7c9742b829d06ddabcfac8921891d57b40a005c8"
-  integrity sha512-1WbML6wNyvIk8KMvY6CjVAjSTf50+2sDkET3Nlh1LgbnClOcAIAQZRHL8DDbA2KAB4eivWNg/9XVJWuFGF3y0Q==
+fig-tree-evaluator@^2.23.2:
+  version "2.23.2"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.23.2.tgz#4cc25fc94b013de9ee0056c07a69225c9962710c"
+  integrity sha512-qTqWtNAkg5wObKmNfMvwP3VT63+cx80eJo6TIRw4UHx5SXrpXk8iCqPdpNxADWT6aQ+1APiH9Fy10bIu6Phk4w==
   dependencies:
     dequal "^2.0.3"
     object-property-extractor "^1.0.14"
@@ -3411,10 +3411,10 @@ json-buffer@3.0.1:
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
   integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
 
-json-edit-react@^2.0.0-beta.8:
-  version "2.0.0-beta.8"
-  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.8.tgz#0744cda02d8743a20559bd2e0127bf60247bcbd4"
-  integrity sha512-/5mJGYyFQpFstr0LcgJ3UhKIWc9DRlH/7hNhYjqVjIL1OIhrFXg8MT3zmg6A+7+WRPCaec7ps+dCvmzeO1hRfA==
+json-edit-react@^2.0.0-beta.10:
+  version "2.0.0-beta.10"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.10.tgz#b4476c101b9f93a16d7885fcd008d13be63e126f"
+  integrity sha512-4DAELJVscjnuIdMfp+JgKaJRGQKVu7hay4dMKCjg8/hYiXL5Cwk53a9m/8hEWgXSfphxgtiFzV7dM77SaybPNA==
 
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"

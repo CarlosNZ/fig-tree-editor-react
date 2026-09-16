@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0-beta.8] - 2026-09-17
+
+### Changed
+
+- Upgrade `fig-tree-evaluator` to `2.23.2`
+- Upgrade `json-edit-react` to `2.0.0-beta.10`
+
 ## [1.0.0-beta.7] - 2026-07-25
 
 ### Changed
