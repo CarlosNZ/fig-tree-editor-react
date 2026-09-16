@@ -196,16 +196,21 @@ Try changing all these values and see the output differences.
       },
     },
     objectJsonEditorProps: {
-      allowEdit: byType('string', 'array'),
+      allowEdit: byType('string', 'array', 'null'),
       allowDelete: inArray,
       allowAdd: byKey('friends'),
-      allowTypeSelection: [
-        {
-          enum: 'gender',
-          values: ['Male', 'Female', 'Other'],
-          matchPriority: 1,
-        },
-      ],
+      allowTypeSelection: ({ key, value }) => {
+        if (key === 'gender')
+          return [
+            {
+              enum: 'gender',
+              values: ['Male', 'Female', 'Other'],
+              matchPriority: 1,
+            },
+          ]
+        if (typeof value === 'string' || value === null) return ['string', 'null']
+        return false
+      },
       defaultValue: 'Clint',
       collapse: 3,
     },

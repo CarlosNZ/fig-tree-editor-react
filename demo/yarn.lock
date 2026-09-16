@@ -959,6 +959,11 @@
   resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.2.tgz#c6812c2b5ea26b3cc5322dbfcbc63dfce6740ca8"
   integrity sha512-tYADe8NZ326KychobKQNiYss8/LxITd11I+HxTL7PRbBVgbaQKWd8H9lzglSCcX9+d/nYaGYCeIjK8OD/q/VVQ==
 
+"@json-edit-react/utils@^0.9.0-beta.3":
+  version "0.9.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.3.tgz#d4f071dd16987129a8dac17f4c8998d4c6ee9358"
+  integrity sha512-UCkxxk+5O113LhqH6AaGUnzBOShCMdwGSEF3zfvpFCvz+8NeXm/uQSb8/yqaq/5hzRpTupNjQ9qP8JCcvW3ypg==
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.yarnpkg.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -2313,6 +2318,14 @@ fig-tree-evaluator@^2.23.1:
     dequal "^2.0.3"
     object-property-extractor "^1.0.14"
 
+fig-tree-evaluator@^2.23.2:
+  version "2.23.2"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.23.2.tgz#4cc25fc94b013de9ee0056c07a69225c9962710c"
+  integrity sha512-qTqWtNAkg5wObKmNfMvwP3VT63+cx80eJo6TIRw4UHx5SXrpXk8iCqPdpNxADWT6aQ+1APiH9Fy10bIu6Phk4w==
+  dependencies:
+    dequal "^2.0.3"
+    object-property-extractor "^1.0.14"
+
 file-entry-cache@^8.0.0:
   version "8.0.0"
   resolved "https://registry.yarnpkg.com/file-entry-cache/-/file-entry-cache-8.0.0.tgz#7787bddcf1131bffb92636c69457bbc0edd6d81f"
@@ -3196,6 +3209,11 @@ json-buffer@3.0.1:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
   integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
+
+json-edit-react@^2.0.0-beta.10:
+  version "2.0.0-beta.10"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.10.tgz#b4476c101b9f93a16d7885fcd008d13be63e126f"
+  integrity sha512-4DAELJVscjnuIdMfp+JgKaJRGQKVu7hay4dMKCjg8/hYiXL5Cwk53a9m/8hEWgXSfphxgtiFzV7dM77SaybPNA==
 
 json-edit-react@^2.0.0-beta.8:
   version "2.0.0-beta.8"
