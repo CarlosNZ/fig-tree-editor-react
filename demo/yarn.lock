@@ -2301,14 +2301,14 @@ fdir@^6.5.0:
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
 
-fig-tree-editor-react@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-1.0.0.tgz#38c64ae969d21facfeabf26fb5b0f6581235793c"
-  integrity sha512-sF8/ckr4ngZzJ/EY8DJe4XjcbEPMYu+72wDICUqqJ9ndXTd1AxB2JdRudKAMVuDgUnbwvVDnUWPI1fyzSDEuvA==
+fig-tree-editor-react@^1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/fig-tree-editor-react/-/fig-tree-editor-react-1.0.1.tgz#eb9a66a52ce3da534e30a9938a5702129ede17ad"
+  integrity sha512-y900+2yC2KAj0l/wWthGtVSmQH4snuzs3TFe0e5zL03muplF59OFepl4PP5KFODRfDGR/39itWncvo8ngi8XxA==
   dependencies:
     "@json-edit-react/utils" "^0.9.0-beta.3"
     fig-tree-evaluator "^2.23.2"
-    json-edit-react "^2.0.0-beta.10"
+    json-edit-react "^2.0.0"
 
 fig-tree-evaluator@^2.23.2:
   version "2.23.2"
@@ -3206,11 +3206,6 @@ json-edit-react@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0.tgz#2ba5878176b52690c02a937066e0b0d7a52abca8"
   integrity sha512-sJikCSIEp+8r8wJg9PkymF8EUceKqLVsdVjq1jRF5uJdeIWErBlELOBJw1BbesA6StNsZGl3/554MDH7qpyQkQ==
-
-json-edit-react@^2.0.0-beta.10:
-  version "2.0.0-beta.10"
-  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.10.tgz#b4476c101b9f93a16d7885fcd008d13be63e126f"
-  integrity sha512-4DAELJVscjnuIdMfp+JgKaJRGQKVu7hay4dMKCjg8/hYiXL5Cwk53a9m/8hEWgXSfphxgtiFzV7dM77SaybPNA==
 
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"

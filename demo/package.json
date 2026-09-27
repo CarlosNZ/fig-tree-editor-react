@@ -29,7 +29,7 @@
     "@json-edit-react/utils": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "fig-tree-editor-react": "^1.0.0",
+    "fig-tree-editor-react": "^1.0.1",
     "fig-tree-evaluator": "^2.23.2",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^2.0.0",
