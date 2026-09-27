@@ -18,6 +18,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
     "demo": "cd demo && yarn start",
     "demo:local": "cd demo && yarn dev",
+    "demo:local-evaluator": "cd demo && yarn start:local-evaluator",
     "dev": "yarn demo:local",
     "pack-demo": "node scripts/pack.mjs",
     "demo:pack": "yarn pack-demo && cd demo && yarn start:pack",

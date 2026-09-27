@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import fs from 'fs'
 import path from 'path'
 
 // Demo source imports the library as `@fig-tree-editor-react` — the `@` prefix
@@ -24,12 +25,49 @@ const figTreeEditorSrcMap: Record<PackageOption, string> = {
   pack: path.resolve(__dirname, '../pack-output/fig-tree-editor-react/package'),
 }
 
+// fig-tree-evaluator itself can also be swapped, independently of the editor
+// source, by VITE_EVALUATOR_SOURCE:
+//   npm   – the package in node_modules (default)
+//   local – the raw TypeScript source of a sibling checkout
+//           (../../fig-tree-evaluator/src), for developing both together
+// The alias applies to every importer, including the editor, so there is
+// still a single copy of fig-tree. It is meant to pair with the editor's
+// `local` mode, since a published editor was built against a released
+// fig-tree.
+type EvaluatorOption = 'npm' | 'local'
+
+const evaluatorProvider: EvaluatorOption =
+  (process.env.VITE_EVALUATOR_SOURCE as EvaluatorOption) ?? 'npm'
+
+const evaluatorRoot = path.resolve(__dirname, '../../fig-tree-evaluator')
+
+console.log(`Using fig-tree-evaluator from: ${evaluatorProvider}`)
+
+if (evaluatorProvider === 'local' && !fs.existsSync(path.join(evaluatorRoot, 'src/index.ts')))
+  throw new Error(
+    `VITE_EVALUATOR_SOURCE=local needs a fig-tree-evaluator checkout at ${evaluatorRoot}`
+  )
+
+// Each package entry point (`fig-tree-evaluator`, `fig-tree-evaluator/format`,
+// etc.) maps to the matching directory under src/, whose index.ts vite
+// resolves.
+const evaluatorAliases =
+  evaluatorProvider === 'local'
+    ? [
+        { find: /^fig-tree-evaluator$/, replacement: path.join(evaluatorRoot, 'src') },
+        { find: /^fig-tree-evaluator\/(.+)$/, replacement: path.join(evaluatorRoot, 'src/$1') },
+      ]
+    : []
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   base: 'https://carlosnz.github.io/fig-tree-evaluator/',
   resolve: {
-    alias: [{ find: /^@fig-tree-editor-react$/, replacement: figTreeEditorSrcMap[provider] }],
+    alias: [
+      { find: /^@fig-tree-editor-react$/, replacement: figTreeEditorSrcMap[provider] },
+      ...evaluatorAliases,
+    ],
     // In local/build/pack modes the library + its source live outside
     // demo/node_modules. Without dedupe, vite's walk-up resolution can pick up
     // a second copy from the repo-root node_modules — a second React breaks
@@ -46,8 +84,14 @@ export default defineConfig({
   },
   server: {
     // Allow serving the library source / build / packed output that lives one
-    // level up from the demo (../src, ../build, ../pack-output).
-    fs: { allow: [path.resolve(__dirname, '..')] },
+    // level up from the demo (../src, ../build, ../pack-output), and the local
+    // fig-tree-evaluator checkout beside the repo.
+    fs: {
+      allow: [
+        path.resolve(__dirname, '..'),
+        ...(evaluatorProvider === 'local' ? [evaluatorRoot] : []),
+      ],
+    },
   },
   build: {
     rollupOptions: {
