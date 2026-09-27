@@ -1,4 +1,4 @@
-// TO-DO: export FigTreeEditor once the v3 skeleton exists (plan, Phase 2).
+import { FigTreeEditor, type FigTreeEditorProps } from './FigTreeEditor'
 import { Select } from './Select'
 
-export { Select }
+export { FigTreeEditor, Select, type FigTreeEditorProps }

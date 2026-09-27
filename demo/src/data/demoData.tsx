@@ -1,4 +1,4 @@
-import { EvaluatorNode, FigTreeOptions } from '@fig-tree-editor-react'
+import { EvaluatorNode, FigTreeOptions } from 'fig-tree-evaluator'
 import { JsonEditorProps } from 'json-edit-react'
 import { and, byKey, byLevel, byType, inArray, not, root } from '@json-edit-react/utils/filters'
 

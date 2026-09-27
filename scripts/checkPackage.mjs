@@ -127,7 +127,10 @@ try {
   // A browser host's view: the DOM library and no @types/node, so a
   // declaration that leans on a Node type fails here. Through the `exports`
   // map (nodenext, bundler), and as the legacy `node` resolution sees the
-  // package, which ignores `exports` and reads `types`
+  // package, which ignores `exports` and reads `types`. The `node` row sets
+  // `allowSyntheticDefaultImports`, which the other two imply:
+  // json-edit-react's declarations default-import React, as a React host's
+  // config allows
   writeFileSync(
     join(consumer, 'types.ts'),
     specifiers.map((spec, i) => `import * as entry${i} from '${spec}'`).join('\n') +
@@ -136,7 +139,12 @@ try {
   const resolutions = [
     { module: 'nodenext', moduleResolution: 'nodenext', via: 'the exports map, under nodenext' },
     { module: 'esnext', moduleResolution: 'bundler', via: 'the exports map, under bundler' },
-    { module: 'esnext', moduleResolution: 'node', via: '"types", under resolution "node"' },
+    {
+      module: 'esnext',
+      moduleResolution: 'node',
+      allowSyntheticDefaultImports: true,
+      via: '"types", under resolution "node"',
+    },
   ]
   for (const { via, ...resolution } of resolutions) {
     writeFileSync(

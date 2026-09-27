@@ -12,4 +12,4 @@
  * raising one is a deliberate edit, visible in review. The bundle is the
  * editor's own code only: its dependencies and peers are external.
  */
-export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 1_350 }]
+export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 2_700 }]

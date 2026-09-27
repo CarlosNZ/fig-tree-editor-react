@@ -17,15 +17,15 @@ import {
   useMediaQuery,
 } from '@chakra-ui/react'
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
+import { FigTreeEditor } from '@fig-tree-editor-react'
 import {
   FigTreeEvaluator,
   SQLNodePostgres,
   FigTreeOptions,
-  FigTreeEditor,
   isFigTreeError,
   truncateString,
   EvaluatorNode,
-} from '@fig-tree-editor-react'
+} from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getInitCache, getLocalStorage, setLocalStorage } from './helpers'
 // @ts-expect-error No declaration
