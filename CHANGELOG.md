@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.1] - 2026-09-28
+
+Bump `json-edit-react` to `v2.0.0` release
+
 ## [1.0.0] - 2026-09-27
 
 First stable release. No changes from `1.0.0-beta.8`.
