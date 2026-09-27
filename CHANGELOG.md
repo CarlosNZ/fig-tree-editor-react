@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.0.0] - 2026-09-27
+
+First stable release. No changes from `1.0.0-beta.8`.
+
 ## [1.0.0-beta.8] - 2026-09-17
 
 ### Changed
