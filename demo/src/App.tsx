@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import JSON5 from 'json5'
 import './App.css'
 import {
@@ -18,42 +18,19 @@ import {
 } from '@chakra-ui/react'
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
 import { FigTreeEditor } from '@fig-tree-editor-react'
-import {
-  FigTreeEvaluator,
-  SQLNodePostgres,
-  FigTreeOptions,
-  isFigTreeError,
-  truncateString,
-  EvaluatorNode,
-} from 'fig-tree-evaluator'
+import { isFigTreeError, version as figTreeVersion } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
-import { getInitOptions, getInitCache, getLocalStorage, setLocalStorage } from './helpers'
-// @ts-expect-error No declaration
-import { PostgresInterface } from './postgresInterface.js'
+import { getInitOptions, getLocalStorage, setLocalStorage, truncate } from './helpers'
+import { buildFigTree, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
-import { Client } from 'pg'
 import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
 import { SourceIndicator } from './SourceIndicator'
 import { figTreeEditorReactVersion, timestamp } from './version'
-const pgConnection = new PostgresInterface() as Client
 
-const initOptions: FigTreeOptions = getInitOptions()
 const initData = demoData[0]
-
-const figTree = new FigTreeEvaluator({
-  ...initOptions,
-  sqlConnection: SQLNodePostgres(pgConnection),
-  // returnErrorAsString: true,
-  // supportDeprecatedValueNodes: true,
-})
-
-const savedCache = getInitCache()
-if (savedCache) {
-  figTree.setCache(savedCache)
-}
 
 console.log(`fig-tree-editor-react v${figTreeEditorReactVersion}`)
 console.log('Site built:', timestamp)
@@ -66,6 +43,9 @@ function App() {
   )
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
+  const [options, setOptions] = useState<DemoOptions>(getInitOptions)
+  const figTree = useMemo(() => buildFigTree(options), [options])
+  const [isEvaluating, setIsEvaluating] = useState(false)
 
   const {
     data: objectData,
@@ -92,6 +72,41 @@ function App() {
 
   const toast = useToast()
 
+  const updateOptions = (newOptions: DemoOptions) => {
+    setOptions(newOptions)
+    setLocalStorage('options', newOptions)
+  }
+
+  // TO-DO: remove once the editor evaluates nodes itself (plan, Phase 9)
+  const evaluate = async () => {
+    setIsEvaluating(true)
+    try {
+      const value = await figTree.evaluate(expression, {
+        data: objectData as Record<string, unknown>,
+      })
+      toast({
+        render: ({ onClose }) => (
+          <ResultToast title="Evaluation result" value={value} close={onClose} />
+        ),
+        position: 'top',
+        status: 'success',
+        duration: 5000,
+        isClosable: true,
+      })
+    } catch (err) {
+      toast({
+        title: 'Evaluation error',
+        description: isFigTreeError(err) ? err.prettyPrint() : String(err),
+        position: 'top',
+        status: 'error',
+        duration: 15000,
+        isClosable: true,
+      })
+    } finally {
+      setIsEvaluating(false)
+    }
+  }
+
   const handleDemoSelect = (selected: number) => {
     setSelectedDataIndex(selected)
     const visited = getLocalStorage('visited')
@@ -99,22 +114,22 @@ function App() {
 
     const { objectData, expression, figTreeOptions = {} } = demoData[selected]
     setExpression(expression)
-    setLocalStorage('expression', expression as object)
+    setLocalStorage('expression', expression)
     if (objectData) {
       setObjectData(objectData)
       setLocalStorage('objectData', objectData)
     }
     setLocalStorage('lastSelected', demoData[selected].name)
     modalContent.current = demoData[selected].name
-    figTree.updateOptions(figTreeOptions)
-    setLocalStorage('options', figTreeOptions)
+    updateOptions({ ...options, ...figTreeOptions })
   }
 
   return (
     <Flex px={1} pt={3} minH="100vh" flexDirection="column" justifyContent="space-between">
       <VStack h="100%" w="100%">
         <OptionsModal
-          figTree={figTree}
+          options={options}
+          onSave={updateOptions}
           modalState={{
             modalOpen,
             setModalOpen,
@@ -206,15 +221,8 @@ function App() {
               </Heading>
               <Text>
                 This object represents a data structure that is available to{' '}
-                <strong>FigTree</strong>. It can be accessed with the{' '}
-                <Link
-                  href="https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties"
-                  isExternal
-                >
-                  {' '}
-                  getData
-                </Link>{' '}
-                operator.
+                <strong>FigTree</strong>. It can be read with <code>$data</code> references, such as{' '}
+                <code>"$data.user.firstName"</code>.
               </Text>
             </Box>
             <JsonEditor
@@ -223,20 +231,20 @@ function App() {
               rootName="data"
               collapse={jsonEditorOptions?.collapse ?? 2}
               onUpdate={(result) => {
-                localStorage.setItem('objectData', JSON.stringify(result.newData))
+                setLocalStorage('objectData', result.newData)
                 if (jsonEditorOptions?.onUpdate) return jsonEditorOptions.onUpdate(result)
               }}
               minWidth="50%"
               onCopy={({ stringValue, type }) => {
                 toast({
                   title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
-                  description: truncateString(String(stringValue)),
+                  description: truncate(String(stringValue)),
                   status: 'info',
                   duration: 5000,
                   isClosable: true,
                 })
               }}
-              showCollectionCount="when-closed"
+              showCollectionCount="when-collapsed"
               jsonParse={JSON5.parse}
               {...jsonEditorOptions}
             />
@@ -254,45 +262,20 @@ function App() {
               <Heading size="md" alignSelf="flex-start">
                 FigTree expression
               </Heading>
-              <Text>
-                Edit the expression, and click any operator "button" to evaluate at that node.
-              </Text>
+              <Text>Edit the expression, and click Evaluate to see its result.</Text>
             </Box>
             <FigTreeEditor
               figTree={figTree}
-              expression={expression as EvaluatorNode}
+              expression={expression}
               setExpression={setExpression}
-              objectData={objectData as Record<string, unknown>}
               onUpdate={({ newData }) => {
-                localStorage.setItem('expression', JSON.stringify(newData))
-              }}
-              onEvaluate={(value: unknown) =>
-                toast({
-                  render: ({ onClose }) => (
-                    <ResultToast title="Evaluation result" value={value} close={onClose} />
-                  ),
-                  position: 'top',
-                  status: 'success',
-                  duration: 5000,
-                  isClosable: true,
-                })
-              }
-              onEvaluateError={(err) => {
-                if (isFigTreeError(err))
-                  toast({
-                    title: 'Evaluation error',
-                    description: err.prettyPrint,
-                    position: 'top',
-                    status: 'error',
-                    duration: 15000,
-                    isClosable: true,
-                  })
+                setLocalStorage('expression', newData)
               }}
               rootName="expression"
               onCopy={({ stringValue, type }) =>
                 toast({
                   title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
-                  description: truncateString(String(stringValue)),
+                  description: truncate(String(stringValue)),
                   status: 'info',
                   duration: 5000,
                   isClosable: true,
@@ -302,10 +285,6 @@ function App() {
               stringTruncateLength={500}
               jsonParse={JSON5.parse}
               collapse={expressionCollapse}
-              // defaultNewOperatorExpression={{ operator: 'getData', property: 'user.name' }}
-              // defaultNewFragment="getFlag"
-              // defaultNewCustomOperator="currentDate"
-              // addTopLevelFallback={null}
             />
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}
@@ -313,6 +292,9 @@ function App() {
                 fig-tree-editor-react
               </Link>
             </Text>
+            <Button colorScheme="green" mt={2} onClick={evaluate} isLoading={isEvaluating}>
+              Evaluate
+            </Button>
             {ExpressionUndoRedo}
           </Flex>
         </Flex>
@@ -351,7 +333,7 @@ function App() {
         <Spacer />
         <HStack alignItems="flex-end" p={2}>
           <Text fontSize="xs" mb={1}>
-            fig-tree-evaluator v{figTree.getVersion()}
+            fig-tree-evaluator v{figTreeVersion}
           </Text>
           <Button colorScheme="green" onClick={() => setModalOpen(true)}>
             Configuration

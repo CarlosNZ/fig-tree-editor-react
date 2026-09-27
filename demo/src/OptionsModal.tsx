@@ -24,53 +24,53 @@ import {
   Checkbox,
   HStack,
   VStack,
+  useToast,
 } from '@chakra-ui/react'
-import { filterObjectRecursive, setLocalStorage } from './helpers'
-import { FigTreeEvaluator, FigTreeOptions } from 'fig-tree-evaluator'
-import { JsonData, JsonEditor } from 'json-edit-react'
+import { filterObjectRecursive } from './helpers'
+import { buildFigTree, type DemoOptions } from './figTree'
+import { JsonEditor } from 'json-edit-react'
+import { type FragmentDefinition } from 'fig-tree-evaluator'
 
-const resetFormState = (options: FigTreeOptions) => {
-  const baseEndpoint = options.baseEndpoint
-  const headers = { ...options.headers }
-  const authHeader = headers?.Authorization
-  const gqlEndpoint = options.graphQLConnection?.endpoint
-  const gqlAuth = options.graphQLConnection?.headers?.Authorization
-  const gqlHeaders = { ...options.graphQLConnection?.headers }
-  const skipRuntimeTypeCheck = options.skipRuntimeTypeCheck ?? false
-  const evaluateFullObject = options.evaluateFullObject ?? false
-  const fragments = options.fragments ?? undefined
-  delete headers?.Authorization
-  delete gqlHeaders?.Authorization
+const resetFormState = (options: DemoOptions) => {
+  const headers = { ...options.http?.headers }
+  const authHeader = headers.Authorization
+  const gqlHeaders = { ...options.graphQL?.headers }
+  const gqlAuth = gqlHeaders.Authorization
+  delete headers.Authorization
+  delete gqlHeaders.Authorization
   return {
-    baseEndpoint,
+    baseEndpoint: options.http?.baseEndpoint,
     authHeader,
     headers,
-    gqlEndpoint,
+    gqlEndpoint: options.graphQL?.endpoint,
     gqlAuth,
     gqlHeaders,
-    skipRuntimeTypeCheck,
-    evaluateFullObject,
-    fragments,
+    runtimeTypeCheck: options.runtimeTypeCheck ?? true,
+    strictDataPaths: options.strictDataPaths ?? false,
+    fragments: options.fragments,
     useCache: options.useCache ?? true,
-    maxCacheSize: options.maxCacheSize,
-    maxCacheTime: options.maxCacheTime,
+    maxCacheSize: options.cache?.maxSize,
+    maxCacheTime: options.cache?.maxTime,
   }
 }
 
 export const OptionsModal = ({
-  figTree,
+  options,
+  onSave,
   modalState: { modalOpen, setModalOpen },
 }: {
-  figTree: FigTreeEvaluator
+  options: DemoOptions
+  onSave: (options: DemoOptions) => void
   modalState: { modalOpen: boolean; setModalOpen: Dispatch<React.SetStateAction<boolean>> }
 }) => {
-  const [formState, setFormState] = useState(resetFormState(figTree.getOptions()))
+  const [formState, setFormState] = useState(resetFormState(options))
+  const toast = useToast()
 
   useEffect(() => {
     if (modalOpen) {
-      setFormState(resetFormState(figTree.getOptions()))
+      setFormState(resetFormState(options))
     }
-  }, [modalOpen, figTree])
+  }, [modalOpen, options])
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
@@ -81,33 +81,42 @@ export const OptionsModal = ({
       gqlEndpoint,
       gqlAuth,
       gqlHeaders,
-      skipRuntimeTypeCheck,
-      evaluateFullObject,
+      runtimeTypeCheck,
+      strictDataPaths,
       fragments,
       useCache,
       maxCacheSize,
       maxCacheTime,
     } = formState
 
-    const newOptions: FigTreeOptions = {
+    const newOptions: DemoOptions = {
       ...filterObjectRecursive({
-        baseEndpoint,
-        headers: { Authorization: authHeader, ...headers },
-        graphQLConnection: {
-          endpoint: gqlEndpoint ?? '',
-          headers: { Authorization: gqlAuth, ...gqlHeaders },
-        },
-        skipRuntimeTypeCheck,
-        evaluateFullObject,
+        http: { baseEndpoint, headers: { Authorization: authHeader, ...headers } },
+        graphQL: { endpoint: gqlEndpoint, headers: { Authorization: gqlAuth, ...gqlHeaders } },
+        runtimeTypeCheck,
+        strictDataPaths,
         useCache,
-        maxCacheSize,
-        maxCacheTime,
+        cache: { maxSize: maxCacheSize, maxTime: maxCacheTime },
       }),
       fragments,
     }
 
-    figTree.updateOptions(newOptions)
-    setLocalStorage('options', newOptions)
+    // FigTree checks the options, the fragment definitions included, when it's
+    // constructed
+    try {
+      buildFigTree(newOptions)
+    } catch (err) {
+      toast({
+        title: 'Invalid configuration',
+        description: err instanceof Error ? err.message : String(err),
+        status: 'error',
+        duration: 15000,
+        isClosable: true,
+      })
+      return
+    }
+
+    onSave(newOptions)
     setModalOpen(false)
   }
 
@@ -159,7 +168,7 @@ export const OptionsModal = ({
                     }
                     collapse={Object.keys(formState.headers).length > 0 ? 1 : 0}
                     rootName="Other HTTP headers"
-                    rootFontSize={12}
+                    baseFontSize={12}
                     maxWidth="80vw"
                     theme={{
                       styles: {
@@ -181,7 +190,7 @@ export const OptionsModal = ({
                         },
                       },
                     }}
-                    showCollectionCount="when-closed"
+                    showCollectionCount="when-collapsed"
                     jsonParse={JSON5.parse}
                   />
                 </FormControl>
@@ -227,7 +236,7 @@ export const OptionsModal = ({
                             }
                             collapse={Object.keys(formState.gqlHeaders).length > 0 ? 1 : 0}
                             rootName="Other headers"
-                            rootFontSize={12}
+                            baseFontSize={12}
                             maxWidth="80vw"
                             theme={{
                               styles: {
@@ -248,7 +257,7 @@ export const OptionsModal = ({
                                 },
                               },
                             }}
-                            showCollectionCount="when-closed"
+                            showCollectionCount="when-collapsed"
                             jsonParse={JSON5.parse}
                           />
                         </FormControl>
@@ -262,12 +271,12 @@ export const OptionsModal = ({
                     setData={(data) =>
                       setFormState({
                         ...formState,
-                        fragments: data as Record<string, JsonData>,
+                        fragments: data as Record<string, FragmentDefinition>,
                       })
                     }
                     collapse={0}
                     rootName="Fragments"
-                    rootFontSize={12}
+                    baseFontSize={12}
                     maxWidth="80vw"
                     theme={{
                       styles: {
@@ -288,7 +297,7 @@ export const OptionsModal = ({
                         },
                       },
                     }}
-                    showCollectionCount="when-closed"
+                    showCollectionCount="when-collapsed"
                     jsonParse={JSON5.parse}
                   />
                 </FormControl>
@@ -344,32 +353,32 @@ export const OptionsModal = ({
                 <Text fontSize="md">
                   <strong>Miscellaneous:</strong>
                 </Text>
-                <FormControl id="skip-runtime-check">
+                <FormControl id="runtime-type-check">
                   <Checkbox
-                    isChecked={formState.skipRuntimeTypeCheck}
+                    isChecked={formState.runtimeTypeCheck}
                     onChange={(_) =>
                       setFormState((curr) => ({
                         ...curr,
-                        skipRuntimeTypeCheck: !formState.skipRuntimeTypeCheck,
+                        runtimeTypeCheck: !formState.runtimeTypeCheck,
                       }))
                     }
                     colorScheme="green"
                   >
-                    <Text fontSize="sm">Skip runtime type checking</Text>
+                    <Text fontSize="sm">Runtime type checking</Text>
                   </Checkbox>
                 </FormControl>
-                <FormControl id="evaluate-object">
+                <FormControl id="strict-data-paths">
                   <Checkbox
-                    isChecked={formState.evaluateFullObject}
+                    isChecked={formState.strictDataPaths}
                     onChange={(_) =>
                       setFormState((curr) => ({
                         ...curr,
-                        evaluateFullObject: !formState.evaluateFullObject,
+                        strictDataPaths: !formState.strictDataPaths,
                       }))
                     }
                     colorScheme="green"
                   >
-                    <Text fontSize="sm">Evaluate full object input</Text>
+                    <Text fontSize="sm">Strict data paths (a missing path is an error)</Text>
                   </Checkbox>
                 </FormControl>
               </Stack>

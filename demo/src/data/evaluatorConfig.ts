@@ -1,53 +1,60 @@
-export const evaluatorConfig = {
-  fragments: {
-    getCapital: {
-      operator: 'POST',
+import { defineOperator, type FragmentDefinition } from 'fig-tree-evaluator'
+
+const fragments: Record<string, FragmentDefinition> = {
+  getCapital: {
+    expression: {
+      operator: 'http',
       url: 'https://countriesnow.space/api/v0.1/countries/capital',
-      returnProperty: 'data.capital',
-      parameters: {
-        country: '$country',
-      },
-      metadata: {
-        description: "Gets a country's capital city",
-        parameters: [{ name: '$country', type: 'string', required: true }],
-      },
+      method: 'post',
+      body: { country: '$params.country' },
+      returnPath: 'data.capital',
     },
-    getFlag: {
-      operator: 'POST',
-      url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
-      returnProperty: 'data.unicodeFlag',
-      parameters: {
-        country: '$country',
-      },
-      default: 'New Zealand',
-      metadata: {
-        description: "Gets a country's flag",
-        parameters: [{ name: '$country', type: 'string', required: true, default: 'New Zealand' }],
-        textColor: 'white',
-        backgroundColor: 'black',
-      },
-    },
+    parameters: { country: { type: 'string' } },
+    description: "Gets a country's capital city",
   },
-  customFunctions: {
-    reverse: {
-      function: (input: unknown[] | string) => {
-        if (Array.isArray(input)) return [...input].reverse()
-        return input.split('').reverse().join('')
-      },
-      description: 'Reverse a string, or array',
-      argsDefault: ['Reverse Me'],
-      backgroundColor: 'orange',
-      textColor: 'blue',
+  getFlag: {
+    expression: {
+      operator: 'http',
+      url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
+      method: 'post',
+      body: { country: '$params.country' },
+      returnPath: 'data.unicodeFlag',
     },
-    changeCase: {
-      function: ({ string, toCase }: { string: string; toCase: 'lower' | 'upper' }) =>
-        toCase === 'upper' ? string.toUpperCase() : string.toLowerCase(),
-      description: 'Convert a string to either upper or lower case',
-      inputDefault: { string: 'New string', toCase: 'upper' },
-    },
-    currentDate: {
-      function: () => new Date().toLocaleDateString(),
-      description: "Returns today's date in local format",
-    },
+    parameters: { country: { type: 'string', default: 'New Zealand' } },
+    description: "Gets a country's flag",
+    metadata: { textColor: 'white', backgroundColor: 'black' },
   },
 }
+
+const customOperators = [
+  defineOperator({
+    name: 'reverse',
+    category: 'other',
+    description: 'Reverses a string, or an array',
+    parameters: { value: { type: ['string', 'array'], description: 'The string or array' } },
+    positionalParams: ['value'],
+    evaluate: ({ value }) =>
+      Array.isArray(value) ? [...value].reverse() : String(value).split('').reverse().join(''),
+  }),
+  defineOperator({
+    name: 'changeCase',
+    category: 'string',
+    description: 'Converts a string to upper or lower case',
+    parameters: {
+      string: { type: 'string', description: 'The string to convert' },
+      toCase: { type: { literal: ['upper', 'lower'] }, description: 'The case to convert to' },
+    },
+    positionalParams: ['string', 'toCase'],
+    evaluate: ({ string, toCase }) =>
+      toCase === 'upper' ? String(string).toUpperCase() : String(string).toLowerCase(),
+  }),
+  defineOperator({
+    name: 'currentDate',
+    category: 'other',
+    description: "Returns today's date in the local format",
+    parameters: {},
+    evaluate: () => new Date().toLocaleDateString(),
+  }),
+]
+
+export const evaluatorConfig = { fragments, customOperators }

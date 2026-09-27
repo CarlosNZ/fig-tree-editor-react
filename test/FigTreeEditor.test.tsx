@@ -37,4 +37,58 @@ describe('FigTreeEditor', () => {
     )
     expect(container.querySelector('.ft-editor.host')).toBeInTheDocument()
   })
+
+  describe('validation', () => {
+    const issues = () => screen.queryAllByRole('listitem')
+
+    it('lists nothing for a valid expression', () => {
+      render(
+        <FigTreeEditor figTree={figTree} expression={{ $plus: [1, 2] }} setExpression={vi.fn()} />
+      )
+      expect(issues()).toHaveLength(0)
+    })
+
+    it('lists each issue with its severity, path and message', () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ $plus: [1, '$vars.missing', '$typo'] }}
+          setExpression={vi.fn()}
+        />
+      )
+      expect(issues()).toHaveLength(2)
+      const [error, warning] = issues()
+      expect(error).toHaveClass('ft-issue-error')
+      expect(error).toHaveTextContent('$plus[1]')
+      expect(error).toHaveTextContent("no var 'missing' is declared in scope")
+      expect(warning).toHaveClass('ft-issue-warning')
+      expect(warning).toHaveTextContent('$plus[2]')
+    })
+
+    it('labels an issue at the root', () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'plus' }}
+          setExpression={vi.fn()}
+        />
+      )
+      expect(issues()[0]).toHaveTextContent("(root)'plus' requires 'values'")
+    })
+
+    it('revalidates when the expression changes', () => {
+      const { rerender } = render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'plus' }}
+          setExpression={vi.fn()}
+        />
+      )
+      expect(issues()).toHaveLength(1)
+      rerender(
+        <FigTreeEditor figTree={figTree} expression={{ $plus: [1, 2] }} setExpression={vi.fn()} />
+      )
+      expect(issues()).toHaveLength(0)
+    })
+  })
 })

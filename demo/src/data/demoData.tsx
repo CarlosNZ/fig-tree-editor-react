@@ -1,5 +1,5 @@
-import { EvaluatorNode, FigTreeOptions } from 'fig-tree-evaluator'
 import { JsonEditorProps } from 'json-edit-react'
+import { DemoOptions } from '../figTree'
 import { and, byKey, byLevel, byType, inArray, not, root } from '@json-edit-react/utils/filters'
 
 export interface DemoData {
@@ -7,9 +7,9 @@ export interface DemoData {
   content: string // Markdown
   objectData?: Record<string, unknown>
   objectJsonEditorProps?: Omit<JsonEditorProps, 'data' | 'setData'>
-  expression: EvaluatorNode
+  expression: unknown
   expressionCollapse?: number
-  figTreeOptions?: FigTreeOptions
+  figTreeOptions?: DemoOptions
 }
 
 export const demoData: DemoData[] = [
@@ -20,26 +20,16 @@ export const demoData: DemoData[] = [
 
 \`\`\`
 {
-  "operator": "+",
-  "values": [
-    {
-      "operator": "getData",
-      "property": "user.firstName"
-    },
-    " ",
-    {
-      "operator": "getData",
-      "property": "user.lastName"
-    }
-  ]
+  "operator": "plus",
+  "values": ["$data.user.firstName", " ", "$data.user.lastName"]
 }
 \`\`\`
 
-A basic expression that just joins a couple of values pulled from some form data.
+A basic expression that just joins a couple of values pulled from some form data. A string such as \`"$data.user.firstName"\` is a *reference*: it reads that path from the data object.
 
-Experiment with changing the values of the data object as well as the object properties being referenced. (See what happens if you reference a path that doesn't exist, then try adding a [\`fallback\`](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#other-common-properties) to handle it.)
+Experiment with changing the values of the data object as well as the paths being referenced. (See what happens if you reference a path that doesn't exist: it reads as \`null\`, so the whole result is \`null\`. Then try wrapping the reference in a \`firstOf\` to give it a default.)
 
-Click the **+** button to see the result, or either of the **getData** buttons to evaluate the child elements individually.
+Click the **plus** button to see the result.
 
 Try out some of the other [operators](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#operator-reference), and build your own expressions from scratch.
 `,
@@ -67,12 +57,8 @@ Try out some of the other [operators](https://github.com/CarlosNZ/fig-tree-evalu
       },
     },
     expression: {
-      operator: '+',
-      values: [
-        { operator: 'getData', property: 'user.firstName' },
-        ' ',
-        { operator: 'getData', property: 'user.lastName' },
-      ],
+      operator: 'plus',
+      values: ['$data.user.firstName', ' ', '$data.user.lastName'],
     },
     expressionCollapse: 3,
   },
@@ -87,19 +73,19 @@ The result of this expression determines whether the filmgoer is allowed entry t
 
 The rule is: the filmgoer must meet the minimum age restriction, unless they have a parent with them, in which case they must be over 13 years old.
 
-Note that the deeper **getData** nodes are written using the [Shorthand syntax](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#shorthand-syntax). This is just a convenience to make complex expressions less verbose. So instead of:
+Note that the data is read with *references*, such as \`"$data.patron.age"\`. A reference is just a convenience to make complex expressions less verbose. So instead of:
 
 \`\`\`
 {
-  "operator": "getData",
-  "property": "patron.age"
+  "operator": "get",
+  "path": "patron.age"
 }
 \`\`\`
 
 we can just write:
 
 \`\`\`
-{ "$getData": "patron.age" }
+"$data.patron.age"
 \`\`\`
 
 Note that you can toggle any node to and from Shorthand form with the hover button on the right of each node header:
@@ -118,30 +104,29 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
       patron: { age: 12, isParentAttending: true },
     },
     expression: {
-      operator: '?',
+      operator: 'if',
       condition: {
         operator: 'or',
         values: [
           {
-            operator: '>',
-            values: [{ $getData: 'patron.age' }, { $getData: 'film.minAgeRating' }],
-            strict: false,
+            operator: 'greaterThanOrEqual',
+            values: ['$data.patron.age', '$data.film.minAgeRating'],
           },
           {
             operator: 'and',
             values: [
-              { operator: '>', values: [{ $getData: 'patron.age' }, 13], strict: false },
-              { $getData: 'patron.isParentAttending' },
+              { operator: 'greaterThanOrEqual', values: ['$data.patron.age', 13] },
+              '$data.patron.isParentAttending',
             ],
           },
         ],
       },
-      valueIfTrue: {
-        operator: 'stringSubstitution',
-        string: 'Enjoy "{{movie}}"! 🍿🎬',
-        substitutions: { movie: { operator: 'getData', property: 'film.title' } },
+      then: {
+        operator: 'buildString',
+        template: 'Enjoy "{{movie}}"! 🍿🎬',
+        substitutions: { movie: '$data.film.title' },
       },
-      valueIfFalse: "Sorry, try again when you're older 😔",
+      else: "Sorry, try again when you're older 😔",
     },
     expressionCollapse: 4,
   },
@@ -150,19 +135,18 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
     content: `
 # Fetch and display a random user
 
-This expression fetches a random user object by making an HTTP request to [https://randomuser.me/api/](https://randomuser.me/api/). We then use this data to populate a templated string.
+This expression fetches a random user object by making an HTTP request to [https://randomuser.me/api/](https://randomuser.me/api/), and keeps it in a var. We then use this data to populate a templated string.
 
 Note that this query requires the FigTree [cache](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#caching-memoization) to be disabled, otherwise we'd get the same result every time it's run. (You can see the "Use cache" option has been disabled in the "Configuration" panel.)
 
 Try toggling the "Use cache" setting to see the difference.
     `,
     expression: {
-      operator: 'stringSubstitution',
-      string: 'Hello, {{name.first}} {{name.last}} from {{location.city}}, {{location.country}}!',
-      substitutions: {
-        operator: 'get',
-        url: 'https://randomuser.me/api/',
-        returnProperty: 'results[0]',
+      operator: 'buildString',
+      template:
+        'Hello, {{$vars.user.name.first}} {{$vars.user.name.last}} from {{$vars.user.location.city}}, {{$vars.user.location.country}}!',
+      vars: {
+        user: { operator: 'http', url: 'https://randomuser.me/api/', returnPath: 'results[0]' },
       },
     },
     objectJsonEditorProps: { collapse: 1 },
@@ -176,9 +160,9 @@ This expression features a much more complex templated string, intended to showc
 
 The values substituted into the output string are based on several different factors:
 
-- Simple **getData** references (e.g. \`user.name.first\`)
-- An [HTTP request](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#get) to lookup the country's capital city
-- [Counting](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#count) the number of friends and presenting different text output based on the \`numberMap\`
+- Data references written straight into the template (e.g. \`{{$data.user.name.first}}\`)
+- An HTTP request to look up the country's capital city
+- Counting the number of friends, and choosing different text depending on the count
 - Different wording in several places depending on the gender of the \`user\`, utilising the [Match](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#match) operator
 
 Try changing all these values and see the output differences.
@@ -215,39 +199,45 @@ Try changing all these values and see the output differences.
       collapse: 3,
     },
     expression: {
-      operator: 'stringSubstitution',
-      string:
-        "This applicant's name is {{user.name.first}} {{user.name.last}}. {{genderLives}} in {{user.country}}, where the capital city is {{capital}}. {{genderHas}} {{friendCount}}.",
-      replacements: {
+      operator: 'buildString',
+      template:
+        "This applicant's name is {{$data.user.name.first}} {{$data.user.name.last}}. {{genderLives}} in {{$data.user.country}}, where the capital city is {{capital}}. {{genderHas}} {{friendCount}}.",
+      substitutions: {
         capital: {
-          operator: 'POST',
+          operator: 'http',
           url: 'https://countriesnow.space/api/v0.1/countries/capital',
-          parameters: {
-            country: { $getData: 'user.country' },
-          },
-          returnProperty: 'data.capital',
+          method: 'post',
+          body: { country: '$data.user.country' },
+          returnPath: 'data.capital',
           fallback: 'unknown',
         },
-        friendCount: { operator: 'count', values: { $getData: 'user.friends' }, fallback: 0 },
+        friendCount: {
+          operator: 'match',
+          value: '$vars.count',
+          branches: { '0': 'no friends 😢', '1': 'only one friend' },
+          default: {
+            operator: 'if',
+            condition: { operator: 'greaterThan', values: ['$vars.count', 4] },
+            then: 'loads of friends',
+            else: {
+              operator: 'buildString',
+              template: '{{count}} friends',
+              substitutions: { count: '$vars.count' },
+            },
+          },
+          vars: { count: { operator: 'length', value: '$data.user.friends' } },
+        },
         genderLives: {
           operator: 'match',
-          matchExpression: { $getData: 'user.gender' },
+          value: '$data.user.gender',
           branches: { Female: 'She lives', Male: 'He lives' },
-          fallback: 'They live',
+          default: 'They live',
         },
         genderHas: {
           operator: 'match',
-          matchExpression: { $getData: 'user.gender' },
+          value: '$data.user.gender',
           branches: { Female: 'She has', Male: 'He has' },
-          fallback: 'They have',
-        },
-      },
-      numberMap: {
-        friendCount: {
-          '0': 'no friends 😢',
-          '1': 'only one friend',
-          other: '{} friends',
-          '>4': 'loads of friends',
+          default: 'They have',
         },
       },
     },
@@ -276,14 +266,11 @@ Note the \`fallback\` property used here — an array with a *"Loading..."* indi
       userResponses: { name: 'Mohini', country: 'India' },
     },
     expression: {
-      operator: 'POST',
+      operator: 'http',
       url: 'https://countriesnow.space/api/v0.1/countries/cities',
-      returnProperty: 'data',
-      parameters: {
-        country: {
-          $getData: 'userResponses.country',
-        },
-      },
+      method: 'post',
+      body: { country: '$data.userResponses.country' },
+      returnPath: 'data',
       fallback: 'Country not specified',
     },
   },
@@ -300,7 +287,7 @@ A diagram of this particular tree can be found [here](https://user-images.github
 
 *Hot tip: Click the "Expand" icon at the top of the expression object while holding "Option"/"Alt" to quickly expand the entire expression tree at once.*
 
-This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#alias-nodes), which reduces the amount of duplication required in this structure.
+This expression also declares \`vars\`, values defined once and read with references such as \`"$vars.difficultyOlder"\`, which reduces the amount of duplication required in this structure.
     `,
     objectData: {
       Info: 'Change the following values to get a card game recommendation!',
@@ -332,89 +319,69 @@ This expression also features [Alias nodes](https://github.com/CarlosNZ/fig-tree
     },
     expression: {
       operator: 'match',
-      matchExpression: { operator: 'objProps', property: 'numberOfPlayers' },
+      value: '$data.numberOfPlayers',
       branches: {
         '1': {
-          operator: '?',
-          condition: {
-            operator: '>',
-            values: [{ operator: 'objProps', property: 'ageOfYoungestPlayer' }, 7],
-            strict: false,
-          },
-          ifTrue: 'Solitaire',
-          ifFalse: 'No recommendations 😔',
+          operator: 'if',
+          condition: { operator: 'greaterThanOrEqual', values: ['$data.ageOfYoungestPlayer', 7] },
+          then: 'Solitaire',
+          else: 'No recommendations 😔',
         },
-        fallback: {
-          operator: '?',
-          condition: {
-            operator: '>',
-            values: [{ operator: 'objProps', property: 'ageOfYoungestPlayer' }, 5],
-            strict: false,
-          },
-          ifTrue: {
-            operator: '?',
-            condition: {
-              operator: '<',
-              values: [{ operator: 'objProps', property: 'ageOfYoungestPlayer' }, 8],
-            },
-            ifTrue: 'Go Fish',
-            ifFalse: {
-              operator: '?',
-              condition: {
-                operator: '<',
-                values: [{ operator: 'objProps', property: 'ageOfYoungestPlayer' }, 12],
-              },
-              ifTrue: '$difficultyYounger',
-              ifFalse: {
-                operator: '?',
-                condition: {
-                  operator: '<',
-                  values: [{ operator: 'objProps', property: 'ageOfYoungestPlayer' }, 16],
-                },
-                ifTrue: '$difficultyOlder',
-                ifFalse: {
+      },
+      default: {
+        operator: 'if',
+        condition: { operator: 'greaterThanOrEqual', values: ['$data.ageOfYoungestPlayer', 5] },
+        then: {
+          operator: 'if',
+          condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 8] },
+          then: 'Go Fish',
+          else: {
+            operator: 'if',
+            condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 12] },
+            then: '$vars.difficultyYounger',
+            else: {
+              operator: 'if',
+              condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 16] },
+              then: '$vars.difficultyOlder',
+              else: {
+                operator: 'match',
+                value: '$data.numberOfPlayers',
+                branches: {
                   '4': {
-                    operator: '?',
-                    condition: {
-                      operator: '=',
-                      values: [{ operator: 'objProps', property: 'preferredDifficulty' }, 'hard'],
-                    },
-                    ifTrue: 'Bridge',
-                    ifFalse: '$difficultyOlder',
+                    operator: 'if',
+                    condition: { operator: 'equal', values: ['$data.preferredDifficulty', 'hard'] },
+                    then: 'Bridge',
+                    else: '$vars.difficultyOlder',
                   },
-                  operator: 'match',
-                  matchExpression: { operator: 'objProps', property: 'numberOfPlayers' },
-                  fallback: '$difficultyOlder',
                 },
+                default: '$vars.difficultyOlder',
               },
             },
           },
-          ifFalse: 'Snap',
         },
+        else: 'Snap',
       },
-      $difficultyYounger: {
-        operator: 'switch',
-        matchExpression: { operator: 'objProps', property: 'preferredDifficulty' },
-        easy: 'Go Fish',
-        challenging: 'Rummy',
-        hard: 'Rummy',
-      },
-      $difficultyOlder: {
-        operator: 'match',
-        matchExpression: { operator: 'objProps', property: 'preferredDifficulty' },
-        easy: 'Rummy',
-        challenging: '500',
-        hard: '500',
+      vars: {
+        difficultyYounger: {
+          operator: 'match',
+          value: '$data.preferredDifficulty',
+          branches: { easy: 'Go Fish', challenging: 'Rummy', hard: 'Rummy' },
+        },
+        difficultyOlder: {
+          operator: 'match',
+          value: '$data.preferredDifficulty',
+          branches: { easy: 'Rummy', challenging: '500', hard: '500' },
+        },
       },
     },
   },
   {
-    name: '🕵️ Alias nodes (Star Wars 🚀)',
+    name: '🕵️ Vars (Star Wars 🚀)',
     content: `
-# Alias Nodes
-If you have the same data referenced more than once in your expression, it can be a good idea to create an [Alias node](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#alias-nodes) so it's only evaluated once, particularly if it's a network request.
+# Vars
+If you have the same data referenced more than once in your expression, it can be a good idea to declare it in a \`vars\` block so it's only evaluated once, particularly if it's a network request.
 
-In this case, the \`$character\` alias pulls a chunk of data from [https://swapi.py4e.com/](https://swapi.py4e.com/) and then values from it are substituted into the final expression, or used as inputs to further lookups.
+In this case, the \`character\` var pulls a chunk of data from [https://swapi.py4e.com/](https://swapi.py4e.com/) and then values from it are substituted into the final expression, or used as inputs to further lookups.
 
 Change the \`selected\` character name to look up a different Star Wars character.
 
@@ -527,44 +494,29 @@ Change the \`selected\` character name to look up a different Star Wars characte
       },
     },
     expression: {
-      operator: 'stringSubstitution',
-      string: 'Name: %1\nGender: %2\nHomeworld: %3\nFirst appearance: %4',
+      operator: 'buildString',
+      template: 'Name: %1\nGender: %2\nHomeworld: %3\nFirst appearance: %4',
       substitutions: [
-        { operator: 'getData', property: 'name', additionalData: '$character' },
-        { operator: 'getData', property: 'gender', additionalData: '$character' },
-        {
-          operator: 'get',
-          url: { operator: 'getData', property: 'homeworld', additionalData: '$character' },
-          returnProperty: 'name',
-        },
-        {
-          operator: 'get',
-          url: { operator: 'getData', property: 'films[0]', additionalData: '$character' },
-          returnProperty: 'title',
-        },
+        '$vars.character.name',
+        '$vars.character.gender',
+        { operator: 'http', url: '$vars.character.homeworld', returnPath: 'name' },
+        { operator: 'http', url: '$vars.character.films[0]', returnPath: 'title' },
       ],
       fallback: {
-        operator: '+',
-        values: ["Can't retrieve data for character: ", { $getData: 'selected' }],
+        operator: 'plus',
+        values: ["Can't retrieve data for character: ", '$data.selected'],
         fallback: '‼️',
       },
-      $character: {
-        operator: 'GET',
-        url: {
-          operator: '+',
-          values: [
-            'https://swapi.py4e.com/api/people/',
-            {
-              operator: 'getData',
-              property: {
-                operator: 'substitute',
-                string: 'characters.%1',
-                substitutions: [{ operator: 'getData', property: 'selected' }],
-              },
-            },
-          ],
+      vars: {
+        character: {
+          operator: 'http',
+          url: {
+            operator: 'buildString',
+            template: 'https://swapi.py4e.com/api/people/%1',
+            substitutions: [{ operator: 'get', path: '$data.selected', from: '$data.characters' }],
+          },
+          fallback: 'Nope',
         },
-        fallback: 'Nope',
       },
     },
   },
@@ -580,7 +532,7 @@ In this case, two Fragments are defined, and can be explored in the "Configurati
 - \`getCapital\`
 - \`getFlag\`
 
-They both require a \`$country\` parameter, which is substituted into the expression.
+They both take a \`country\` parameter, which the fragment reads as \`"$params.country"\`. \`getFlag\` gives it a default, so it's optional there.
     `,
     objectData: {
       myFavouriteCountry: 'New Zealand',
@@ -592,91 +544,71 @@ They both require a \`$country\` parameter, which is substituted into the expres
       allowTypeSelection: false,
     },
     expression: {
-      operator: 'stringSubstitution',
-      string: '===={{country}}====\nCapital city: {{capital}}\nFlag: {{flag}}',
-      replacements: {
-        capital: { fragment: 'getCapital', $country: '$selectedCountry' },
-        flag: { fragment: 'getFlag', $country: '$selectedCountry' },
-        country: '$selectedCountry',
+      operator: 'buildString',
+      template: '===={{country}}====\nCapital city: {{capital}}\nFlag: {{flag}}',
+      substitutions: {
+        capital: { fragment: 'getCapital', parameters: { country: '$vars.selectedCountry' } },
+        flag: { fragment: 'getFlag', parameters: { country: '$vars.selectedCountry' } },
+        country: '$vars.selectedCountry',
       },
       fallback: "Can't find country 😔",
-      $selectedCountry: {
-        operator: 'getData',
-        property: 'myFavouriteCountry',
-        fallback: 'Country not found',
+      vars: {
+        selectedCountry: {
+          operator: 'get',
+          path: 'myFavouriteCountry',
+          default: 'Country not found',
+        },
       },
     },
     expressionCollapse: 3,
-    figTreeOptions: {
-      useCache: true,
-      fragments: {
-        getCapital: {
-          operator: 'POST',
-          url: 'https://countriesnow.space/api/v0.1/countries/capital',
-          returnProperty: 'data.capital',
-          parameters: {
-            country: '$country',
-          },
-          metadata: {
-            description: "Gets a country's capital city",
-            parameters: [{ name: '$country', type: 'string', required: true }],
-          },
-        },
-        getFlag: {
-          operator: 'POST',
-          url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
-          returnProperty: 'data.unicodeFlag',
-          parameters: {
-            country: '$country',
-          },
-          metadata: {
-            description: "Gets a country's flag",
-            parameters: [
-              { name: '$country', type: 'string', required: true, default: 'New Zealand' },
-            ],
-            textColor: 'white',
-            backgroundColor: 'black',
-          },
-        },
-        metadata: {
-          description: "Gets a country's flag",
-          textColor: 'white',
-          backgroundColor: 'black',
-          parameters: [
-            { name: '$country', type: 'string', required: true, default: 'New Zealand' },
-          ],
-        },
-      },
-    },
+    figTreeOptions: { useCache: true },
   },
   {
     name: '➡ Custom Operators',
     content: `
 # Custom Operators
 
-Extend the capabilities of FigTree by adding your own functions, which can be used as [Custom Operators](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#custom-functionsoperators).
+Extend the capabilities of FigTree by defining your own operators with \`defineOperator()\`, and registering them with the \`operators\` option. A custom operator is used in exactly the same way as a built-in one.
 
-There are three hard-coded into this FigTree instance:
+There are three registered with this FigTree instance:
 - **changeCase**:
 
   \`\`\`
-  ({ string, toCase }) =>
-        toCase === 'upper' ? string.toUpperCase() : string.toLowerCase()
+  defineOperator({
+    name: 'changeCase',
+    parameters: {
+      string: { type: 'string' },
+      toCase: { type: { literal: ['upper', 'lower'] } },
+    },
+    evaluate: ({ string, toCase }) =>
+      toCase === 'upper' ? string.toUpperCase() : string.toLowerCase(),
+    ...
+  })
   \`\`\`
-- **reverse** (reverse a string or array):  
-  
+- **reverse** (reverse a string or array):
+
   \`\`\`
-  (input) => {
-    if (Array.isArray(input)) return [...input].reverse()
-    return input.split('').reverse().join('')
-  }
+  defineOperator({
+    name: 'reverse',
+    parameters: { value: { type: ['string', 'array'] } },
+    positionalParams: ['value'],
+    evaluate: ({ value }) =>
+      Array.isArray(value)
+        ? [...value].reverse()
+        : value.split('').reverse().join(''),
+    ...
+  })
   \`\`\`
 - **currentDate** (print current date in local format):
-  
+
   \`\`\`
-  ({ string, toCase }) =>
-        toCase === 'upper' ? string.toUpperCase() : string.toLowerCase()
-  \`\`\`  
+  defineOperator({
+    name: 'currentDate',
+    parameters: {},
+    evaluate: () => new Date().toLocaleDateString(),
+    ...
+  })
+  \`\`\`
     `,
     objectData: {
       backwardsInput: " :si etad s'yadoT",
@@ -690,14 +622,11 @@ There are three hard-coded into this FigTree instance:
     },
     expression: {
       operator: 'changeCase',
-      toCase: { $getData: 'toCase' },
       string: {
-        operator: '+',
-        values: [
-          { operator: 'reverse', args: [{ $getData: 'backwardsInput' }] },
-          { operator: 'currentDate' },
-        ],
+        operator: 'plus',
+        values: [{ $reverse: ['$data.backwardsInput'] }, { operator: 'currentDate' }],
       },
+      toCase: '$data.toCase',
     },
     expressionCollapse: 4,
   },

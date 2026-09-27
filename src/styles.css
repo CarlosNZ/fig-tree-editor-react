@@ -339,3 +339,44 @@ input.ft-select-input::placeholder {
   background-color: rgb(27, 38, 101);
   color: white;
 }
+
+/* Validation issues, listed below the editor */
+.ft-issues {
+  list-style: none;
+  margin: 0.5em 0;
+  padding: 0;
+  font-size: 0.85em;
+  font-family: sans-serif;
+}
+
+.ft-issue {
+  display: flex;
+  gap: 0.6em;
+  align-items: baseline;
+  padding: 0.2em 0;
+}
+
+.ft-issue-severity {
+  flex-shrink: 0;
+  padding: 0 0.4em;
+  border-radius: 0.3em;
+  font-size: 0.85em;
+  text-transform: uppercase;
+  color: white;
+}
+
+.ft-issue-error .ft-issue-severity {
+  background-color: #c0392b;
+}
+
+.ft-issue-warning .ft-issue-severity {
+  background-color: #d68910;
+}
+
+.ft-issue-hint .ft-issue-severity {
+  background-color: #7f8c8d;
+}
+
+.ft-issue-path {
+  flex-shrink: 0;
+}

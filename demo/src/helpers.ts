@@ -1,53 +1,31 @@
-import { evaluatorConfig } from './data/evaluatorConfig'
+import { buildFigTree, defaultOptions, type DemoOptions } from './figTree'
 
-export const getInitOptions = () => {
-  const savedOptions = parseLocalStorage('options') ?? {}
-  const graphQLConnection = savedOptions.graphQLConnection ?? undefined
-  const baseEndpoint = savedOptions.baseEndpoint ?? undefined
-  const headers = savedOptions.headers ?? undefined
-  const skipRuntimeTypeCheck = savedOptions.skipRuntimeTypeCheck ?? undefined
-  const evaluateFullObject = savedOptions.evaluateFullObject ?? undefined
-  const fragments = savedOptions.fragments ?? evaluatorConfig.fragments
-  const useCache = savedOptions.useCache ?? true
-  const maxCacheSize = savedOptions.maxCacheSize ?? 50
-  const maxCacheTime = savedOptions.maxCacheTime ?? 1800
-  const functions = evaluatorConfig.customFunctions
-  return {
-    graphQLConnection,
-    baseEndpoint,
-    headers,
-    skipRuntimeTypeCheck,
-    evaluateFullObject,
-    fragments,
-    functions,
-    useCache,
-    maxCacheSize,
-    maxCacheTime,
+// Every key the demo stores is prefixed, so that what the v2 playground left
+// in the same origin's storage is never read as v3
+const STORAGE_PREFIX = 'v3:'
+
+export const getLocalStorage = (key: string) => {
+  try {
+    const value = localStorage.getItem(STORAGE_PREFIX + key)
+    return value ? JSON.parse(value) : null
+  } catch {
+    return null
   }
 }
 
-export const getInitCache = () => parseLocalStorage('cache') ?? null
+export const setLocalStorage = (key: string, value: unknown) => {
+  localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value))
+}
 
-export const parseLocalStorage = (key: string | object) => {
-  const value = typeof key === 'string' ? localStorage.getItem(key) : key
-  if (!value) return null
-  const convertTypes = (obj: { [key: string]: any }): any =>
-    Object.fromEntries(
-      Object.entries(obj).map(([key, val]) => {
-        if (!isNaN(Number(val))) return [key, Number(val)]
-        if (val === 'true') return [key, true]
-        if (val === 'false') return [key, false]
-        if (val === 'null') return [key, null]
-        if (val === 'undefined') return [key, undefined]
-        if (val instanceof Object && !Array.isArray(val)) return [key, convertTypes(val)]
-        return [key, val]
-      })
-    )
+// The saved options, if FigTree accepts them, else the defaults
+export const getInitOptions = (): DemoOptions => {
+  const saved = getLocalStorage('options') as DemoOptions | null
+  if (!saved) return defaultOptions
   try {
-    const parsed = typeof value === 'string' ? JSON.parse(value) : value
-    return key === 'options' ? parsed : convertTypes(parsed)
+    buildFigTree(saved)
+    return saved
   } catch {
-    return null
+    return defaultOptions
   }
 }
 
@@ -77,16 +55,6 @@ export const filterObjectRecursive = (
     })
     .filter(([_, value]) => filterFunction(value)) as [key: string, value: any][]
   return Object.fromEntries(filtered)
-}
-
-export const getLocalStorage = (key: string) => {
-  const value = localStorage.getItem(key)
-  if (value) return JSON.parse(value)
-  return null
-}
-
-export const setLocalStorage = (key: string, value: object | string | number) => {
-  localStorage.setItem(key, JSON.stringify(value))
 }
 
 export const truncate = (string: string, length = 200) =>

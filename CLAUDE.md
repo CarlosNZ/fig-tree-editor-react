@@ -28,6 +28,7 @@ The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm i
   - `pnpm test`
   - `pnpm build`
   - `pnpm check:package`
+  - CI then runs the demo's checks, `pnpm -C demo lint` and `pnpm -C demo typecheck`.
 - **Build.** `pnpm build` runs rollup to produce an ESM-only `build/index.js` and `build/index.d.ts`, then prints a bundle-size report. `pnpm size` reprints the report without rebuilding. The entries and their brotli budgets are in `scripts/entries.mjs`, and the build fails if `package.json`'s `exports` disagrees with them. Stylesheets are imported as `./styles.css?inline` text (`scripts/inlineCss.mjs`, the same as JER's) and injected by the component, not by a module side effect.
 - **Packaging.** `pnpm check:package` (after a build) checks the size budget. It then `pnpm pack`s the package into `pack-output/`, installs that copy into a temporary consumer that has only the declared dependencies and peers, and imports, `require()`s and typechecks it there.
 - **Tests.** vitest with React Testing Library, in jsdom. Tests live in `test/` (setup in `test/setup.ts`). `pnpm test:watch` runs them in watch mode.
@@ -36,9 +37,8 @@ The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm i
 - **Run the demo** (the primary way to see changes live):
   - `pnpm dev` / `pnpm demo:local` → demo against the **raw `src/` TypeScript**, with HMR.
   - `pnpm demo:local-evaluator` → the same, with fig-tree-evaluator also taken from the source of a sibling checkout (`../fig-tree-evaluator`).
-  - `pnpm demo` → demo against the **published npm package**.
+  - `pnpm demo` → demo against the **published npm package**. No published editor runs on fig-tree v3 yet, so until the first v3 pre-release this mode stops with a message and the demo doesn't depend on the npm package.
   - `pnpm demo:pack` → builds, runs `check:package`, then runs the demo against the packed copy in `pack-output/`. This is the closest test to a real publish.
-  - Until the Phase 2 skeleton (`docs-dev/v3-plan.md`), only `pnpm demo` runs, because `src/` has no `FigTreeEditor` yet.
 
 ## Dependency-source switching (important & non-obvious)
 
@@ -47,7 +47,7 @@ Two layers let you swap between local source and published packages without code
 1. **`v1-src/_imports.ts`** re-exports `json-edit-react`. It exists so the v1 library's own import of JER can be flipped between the published package and a local checkout (`../package`) by toggling one line. The v3 `src/` has no equivalent so far.
 2. **`demo/vite.config.ts`** aliases `@fig-tree-editor-react` (note the `@`) to one of four sources selected by `VITE_FIG_SOURCE` (`npm` | `local` | `build` | `pack`), set by the demo scripts above. Separately, `VITE_EVALUATOR_SOURCE=local` aliases `fig-tree-evaluator` and each of its subpaths to the sibling checkout's `src/`, for every importer, the library included. In non-`npm` modes the config must `dedupe` react/react-dom/fig-tree-evaluator/json-edit-react: a duplicate React breaks hooks, and a duplicate fig-tree or JER breaks `instanceof` checks and editor context.
 
-`demo/` is a **workspace package** (`pnpm-workspace.yaml`). It shares the root's lockfile and install, but keeps its own `package.json` and `node_modules`. It resolves the editor from npm in `npm` mode, not through a `workspace:` link. When bumping a shared dependency (fig-tree-evaluator, json-edit-react), update it in **both** `package.json` files, since there are no catalogs. Until Phase 2.3 the demo stays on fig-tree v2 while the root is on v3.
+`demo/` is a **workspace package** (`pnpm-workspace.yaml`). It shares the root's lockfile and install, but keeps its own `package.json` and `node_modules`. In `npm` mode it resolves the editor from npm rather than through a `workspace:` link, once a v3 editor is published. When bumping a shared dependency (fig-tree-evaluator, json-edit-react), update it in **both** `package.json` files, since there are no catalogs.
 
 ## Architecture
 

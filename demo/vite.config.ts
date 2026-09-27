@@ -8,6 +8,7 @@ import path from 'path'
 // rewrites that alias to one of the sources below, selected by the
 // VITE_FIG_SOURCE env var (set by the package.json scripts):
 //   npm   – the published package in node_modules (default; what gets deployed)
+//           Unavailable until a v3 editor is published: see the guard below
 //   local – the library's raw TypeScript source (../src) for live dev / HMR
 //   build – the rollup output (../build/index.js)
 //   pack  – an extracted `npm pack` tarball (../pack-output/.../package)
@@ -16,6 +17,17 @@ type PackageOption = 'npm' | 'local' | 'build' | 'pack'
 const provider: PackageOption = (process.env.VITE_FIG_SOURCE as PackageOption) ?? 'npm'
 
 console.log(`Using fig-tree-editor-react from: ${provider}`)
+
+// No published editor runs on fig-tree v3 yet: 1.x is built for v2. So the
+// demo doesn't depend on the npm package, and this mode stops with the
+// alternatives.
+// TO-DO: restore the dependency when the first v3 pre-release is published
+// (docs-dev/v3-plan.md, 2.3)
+if (provider === 'npm')
+  throw new Error(
+    'No v3 fig-tree-editor-react is published yet, so the demo has no npm mode. ' +
+      'Run `pnpm dev` (the library source) or `pnpm demo:pack` (the packed build) from the repo root.'
+  )
 
 const figTreeEditorSrcMap: Record<PackageOption, string> = {
   npm: 'fig-tree-editor-react', // no-op replacement → resolves through node_modules
@@ -108,7 +120,7 @@ export default defineConfig({
             '@emotion/styled',
             'framer-motion',
           ],
-          'editor-vendor': ['json-edit-react', 'fig-tree-evaluator', 'fig-tree-editor-react'],
+          'editor-vendor': ['json-edit-react', 'fig-tree-evaluator'],
         },
       },
     },

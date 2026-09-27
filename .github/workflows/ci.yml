@@ -1,7 +1,8 @@
 name: CI
 
 # The library's checks, in the order `pnpm release` runs them
-# (scripts/release.mjs). Modelled on fig-tree-evaluator's ci.yml.
+# (scripts/release.mjs), then the demo's. Modelled on fig-tree-evaluator's
+# ci.yml.
 on:
   push:
     branches: [main, v3.0-dev]
@@ -34,3 +35,7 @@ jobs:
       # imported, required and typechecked as a consumer would
       # (scripts/checkPackage.mjs)
       - run: pnpm check:package
+      # The demo has its own lint config, and typechecks against the
+      # library's source (demo/tsconfig.json)
+      - run: pnpm -C demo lint
+      - run: pnpm -C demo typecheck
