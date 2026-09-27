@@ -37,7 +37,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 
 ## Working rules
 
-1. **The demo runs at the end of every phase.** Each phase adds capability on top of a working editor. No phase leaves the build or `yarn dev` broken.
+1. **The demo runs at the end of every phase from Phase 2 on.** Each phase adds capability on top of a working editor, and no phase leaves the build or `yarn dev` broken. Phases 0 and 1 are the exception for `yarn dev`: Phase 0 freezes the v1 components and the new `src/` has no `FigTreeEditor` until the Phase 2 skeleton, so only the npm-mode demo (`yarn demo`) runs until then. The library build still works at the end of both.
 2. **`v1-src/` is reference only.** It is never imported, built or linted, and it is deleted before 3.0.0 ships.
 3. **Upstream fixes are in scope.** The same maintainer owns fig-tree-evaluator and json-edit-react. When the editor needs something from either one (a hint field, a format option, a JER opt-in), prefer a root-cause change upstream over a local workaround. Record each such change under "Upstream changes" at the end.
 4. **Test the pure logic as it is written.** Node classification, fill-in and path helpers each get tests alongside the code (see Phase 1).
