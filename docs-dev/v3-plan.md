@@ -51,7 +51,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 - **0.2 · Freeze v1 as reference.** Move `src/` to `v1-src/`. Exclude it from `tsconfig`, rollup and eslint, and add a lint rule that bans imports from it. Copy `Select/`, `Icons.tsx` and `styles.css` into the new `src/`.
 - **0.3 · Dependencies.**
   - Move `fig-tree-evaluator` to `peerDependencies` as `^3.0.0` (or the current preview range until 3.0.0 is out), and keep it as a devDependency for development. `json-edit-react` and `@json-edit-react/utils` stay as regular dependencies, since consumers don't touch them directly.
-  - Bump both the root and `demo/`. `demo/` is a separate package with its own lockfile.
+  - Bump the root only. `demo/` stays on fig-tree v2 until Phase 2.3: its `dedupe` rule forces a single fig-tree copy in every mode, so a v3 bump there breaks even the `npm` mode (the published v1 editor can't run on v3).
 - **0.4 · Local fig-tree source.** Add a vite alias mode that resolves `fig-tree-evaluator` to the local checkout at `../fig-tree-evaluator`, alongside the existing `VITE_FIG_SOURCE` modes. Keep the `dedupe` rules so only one copy of fig-tree and React exists. Also decide whether `src/_imports.ts` needs a matching toggle for fig-tree.
 - **0.5 · Version.** Set the version to `3.0.0-alpha.0` so nothing publishes as `latest` by accident.
 - **0.6 · Demo deployment guard.** `demo`'s `deploy` script publishes to the live v2 playground (`carlosnz.github.io/fig-tree-evaluator`). Make sure a v3 demo can't be deployed there before release, for example by disabling the script on this branch or pointing it at a separate preview location.
@@ -88,7 +88,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
 - **1.1 · Minimal `FigTreeEditor`.** A new component with the same outline of props as v1 (the expression, a `FigTree` instance, `onUpdate`, and options). It renders a JER `<JsonEditor>` over the expression with **no custom nodes**. That's a working v3 editor, just an unstyled JSON one.
 - **1.2 · Validation wired in.** Run `fig.validate()` on every update, and show its issues in a simple list for now, with each issue's path and message.
 - **1.3 · Demo rewired.**
-  - Get the demo running against the new component and v3.
+  - Get the demo running against the new component and v3, bumping `demo/`'s `fig-tree-evaluator` to the v3 range (deferred from 0.3). `demo/` is a separate package with its own lockfile.
   - Produce the demo's test expressions in v3 syntax. Generate most of them by running the v1 set through `fig-tree-evaluator/migrate` (`migrateV2Expression`), then review them by hand.
   - Replace or remove v2-specific demo plumbing, such as the custom-function definitions and the express/postgres setup, where it no longer applies.
 

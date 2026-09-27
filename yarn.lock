@@ -662,10 +662,10 @@
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
 
-"@json-edit-react/utils@^0.9.0-beta.3":
-  version "0.9.0-beta.3"
-  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-0.9.0-beta.3.tgz#d4f071dd16987129a8dac17f4c8998d4c6ee9358"
-  integrity sha512-UCkxxk+5O113LhqH6AaGUnzBOShCMdwGSEF3zfvpFCvz+8NeXm/uQSb8/yqaq/5hzRpTupNjQ9qP8JCcvW3ypg==
+"@json-edit-react/utils@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@json-edit-react/utils/-/utils-1.0.0.tgz#09bfcd19a08147184ce633c1d51d2eb3433f2298"
+  integrity sha512-0FqC64plK/SEnNXON8Ivb2QqdsO6fBSebqQNTTUs1Ox6ycRcDb0CgXWwbBKiwhCnJFbqcMA7Dc8uFrhkoKL2rA==
 
 "@pkgjs/parseargs@^0.11.0":
   version "0.11.0"
@@ -1859,11 +1859,6 @@ define-properties@^1.1.3, define-properties@^1.2.1:
     has-property-descriptors "^1.0.0"
     object-keys "^1.1.1"
 
-dequal@^2.0.3:
-  version "2.0.3"
-  resolved "https://registry.yarnpkg.com/dequal/-/dequal-2.0.3.tgz#2644214f1997d39ed0ee0ece72335490a7ac67be"
-  integrity sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==
-
 detect-newline@^3.0.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/detect-newline/-/detect-newline-3.1.0.tgz#576f5dfc63ae1a192ff192d8ad3af6308991b651"
@@ -2358,13 +2353,10 @@ fdir@^6.5.0:
   resolved "https://registry.yarnpkg.com/fdir/-/fdir-6.5.0.tgz#ed2ab967a331ade62f18d077dae192684d50d350"
   integrity sha512-tIbYtZbucOs0BRGqPJkshJUYdL+SDH7dVM8gjy+ERp3WAUjLEFJE+02kanyHtwjWOnwrKYBiwAmM0p4kLJAnXg==
 
-fig-tree-evaluator@^2.23.2:
-  version "2.23.2"
-  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-2.23.2.tgz#4cc25fc94b013de9ee0056c07a69225c9962710c"
-  integrity sha512-qTqWtNAkg5wObKmNfMvwP3VT63+cx80eJo6TIRw4UHx5SXrpXk8iCqPdpNxADWT6aQ+1APiH9Fy10bIu6Phk4w==
-  dependencies:
-    dequal "^2.0.3"
-    object-property-extractor "^1.0.14"
+fig-tree-evaluator@^3.0.0-preview.1:
+  version "3.0.0-preview.1"
+  resolved "https://registry.yarnpkg.com/fig-tree-evaluator/-/fig-tree-evaluator-3.0.0-preview.1.tgz#55544eb7e43f7873f44a5264246866f1f87d4f3d"
+  integrity sha512-dfsOL1tlMzZJbLVI4FWkkgfyXKPmAJz07ikitz0fkfWwGzaFBxLVb9Hxzx4iQk9bRGOkcXG0ERMiM9hlhartrw==
 
 figures@^1.0.1:
   version "1.7.0"
@@ -3735,11 +3727,6 @@ object-keys@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/object-keys/-/object-keys-1.1.1.tgz#1c47f272df277f3b1daf061677d9c82e2322c60e"
   integrity sha512-NuAESUOUMrlIXOfHKzD6bpPu3tYt3xvjNdRIQ+FeT0lNb4K8WR70CaDxhuNguS2XG+GjkyMwOzsN5ZktImfhLA==
-
-object-property-extractor@^1.0.14:
-  version "1.0.14"
-  resolved "https://registry.yarnpkg.com/object-property-extractor/-/object-property-extractor-1.0.14.tgz#bff9292974a47633129e8108b547b6a116ad67b6"
-  integrity sha512-euG3MQwj41DMbfk1keguY+jKQvaf9r26NeECtb28G8jABnhZVqxVEvIFywWC2107cSgx8dimA+JXuCAZFfbsSg==
 
 object.assign@^4.1.4, object.assign@^4.1.7:
   version "4.1.7"
