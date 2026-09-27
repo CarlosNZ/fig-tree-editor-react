@@ -3411,10 +3411,10 @@ json-buffer@3.0.1:
   resolved "https://registry.yarnpkg.com/json-buffer/-/json-buffer-3.0.1.tgz#9338802a30d3b6605fbe0613e094008ca8c05a13"
   integrity sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==
 
-json-edit-react@^2.0.0-beta.10:
-  version "2.0.0-beta.10"
-  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0-beta.10.tgz#b4476c101b9f93a16d7885fcd008d13be63e126f"
-  integrity sha512-4DAELJVscjnuIdMfp+JgKaJRGQKVu7hay4dMKCjg8/hYiXL5Cwk53a9m/8hEWgXSfphxgtiFzV7dM77SaybPNA==
+json-edit-react@^2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/json-edit-react/-/json-edit-react-2.0.0.tgz#2ba5878176b52690c02a937066e0b0d7a52abca8"
+  integrity sha512-sJikCSIEp+8r8wJg9PkymF8EUceKqLVsdVjq1jRF5uJdeIWErBlELOBJw1BbesA6StNsZGl3/554MDH7qpyQkQ==
 
 json-parse-even-better-errors@^2.3.0:
   version "2.3.1"
