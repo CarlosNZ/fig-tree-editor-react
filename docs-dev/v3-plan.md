@@ -95,6 +95,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
 - **1.7 · Test runner.**
   - Replace the unused jest config with vitest, plus React Testing Library for later component tests, and add the `test` script.
   - This is a deliberate difference from fig-tree, which uses jest. Vitest fits an ESM React library built alongside a Vite demo better.
+  - Done. Vitest 5 in jsdom, with React Testing Library, `jest-dom` matchers and `user-event`. `test` is `vitest run`, and `test:watch` is `vitest`. Tests live in `test/`, as in fig-tree, with `tsconfig.test.json` (the library plus `test/`) so `typecheck` and type-aware linting cover them. Vitest itself only transpiles. The first suite covers `Select` through what a user does: opening it, filtering by search, and choosing or dismissing with the keyboard. jest, ts-jest, ts-node and `jest.config.js` are gone from the root. `demo/` still lists jest and ts-jest, unused, for Phase 2.3's cleanup.
 - **1.8 · CI.** Add a GitHub Actions workflow modelled on fig-tree's `ci.yml` that runs `format:check`, `lint`, `typecheck`, `test` and `build`. Consider fig-tree's PR bundle-size comment (`pr-bundle-size.yml`) as well.
 - **1.9 · Docs.** Update the Commands section of `CLAUDE.md` straight away, since the commands change here and it shouldn't wait for the Phase 10 rewrite.
 

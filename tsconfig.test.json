@@ -1,0 +1,11 @@
+{
+  // Typechecking context for the tests (vitest.config.mjs): the library
+  // source plus test/. Vitest only transpiles, so `pnpm typecheck` runs this
+  // to catch a type error in a test.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["src", "test"]
+}

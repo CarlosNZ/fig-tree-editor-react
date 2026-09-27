@@ -7,7 +7,8 @@ import commentLength from 'eslint-plugin-comment-length'
 
 // Flat config (ESLint 9). Type-aware: rules that need type info
 // (await-thenable, no-floating-promises, prefer-nullish-coalescing, the
-// no-unsafe-* family) read the library's `tsconfig.json`.
+// no-unsafe-* family) read `tsconfig.json` for the library and
+// `tsconfig.test.json` for the tests.
 // Formatting is owned by Prettier (.prettierrc.js); the only length rules here
 // are for comments, which Prettier never wraps. The comment-length setup
 // matches fig-tree-evaluator's.
@@ -46,11 +47,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ['src/**/*.{ts,tsx}'],
+    files: ['src/**/*.{ts,tsx}', 'test/**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ['./tsconfig.json', './tsconfig.test.json'],
         tsconfigRootDir: import.meta.dirname,
       },
       globals: { ...globals.browser },
