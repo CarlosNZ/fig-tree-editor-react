@@ -1,7 +1,7 @@
 import express from 'express'
 const app = express()
 import cors from 'cors'
-import config from '../config.json' assert { type: 'json' }
+import config from '../config.json' with { type: 'json' }
 const port = config.postgresInterfacePort
 import pg from 'pg'
 
