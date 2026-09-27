@@ -78,7 +78,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Decided: a workspace (`pnpm-workspace.yaml` lists `demo`), with no catalogs and no `workspace:` links. Neither "for" holds on its own. The demo still declares its own versions unless it uses catalogs, and `npm pack` (in `scripts/pack.mjs`) doesn't rewrite `catalog:`. A `workspace:` link resolves the built package, so it can't stand in for the raw-source `local` mode, and the `npm` mode must resolve the published editor. Neither "against" bites either. pnpm 10 doesn't link workspace packages by default, and `3.0.0-dev` doesn't satisfy the demo's `^1.0.1`, so the demo still gets the published editor. All four `VITE_FIG_SOURCE` modes are unchanged. What the workspace gives is one install and one lockfile. Revisit catalogs at 2.3, when both packages are on fig-tree v3, switching `pack.mjs` to `pnpm pack` at the same time.
 - **1.3 · Scripts.** Use the same names as fig-tree wherever the job is the same: `lint`, `format`, `format:check`, `typecheck`, `test`, `build`, `dev`, `size`, `check:package`, `release`. Port what applies from fig-tree's `codegen/`: the release script, the bundle-size report and the packed-package check. Merge the last one with the existing `scripts/pack.mjs`.
   - Done: `lint`, `format`, `format:check`, `typecheck`, `build`, `dev` and `release`. The ported scripts live in `scripts/`, which this repo already had, rather than a `codegen/`. `release` is fig-tree's, less the `src/version.ts` step (the editor has no version constant). It refuses to start while `"private": true` is set, rather than failing at `npm publish` after committing and tagging. `typecheck` runs `tsc` over the lint project, which covers all of `src/`. The demo joins it in Phase 2, once `src/` has the `FigTreeEditor` the demo imports.
-  - Moved to 1.6: `size` and `check:package`. They measure and install the build as it's shaped (ESM-only, `exports` map), so they're written with that build. `test` arrives with 1.7.
+  - Moved to 1.6, and done there: `size` and `check:package`. They measure and install the build as it's shaped (ESM-only, `exports` map), so they're written with that build. `test` arrives with 1.7.
 - **1.4 · Prettier.** Change `.prettierrc.js` to ESM. Add a `.prettierignore` that mirrors the eslint ignores (including `v1-src/`), and format the whole repo (`prettier --write .`, covering Markdown too), not just `src/`.
   - Done. `demo/` is formatted with the rest of the repo, though ESLint lints it separately. `demo/src/version.ts` is ignored, since the demo's `prebuild` writes it.
 - **1.5 · ESLint.**
@@ -87,6 +87,11 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Add the ban on imports from `v1-src/`.
   - Done. The ban on `v1-src/` imports dates from 0.2. `max-len` keeps this repo's exemptions for strings, template literals and regexes, since an SVG path in `Icons.tsx` can't be broken. `eslint .` also covers the repo's Node tooling (`scripts/`, the rollup config).
 - **1.6 · Packaging.** Go ESM-only to match fig-tree v3, whose Node floor is 22.12. Add `"type": "module"` and an `exports` map, and drop the CJS build. If there's a reason to keep CJS, record it here.
+  - Decided: ESM-only. fig-tree v3 is an ESM-only required peer, so a CJS build of the editor would let nobody run it who couldn't already. The one real CJS case, a consumer's Jest suite, hits fig-tree first. Adding a CJS build later is non-breaking, and removing one is not.
+  - Done. `build/index.js` and `build/index.d.ts`, with an `exports` map checked against `scripts/entries.mjs` at build time, as fig-tree does. Externals are read from the manifest's dependencies and peers, subpaths included. Terser runs with its defaults. v1's `mangle: false` had no recorded reason. There's no `sideEffects` field: the package is one file, so the module-level flag couldn't drop anything a consumer imports.
+  - Styles follow json-edit-react v2: `import css from './styles.css?inline'` yields the minified text, through the `inlineCss` plugin (`scripts/inlineCss.mjs`, the same as JER's) in the build and natively in Vite. The component injects the text on mount, so the module has no side effect at import, and the demo's `local` mode runs the same path as the bundle. This replaces `rollup-plugin-styles`, which needed rollup 2.
+  - `tsconfig.json` is modelled on fig-tree's (ES2022, bundler resolution, the stricter checks, DOM libs, no Node types) and covers all of `src/`, so `tsconfig.eslint.json` is gone. `typecheck` is `tsc --noEmit`.
+  - `size` and `check:package` (from 1.3) are ported. `check:package` checks the brotli budget, then packs the package into `pack-output/` for the demo's `pack` mode, replacing `scripts/pack.mjs`. Then it installs the packed copy into a temporary consumer that has only the package's declared dependencies and peers. There it checks an ESM import, a `require()`, and typechecking under nodenext, bundler and node resolutions. fig-tree's tree-shaking fixtures aren't ported. `pack-demo` is `pnpm build && pnpm check:package`.
 - **1.7 · Test runner.**
   - Replace the unused jest config with vitest, plus React Testing Library for later component tests, and add the `test` script.
   - This is a deliberate difference from fig-tree, which uses jest. Vitest fits an ESM React library built alongside a Vite demo better.
@@ -96,6 +101,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
 ## Phase 2 — Skeleton
 
 - **2.1 · Minimal `FigTreeEditor`.** A new component with the same outline of props as v1 (the expression, a `FigTree` instance, `onUpdate`, and options). It renders a JER `<JsonEditor>` over the expression with **no custom nodes**. That's a working v3 editor, just an unstyled JSON one.
+  - Port JER's `injectStyles` with it (called from a `useInsertionEffect`, deduplicated on a marked `<style>` element), importing `styles.css?inline` (see 1.6).
 - **2.2 · Validation wired in.** Run `fig.validate()` on every update, and show its issues in a simple list for now, with each issue's path and message.
 - **2.3 · Demo rewired.**
   - Get the demo running against the new component and v3, bumping `demo/`'s `fig-tree-evaluator` to the v3 range (deferred from 0.3). `demo/` is a separate package with its own lockfile.
@@ -119,7 +125,7 @@ Questions to work through (a starting list, not exhaustive):
 - **Fragments.** Choosing a fragment and editing its `parameters`, plus the display hints taken from fragment `metadata`.
 - **Diagnostics.** How `validate()` issues attach to nodes: inline markers, a summary panel, or both. How severity is shown.
 - **Evaluation.** Evaluating a whole expression and individual nodes. Displaying trace output (which branch ran, which references resolved to null, which fallbacks fired). Highlighting the failing path in report mode. Surfacing `getDependencies()`, such as a "reads these data paths" view.
-- **Public API.** The `FigTreeEditor` props, theming and overriding display, and what the package exports (keeping `Select`, for example).
+- **Public API.** The `FigTreeEditor` props, theming and overriding display, and what the package exports (keeping `Select`, for example). Whether to also export a standalone `./style.css`, as JER does for hosts that inject styles themselves (a Shadow DOM, say).
 - **Dependencies on JER.** Anything the design needs that JER doesn't support yet. Each one becomes an upstream change (working rule 3).
 
 ## Phase 4 — Operator node (full form)

@@ -1,22 +1,37 @@
 {
+  // The library source, as the rollup build, `pnpm typecheck`, type-aware
+  // linting and the IDE all see it. Modelled on fig-tree-evaluator's: ES2022,
+  // bundler resolution, strict checking. The DOM libs are in, and Node's types
+  // are out, because this is browser code.
   "compilerOptions": {
-    "strict": true,
+    /* Language and environment */
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": [],
     "jsx": "react-jsx",
+
+    /* Emit — consumed by the rollup pipeline (dts bundling reads build/dts) */
     "declaration": true,
     "declarationDir": "build/dts",
-    "lib": ["dom", "es6"],
-    "esModuleInterop": true,
     "outDir": "build",
     "rootDir": "src",
-    "target": "ESNext",
-    "module": "ESNext",
-    "allowJs": true,
     "removeComments": true,
-    "noImplicitAny": true,
-    "moduleResolution": "node",
-    "allowSyntheticDefaultImports": true
+
+    /* Checking */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+
+    /* Interop */
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "resolveJsonModule": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true
   },
-  // "include": ["src"]
-  "files": ["src/index.ts", "src/global.d.ts"]
-  // "include": ["src/types.ts"]
+  "include": ["src"]
 }

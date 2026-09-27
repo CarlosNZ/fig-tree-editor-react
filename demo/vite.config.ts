@@ -9,7 +9,7 @@ import path from 'path'
 // VITE_FIG_SOURCE env var (set by the package.json scripts):
 //   npm   – the published package in node_modules (default; what gets deployed)
 //   local – the library's raw TypeScript source (../src) for live dev / HMR
-//   build – the rollup output (../build/index.esm.js)
+//   build – the rollup output (../build/index.js)
 //   pack  – an extracted `npm pack` tarball (../pack-output/.../package)
 type PackageOption = 'npm' | 'local' | 'build' | 'pack'
 
@@ -21,7 +21,7 @@ const figTreeEditorSrcMap: Record<PackageOption, string> = {
   npm: 'fig-tree-editor-react', // no-op replacement → resolves through node_modules
   local: path.resolve(__dirname, '../src'),
   // Point at the ESM file, not the dir: `build/` has no package.json for Vite to resolve.
-  build: path.resolve(__dirname, '../build/index.esm.js'),
+  build: path.resolve(__dirname, '../build/index.js'),
   pack: path.resolve(__dirname, '../pack-output/fig-tree-editor-react/package'),
 }
 

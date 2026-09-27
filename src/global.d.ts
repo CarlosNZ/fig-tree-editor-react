@@ -1,4 +1,8 @@
-// Ambient declarations for non-code imports. CSS is imported for its side
-// effects (bundled by rollup-plugin-styles at build time); TypeScript needs a
-// type for the module so `import './styles.css'` resolves.
-declare module '*.css'
+// Ambient declarations for non-code imports. A stylesheet is imported with
+// `?inline` for its text, which the component injects itself: Vite resolves
+// the query natively (the demo's `local` mode), and the rollup build through
+// the `inlineCss` plugin (scripts/inlineCss.mjs).
+declare module '*.css?inline' {
+  const css: string
+  export default css
+}
