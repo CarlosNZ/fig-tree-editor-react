@@ -1,0 +1,36 @@
+name: CI
+
+# The library's checks, in the order `pnpm release` runs them
+# (scripts/release.mjs). Modelled on fig-tree-evaluator's ci.yml.
+on:
+  push:
+    branches: [main, v3.0-dev]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Reads the pnpm version from package.json's packageManager field
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      # The whole workspace, demo included: one lockfile covers both
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      # Prettier owns whitespace; ESLint owns everything else. Scope and
+      # exclusions: .prettierignore
+      - run: pnpm format:check
+      # The library source, and test/ through tsconfig.test.json: vitest
+      # only transpiles, so a type error in a test shows up here or nowhere
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Prints the bundle-size report
+      - run: pnpm build
+      # Needs the built package: the size budget, and the packed package
+      # imported, required and typechecked as a consumer would
+      # (scripts/checkPackage.mjs)
+      - run: pnpm check:package

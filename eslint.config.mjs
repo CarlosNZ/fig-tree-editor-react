@@ -14,8 +14,9 @@ import commentLength from 'eslint-plugin-comment-length'
 // matches fig-tree-evaluator's.
 export default tseslint.config(
   // Excluded: the build output, the demo (its own package, with its own
-  // config), packed tarballs, and the frozen v1 reference source.
-  { ignores: ['build/', 'demo/', 'pack-output/', 'coverage/', 'v1-src/'] },
+  // config), packed tarballs, pnpm's store when it sits in the project, and
+  // the frozen v1 reference source.
+  { ignores: ['build/', 'demo/', 'pack-output/', 'coverage/', '.pnpm-store/', 'v1-src/'] },
   {
     // The repo's own tooling (rollup config, scripts/) is plain JS run by
     // Node.

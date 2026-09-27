@@ -97,6 +97,8 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - This is a deliberate difference from fig-tree, which uses jest. Vitest fits an ESM React library built alongside a Vite demo better.
   - Done. Vitest 5 in jsdom, with React Testing Library, `jest-dom` matchers and `user-event`. `test` is `vitest run`, and `test:watch` is `vitest`. Tests live in `test/`, as in fig-tree, with `tsconfig.test.json` (the library plus `test/`) so `typecheck` and type-aware linting cover them. Vitest itself only transpiles. The first suite covers `Select` through what a user does: opening it, filtering by search, and choosing or dismissing with the keyboard. jest, ts-jest, ts-node and `jest.config.js` are gone from the root. `demo/` still lists jest and ts-jest, unused, for Phase 2.3's cleanup.
 - **1.8 · CI.** Add a GitHub Actions workflow modelled on fig-tree's `ci.yml` that runs `format:check`, `lint`, `typecheck`, `test` and `build`. Consider fig-tree's PR bundle-size comment (`pr-bundle-size.yml`) as well.
+  - Done: `.github/workflows/ci.yml`, one job on pushes to `main` and `v3.0-dev` and on every pull request, running the checks in `release`'s order and taking Node from `.nvmrc`. It doesn't lint or typecheck `demo/` yet, because the demo can't typecheck until Phase 2 gives `src/` a `FigTreeEditor`. Add both in 2.3.
+  - Deferred: the PR bundle-size comment. `bundleSize.mjs --json` already emits what it needs, so fig-tree's `pr-bundle-size.yml` and `formatSizeDiff.mjs` can be ported when wanted.
 - **1.9 · Docs.** Update the Commands section of `CLAUDE.md` straight away, since the commands change here and it shouldn't wait for the Phase 10 rewrite.
 
 ## Phase 2 — Skeleton
@@ -108,6 +110,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Get the demo running against the new component and v3, bumping `demo/`'s `fig-tree-evaluator` to the v3 range (deferred from 0.3). `demo/` is a separate package with its own lockfile.
   - Produce the demo's test expressions in v3 syntax. Generate most of them by running the v1 set through `fig-tree-evaluator/migrate` (`migrateV2Expression`), then review them by hand.
   - Replace or remove v2-specific demo plumbing, such as the custom-function definitions and the express/postgres setup, where it no longer applies.
+  - Add `pnpm -C demo lint` and a demo typecheck to CI (deferred from 1.8), and drop the demo's unused jest and ts-jest (from 1.7).
 
 At the end of this phase you can load, edit and validate any v3 expression in the demo, as raw JSON.
 

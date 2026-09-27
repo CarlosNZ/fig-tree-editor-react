@@ -15,5 +15,9 @@ v1-src
 # Generated: written by demo/scripts/getVersion.cjs on every demo build
 demo/src/version.ts
 
+# pnpm's package store, which pnpm places inside the project when the home
+# directory is on another filesystem (as in a container)
+.pnpm-store
+
 # Lockfile
 pnpm-lock.yaml
