@@ -19,32 +19,39 @@ is a legitimate option, not just a local workaround.
 
 ## Commands
 
-- **Build**: `pnpm build` — rollup → CJS + ESM + `.d.ts` in `build/` (`prepublishOnly` runs it).
-- **Lint**: `pnpm lint` (eslint, flat config in `eslint.config.mjs`).
-- **Run the demo** (primary way to see changes live):
-  - `pnpm dev` / `pnpm demo:local` → demo against **raw `src/` TypeScript** (HMR; what you want while developing this library).
+The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm install` at the root installs both. Node is ≥ 22.12 (`.nvmrc`), and `packageManager` pins the pnpm version. The tooling matches fig-tree-evaluator's, so the script names do the same jobs in both repos.
+
+- **Checks.** These are what CI (`.github/workflows/ci.yml`) and `pnpm release` run, in this order:
+  - `pnpm lint`
+  - `pnpm format:check` (`pnpm format` to fix)
+  - `pnpm typecheck`, which checks the library, then the tests through `tsconfig.test.json`
+  - `pnpm test`
+  - `pnpm build`
+  - `pnpm check:package`
+- **Build.** `pnpm build` runs rollup to produce an ESM-only `build/index.js` and `build/index.d.ts`, then prints a bundle-size report. `pnpm size` reprints the report without rebuilding. The entries and their brotli budgets are in `scripts/entries.mjs`, and the build fails if `package.json`'s `exports` disagrees with them. Stylesheets are imported as `./styles.css?inline` text (`scripts/inlineCss.mjs`, the same as JER's) and injected by the component, not by a module side effect.
+- **Packaging.** `pnpm check:package` (after a build) checks the size budget. It then `pnpm pack`s the package into `pack-output/`, installs that copy into a temporary consumer that has only the declared dependencies and peers, and imports, `require()`s and typechecks it there.
+- **Tests.** vitest with React Testing Library, in jsdom. Tests live in `test/` (setup in `test/setup.ts`). `pnpm test:watch` runs them in watch mode.
+- **Release.** `pnpm release [--dry-run]` (`scripts/release.mjs`) bumps the version, runs the checks, commits, tags and publishes. It refuses while `package.json` has `"private": true`, which guards the unpublishable `3.0.0-dev`.
+- **Style.** Prettier owns formatting (`.prettierrc.js`, 100 columns). ESLint holds comments to 80 characters: `//` comments through `comment-length`, which `--fix` reflows, and block comments through `max-len`.
+- **Run the demo** (the primary way to see changes live):
+  - `pnpm dev` / `pnpm demo:local` → demo against the **raw `src/` TypeScript**, with HMR.
+  - `pnpm demo:local-evaluator` → the same, with fig-tree-evaluator also taken from the source of a sibling checkout (`../fig-tree-evaluator`).
   - `pnpm demo` → demo against the **published npm package**.
-  - `pnpm demo:pack` → builds, `npm pack`s, extracts to `pack-output/`, and runs the demo against the packed tarball (closest test to a real publish; see `scripts/pack.mjs`).
-- **Tests**: there is a `jest.config.js` (expects tests under `test/`) but **no `test/` dir and no `test` script exist** — the library currently has no test suite.
+  - `pnpm demo:pack` → builds, runs `check:package`, then runs the demo against the packed copy in `pack-output/`. This is the closest test to a real publish.
+  - Until the Phase 2 skeleton (`docs-dev/v3-plan.md`), only `pnpm demo` runs, because `src/` has no `FigTreeEditor` yet.
 
 ## Dependency-source switching (important & non-obvious)
 
 Two layers let you swap between local source and published packages without code edits:
 
-1. **`src/_imports.ts`** re-exports `json-edit-react`. It exists so you can flip the library's own
-   import of JER between the published package and a local checkout (`../package`) by toggling one
-   line. All JER imports in `src/` go through `./_imports`, not `json-edit-react` directly.
-2. **`demo/vite.config.ts`** aliases `@fig-tree-editor-react` (note the `@`) to one of four sources
-   selected by `VITE_FIG_SOURCE` (`npm` | `local` | `build` | `pack`), set by the demo scripts
-   above. In non-`npm` modes it must `dedupe` react/react-dom/fig-tree-evaluator/json-edit-react —
-   a duplicate React breaks hooks, and a duplicate fig-tree/JER breaks `instanceof` checks and
-   editor context.
+1. **`v1-src/_imports.ts`** re-exports `json-edit-react`. It exists so the v1 library's own import of JER can be flipped between the published package and a local checkout (`../package`) by toggling one line. The v3 `src/` has no equivalent so far.
+2. **`demo/vite.config.ts`** aliases `@fig-tree-editor-react` (note the `@`) to one of four sources selected by `VITE_FIG_SOURCE` (`npm` | `local` | `build` | `pack`), set by the demo scripts above. Separately, `VITE_EVALUATOR_SOURCE=local` aliases `fig-tree-evaluator` and each of its subpaths to the sibling checkout's `src/`, for every importer, the library included. In non-`npm` modes the config must `dedupe` react/react-dom/fig-tree-evaluator/json-edit-react: a duplicate React breaks hooks, and a duplicate fig-tree or JER breaks `instanceof` checks and editor context.
 
-`demo/` is a **separate package** with its own `package.json`, lockfile, and `node_modules`. When
-bumping a shared dependency (fig-tree-evaluator, json-edit-react), update it in **both** the root
-and `demo/`.
+`demo/` is a **workspace package** (`pnpm-workspace.yaml`). It shares the root's lockfile and install, but keeps its own `package.json` and `node_modules`. It resolves the editor from npm in `npm` mode, not through a `workspace:` link. When bumping a shared dependency (fig-tree-evaluator, json-edit-react), update it in **both** `package.json` files, since there are no catalogs. Until Phase 2.3 the demo stays on fig-tree v2 while the root is on v3.
 
 ## Architecture
+
+This section describes **v1**, whose components are in `v1-src/` (reference only, never imported or built), so read its `src/` paths as `v1-src/`. The v3 rewrite is planned in `docs-dev/v3-plan.md`, and Phase 10 rewrites this section for it.
 
 ### Entry point: `src/FigTreeEditor.tsx`
 

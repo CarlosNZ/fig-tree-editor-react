@@ -100,6 +100,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Done: `.github/workflows/ci.yml`, one job on pushes to `main` and `v3.0-dev` and on every pull request, running the checks in `release`'s order and taking Node from `.nvmrc`. It doesn't lint or typecheck `demo/` yet, because the demo can't typecheck until Phase 2 gives `src/` a `FigTreeEditor`. Add both in 2.3.
   - Deferred: the PR bundle-size comment. `bundleSize.mjs --json` already emits what it needs, so fig-tree's `pr-bundle-size.yml` and `formatSizeDiff.mjs` can be ported when wanted.
 - **1.9 · Docs.** Update the Commands section of `CLAUDE.md` straight away, since the commands change here and it shouldn't wait for the Phase 10 rewrite.
+  - Done. The Commands and dependency-source sections of `CLAUDE.md` describe the Phase 1 tooling. Architecture carries a note that it describes v1, in `v1-src/`, until Phase 10.
 
 ## Phase 2 — Skeleton
 
