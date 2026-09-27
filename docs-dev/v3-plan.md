@@ -55,7 +55,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 - **0.4 · Local fig-tree source.** Add a vite alias mode that resolves `fig-tree-evaluator` to the local checkout at `../fig-tree-evaluator`, alongside the existing `VITE_FIG_SOURCE` modes. Keep the `dedupe` rules so only one copy of fig-tree and React exists. Also decide whether `src/_imports.ts` needs a matching toggle for fig-tree.
   - Done as a separate `VITE_EVALUATOR_SOURCE` (`npm` | `local`), run with `yarn demo:local-evaluator`. Every entry point (`fig-tree-evaluator`, `/format`, `/editor-hints`, `/migrate`) maps to the matching directory under the checkout's `src/`.
   - Decided: no fig-tree toggle in `_imports.ts`. The vite alias applies to every importer, `../src` included, so the library already runs on the local fig-tree without a code edit. A comment toggle would need one re-export per entry point and is easy to commit by accident. The remaining gap is types: tsc, eslint and the IDE still see the npm package, so using fig-tree API that hasn't been released yet needs the root's `fig-tree-evaluator` linked to the checkout (for example with `pnpm link` after Phase 1).
-- **0.5 · Version.** Set the version to `3.0.0-alpha.0` so nothing publishes as `latest` by accident.
+- **0.5 · Version.** Set the version to `3.0.0-dev` to mark a development phase with no releases planned for a while. It is never published: in semver, `dev` sorts above `alpha` and `beta`, so a published `3.0.0-dev` would outrank later pre-releases. The first published pre-release sets its own version. `package.json` also sets `"private": true`, so `npm publish` refuses outright while `npm pack` (and so `demo:pack`) still works. Remove it when the first pre-release goes out.
 - **0.6 · Demo deployment guard.** `demo`'s `deploy` script publishes to the live v2 playground (`carlosnz.github.io/fig-tree-evaluator`). Make sure a v3 demo can't be deployed there before release, for example by disabling the script on this branch or pointing it at a separate preview location.
 
 ## Phase 1 — Tooling
@@ -157,7 +157,7 @@ _Provisional; revise after Phase 3._
 - Rewrite `CLAUDE.md` for the v3 architecture.
 - Cut `v1.x` from `main` for future 1.x patches, then merge `v3.0-dev` into `main`.
 - Deploy the demo, replacing the live v2 playground in step with the fig-tree 3.0.0 release.
-- Run `demo:pack` against the packed tarball, then publish 3.0.0.
+- Run `demo:pack` against the packed tarball, then publish 3.0.0. Remove `"private": true` from `package.json` first, if an earlier pre-release hasn't already.
 
 ---
 

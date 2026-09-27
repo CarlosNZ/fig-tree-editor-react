@@ -1,6 +1,7 @@
 {
   "name": "fig-tree-editor-react",
-  "version": "1.0.1",
+  "version": "3.0.0-dev",
+  "private": true,
   "description": "React component for constructing FigTree Evaluator expressions",
   "main": "build/index.cjs.js",
   "module": "build/index.esm.js",
