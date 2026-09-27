@@ -11,7 +11,7 @@ component.
 
 It is **a thin specialisation of [json-edit-react](https://github.com/CarlosNZ/json-edit-react)
 (JER)**, a general JSON viewer/editor. Nearly all behaviour comes from JER; this library only adds
-FigTree-specific UI via JER's *Custom Node* mechanism. Understanding JER's custom-node API
+FigTree-specific UI via JER's _Custom Node_ mechanism. Understanding JER's custom-node API
 (`customNodeDefinitions`, `CustomComponentProps`, `CustomWrapperProps`, `condition` filters,
 `showOnEdit`, `wrapperComponent`) is a prerequisite for working here. Both fig-tree-evaluator and
 json-edit-react are authored by the same maintainer, so a root-cause fix in those upstream packages
@@ -71,7 +71,7 @@ Renders a single JER `<JsonEditor>` over the expression object and wires everyth
 This is the central design decision and the easiest thing to get wrong:
 
 - Custom node components are **anchored on the operator/fragment object itself** (a stable path),
-  not on the `operator`/`fragment` *key*. So `value` inside a component **is** the whole expression
+  not on the `operator`/`fragment` _key_. So `value` inside a component **is** the whole expression
   node. This is what lets an edit survive a node-type switch and reuse JER's built-in editing
   session. `useCommon.filterChildren` then hides the redundant `operator:`/`fragment:` child row,
   since the header (`DisplayBar`/selectors) already represents it.
@@ -84,7 +84,7 @@ Each operator/fragment/custom node intentionally supports **two** editors, and t
   pencil; and
 - JER's **raw-JSON textarea**, opened by the generic collection edit-tools pencil.
 
-Both go through the same JER editing session (`isEditing` on the same path), so the *only* lever that
+Both go through the same JER editing session (`isEditing` on the same path), so the _only_ lever that
 distinguishes them is **which variant of the node definition matches**. `FigTreeEditor`'s
 `editVariants(def)` helper expands every node def into a pair:
 
@@ -97,23 +97,24 @@ distinguishes them is **which variant of the node definition matches**. `FigTree
 `displayBarEditPath` is `FigTreeEditor` state, set/cleared per-node in `useCommon` (see below). The
 DisplayBar pencil sets it to that node's path → the toolbar variant matches → structured toolbar.
 The edit-tools pencil never sets it → that node stays on the default variant → raw JSON. Because the
-discriminator is the node's *path* (not a global boolean), a node opened via edit-tools never
+discriminator is the node's _path_ (not a global boolean), a node opened via edit-tools never
 momentarily matches the toolbar variant, so there's no flicker.
 
-(Known minor wart: while the toolbar is open, JER hides *that* node's own edit-tools row
+(Known minor wart: while the toolbar is open, JER hides _that_ node's own edit-tools row
 (`showEditButtons = !isEditing`), since the object is the node being edited. Fixing it cleanly would
 need a JER opt-in; left as-is for now.)
+
 - Edits never mutate in place. Components call **`onEdit(newValue, path)`** (from
   `buildOnEdit` in `src/useCommon.tsx`), which reads the latest full tree (`getLatestData`),
   `assign`s the new value at `path`, then runs it through **`updateExpression`** →
-  `validateExpression` → `setExpression`. So every change re-validates and persists the *complete*
+  `validateExpression` → `setExpression`. So every change re-validates and persists the _complete_
   expression.
 - **`src/useCommon.tsx`** holds the shared logic for the Operator/Fragment/CustomOperator components
   (evaluate button, loading state, alias collection, `maybeInsertFallback`, the live-edit toolbar
   keyboard handling, and `startOpen`). It also wraps the JER `setIsEditing`/`handleCancel` props as
   `startEditing`/`closeEditing`, which set/clear `displayBarEditPath` (so the DisplayBar pencil
   selects the toolbar variant above); a transition-guarded effect clears it if the edit ends without
-  `closeEditing` (e.g. displacement). The Shorthand components do *not* use `useCommon` but reuse
+  `closeEditing` (e.g. displacement). The Shorthand components do _not_ use `useCommon` but reuse
   `buildOnEdit` directly.
 
 ### Validation: `src/validator.tsx`

@@ -10,12 +10,11 @@ It's built on [**json-edit-react**](https://carlosnz.github.io/json-edit-react/)
 
 Your best bet is to have a play with the [Demo](https://carlosnz.github.io/fig-tree-evaluator/) to get a feel for it.
 
-
 ## Installation
 
 `npm i fig-tree-builder-react`
 
-or 
+or
 
 `yarn add fig-tree-builder-react`
 
@@ -25,13 +24,15 @@ or
 import { FigTreeEditor } from 'fig-tree-builder-react'
 
 // In your React component:
-return 
+return (
   <FigTreeEditor
     // These 3 props are required, the rest are optional
     figTree={figTree} // your FigTree instance
     expression={expressionObject} // your FigTree expression object
-    setData={ (data) => updateMyExpression(data) } // function to update your expression object
-    { ...otherProps } />
+    setData={(data) => updateMyExpression(data)} // function to update your expression object
+    {...otherProps}
+  />
+)
 ```
 
 ## Available props
@@ -50,15 +51,14 @@ The majority of props are those for [json-edit-react](https://carlosnz.github.io
 
 | Prop                           | Type                                            | Default | Description                                                                                                                                                                                                             |
 | ------------------------------ | ----------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `objectData`                   | `object`                                        |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).                                                         |  |
+| `objectData`                   | `object`                                        |         | Data object accessed by FigTree's [`getData`/`objectProperties` operator](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#object_properties).                                                         |     |
 | `onEvaluate`                   | `(value: unknown, e: React.MouseEvent) => void` |         | Optional function to call on the evaluated result after clicking one of the "Evaluate" buttons. Can be used (for example) to display a Notification with the result.                                                    |
 | `onEvaluateStart`              | `() => void`                                    |         | Called when an "Evaluate" button is clicked. Some evaluations can take some time (e.g. network requests), so this can be used to trigger a "Loading" indicator.                                                         |
-| `operatorDisplay`              | `Operator Display Data`                         |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                                                                       |  |
-| `defaultNewOperatorExpression` | `EvaluatorNode`                                 |         | Expression to populate the UI with when switching to a new "Operator" node                                                                                                                                              |  |
-| `defaultNewFragment`           | `string`                                        |         | Name of the [Fragment](https://github.com/CarlosNZ/fig-tree-evaluator?#fragments) to default to when switching to new "Fragment" node                                                                                   |  |
-| `defaultNewCustomOperator`     | `string`                                        |         | Name of the [Custom Operator](https://github.com/CarlosNZ/fig-tree-evaluator?#custom-functionsoperators) to default to when switching to new "Custom Operator" node                                                     |  |
-| `addTopLevelFallback`          | `any`                                           |         | If defined, the specified value will be inserted as a `fallback` when selecting a new operator/fragment *at the top level only*. This offers an option to ensure protection against evaluator errors lower in the tree. |  |
-
+| `operatorDisplay`              | `Operator Display Data`                         |         | Used to set the background and text colours for the various Operator "Evaluate" buttons. See [below] for details.                                                                                                       |     |
+| `defaultNewOperatorExpression` | `EvaluatorNode`                                 |         | Expression to populate the UI with when switching to a new "Operator" node                                                                                                                                              |     |
+| `defaultNewFragment`           | `string`                                        |         | Name of the [Fragment](https://github.com/CarlosNZ/fig-tree-evaluator?#fragments) to default to when switching to new "Fragment" node                                                                                   |     |
+| `defaultNewCustomOperator`     | `string`                                        |         | Name of the [Custom Operator](https://github.com/CarlosNZ/fig-tree-evaluator?#custom-functionsoperators) to default to when switching to new "Custom Operator" node                                                     |     |
+| `addTopLevelFallback`          | `any`                                           |         | If defined, the specified value will be inserted as a `fallback` when selecting a new operator/fragment _at the top level only_. This offers an option to ensure protection against evaluator errors lower in the tree. |     |
 
 ## Operator UI customisation
 
@@ -69,7 +69,6 @@ You can also specify the colours for [Fragments](https://github.com/CarlosNZ/fig
 ## Help, Feedback, Suggestions
 
 Please open an issue: https://github.com/CarlosNZ/fig-tree-editor-react/issues
-
 
 ## Changelog
 

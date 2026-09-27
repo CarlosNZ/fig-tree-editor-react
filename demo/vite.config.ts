@@ -102,7 +102,12 @@ export default defineConfig({
         // is a single view that needs all of them on first paint.
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'chakra-vendor': ['@chakra-ui/react', '@emotion/react', '@emotion/styled', 'framer-motion'],
+          'chakra-vendor': [
+            '@chakra-ui/react',
+            '@emotion/react',
+            '@emotion/styled',
+            'framer-motion',
+          ],
           'editor-vendor': ['json-edit-react', 'fig-tree-evaluator', 'fig-tree-editor-react'],
         },
       },
