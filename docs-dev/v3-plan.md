@@ -47,7 +47,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 
 ## Phase 0 — Housekeeping
 
-- **0.1 · Maintenance branch.** Cut `v1.x` from `main` (at `v1.0.0`) for any 1.x patches. `v3.0-dev` merges to `main` at release.
+- **0.1 · Branching.** `main` stays the active 1.x branch while v3 is developed, and patch releases go out from it as usual. `v3.0-dev` takes v1 fixes from `main` only where they still apply, such as fixes to the demo or tooling, since the v3 components are new code. The `v1.x` maintenance branch is cut at release (Phase 10).
 - **0.2 · Freeze v1 as reference.** Move `src/` to `v1-src/`. Exclude it from `tsconfig`, rollup and eslint, and add a lint rule that bans imports from it. Copy `Select/`, `Icons.tsx` and `styles.css` into the new `src/`.
 - **0.3 · Dependencies.**
   - Move `fig-tree-evaluator` to `peerDependencies` as `^3.0.0` (or the current preview range until 3.0.0 is out), and keep it as a devDependency for development. `json-edit-react` and `@json-edit-react/utils` stay as regular dependencies, since consumers don't touch them directly.
@@ -153,8 +153,9 @@ _Provisional; revise after Phase 3._
 - Delete `v1-src/`.
 - README (including the version-alignment policy), CHANGELOG, and a migration note for v1 consumers.
 - Rewrite `CLAUDE.md` for the v3 architecture.
+- Cut `v1.x` from `main` for future 1.x patches, then merge `v3.0-dev` into `main`.
 - Deploy the demo, replacing the live v2 playground in step with the fig-tree 3.0.0 release.
-- Run `yarn demo:pack` against the packed tarball, then publish 3.0.0.
+- Run `demo:pack` against the packed tarball, then publish 3.0.0.
 
 ---
 
