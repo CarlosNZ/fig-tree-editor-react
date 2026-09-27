@@ -57,6 +57,8 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
   - Decided: no fig-tree toggle in `_imports.ts`. The vite alias applies to every importer, `../src` included, so the library already runs on the local fig-tree without a code edit. A comment toggle would need one re-export per entry point and is easy to commit by accident. The remaining gap is types: tsc, eslint and the IDE still see the npm package, so using fig-tree API that hasn't been released yet needs the root's `fig-tree-evaluator` linked to the checkout (for example with `pnpm link` after Phase 1).
 - **0.5 · Version.** Set the version to `3.0.0-dev` to mark a development phase with no releases planned for a while. It is never published: in semver, `dev` sorts above `alpha` and `beta`, so a published `3.0.0-dev` would outrank later pre-releases. The first published pre-release sets its own version. `package.json` also sets `"private": true`, so `npm publish` refuses outright while `npm pack` (and so `demo:pack`) still works. Remove it when the first pre-release goes out.
 - **0.6 · Demo deployment guard.** `demo`'s `deploy` script publishes to the live v2 playground (`carlosnz.github.io/fig-tree-evaluator`). Make sure a v3 demo can't be deployed there before release, for example by disabling the script on this branch or pointing it at a separate preview location.
+  - Done by disabling it: `deploy` prints why and exits with an error, and `predeploy` is removed so nothing builds first. A preview location can be added later if a hosted v3 preview is wanted before release.
+  - The live scripts, to restore in Phase 10: `"predeploy": "yarn build"` and `"deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"`.
 
 ## Phase 1 — Tooling
 
@@ -67,7 +69,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Run `pnpm import` before deleting each `yarn.lock`, so the resolved versions carry over.
   - Add `engines` and `.nvmrc` with fig-tree's Node floor (22.12), and `pnpm.onlyBuiltDependencies` where install scripts need it.
   - Replace every `yarn` call in scripts: the root `package.json`, `demo/package.json` and `scripts/pack.mjs`.
-  - **Watch out:** pnpm doesn't run implicit pre/post hooks for ordinary scripts. The demo's `predeploy` stops firing, so chain it explicitly the way fig-tree's `build` chains `getVersion`. `prepublishOnly` is a lifecycle hook and still runs.
+  - **Watch out:** pnpm doesn't run implicit pre/post hooks for ordinary scripts. The demo's `predeploy` (disabled in 0.6, restored in Phase 10) won't fire under pnpm, so when it's restored, chain it explicitly the way fig-tree's `build` chains `getVersion`. `prepublishOnly` is a lifecycle hook and still runs.
 - **1.2 · Decide: should the demo be a pnpm workspace?**
   - For: one lockfile and one install, and no need to bump a shared dependency in two places. A `workspace:` link could also replace the demo's `local` alias mode.
   - Against: the demo's `npm` and `pack` modes rely on it resolving the editor independently of the root, and it deploys on its own.
@@ -156,7 +158,7 @@ _Provisional; revise after Phase 3._
 - README (including the version-alignment policy), CHANGELOG, and a migration note for v1 consumers.
 - Rewrite `CLAUDE.md` for the v3 architecture.
 - Cut `v1.x` from `main` for future 1.x patches, then merge `v3.0-dev` into `main`.
-- Deploy the demo, replacing the live v2 playground in step with the fig-tree 3.0.0 release.
+- Restore the demo's `deploy` script (disabled in 0.6), then deploy the demo, replacing the live v2 playground in step with the fig-tree 3.0.0 release.
 - Run `demo:pack` against the packed tarball, then publish 3.0.0. Remove `"private": true` from `package.json` first, if an earlier pre-release hasn't already.
 
 ---

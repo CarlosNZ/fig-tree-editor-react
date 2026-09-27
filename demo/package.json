@@ -19,8 +19,7 @@
     "build:pack": "VITE_FIG_SOURCE=pack yarn build",
     "lint": "eslint . --report-unused-disable-directives",
     "preview": "vite preview",
-    "predeploy": "yarn build",
-    "deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"
+    "deploy": "echo 'deploy is disabled on v3.0-dev, so a v3 demo cannot replace the live v2 playground. See docs-dev/v3-plan.md (0.6 and Phase 10).' && exit 1"
   },
   "dependencies": {
     "@chakra-ui/icons": "^2.1.1",
