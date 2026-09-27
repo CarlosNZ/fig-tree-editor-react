@@ -19,12 +19,12 @@ is a legitimate option, not just a local workaround.
 
 ## Commands
 
-- **Build**: `yarn build` — rollup → CJS + ESM + `.d.ts` in `build/` (`prepublishOnly` runs it).
-- **Lint**: `yarn lint` (eslint, flat config in `eslint.config.mjs`).
+- **Build**: `pnpm build` — rollup → CJS + ESM + `.d.ts` in `build/` (`prepublishOnly` runs it).
+- **Lint**: `pnpm lint` (eslint, flat config in `eslint.config.mjs`).
 - **Run the demo** (primary way to see changes live):
-  - `yarn dev` / `yarn demo:local` → demo against **raw `src/` TypeScript** (HMR; what you want while developing this library).
-  - `yarn demo` → demo against the **published npm package**.
-  - `yarn demo:pack` → builds, `npm pack`s, extracts to `pack-output/`, and runs the demo against the packed tarball (closest test to a real publish; see `scripts/pack.mjs`).
+  - `pnpm dev` / `pnpm demo:local` → demo against **raw `src/` TypeScript** (HMR; what you want while developing this library).
+  - `pnpm demo` → demo against the **published npm package**.
+  - `pnpm demo:pack` → builds, `npm pack`s, extracts to `pack-output/`, and runs the demo against the packed tarball (closest test to a real publish; see `scripts/pack.mjs`).
 - **Tests**: there is a `jest.config.js` (expects tests under `test/`) but **no `test/` dir and no `test` script exist** — the library currently has no test suite.
 
 ## Dependency-source switching (important & non-obvious)

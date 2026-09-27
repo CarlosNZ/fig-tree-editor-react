@@ -37,7 +37,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 
 ## Working rules
 
-1. **The demo runs at the end of every phase from Phase 2 on.** Each phase adds capability on top of a working editor, and no phase leaves the build or `yarn dev` broken. Phases 0 and 1 are the exception for `yarn dev`: Phase 0 freezes the v1 components and the new `src/` has no `FigTreeEditor` until the Phase 2 skeleton, so only the npm-mode demo (`yarn demo`) runs until then. The library build still works at the end of both.
+1. **The demo runs at the end of every phase from Phase 2 on.** Each phase adds capability on top of a working editor, and no phase leaves the build or `pnpm dev` broken. Phases 0 and 1 are the exception for `pnpm dev`: Phase 0 freezes the v1 components and the new `src/` has no `FigTreeEditor` until the Phase 2 skeleton, so only the npm-mode demo (`pnpm demo`) runs until then. The library build still works at the end of both.
 2. **`v1-src/` is reference only.** It is never imported, built or linted, and it is deleted before 3.0.0 ships.
 3. **Upstream fixes are in scope.** The same maintainer owns fig-tree-evaluator and json-edit-react. When the editor needs something from either one (a hint field, a format option, a JER opt-in), prefer a root-cause change upstream over a local workaround. Record each such change under "Upstream changes" at the end.
 4. **Test the pure logic as it is written.** Node classification, fill-in and path helpers each get tests alongside the code (see Phase 1).
@@ -53,12 +53,12 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
   - Move `fig-tree-evaluator` to `peerDependencies` as `^3.0.0` (or the current preview range until 3.0.0 is out), and keep it as a devDependency for development. `json-edit-react` and `@json-edit-react/utils` stay as regular dependencies, since consumers don't touch them directly.
   - Bump the root only. `demo/` stays on fig-tree v2 until Phase 2.3: its `dedupe` rule forces a single fig-tree copy in every mode, so a v3 bump there breaks even the `npm` mode (the published v1 editor can't run on v3).
 - **0.4 · Local fig-tree source.** Add a vite alias mode that resolves `fig-tree-evaluator` to the local checkout at `../fig-tree-evaluator`, alongside the existing `VITE_FIG_SOURCE` modes. Keep the `dedupe` rules so only one copy of fig-tree and React exists. Also decide whether `src/_imports.ts` needs a matching toggle for fig-tree.
-  - Done as a separate `VITE_EVALUATOR_SOURCE` (`npm` | `local`), run with `yarn demo:local-evaluator`. Every entry point (`fig-tree-evaluator`, `/format`, `/editor-hints`, `/migrate`) maps to the matching directory under the checkout's `src/`.
+  - Done as a separate `VITE_EVALUATOR_SOURCE` (`npm` | `local`), run with `pnpm demo:local-evaluator`. Every entry point (`fig-tree-evaluator`, `/format`, `/editor-hints`, `/migrate`) maps to the matching directory under the checkout's `src/`.
   - Decided: no fig-tree toggle in `_imports.ts`. The vite alias applies to every importer, `../src` included, so the library already runs on the local fig-tree without a code edit. A comment toggle would need one re-export per entry point and is easy to commit by accident. The remaining gap is types: tsc, eslint and the IDE still see the npm package, so using fig-tree API that hasn't been released yet needs the root's `fig-tree-evaluator` linked to the checkout (for example with `pnpm link` after Phase 1).
 - **0.5 · Version.** Set the version to `3.0.0-dev` to mark a development phase with no releases planned for a while. It is never published: in semver, `dev` sorts above `alpha` and `beta`, so a published `3.0.0-dev` would outrank later pre-releases. The first published pre-release sets its own version. `package.json` also sets `"private": true`, so `npm publish` refuses outright while `npm pack` (and so `demo:pack`) still works. Remove it when the first pre-release goes out.
 - **0.6 · Demo deployment guard.** `demo`'s `deploy` script publishes to the live v2 playground (`carlosnz.github.io/fig-tree-evaluator`). Make sure a v3 demo can't be deployed there before release, for example by disabling the script on this branch or pointing it at a separate preview location.
   - Done by disabling it: `deploy` prints why and exits with an error, and `predeploy` is removed so nothing builds first. A preview location can be added later if a hosted v3 preview is wanted before release.
-  - The live scripts, to restore in Phase 10: `"predeploy": "yarn build"` and `"deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"`.
+  - The live scripts, to restore in Phase 10: `"predeploy": "pnpm build"` (`yarn build` before 1.1) and `"deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"`.
 
 ## Phase 1 — Tooling
 
@@ -69,11 +69,13 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Run `pnpm import` before deleting each `yarn.lock`, so the resolved versions carry over.
   - Add `engines` and `.nvmrc` with fig-tree's Node floor (22.12), and `pnpm.onlyBuiltDependencies` where install scripts need it.
   - Replace every `yarn` call in scripts: the root `package.json`, `demo/package.json` and `scripts/pack.mjs`.
-  - **Watch out:** pnpm doesn't run implicit pre/post hooks for ordinary scripts. The demo's `predeploy` (disabled in 0.6, restored in Phase 10) won't fire under pnpm, so when it's restored, chain it explicitly the way fig-tree's `build` chains `getVersion`. `prepublishOnly` is a lifecycle hook and still runs.
+  - Done. Both lockfiles were merged and imported in one `pnpm import` at the workspace root (1.2). Where the two resolved a transitive dependency to different versions within the same range (62 specifiers, all patch or minor), the root's version was kept. `esbuild` is the only dependency whose install script needs allowing. The root gains explicit `react` and `react-dom` devDependencies at `^18.3.1`: under yarn it had no `react` and a stray `react-dom@19`.
+  - pnpm runs pre/post hooks for ordinary scripts (`enable-pre-post-scripts` defaults to true), so the demo's `prebuild` still fires, and so will `predeploy` when Phase 10 restores it.
 - **1.2 · Decide: should the demo be a pnpm workspace?**
   - For: one lockfile and one install, and no need to bump a shared dependency in two places. A `workspace:` link could also replace the demo's `local` alias mode.
   - Against: the demo's `npm` and `pack` modes rely on it resolving the editor independently of the root, and it deploys on its own.
   - Recommendation: try a workspace, and fall back to two separate pnpm packages if the `VITE_FIG_SOURCE` modes get awkward.
+  - Decided: a workspace (`pnpm-workspace.yaml` lists `demo`), with no catalogs and no `workspace:` links. Neither "for" holds on its own. The demo still declares its own versions unless it uses catalogs, and `npm pack` (in `scripts/pack.mjs`) doesn't rewrite `catalog:`. A `workspace:` link resolves the built package, so it can't stand in for the raw-source `local` mode, and the `npm` mode must resolve the published editor. Neither "against" bites either. pnpm 10 doesn't link workspace packages by default, and `3.0.0-dev` doesn't satisfy the demo's `^1.0.1`, so the demo still gets the published editor. All four `VITE_FIG_SOURCE` modes are unchanged. What the workspace gives is one install and one lockfile. Revisit catalogs at 2.3, when both packages are on fig-tree v3, switching `pack.mjs` to `pnpm pack` at the same time.
 - **1.3 · Scripts.** Use the same names as fig-tree wherever the job is the same: `lint`, `format`, `format:check`, `typecheck`, `test`, `build`, `dev`, `size`, `check:package`, `release`. Port what applies from fig-tree's `codegen/`: the release script, the bundle-size report and the packed-package check. Merge the last one with the existing `scripts/pack.mjs`.
 - **1.4 · Prettier.** Change `.prettierrc.js` to ESM. Add a `.prettierignore` that mirrors the eslint ignores (including `v1-src/`), and format the whole repo (`prettier --write .`, covering Markdown too), not just `src/`.
 - **1.5 · ESLint.**
@@ -89,9 +91,9 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
 
 ## Phase 2 — Skeleton
 
-- **1.1 · Minimal `FigTreeEditor`.** A new component with the same outline of props as v1 (the expression, a `FigTree` instance, `onUpdate`, and options). It renders a JER `<JsonEditor>` over the expression with **no custom nodes**. That's a working v3 editor, just an unstyled JSON one.
-- **1.2 · Validation wired in.** Run `fig.validate()` on every update, and show its issues in a simple list for now, with each issue's path and message.
-- **1.3 · Demo rewired.**
+- **2.1 · Minimal `FigTreeEditor`.** A new component with the same outline of props as v1 (the expression, a `FigTree` instance, `onUpdate`, and options). It renders a JER `<JsonEditor>` over the expression with **no custom nodes**. That's a working v3 editor, just an unstyled JSON one.
+- **2.2 · Validation wired in.** Run `fig.validate()` on every update, and show its issues in a simple list for now, with each issue's path and message.
+- **2.3 · Demo rewired.**
   - Get the demo running against the new component and v3, bumping `demo/`'s `fig-tree-evaluator` to the v3 range (deferred from 0.3). `demo/` is a separate package with its own lockfile.
   - Produce the demo's test expressions in v3 syntax. Generate most of them by running the v1 set through `fig-tree-evaluator/migrate` (`migrateV2Expression`), then review them by hand.
   - Replace or remove v2-specific demo plumbing, such as the custom-function definitions and the express/postgres setup, where it no longer applies.

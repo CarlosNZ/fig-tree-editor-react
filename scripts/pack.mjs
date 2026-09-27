@@ -12,7 +12,7 @@ const outDir = join(root, 'pack-output')
 const dest = join(outDir, 'fig-tree-editor-react')
 
 console.log('→ Building library...')
-execSync('yarn build', { cwd: root, stdio: 'inherit' })
+execSync('pnpm build', { cwd: root, stdio: 'inherit' })
 
 console.log('→ Cleaning pack-output...')
 rmSync(outDir, { recursive: true, force: true })
