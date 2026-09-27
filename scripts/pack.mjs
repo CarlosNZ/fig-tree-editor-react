@@ -25,7 +25,8 @@ const tarball = readdirSync(dest).find((f) => f.endsWith('.tgz'))
 if (!tarball) throw new Error(`No .tgz produced in ${dest}`)
 
 console.log(`→ Extracting ${tarball}...`)
-// Yields pack-output/fig-tree-editor-react/package/ (npm tarballs nest under `package/`).
+// Yields pack-output/fig-tree-editor-react/package/ (npm tarballs nest under
+// `package/`).
 execSync(`tar -xzf "${join(dest, tarball)}" -C "${dest}"`, { stdio: 'inherit' })
 rmSync(join(dest, tarball))
 

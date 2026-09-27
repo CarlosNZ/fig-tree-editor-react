@@ -3,19 +3,48 @@ import tseslint from 'typescript-eslint'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import globals from 'globals'
-import stylistic from '@stylistic/eslint-plugin'
+import commentLength from 'eslint-plugin-comment-length'
 
 // Flat config (ESLint 9). Type-aware: rules that need type info
 // (await-thenable, no-floating-promises, prefer-nullish-coalescing, the
 // no-unsafe-* family) are powered by the lint-only `tsconfig.eslint.json`.
-// Formatting is owned by Prettier (.prettierrc.js); the only stylistic rule
-// here is `max-len`, which fills a gap Prettier can't (it never wraps comment
-// prose).
+// Formatting is owned by Prettier (.prettierrc.js); the only length rules here
+// are for comments, which Prettier never wraps. The comment-length setup
+// matches fig-tree-evaluator's.
 export default tseslint.config(
-  // Nothing outside src is linted by the library config: the build output, the
-  // demo (its own package), packed tarballs, and the frozen v1 reference source
-  // are excluded.
+  // Excluded: the build output, the demo (its own package, with its own
+  // config), packed tarballs, and the frozen v1 reference source.
   { ignores: ['build/', 'demo/', 'pack-output/', 'coverage/', 'v1-src/'] },
+  {
+    // The repo's own tooling (rollup config, scripts/) is plain JS run by
+    // Node.
+    files: ['**/*.{js,mjs,cjs}'],
+    extends: [js.configs.recommended],
+    languageOptions: { globals: globals.node },
+  },
+  {
+    plugins: { 'comment-length': commentLength },
+    rules: {
+      // `//` comments: enforced + auto-fixable (reflow) via plugin. Its
+      // multi-line sibling is NOT used — it mangles non-JSDoc /* blocks.
+      'comment-length/limit-single-line-comments': ['error', { maxLength: 80 }],
+      // Block-comment lines: enforced (not auto-fixable) via core max-len.
+      // `code` is set high so Prettier (100) stays the authority on code
+      // width. Unbreakable literals are exempt: an SVG path in Icons.tsx runs
+      // past 200.
+      'max-len': [
+        'error',
+        {
+          code: 200,
+          comments: 80,
+          ignoreUrls: true,
+          ignoreStrings: true,
+          ignoreTemplateLiterals: true,
+          ignoreRegExpLiterals: true,
+        },
+      ],
+    },
+  },
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
@@ -26,29 +55,12 @@ export default tseslint.config(
       },
       globals: { ...globals.browser },
     },
-    plugins: { '@stylistic': stylistic, react, 'react-hooks': reactHooks },
+    plugins: { react, 'react-hooks': reactHooks },
     settings: { react: { version: '18' } },
     rules: {
       ...react.configs.flat.recommended.rules,
       ...react.configs.flat['jsx-runtime'].rules, // new JSX transform (tsconfig jsx: react-jsx)
       'react/prop-types': 'off', // types come from TypeScript, not prop-types
-
-      // Line length: code tracks Prettier's printWidth (100), but comments are
-      // held to 80 — Prettier wraps code, never comment prose. Unbreakable
-      // lines (URLs, strings, templates, regexes) are exempt so this never
-      // fights Prettier.
-      '@stylistic/max-len': [
-        'warn',
-        {
-          code: 100,
-          comments: 80,
-          tabWidth: 2,
-          ignoreUrls: true,
-          ignoreStrings: true,
-          ignoreTemplateLiterals: true,
-          ignoreRegExpLiterals: true,
-        },
-      ],
 
       // `v1-src/` is reference only (see docs-dev/v3-plan.md): nothing in the
       // library may import from it.
@@ -76,7 +88,8 @@ export default tseslint.config(
       '@typescript-eslint/prefer-nullish-coalescing': 'warn', // auto-fixable
 
       // `checksVoidReturn: false` allows async event handlers (`onClick={async
-      // ...}`) — a standard React allowance; the conditional/spread checks stay on.
+      // ...}`) — a standard React allowance; the conditional/spread checks
+      // stay on.
       '@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
 
       // Permit the idiomatic `cond && fn()` / `cond ? fn() : null` call style.

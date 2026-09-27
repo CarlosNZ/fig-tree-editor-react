@@ -1,0 +1,19 @@
+# Mirrors the `ignores` list in eslint.config.mjs, less demo/ (which has an
+# ESLint config of its own but is formatted with the rest of the repo), plus
+# the files that are generated rather than authored. Prettier already skips
+# node_modules and .git by default.
+
+# Build output and the extracted `npm pack` tarball
+build
+pack-output
+coverage
+demo/dist
+
+# The frozen v1 components, reference only until Phase 10 deletes them
+v1-src
+
+# Generated: written by demo/scripts/getVersion.cjs on every demo build
+demo/src/version.ts
+
+# Lockfile
+pnpm-lock.yaml

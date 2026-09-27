@@ -17,14 +17,14 @@ Editor v3.0.0 targets fig-tree-evaluator v3, a ground-up rewrite with new syntax
 
 **v3 provides much of what v1 built by hand.** Use it rather than rebuilding it:
 
-| v1 editor code | v3 replacement |
-| --- | --- |
-| `operatorDisplay.ts` (colours, names) | `fig-tree-evaluator/editor-hints`: `displayName`, `docUrl`, colours, category grouping and order (`CategoryHints`), and `seeds` (starting values) for new parameters. A host describes a fragment's display with `FragmentHints` in its `metadata`. |
-| `validator.tsx` (most of it) | `fig.validate()`: synchronous, needs no data, and reports each problem with the node's path. The editor keeps only the step that changes the tree, such as adding required parameters with their seeds. The format spec explicitly leaves that step to the editor. |
-| `DisplayBar` convert buttons | `fig-tree-evaluator/format`: `toCanonical`, `toShorthand`, `toGet`, `toReference`. The spec was written with this editor's "To shorthand", "To full node", "To reference" and "To get node" affordances in mind. |
-| `CustomOperator.tsx` and custom-function handling | Nothing. `defineOperator()` is v3's only extension API, so host operators are ordinary operators with full metadata, and one Operator component serves them all. |
-| Evaluate-error display | Evaluate with `mode: 'report'` and `trace: true`. Failures carry the path of the node responsible, so the editor can highlight it. |
-| — | New to v3: `getDependencies()` lists the data paths an expression reads. |
+| v1 editor code                                    | v3 replacement                                                                                                                                                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `operatorDisplay.ts` (colours, names)             | `fig-tree-evaluator/editor-hints`: `displayName`, `docUrl`, colours, category grouping and order (`CategoryHints`), and `seeds` (starting values) for new parameters. A host describes a fragment's display with `FragmentHints` in its `metadata`.                |
+| `validator.tsx` (most of it)                      | `fig.validate()`: synchronous, needs no data, and reports each problem with the node's path. The editor keeps only the step that changes the tree, such as adding required parameters with their seeds. The format spec explicitly leaves that step to the editor. |
+| `DisplayBar` convert buttons                      | `fig-tree-evaluator/format`: `toCanonical`, `toShorthand`, `toGet`, `toReference`. The spec was written with this editor's "To shorthand", "To full node", "To reference" and "To get node" affordances in mind.                                                   |
+| `CustomOperator.tsx` and custom-function handling | Nothing. `defineOperator()` is v3's only extension API, so host operators are ordinary operators with full metadata, and one Operator component serves them all.                                                                                                   |
+| Evaluate-error display                            | Evaluate with `mode: 'report'` and `trace: true`. Failures carry the path of the node responsible, so the editor can highlight it.                                                                                                                                 |
+| —                                                 | New to v3: `getDependencies()` lists the data paths an expression reads.                                                                                                                                                                                           |
 
 These v3 specs matter most for the editor. They are in the fig-tree-evaluator repo under `docs-dev/v3-specs/`:
 
@@ -77,11 +77,15 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Recommendation: try a workspace, and fall back to two separate pnpm packages if the `VITE_FIG_SOURCE` modes get awkward.
   - Decided: a workspace (`pnpm-workspace.yaml` lists `demo`), with no catalogs and no `workspace:` links. Neither "for" holds on its own. The demo still declares its own versions unless it uses catalogs, and `npm pack` (in `scripts/pack.mjs`) doesn't rewrite `catalog:`. A `workspace:` link resolves the built package, so it can't stand in for the raw-source `local` mode, and the `npm` mode must resolve the published editor. Neither "against" bites either. pnpm 10 doesn't link workspace packages by default, and `3.0.0-dev` doesn't satisfy the demo's `^1.0.1`, so the demo still gets the published editor. All four `VITE_FIG_SOURCE` modes are unchanged. What the workspace gives is one install and one lockfile. Revisit catalogs at 2.3, when both packages are on fig-tree v3, switching `pack.mjs` to `pnpm pack` at the same time.
 - **1.3 · Scripts.** Use the same names as fig-tree wherever the job is the same: `lint`, `format`, `format:check`, `typecheck`, `test`, `build`, `dev`, `size`, `check:package`, `release`. Port what applies from fig-tree's `codegen/`: the release script, the bundle-size report and the packed-package check. Merge the last one with the existing `scripts/pack.mjs`.
+  - Done: `lint`, `format`, `format:check`, `typecheck`, `build`, `dev` and `release`. The ported scripts live in `scripts/`, which this repo already had, rather than a `codegen/`. `release` is fig-tree's, less the `src/version.ts` step (the editor has no version constant). It refuses to start while `"private": true` is set, rather than failing at `npm publish` after committing and tagging. `typecheck` runs `tsc` over the lint project, which covers all of `src/`. The demo joins it in Phase 2, once `src/` has the `FigTreeEditor` the demo imports.
+  - Moved to 1.6: `size` and `check:package`. They measure and install the build as it's shaped (ESM-only, `exports` map), so they're written with that build. `test` arrives with 1.7.
 - **1.4 · Prettier.** Change `.prettierrc.js` to ESM. Add a `.prettierignore` that mirrors the eslint ignores (including `v1-src/`), and format the whole repo (`prettier --write .`, covering Markdown too), not just `src/`.
+  - Done. `demo/` is formatted with the rest of the repo, though ESLint lints it separately. `demo/src/version.ts` is ignored, since the demo's `prebuild` writes it.
 - **1.5 · ESLint.**
   - Adopt fig-tree's comment-length setup: `eslint-plugin-comment-length` for `//` comments at 80 characters, and `max-len` for block comments. That replaces the `@stylistic/max-len` rule here.
   - Keep what is specific to this repo: the React and hooks rules, and type-aware linting.
   - Add the ban on imports from `v1-src/`.
+  - Done. The ban on `v1-src/` imports dates from 0.2. `max-len` keeps this repo's exemptions for strings, template literals and regexes, since an SVG path in `Icons.tsx` can't be broken. `eslint .` also covers the repo's Node tooling (`scripts/`, the rollup config).
 - **1.6 · Packaging.** Go ESM-only to match fig-tree v3, whose Node floor is 22.12. Add `"type": "module"` and an `exports` map, and drop the CJS build. If there's a reason to keep CJS, record it here.
 - **1.7 · Test runner.**
   - Replace the unused jest config with vitest, plus React Testing Library for later component tests, and add the `test` script.
@@ -169,6 +173,6 @@ _Provisional; revise after Phase 3._
 
 Changes needed in fig-tree-evaluator or json-edit-react, logged as they come up.
 
-| Package | Change | Why | Status |
-| --- | --- | --- | --- |
+| Package         | Change                                                                              | Why                                                                                                                      | Status                   |
+| --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
 | json-edit-react | Opt-in to keep a node's own edit-tools row visible while its custom toolbar is open | Known wart carried from v1: while the toolbar is open, JER hides that node's edit tools (`showEditButtons = !isEditing`) | Open — decide in Phase 3 |
