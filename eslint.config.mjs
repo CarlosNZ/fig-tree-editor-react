@@ -13,8 +13,9 @@ import stylistic from '@stylistic/eslint-plugin'
 // prose).
 export default tseslint.config(
   // Nothing outside src is linted by the library config: the build output, the
-  // demo (its own package), and packed tarballs are excluded.
-  { ignores: ['build/', 'demo/', 'pack-output/', 'coverage/'] },
+  // demo (its own package), packed tarballs, and the frozen v1 reference source
+  // are excluded.
+  { ignores: ['build/', 'demo/', 'pack-output/', 'coverage/', 'v1-src/'] },
   {
     files: ['src/**/*.{ts,tsx}'],
     extends: [js.configs.recommended, ...tseslint.configs.recommendedTypeChecked],
@@ -46,6 +47,20 @@ export default tseslint.config(
           ignoreStrings: true,
           ignoreTemplateLiterals: true,
           ignoreRegExpLiterals: true,
+        },
+      ],
+
+      // `v1-src/` is reference only (see docs-dev/v3-plan.md): nothing in the
+      // library may import from it.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              regex: '(^|/)v1-src(/|$)',
+              message: 'v1-src/ is reference only and must not be imported.',
+            },
+          ],
         },
       ],
 
