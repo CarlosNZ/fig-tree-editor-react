@@ -39,7 +39,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 
 1. **The demo runs at the end of every phase from Phase 2 on.** Each phase adds capability on top of a working editor, and no phase leaves the build or `pnpm dev` broken. Phases 0 and 1 are the exception for `pnpm dev`: Phase 0 freezes the v1 components and the new `src/` has no `FigTreeEditor` until the Phase 2 skeleton, so only the npm-mode demo (`pnpm demo`) runs until then. The library build still works at the end of both.
 2. **`v1-src/` is reference only.** It is never imported, built or linted, and it is deleted before 3.0.0 ships.
-3. **Upstream fixes are in scope.** The same maintainer owns fig-tree-evaluator and json-edit-react. When the editor needs something from either one (a hint field, a format option, a JER opt-in), prefer a root-cause change upstream over a local workaround. Record each such change under "Upstream changes" at the end.
+3. **Upstream fixes are in scope.** The same maintainer owns fig-tree-evaluator and json-edit-react. When the editor needs something from either one (a hint field, a format option, a JER opt-in), prefer a root-cause change upstream over a local workaround. Record each such change in [v3-upstream.md](v3-upstream.md), with its state and, once filed, its issue.
 4. **Test the pure logic as it is written.** Node classification, fill-in and path helpers each get tests alongside the code (see Phase 1).
 5. **Findings from the design phase flow back into this plan.** Phases 4 onwards are provisional until Phase 3 closes.
 
@@ -195,8 +195,4 @@ _Provisional; revise after Phase 3._
 
 ## Upstream changes
 
-Changes needed in fig-tree-evaluator or json-edit-react, logged as they come up.
-
-| Package         | Change                                                                              | Why                                                                                                                      | Status                   |
-| --------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
-| json-edit-react | Opt-in to keep a node's own edit-tools row visible while its custom toolbar is open | Known wart carried from v1: while the toolbar is open, JER hides that node's edit tools (`showEditButtons = !isEditing`) | Open — decide in Phase 3 |
+Tracked in [v3-upstream.md](v3-upstream.md).

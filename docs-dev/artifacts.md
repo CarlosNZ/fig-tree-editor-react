@@ -1,0 +1,7 @@
+# claude.ai artifacts
+
+_Pages published on claude.ai during the v3 work, newest last. They are private to their owner unless shared._
+
+| Artifact                                                                  | What it is                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [FigTree Node Mockups](https://claude.ai/artifact/WcfDoiKYH84FsQxQa4r84E) | Mockups of each node kind for Phase 3, topic 3 ("Node anatomy" in [v3-design.md](v3-design.md)): headers, the toolbar and picker, states, messages and collapsed views, with the decisions reached on each. |
