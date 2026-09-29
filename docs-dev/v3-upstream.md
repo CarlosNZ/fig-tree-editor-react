@@ -27,6 +27,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F9  | fig-tree-evaluator | A fragment-body option on `validate()`                               | Open     | Not filed                                                         |
 | F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         |
 | F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | Not filed                                                         |
+| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                 | Wanted   | Not filed                                                         |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Wanted   | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
@@ -35,6 +36,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         |
 | J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         |
 | J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         |
+| J9  | json-edit-react    | Reveal a row from the editor handle                                  | Maybe    | Not filed                                                         |
 
 ---
 
@@ -195,6 +197,16 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Issue.** Not filed.
 
+### F12 · Sample-data warnings at the path of the reading node — **Wanted**
+
+**The change.** `validate(expression, { data })` reports each statically known `$data` path the sample data lacks as a `missing-data-path` warning, always at `path: []` (`src/validation.ts`, which walks the stored dependency list, where the reading nodes' paths are no longer kept). The change is to report one warning per reading node, at its path: a reference string, a `get` node with a literal path, or a string holding a `{{$data.…}}` token. A path read in several places would then give one warning at each. The compiler already turns every reference into a node with a path, so the paths exist at compile time; the dependency record would keep them beside each path's segments.
+
+**Why.** Each issue marks the row at its path ("Where issues attach" in [v3-design.md](v3-design.md)), so `'$data.user.nmae' is absent from the supplied sample data` belongs on the row that reads `$data.user.nmae`. At `[]` it lands on the root, far from the typo it reports.
+
+**Without it.** The sample-data warnings appear in the messages area only, naming the path but marking no row.
+
+**Issue.** Not filed.
+
 ---
 
 ## json-edit-react
@@ -282,5 +294,15 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Why it was dropped.** Two steps are acceptable for now (Carl, September 2026).
 
 **Revisit.** If the two steps prove awkward once the editor is in use.
+
+**Issue.** Not filed.
+
+### J9 · Reveal a row from the editor handle — **Maybe**
+
+**The change.** A `reveal({ path })` on `JsonEditorHandle`, which expands the row's collapsed ancestors and scrolls the row into view without opening an edit. `startEdit` already reveals a target collapsed below the mount frontier, so the logic exists; this exposes it on its own.
+
+**Why.** Clicking a line's path in the messages area reveals its row ("The messages area" in [v3-design.md](v3-design.md)). json-edit-react's rows carry no marker of their path, so the editor can expand the ancestors through `collapse` but can only scroll to an element it draws itself.
+
+**Without it.** The editor scrolls to the nearest element it draws: the row where it has a component, otherwise the enclosing node's header. Expected to be adequate in most cases (Carl, September 2026); to revisit if it proves not to be.
 
 **Issue.** Not filed.

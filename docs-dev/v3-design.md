@@ -391,9 +391,9 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 ### States — **Agreed**, except where marked
 
 - **Modifier keys look different from parameters** (`fallback`, `useCache`; italic and muted in the mockups, the exact style to be settled later).
-- **A broken node** has an error border and stripe (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge.
+- **A broken node** has an error border and stripe (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge. Which row an issue marks, which codes make a node broken, and how warnings and hints differ are settled in topic 7 ("Where issues attach").
 - **A collapsed node with an issue** colours its summary line as an error.
-- **Filled in on load — Proposed:** the amber marker (A6) fades after a few seconds, needing no edit to clear. Its line in the messages area stays until dismissed, so the record is not lost if the marker is missed.
+- **Filled in on load — Agreed** in topic 7: the amber marker (A6) fades after a few seconds, needing no edit to clear. Its line in the messages area stays until dismissed, so the record is not lost if the marker is missed.
 - **No badge for dynamic fragment arguments:** `parameters` there is a property with a value, and nothing needs to call attention to it.
 - **No "quoted data" badge on `literal`:** its neutral colour and plain-data content are enough.
 
@@ -415,7 +415,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 
 As in v1: a collapsed node shows only json-edit-react's header row, with a summary between the brackets in place of the item count (section I of the mockups): `{ Operator: plus }`, `{ Fragment: greet }`, `{ Shorthand: $if }`, `{ Literal }`, `{ 2 vars }`, and the ordinary count for plain containers. A node with an issue colours its summary as an error, and with more than one, adds a count ("3 errors"). A collapsed operator, fragment or shorthand node shows a small inline ▶ after its summary, so it can be evaluated without expanding it; other collapsed rows do not.
 
-### Messages — **Proposed** (detail in topics 7 and 8)
+### Messages — **Agreed** in topic 7 ("The messages area"), with the host API in topic 8
 
 A messages region built into the component, below the tree as in Phase 2's skeleton: one line per `validate()` issue and per value filled in on load, each with its path (which reveals the row) and any quick fix. The same information goes to the host through the provisional `onStatusChange`, and a prop hides the built-in region for a host that renders its own.
 
@@ -883,3 +883,104 @@ Choosing another fragment in the picker is a structural action (topic 2), so it 
 - **Dynamic arguments are kept unchanged** (`parameters: '$data.form'`, or a node): the editor cannot know what they compute, and they are checked at runtime.
 - **An emptied `parameters` map is removed,** so switching to a fragment with no parameters leaves `{ fragment: 'today' }` rather than `parameters: {}`. The editor removes what the editor made obsolete (topic 2).
 - **There is no confirmation step,** even when the switch drops argument subtrees. Cancel while the toolbar is open reverts it (topic 2, "Commit semantics").
+
+---
+
+## 7. Diagnostics and evaluation
+
+### What fig-tree 3.0.0-preview.1 provides — **Findings**
+
+Checked against the installed package:
+
+- **`validate()` issues carry paths in the authored coordinates,** shorthand included (`['items', '$map', 'each']`), so they name json-edit-react rows directly. An issue points at a node (`missing-required`, `unknown-operator`, `malformed-node`, and `returns-mismatch` at the node doing the returning), at a key's row (`unknown-node-key` at `['age', 'thn']`, `useless-modifier` at `['x', 'fallback']`), or at a string holding a reference token (`unresolved-var` at a `buildString` template). Severities are `error`, `warning` and `hint`.
+- **The sample-data warnings point at the root.** Given `data`, `validate()` warns about each statically known `$data` path the data lacks (`missing-data-path`), always at `path: []`.
+- **A static error anywhere refuses the whole evaluation:** `{ result: null, errors: [...] }` with the static issues and no trace. A sub-tree evaluation compiles only its synthesised expression, so it is refused only by errors inside the sub-tree or in the ancestor `vars` blocks wrapped around it.
+- **`{ mode: 'report', trace: true }` never throws.** `errors` holds each failure no `fallback` caught, with the failing node's `path` and the `holePath` that degraded to `null`; a failure inside a fragment body carries the call's `path` with `fragment` and `fragmentPath`, a location in a body the editor never receives. A failure a `fallback` caught is not in `errors`: the trace shows it as `status: 'fallback'` with the error it caught.
+- **The trace is an instance tree in authored paths:** one entry per node instance with its status (`value`, `failed`, `fallback`, `cancelled`, `skipped`), one entry per iterator element at the same path, reference entries with their resolved values, a fragment call's body nodes marked `source: { fragment }`, the compile warnings on the root, and events for cache hits, requests (header names only), renders and SQL queries. Values are held by reference.
+- **`getDependencies()`** lists the `$data` paths read (with a `dynamic` flag where reads cannot all be listed), the operators and the fragments, transitively through fragment calls.
+
+### Where issues attach — **Agreed**
+
+**Each issue marks one row: the row at its path, or where that row is not drawn, the nearest drawn ancestor.** Nearly every issue path names a drawn row: `{ operator: 42 }` and `operator` beside `fragment` are reported at the node, not the filtered `operator` row, and a type error in `{ $not: 1 }` at the unlabelled `$name` row, which is drawn. A path into a flattened payload's own row (`parameters`, a named `$if: { … }`), or into a filtered row, lands on the node.
+
+**A collapsed row carries the issues beneath it.** Its summary is coloured by the most severe of them, with a count where there is more than one ("2 errors"), as topic 3 decided for collapsed nodes, extended to every collapsed row, plain arrays and objects included, so that an error inside a collapsed `values: [ 3 items ]` is not hidden. Rejected: marking every ancestor of an issue, which clutters the whole path to it when the messages area already lists it; and rolling up only onto collapsed nodes.
+
+**An issue at a node's own path.**
+
+- **Broken** (topic 3's error border and stripe, with the name as an error) means exactly `malformed-node`, `unknown-operator` or `unknown-fragment` at the node's own path: the node cannot be read as a node, and the compiler and `./format` both refuse it, so it has no Evaluate and no conversion.
+- **Any other issue at a node's path flags the node's DisplayBar line,** with no border: a missing `then` held back by the typo guard, `upper` feeding a number position, a fragment call missing a required argument. The node is well-formed, so its header reads as usual.
+
+**Severity on rows:**
+
+- **Error:** the row is tinted and flagged (topic 3).
+- **Warning:** a flag only, with no tint. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), so a tint would make a tree with a few warnings look as alarming as a broken one, while a flag still puts a warning such as `'$colour' is not a registered operator or fragment` on its row. The warning flag's colour must be told apart from the "filled in on load" marker's amber (topic 3); exact colours are settled when the components are built.
+- **Hint:** the messages area only. fig-tree has one hint today (`token-renumber`, beside the warnings it explains).
+
+Rejected: one treatment for all three in different colours, which tints every new var's row; and warnings in the messages area only, which moves a row's problem away from the row.
+
+**What a flag says: the issue's message, cut to the space left on the row with an ellipsis, with the full text on hover.** It works for every code, including a host operator's `validate` hook (`operator-validate`, with any message), and needs no text of the editor's own. A row with several issues flags the most severe first, followed by "+1" and so on, and the hover lists them all. Rejected: the editor's own short text per code ("not a parameter", "no such var"), which reads best but is a second copy of fig-tree's vocabulary, over 40 codes kept in step by hand and still nothing for host hooks; and an icon alone, which makes reading any problem take a hover.
+
+**The sample-data warnings go on the rows that read the missing paths,** once fig-tree gives each one the path of its reading node (F12 in [v3-upstream.md](v3-upstream.md)): a reference string, a `get` with a literal path, or a string holding a `{{$data.…}}` token. Until then they appear in the messages area only. Rejected: the editor checking the sample data itself with its walk and fig-tree's exported `resolvePath`, which duplicates `validate()`'s check and misses `get` paths and template tokens unless it re-implements them.
+
+### The messages area — **Agreed**
+
+The region below the tree that topic 3 proposed, as a sibling of the `JsonEditor` (Phase 2).
+
+**It shows only when it has lines,** under a header of counts ("2 errors · 1 warning · 1 hint · 1 added") that collapses it, with a maximum height beyond which it scrolls, since a pasted expression can bring dozens of issues. The maximum height is a host prop (named in topic 8). A host prop hides the region entirely (topic 3). Rejected: always shown, reading "No issues" when clean, which takes permanent space on every host; and collapsed by default, which leaves a new error signalled only by a changing count.
+
+**What it holds:** every `validate()` issue, hints included, since this is the only place hints appear ("Where issues attach"); the sample-data warnings, which appear only here until F12; and one line per value filled in on load (topic 2). Evaluation failures are decided with evaluation.
+
+**One list in tree order,** sorted by the row each line marks, as the tree displays it, so reading down the list is reading down the tree. On the same row the most severe comes first, then fig-tree's own order. The editor sorts, because `validate()`'s stream is not strictly in tree order (a node's own `missing-required` can follow a child's issue, and the sample-data warnings come last, at `[]`). The filled-in lines are interleaved by their row. Rejected: grouped by severity, errors first, which separates the problems on one node when the pills already show severity (Carl was tempted by it; a sort or filter by severity could be added later); and grouped by node, a nested list that tree order already gives in effect.
+
+**Each line** shows the severity pill, the path of the row it marks (not the issue's raw path, so a line for a flattened payload names the node), in display form (`[1].thn`, `displayPath`), the full message wrapped, and its quick fixes, as in mockup H1.
+
+**Clicking the path reveals the row.** The editor expands the row's collapsed ancestors through `editorRef.collapse`, then scrolls to the nearest element it draws itself: the row where it has a component, otherwise the enclosing node's header, since json-edit-react's rows carry no marker of their path. This is expected to be close enough in most cases. No temporary highlight: the row already carries its marker. A `reveal({ path })` on json-edit-react's handle would scroll to the exact row (J9 in [v3-upstream.md](v3-upstream.md), Maybe).
+
+**Quick fixes,** in the messages area only:
+
+- **Remove,** on an unknown key: `unknown-node-key`, and `malformed-node` at a stray sibling key (`{ $plus: [1], extra: 2 }`).
+- **Rename to `then`,** where fig-tree suggests the name (F3), which also clears the `missing-required` the typo guard held back.
+- **Change to `plus`,** on an unknown operator or fragment name where fig-tree suggests one (F3), the one-click form of the picker opening on the suggestion (topic 4).
+- **Dismiss,** on a filled-in line, and **Dismiss all** in the header when there is more than one.
+
+Do later: the same fixes in the row's hover card ("Where issues attach"), which would need the card to stay open while the pointer moves into it.
+
+**A filled-in line clears** when its row is edited or when it is dismissed (topic 2).
+
+**The filled-in marker fades — Agreed.** The amber marker on a row filled in on load fades after about three seconds, needing no edit, and its line stays until dismissed, so the record is not lost if the marker is missed (topic 3's proposal). Rejected: keeping the marker until the line is dismissed, which leaves every row filled in on a large load amber indefinitely. The fade applies only to that marker: issues from `validate()`, warnings included, stay on their rows and in the list for as long as `validate()` reports them, whether they were present on load or caused by an edit.
+
+**For topic 8:** what the host receives for its own rendering. It can call `validate()` itself, but not get what the editor adds: the filled-in lines, each line's resolved row, tree order, and fixes that apply to the expression.
+
+### Evaluating — **Agreed**, except where marked
+
+What an Evaluate affordance does: the node's button, a reference's ▶, a collapsed node's ▶, and the root container's bar (topic 3). How a sub-tree is turned into an expression is "Sub-tree evaluation" (below); failures are "Showing failures".
+
+**The editor shows the result, and also passes it to the host.** A built-in popover shows each result by default; a callback is always called with it, as v1's `onEvaluate` was; and a host prop turns the popover off for a host that shows results itself. This is the messages area's pattern (built in, with the same information to the host), and the extra machinery is one callback and one boolean. The callback's shape and the prop's name are for topic 8. Rejected: the host only, as in v1, which makes every host build a display before Evaluate appears to do anything; and the popover only, which leaves v1 hosts with nothing to wire.
+
+**What the result display shows — Agreed.** The value printed by type, and sized by it:
+
+- **A number, a boolean or `null`:** large and bold, with `null` muted, so it reads as "no value".
+- **A string:** without quotes. Up to about 30 characters it is medium-sized; longer, it is small and wrapped, cut off at about six lines with "Show all" to expand it. An empty string shows as a muted "empty string".
+- **An object or an array,** the one case that is JSON content: json-edit-react's read-only `JsonViewer`, in a small font, open two levels deep, with a maximum height and a scrollbar, so a whole API response does not fill the screen.
+- **A small type caption** beneath ("string", "number", "array · 3 items", "object · 5 keys"), which is what tells `'42'` from `42`, and `'null'` from `null`, once strings lose their quotes.
+- **A ✕ to close it, and a copy button.**
+
+Rejected: every result in `JsonViewer`, which suits the collections it is built for but draws most results, which are single values, as a one-row tree.
+
+**When it closes — Agreed:** on its ✕, on Esc, on the next Evaluate, and when any edit starts (json-edit-react's `onEditEvent` reports `startEdit`, `startRename`, `startAdd`, `delete` and `move`, and the editor knows when its own toolbar opens), since the result is stale as soon as the expression starts to change. Not when clicking elsewhere, so the author can scroll, or select and copy from it.
+
+**One result at a time — Agreed.** The built-in display shows the latest result only, which fits one evaluation at a time (below). Several results at once, as toasts that stack, are left to the host through the callback, as the demo's toasts do: built in, they would be detached from their nodes (each needing a label naming its node), would need positioning over the host's page (a portal and a z-index, colliding with the host's own notifications), and would make one-at-a-time evaluation harder to justify.
+
+**Where it is placed — Open.** It must not block the rest of the tree, which the author may want to inspect beside the result (Carl). The candidates:
+
+- **Inline:** a panel just beneath the node's header, pushing the rows below it down. It covers nothing, stays with its node and needs no positioning, at the cost of the tree shifting while it is open. The current lean.
+- **Anchored and floating,** beside the affordance and over the rows beneath it. No layout shift, but it hides what is under it.
+- **Docked:** a fixed results area below the tree, beside the messages area. It never covers anything, but it is detached from its node and needs a label naming it.
+
+A host prop could choose between placements, but each is its own component, so one is built first and others only if it proves wrong. To settle when a result display can be tried in the built editor.
+
+**While it runs,** the affordance shows a spinner, as in v1. **Clicking it again cancels** the evaluation through an `AbortSignal`, so a slow request can be stopped without waiting for its timeout. **One evaluation at a time:** starting another cancels the one running. Rejected: several running at once, which can show a result beside the wrong expectation.
+
+**A node that cannot be evaluated has its Evaluate disabled,** with the reason on hover ("Fix the 2 errors in this node to evaluate it"). fig-tree refuses an evaluation whose expression has a static error, so the editor disables the affordance where the issue list has an error at or under the node's path, or in an ancestor `vars` block that sub-tree evaluation would wrap around it. Warnings never disable it. At the root, Evaluate is therefore disabled while any error exists anywhere, as fig-tree would refuse it. A broken node has no Evaluate at all (topic 1). Rejected: leaving it enabled and showing the refusal in the popover, which offers an action that cannot succeed.
+
+**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` where the display needs it (decided with failures and trace display), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop's name is for topic 8 (v1's was `objectData`).
