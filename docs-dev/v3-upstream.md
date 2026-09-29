@@ -10,35 +10,35 @@ _Changes the v3 editor needs in fig-tree-evaluator and json-edit-react, logged a
 - **Open:** whether it is needed at all is still to be decided.
 - **Dropped:** considered and not pursued. The entry stays, with the reason, so it is not raised again without new grounds.
 
-An entry also records whether its issue has been filed, and when the change has shipped.
+An entry also records whether its issue has been filed, and when the change has shipped. The state records how much the editor needs a change, so it stays as it was once the change ships.
 
 ## Summary
 
-| ID  | Package            | Change                                                               | State    | Issue                                                             |
-| --- | ------------------ | -------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- |
-| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) |
-| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                         |
-| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                 | Wanted   | Not filed                                                         |
-| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | Not filed                                                         |
-| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                            | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
-| F6  | fig-tree-evaluator | Export `typesIntersect`                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
-| F7  | fig-tree-evaluator | A description on every parameter                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
-| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                            | Maybe    | Not filed                                                         |
-| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                               | Open     | Not filed                                                         |
-| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         |
-| F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | Not filed                                                         |
-| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                 | Wanted   | Not filed                                                         |
-| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution             | Maybe    | Not filed                                                         |
-| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         |
-| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    |
-| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
-| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    |
-| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Dropped  | Not filed                                                         |
-| J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         |
-| J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         |
-| J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         |
-| J9  | json-edit-react    | Reveal a row from the editor handle                                  | Maybe    | Not filed                                                         |
-| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                 | Open     | Not filed                                                         |
+| ID  | Package            | Change                                                               | State    | Issue                                                             | Shipped         |
+| --- | ------------------ | -------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
+| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
+| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                         | —               |
+| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                 | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                            | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F6  | fig-tree-evaluator | Export `typesIntersect`                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F7  | fig-tree-evaluator | A description on every parameter                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                            | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
+| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                               | Open     | Not filed                                                         | —               |
+| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         | —               |
+| F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                 | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution             | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         | —               |
+| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
+| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
+| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    | —               |
+| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Dropped  | Not filed                                                         | —               |
+| J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         | —               |
+| J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         | —               |
+| J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         | —               |
+| J9  | json-edit-react    | Reveal a row from the editor handle                                  | Maybe    | Not filed                                                         | —               |
+| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                 | Open     | Not filed                                                         | —               |
 
 ---
 
@@ -56,7 +56,7 @@ An entry also records whether its issue has been filed, and when the change has 
 
 **Why.** The editor classifies the whole tree once per update, and must read each object and string exactly as the compiler does. The walk around them, with its position rules, stays in the editor. `positionalLayout` maps a positional payload's elements to parameters, for their type dropdowns. ("Classification" in [v3-design.md](v3-design.md).)
 
-**Without it.** The editor would re-implement the grammar, which is how v1's classification drifted from the evaluator's. There is no acceptable fallback.
+**Shipped** in fig-tree 3.0.0-preview.2 (c7ac479), as asked. `./format` exports the three, the compiler's own functions re-exported unchanged, and `test/format.test.ts` checks that each is the compiler's function and not a copy. Their types export from the root: `ObjectClass`, `ReferenceRecognition`, `ReferenceNamespace`, `PositionalShape` and `PositionalLayout`. The spec is "Reading primitives" in fig-tree's `docs-dev/v3-specs/v3-format.md`. The signatures and result shapes are semver-stable. The text in a result (a malformed object's `message`, an invalid reference's `reason`) is for people and may change.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
 
@@ -95,9 +95,18 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **Extended (topic 4): unknown operator and fragment names.** `unknown-operator` (`'plsu' names no registered operator — did you mean 'plus'?`), `unknown-fragment` and the shorthand's `unrecognized-identifier` warning carry the same kind of suggestion in their message text. With it as a field too, the operator picker opens a broken node with the suggested operator highlighted ("The operator picker" in [v3-design.md](v3-design.md)).
 
-**Without it.** No typo guard, so a seed appears beside the typo, and the unknown key's only quick fix is "Remove". A broken node's picker opens with nothing highlighted.
+**Shipped** in fig-tree 3.0.0-preview.2 (82e9201), as `Issue.suggestion`:
 
-**Issue.** Not filed.
+- It is a drop-in replacement for what was written, set on `unknown-operator`, `unknown-fragment`, `unknown-node-key` (on an operator node or a fragment call) and the shorthand's `unrecognized-identifier` warning. It is absent when no name is close enough.
+- It may be an alias (`'+'`), and on `unrecognized-identifier` it keeps the sigil (`'$greaterThan'`).
+- An operator's `unknown-node-key` names the key as `parameter`, as a fragment call's already did.
+- The `unrecognized-identifier` warning's path ends at the key (`['condition', '$graeterThan']`), not the containing object, so it marks the key's row.
+
+The editor reads the `unrecognized-identifier` suggestion for a third feature: a "Rename to `$greaterThan`" quick fix on the key (Carl, September 2026; "The messages area" in [v3-design.md](v3-design.md)).
+
+**Offered as follow-ups, not taken up:** suggestions on an unrecognised reference namespace (`'$dta.x'`), on `unresolved-var` and on `unresolved-param`, none of which computes one today. Nothing in the design reads them. They would serve a rename quick fix on references, or suggestions while a reference is typed (do later, "Editing references" in [v3-design.md](v3-design.md)).
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 1.
 
 ### F4 · A `literal` entry in `./editor-hints` — **Maybe**
 
@@ -105,9 +114,9 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **Why.** `literal` is absent from `getOperators()` and from the hints, which cover the 40 operator definitions, so the editor has no display data for it. ("Kinds" in [v3-design.md](v3-design.md).)
 
-**Without it.** The editor hard-codes `literal`'s display data, including its seed (`'No content inside a literal node is evaluated'`, "`literal`" in [v3-design.md](v3-design.md)). That works, but keeps one operator's presentation apart from all the others', and its `docUrl` would not move with fig-tree's documentation.
+**Shipped** in fig-tree 3.0.0-preview.2 (d227952). `operatorHints.literal` has the display name `'Literal'`, the shared `docUrl`, a shade of Other's slate (`#d5dae4` on `#272a30`), and the seed `value: 'No content inside a literal node is evaluated'`. The drift test's key set is the package's operators plus `literal`, and `literal`'s starting node is checked to validate and return its seed. `OperatorHints` has no description field and `literal` still has no `getOperators()` entry, so the editor still supplies `literal`'s description and its `value` declaration.
 
-**Issue.** Not filed.
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 4.
 
 ### F5 · `plus` declares `homogeneous` on `values` — **Maybe**
 
@@ -115,7 +124,13 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **Why.** An element of an array parameter admits what its constraints say ("Slots" in [v3-design.md](v3-design.md)), so with the constraint `plus`'s elements admit the four types rather than `any`: the type dropdown narrows, a new element can be seeded to match its siblings, and `validate()` reports a mixed literal payload through the generic constraint check. fig-tree may have reasons not to (its own mixed-type message, the `expect` pin, `runtimeTypeCheck: false` skipping constraints), which the issue lists.
 
-**Without it.** `plus`'s elements admit `any`, as the metadata says.
+**Shipped** in fig-tree 3.0.0-preview.2 (d227952), with the four types. On the concerns the issue raised:
+
+- A failed `homogeneous` check names the first two types that differ (`received string beside number`) or the one type that isn't allowed (`received array of boolean`), for every operator.
+- `expect` doesn't conflict: `{ values: ['a', 'b'], expect: 'number' }` passes the constraint, and the body reports it.
+- With `runtimeTypeCheck: false` the body's own check still runs.
+
+So `validate()` reports `{ $plus: [1, 'a'] }` as `type-check`, and `plus`'s elements admit the four types.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 1.
 
@@ -125,7 +140,7 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **Why.** An operator cannot fit a slot when its declared `returns` and the slot's type share no value, which is exactly `validate()`'s `returns-mismatch` check, so the picker's test must agree with it to the letter, including the `integer`/`number` bridge and literal-union members matching by runtime type ("Slots" in [v3-design.md](v3-design.md)). Exporting the function keeps the rules in one place as the type vocabulary grows. A containment companion may be asked for later, if the operator picker gets a "Suggested" section.
 
-**Without it.** The editor re-implements it (about 40 lines), with a parity test against `validate()`'s `returns-mismatch` over every core operator at every typed parameter.
+**Shipped** in fig-tree 3.0.0-preview.2 (c7ac479), from `./format`. It moved into its own module (`src/typeIntersection.ts`), so exporting it doesn't bring `typeCheck.ts` into `./format`'s shared chunk. So the editor has no local copy and no parity test.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 2.
 
@@ -135,7 +150,7 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **Why.** A parameter's hover card carries its declaration's `description` ("Parameter metadata" in [v3-design.md](v3-design.md)).
 
-**Without it.** Those parameters' hover cards have no description line.
+**Shipped** in fig-tree 3.0.0-preview.2 (d227952). The nine parameters have descriptions, and a drift test in `test/editor-hints.test.ts` requires one on every core and I/O parameter.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 3.
 
@@ -153,7 +168,9 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Without it.** No quick fix: a rename renames nothing, and each broken reference is fixed by hand. The quick fix itself is do-later, to be reconsidered once the built editor can be tried.
 
-**Issue.** Not filed.
+**Status.** The one item of #200 still to do. fig-tree gives it a design pass first (step 5 of its `docs-dev/editor-requests-plan.md`).
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 5.
 
 ### F9 · A fragment-body option on `validate()` — **Open**
 
@@ -195,9 +212,15 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Why.** The fragment picker moves fragments that cannot fit their position to "Not valid here", as the operator picker does for operators ("The fragment picker" in [v3-design.md](v3-design.md)). The editor cannot infer the type itself, because `getFragments()` deliberately omits the body. And the picker blocks only what `validate()` rejects, which today never includes a fragment call: its feeding check runs only where the supplied node is an operator (`supplied.kind === 'operator'` in `src/compile/staticChecks.ts`). So `{ $round: { value: { fragment: 'str' } } }` validates cleanly even where `str`'s body is `{ $upper: 'x' }`.
 
-**Without it.** Every fragment fits every position: the picker offers all of them, a new call starts as the host's default fragment wherever it is, and Fragment is offered in the type dropdown wherever a fragment is registered.
+**Shipped** in fig-tree 3.0.0-preview.2 (9eb8887), with the container check:
 
-**Issue.** Not filed.
+- `getFragments()` reports `returns`, inferred at registration from the body's root. An operator node gives its declared `returns`, never narrowed by its arguments. A fragment call gives the called fragment's `returns`. A constant gives its type as the type table reads it: `number`, never `integer`, and a `Date` is `object`. A container holding something computed gives `array` or `object`, and a reference gives `any`. A root `fallback` and null propagation are ignored.
+- A fragment call feeding a parameter is checked against that type, with the operator's `returns-mismatch` code, so `{ $round: { value: { $shout: {} } } }` fails where `shout`'s body is `{ $upper: … }`. Registration works out every fragment's type before checking any body, so the check also holds inside bodies, whatever the key order.
+- A container holding something computed is checked as a literal container is, with the same `type-check` message, so `{ $round: { value: { a: '$data.x' } } }` no longer validates.
+
+A host can't declare a fragment's `returns`. That would be an additive later change, which the design doesn't pursue for now ("The fragment picker" in [v3-design.md](v3-design.md)).
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 2.
 
 ### F12 · Sample-data warnings at the path of the reading node — **Wanted**
 
@@ -205,9 +228,9 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Why.** Each issue marks the row at its path ("Where issues attach" in [v3-design.md](v3-design.md)), so `'$data.user.nmae' is absent from the supplied sample data` belongs on the row that reads `$data.user.nmae`. At `[]` it lands on the root, far from the typo it reports.
 
-**Without it.** The sample-data warnings appear in the messages area only, naming the path but marking no row.
+**Shipped** in fig-tree 3.0.0-preview.2 (8d7ee44, which also closes fig-tree #179). Each `missing-data-path` warning sits at its reading node, one per reader. A read inside a fragment body is reported at the call, naming the fragment.
 
-**Issue.** Not filed.
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 3.
 
 ### F13 · A `buildString` template seed that needs no substitution — **Maybe**
 
@@ -215,9 +238,9 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Why.** A new node is seeded with its required parameters only ("Adding parameters and starting values" in [v3-design.md](v3-design.md)), and `substitutions` is optional, so a new `buildString` is `{ operator: 'buildString', template: 'Hello {{name}}' }`, which evaluates to the literal `'Hello {{name}}'`. It is the built-in default operator at every string slot ("Defaults and what the pickers offer"), so it is the node authors see most often when they create one at a string position.
 
-**Without it.** A new `buildString` shows an unsubstituted token until the author edits it. It is valid, so nothing else is affected.
+**Shipped** in fig-tree 3.0.0-preview.2 (d227952). The template seed is `'Hello {{$data.name}}'`, and the `substitutions` seed is dropped. Without data it renders `'Hello '`, and under `strictDataPaths` it throws.
 
-**Issue.** Not filed.
+**Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 6.
 
 ---
 

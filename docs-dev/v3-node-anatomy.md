@@ -260,7 +260,7 @@ The `$name` row holds one value rather than a list, so it is **unlabelled**: it 
 
 ## 6. Literal, full
 
-`literal` is grammar rather than an operator, so it has no `getOperators()` entry. The editor supplies its display name, description and colour itself.
+`literal` is grammar rather than an operator, so it has no `getOperators()` entry. Its display name and colours come from its entry in `./editor-hints`, and the editor supplies its description.
 
 ```js
 { template: { operator: 'literal', value: { $plus: [1, 2] } } }
