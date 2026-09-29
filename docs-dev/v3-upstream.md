@@ -16,7 +16,7 @@ An entry also records whether its issue has been filed, and when the change has 
 
 | ID  | Package            | Change                                                               | State    | Issue                                                             |
 | --- | ------------------ | -------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- |
-| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | Not filed                                                         |
+| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) |
 | F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                         |
 | F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                 | Wanted   | Not filed                                                         |
 | F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | Not filed                                                         |
@@ -51,13 +51,13 @@ An entry also records whether its issue has been filed, and when the change has 
 - `recognizeReference(value)` (`src/compile/references.ts`): whether a string is a reference, and in which namespace.
 - `positionalLayout(shape, length)` (`src/compile/grammar.ts`): how a positional payload maps to parameters.
 
-The subpath's value-import lint rule and its exports test would need extending, and the format spec would need a section on them.
+`./format` already imports all three (`src/format/read.ts`), so its value-import lint rule needs no change; the test pinning its exports (`test/format.test.ts`) gains the names, and the format spec a section on them.
 
 **Why.** The editor classifies the whole tree once per update, and must read each object and string exactly as the compiler does. The walk around them, with its position rules, stays in the editor. `positionalLayout` maps a positional payload's elements to parameters, for their type dropdowns. ("Classification" in [v3-design.md](v3-design.md).)
 
 **Without it.** The editor would re-implement the grammar, which is how v1's classification drifted from the evaluator's. There is no acceptable fallback.
 
-**Issue.** Not filed.
+**Issue.** [CarlosNZ/fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
 
 ### F2 · A single-level conversion option — **Dropped**
 

@@ -9,10 +9,10 @@ Editor v3.0.0 targets fig-tree-evaluator v3, a ground-up rewrite with new syntax
 **This is a full rewrite of the components, not a port.** The components and their implementations are built fresh against v3. These parts of v1 carry over:
 
 - **The architecture.** A single JER `<JsonEditor>` over the expression, with FigTree UI supplied as custom node definitions (`customNodeDefinitions` with `condition` predicates).
-- **The patterns, re-derived deliberately rather than copied.** They are sound, and they are also where v1's subtle bugs were found and fixed, so read the v1 code and its comments before re-implementing them:
-  - **Object-anchored custom nodes.** A node is anchored on the operator/fragment object itself, not on its `operator` key. So `value` is the whole node, an edit survives a change of node type, and JER's editing session is reused.
-  - **`buildOnEdit`.** Components never mutate in place. They call `onEdit(newValue, path)`, which reads the latest full tree, assigns the new value, and runs the complete expression through the editor's fill-in step and validation before persisting it.
-  - **Two editors per node.** `editVariants` expands each node definition into a toolbar variant and a default variant, and `displayBarEditPath` chooses between them. This keeps the structured toolbar (opened by the node's own pencil) separate from JER's raw-JSON textarea (opened by the generic edit-tools pencil).
+- **The patterns, re-derived deliberately rather than copied.** They are sound, and they are also where v1's subtle bugs were found and fixed, so read the v1 code and its comments before re-implementing them. Phase 3 kept the first and replaced the other two with json-edit-react's own mechanisms ([v3-design.md](v3-design.md), topic 2):
+  - **Object-anchored custom nodes.** A node is anchored on the operator/fragment object itself, not on its `operator` key. So `value` is the whole node, an edit survives a change of node type, and JER's editing session is reused. Kept, for every node kind (topic 1, "Anchoring").
+  - **`buildOnEdit`.** In v1, components never mutate in place: they call `onEdit(newValue, path)`, which reads the latest full tree, assigns the new value, and persists the complete expression. Replaced by `setValue` at the node's own path, json-edit-react's commit pipeline, with the fill-in step on the `setData` path ("Commit semantics").
+  - **Two editors per node.** In v1, `editVariants` expands each node definition into a toolbar variant and a default variant, and `displayBarEditPath` chooses between them. Replaced by one definition whose component owns both editors, choosing between them in local state ("Two editors per node").
 - **Generic pieces, kept verbatim:** `Select/` (the searchable dropdown), `Icons.tsx`, and most of `styles.css`, so the layout stays familiar.
 
 **v3 provides much of what v1 built by hand.** Use it rather than rebuilding it:
@@ -24,7 +24,7 @@ Editor v3.0.0 targets fig-tree-evaluator v3, a ground-up rewrite with new syntax
 | `DisplayBar` convert buttons                      | `fig-tree-evaluator/format`: `toCanonical`, `toShorthand`, `toGet`, `toReference`. The spec was written with this editor's "To shorthand", "To full node", "To reference" and "To get node" affordances in mind.                                                   |
 | `CustomOperator.tsx` and custom-function handling | Nothing. `defineOperator()` is v3's only extension API, so host operators are ordinary operators with full metadata, and one Operator component serves them all.                                                                                                   |
 | Evaluate-error display                            | Evaluate with `mode: 'report'` and `trace: true`. Failures carry the path of the node responsible, so the editor can highlight it.                                                                                                                                 |
-| —                                                 | New to v3: `getDependencies()` lists the data paths an expression reads.                                                                                                                                                                                           |
+| —                                                 | New to v3: `getDependencies()` lists the data paths an expression reads. The editor builds nothing on it: a host calls it directly (design, topic 7).                                                                                                              |
 
 These v3 specs matter most for the editor. They are in the fig-tree-evaluator repo under `docs-dev/v3-specs/`:
 
@@ -41,7 +41,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 2. **`v1-src/` is reference only.** It is never imported, built or linted, and it is deleted before 3.0.0 ships.
 3. **Upstream fixes are in scope.** The same maintainer owns fig-tree-evaluator and json-edit-react. When the editor needs something from either one (a hint field, a format option, a JER opt-in), prefer a root-cause change upstream over a local workaround. Record each such change in [v3-upstream.md](v3-upstream.md), with its state and, once filed, its issue.
 4. **Test the pure logic as it is written.** Node classification, fill-in and path helpers each get tests alongside the code (see Phase 1).
-5. **Findings from the design phase flow back into this plan.** Phases 4 onwards are provisional until Phase 3 closes.
+5. **Findings from the design phase flow back into this plan.** Phases 4 onwards were revised to match the design at the end of Phase 3, and follow it where they differ.
 
 ---
 
@@ -146,47 +146,58 @@ Questions to work through (a starting list, not exhaustive):
 - **Public API.** The `FigTreeEditor` props, theming and overriding display, and what the package exports (keeping `Select`, for example). Whether to also export a standalone `./style.css`, as JER does for hosts that inject styles themselves (a Shadow DOM, say).
 - **Dependencies on JER.** Anything the design needs that JER doesn't support yet. Each one becomes an upstream change (working rule 3).
 
-## Phase 4 — Operator node (full form)
+Done (September 2026). The design is in [v3-design.md](v3-design.md), topics 1 to 8, with the per-kind breakdown in [v3-node-anatomy.md](v3-node-anatomy.md) and the mockups listed in [artifacts.md](artifacts.md). Phases 4 onwards were revised to match. Two things stay open by design: where the result display sits, settled by trying it in Phase 9, and fragment-definition mode, parked (topic 6). Upstream changes are in [v3-upstream.md](v3-upstream.md); F1, the one marked Required, is filed as [fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
 
-_Provisional; revise after Phase 3._
+## Phase 4 — Foundations and the full operator node
 
-- The Operator custom node, anchored on the object, with its header showing the name, description and doc link from editor-hints, and colours from editor-hints.
-- The operator selector, grouped by category.
-- The two-editor pair: `editVariants`, `displayBarEditPath` and `buildOnEdit`.
+Each phase from here builds what [v3-design.md](v3-design.md) specifies; the design is the reference for the detail, and these steps order the work.
+
+- **4.1 · Dependencies.** Move `json-edit-react` to `peerDependencies` (0.3, as revised), with `check:package`'s consumer installing it as a peer. File F1 in [v3-upstream.md](v3-upstream.md), which is Required: the classification walk reads each object and string through fig-tree's own functions. Until a fig-tree release exports them, work against the local checkout (0.4).
+- **4.2 · The classification walk.** The path-to-kind map, each row's slot and each node's scope chain, in one top-down walk per update (topics 1 and 4). A pure module with its own tests, including the parity test against `inspect()`. `customNodeDefinitions` keeps its identity while the map's content is unchanged.
+- **4.3 · The operator node.** The Operator component, anchored on the object, with the DisplayBar: the Evaluate button showing the name as written (evaluation itself is Phase 9), the display name linked to `docUrl`, the operator's hover card, and hover-only controls (topic 3). Display data in its layers, `operatorHints` and `categoryHints` props included, and the derived colour for host operators without their own (topic 8, "Display overrides"). The broken state (topic 7, "Where issues attach"). The collapsed summary.
+- **4.4 · Two editors and the toolbar.** One definition owning both editors, proved on this node first, with J2 or its fallback (topic 2, "Two editors per node"). The toolbar commits each action with `setValue` and reopens the session; ✗ and Esc commit the snapshot ("Commit semantics"). The handle's `confirm()` and `cancel()` behave as topic 8 describes.
+- **4.5 · The operator picker.** The `Select` changes (topic 4, "Changes to `Select`"), then the picker: category groups, `keywords`, "Not valid here" from the slots (with F6 or its local copy and parity test), the spelling toggle and its hint, and `literal`'s entry.
+- **4.6 · The props that shape every later phase.** `setExpression`'s `autoUpdate` marker, the four prop groups over json-edit-react's props (topic 8, "How the props relate to json-edit-react's"), `editorTheme` and the theme layering ("Theming and CSS"), the standalone `./style.css`, and one module holding every user-visible string ("Wording").
 - Host operators registered with `defineOperator()` work with no special handling.
 
 ## Phase 5 — Parameters
 
-- The add-parameter selector, driven by the operator's parameter metadata.
-- The type filter per parameter, including dropdowns for literal-union enums.
-- The editor's fill-in step: add required parameters from seeds (`OperatorHints.seeds`, then `TypeSeeds`), and fix the key order so the tree renders predictably.
-  - Don't call it "validate" in code or UI (v1's was `validateExpression`). `fig.validate()` is v3's read-only check, which reports issues and never changes the tree, and it already has the name. Pick something like `fillIn` or `completeExpression` when it's built.
-- Restrictions on deleting required parameters and the root.
+- **5.1 · The fill-in step.** Complete, clean and order (topic 2, "The fill-in step"): completion on load written with `autoUpdate`, the rows it filled recorded for Phase 9's markers, cleaning only on structural actions, and key order with `positionalParams` first (topic 4). Not called "validate" (fig-tree's `validate()` already has the name).
+- **5.2 · Starting values.** The starting-value rule, including the rule for a new array element and the defaults never at their effective default (topic 4, "Adding parameters and starting values"), and `defaultOperators` (topic 8).
+- **5.3 · Adding parameters.** The toolbar's "Add parameter" and json-edit-react's ＋ through `newKeyOptions` and `defaultValue`, offering the same list.
+- **5.4 · The type dropdown.** `allowTypeSelection` from each row's slot, with the reference entries and Operator and Fragment where they fit (topic 4, "The type dropdown"). A new node's picker opens on it (topic 2, "Node lifecycle").
+- **5.5 · Guards.** Deleting, adding and renaming, including array constraints (topics 2 and 4). Dragging is disabled until J4 lands.
+- **5.6 · Parameter hover cards,** on every definition at a parameter row and the catch-all (topic 4, "Parameter metadata").
 
 ## Phase 6 — Fragments
 
-- The Fragment custom node: the fragment selector, editing `parameters`, and display hints from `FragmentHints`.
-- Switching node type between operator and fragment.
+- The fragment call, static and dynamic, with `FragmentHints` display (topics 1, 3 and 6), and its broken state.
+- The fragment picker, `defaultFragment`, switching fragment, and the node-type switch between operator, fragment and value (topics 2 and 6).
+- Fragment-definition mode stays parked (topic 6): nothing here depends on it.
 
 ## Phase 7 — Shorthand forms and references
 
-- Rendering nodes in named and positional shorthand, and rendering references.
-- Conversion affordances using `toCanonical`, `toShorthand`, `toGet` and `toReference`, applied to the selected node's subtree.
+- Shorthand nodes, named and positional, with the flattened and unlabelled definitions (topic 1, "Node shapes and their definitions"), the dashed border, and the value on the button's line (topic 3).
+- The conversion button cycling full, named and positional, and "To get node" and back (topic 1, "Conversions").
+- References: the Leaf definitions, one per namespace, with `editorTheme`'s colours, the inline ▶ and `editOnTypeSwitch` (topics 3, 4 and 5).
 
 ## Phase 8 — `vars`, comments and `literal`
 
-- The UI for these, as decided in Phase 3.
+- The vars block through the theme, proving the tint and rule, and a new var opening for editing (topic 5).
+- Comments, single and multi-line, never starting collapsed (topic 5).
+- `literal`, full and shorthand, with its seed (topic 5).
 
-## Phase 9 — Evaluation and diagnostics
+## Phase 9 — Diagnostics and evaluation
 
-- Evaluate the whole expression and individual nodes.
-- Display report-mode failures by highlighting the responsible path, show trace output, and add the dependencies view.
-- Replace Phase 2's plain issue list with the diagnostics UI from Phase 3.
+- **9.1 · Diagnostics.** Issues on rows (tint, flag, the collapsed roll-up), the filled-in marker and its fade, and the messages area in tree order with its quick fixes and `messagesMaxHeight`, replacing Phase 2's plain list (topic 7). `onStatusChange` and the handle's `reveal` (topic 8).
+- **9.2 · Sub-tree evaluation.** The pure module that builds the wrapped expression and maps paths back, with its own tests against fig-tree (topic 7, "Sub-tree evaluation").
+- **9.3 · Evaluating.** Every Evaluate affordance, one evaluation at a time with cancel, disabled while errors block it, the result display (settling its placement by trying it), failures and the fallbacks that fired, and the failed-row marker (topic 7). The evaluation props and callbacks (topic 8, "Evaluation"). The demo's own Evaluate button (2.3) goes.
+- The trace views and a dependencies view are do-later (topic 7).
 
 ## Phase 10 — Release prep
 
 - Delete `v1-src/`.
-- README (including the version-alignment policy), CHANGELOG, and a migration note for v1 consumers.
+- README (including the version-alignment policy, theming with `editorTheme` and `theme`, and wiring `useUndo` with `autoUpdate`), CHANGELOG, and a migration note for v1 consumers: the renamed and removed props (the summary at the end of topic 8 in [v3-design.md](v3-design.md)), `Select`'s groups as labels only, fig-tree no longer re-exported, and json-edit-react as a peer.
 - Rewrite `CLAUDE.md` for the v3 architecture.
 - Cut `v1.x` from `main` for future 1.x patches, then merge `v3.0-dev` into `main`.
 - Restore the demo's `deploy` script (disabled in 0.6), then deploy the demo, replacing the live v2 playground in step with the fig-tree 3.0.0 release.
