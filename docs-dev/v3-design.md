@@ -284,7 +284,7 @@ The editor's step that changes the tree, run over the whole expression after eve
 
 **Marking what was filled in on load — Agreed.** The editor remembers which paths it completed when an expression was loaded, as UI state outside the data, and marks those rows until the user edits or dismisses them, with a line for each in the messages area. The seed value itself is not annotated: most seeds are not strings, and an annotated string would be saved as real data if nobody noticed it.
 
-### Reporting state to the host — **Provisional** (to be revisited in topic 8)
+### Reporting state to the host — **Agreed** in topic 8 ("Telling the host about state"; the handle in "The handle and edit sessions")
 
 The host needs the editor's state, for example to disable its own Save button while the expression is invalid.
 
@@ -314,7 +314,7 @@ The same rule repairs a broken node: picking `plus` for `{ operator: 'plsu', val
 
 **Name or alias — Agreed.** The picker has one entry per operator, titled with editor-hints' display name, which already carries the alias ("Plus (+)"), so there is no separate alias badge. Search matches either spelling. It opens with the current operator selected. There is no separate spelling control:
 
-- **A new operator node** gets the canonical name, or a host preference if one is added (topic 8).
+- **A new operator node** gets the canonical name, or the spelling written in the host's `defaultOperators` (topic 8, "Defaults and what the pickers offer"), which then carries through switches by the rule below.
 - **Switching to another operator keeps the node's current spelling where the new operator allows it:** `+` to `*`, and `+` to `?` for `if`. An operator with no alias gets its canonical name, and the node's spelling is then canonical: `+` to `match` to `multiply` ends as `multiply`.
 - **Selecting the current operator again toggles its spelling** (`plus` to `+` and back). For an operator with no alias it does nothing.
 
@@ -338,13 +338,15 @@ While a session is open, json-edit-react hides the row's edit tools, as in v1. C
 
 ### Commit semantics — **Agreed**
 
-**Toolbar edits are live, and Cancel reverts.** When the toolbar opens, the component takes a snapshot of its node's value. Each change writes through as it is made, so the child rows beneath always show the current state. ✓ and Enter close and keep the changes; ✗ and Esc write the snapshot back and close; opening another node's editor keeps the changes, as json-edit-react does when one edit displaces another. The revert writes the snapshot exactly as it was, without the fill-in step, since the snapshot was already complete. It is one write to a stable path, because the node is anchored on its own object, and nothing else in the tree can change while the toolbar is open, since editing another row opens a new session and closes this one first. It also covers the risk accepted under "Node lifecycle": a switch that drops parameter subtrees can be cancelled while the toolbar is open.
+**Toolbar edits are live, and Cancel reverts.** When the toolbar opens, the component takes a snapshot of its node's value. Each change is committed as it is made, so the child rows beneath always show the current state. ✓ and Enter close the toolbar, keeping the changes, which are already committed; ✗ and Esc commit the snapshot back and close; opening another node's editor keeps the changes, as json-edit-react does when one edit displaces another. The revert is one write to a stable path, because the node is anchored on its own object, and nothing else in the tree can change while the toolbar is open, since editing another row opens a new session and closes this one first. It also covers the risk accepted under "Node lifecycle": a switch that drops parameter subtrees can be cancelled while the toolbar is open.
+
+**Each change is an ordinary json-edit-react commit, as json-edit-react documents for a `showOnEdit` collection with a toolbar** (its README's "Collection nodes" and Playlist example). The component writes its node's new value with `setValue`, which is json-edit-react's commit pipeline: the host's `onUpdate`, then `setData`, where the fill-in step runs, then `setExpression`. Committing closes the node's session, so the component reopens it with `setIsEditing(true)`, and the toolbar stays open until ✓, ✗ or a displacement. The revert on ✗ is one more such commit, of the snapshot. So the toolbar's writes reach the host exactly as any other edit's do, and v1's `buildOnEdit`, which wrote to `setExpression` beside json-edit-react, is replaced by `setValue` at the node's own path (plan, "The patterns").
 
 **Rejected:** live edits with no Cancel, which leaves no way back from an unintended change; and holding the changes until ✓, which would leave json-edit-react rendering the old child rows beneath a switched operator's header until confirmed.
 
-**Undo history.** A host that saves automatically sees the intermediate states, and a host using `@json-edit-react/utils`' `useUndo` records one step per write, including Cancel's revert, so Undo straight after a Cancel brings back the cancelled state. The editor therefore reports its edit sessions' boundaries to the host (with the provisional host API, topic 8), and a host using `useUndo` groups each session into one step, or none when cancelled, with the transactions requested as J3 in [v3-upstream.md](v3-upstream.md). Without J3, history behaves as in v1: one step per toolbar action.
+**Undo history.** A host that saves automatically sees each change as it is committed, and the revert, and a host using `@json-edit-react/utils`' `useUndo` records one step per toolbar action, as in v1, and one for Cancel's revert, so Undo straight after a Cancel brings back the cancelled state. Accepted: the history is consistent, since Cancel is itself an edit. Grouping a whole toolbar use into one step was considered (J3 in [v3-upstream.md](v3-upstream.md), dropped): with each action its own session, json-edit-react cannot see where a toolbar use begins and ends, so it would need the editor to report the toolbar's opening and closing to the host, editor-specific API for a small nicety (topic 8, "The handle and edit sessions").
 
-**Completion on load and undo — Open (topic 8).** Completing an expression on load is one `setExpression` call, so it records the incomplete expression as an undo step. One answer is to export the fill-in step as a pure function, so a host can call `reset(complete(expression))` when it loads one.
+**Completion on load and undo — Agreed** in topic 8 ("The expression and loading"): the editor's write that completes an expression it was given is marked `{ autoUpdate: true }`, so a host using `useUndo` commits it with `replace`, recording no step.
 
 ### Guards — **Agreed**
 
@@ -404,7 +406,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **A positional payload keeps its brackets** (C2): the argument array is unlabelled rather than flattened, keeping its chevron and edit tools, since it is still one value beneath the `$name`. A named payload stays flattened (C1).
 - **One conversion button cycles the forms:** "To shorthand" on a full node (giving the named form), "To positional" on a named shorthand, "To full" on a positional one; a node with no positional form swaps between full and named ("Conversions", topic 1). Going from named back to full takes two clicks, by way of positional.
 - **`literal` keeps its Evaluate button,** for consistency, though it only returns the content.
-- **References:** Evaluate is a small ▶ inline after the text. "To get node" is a json-edit-react custom button on reference rows, appearing on hover with the other edit tools. **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** like the rest of the theme. Whether they belong in an extension of json-edit-react's theme definitions, which today cover only its own elements, is to be investigated (J5 in [v3-upstream.md](v3-upstream.md)).
+- **References:** Evaluate is a small ▶ inline after the text. "To get node" is a json-edit-react custom button on reference rows, appearing on hover with the other edit tools. **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** through the `editorTheme` prop (topic 8, "Theming and CSS").
 - **Plain containers with holes** get the bare Evaluate button **at the root only,** for now.
 - **Comments** render as a note beneath the header, with json-edit-react's edit tools on hover like any row.
 - **Row order:** the node's parameters, then `fallback` and `useCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
@@ -415,7 +417,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 
 As in v1: a collapsed node shows only json-edit-react's header row, with a summary between the brackets in place of the item count (section I of the mockups): `{ Operator: plus }`, `{ Fragment: greet }`, `{ Shorthand: $if }`, `{ Literal }`, `{ 2 vars }`, and the ordinary count for plain containers. A node with an issue colours its summary as an error, and with more than one, adds a count ("3 errors"). A collapsed operator, fragment or shorthand node shows a small inline ▶ after its summary, so it can be evaluated without expanding it; other collapsed rows do not.
 
-### Messages — **Agreed** in topic 7 ("The messages area"), with the host API in topic 8
+### Messages — **Agreed** in topic 7 ("The messages area"), with the host API in topic 8 ("Telling the host about state")
 
 A messages region built into the component, below the tree as in Phase 2's skeleton: one line per `validate()` issue and per value filled in on load, each with its path (which reveals the row) and any quick fix. The same information goes to the host through the provisional `onStatusChange`, and a prop hides the built-in region for a host that renders its own.
 
@@ -460,7 +462,7 @@ type Slot = {
 | `useCache: X`                                                 | modifier: `boolean`, literal only                                                                                             |
 | `vars: { price: X }`                                          | var: `any`. A separate role from `modifier`, since vars are names that make a scope (topic 5)                                 |
 | `as: X`                                                       | parameter, structural: `string`, literal only                                                                                 |
-| the root                                                      | root: `any`. A host prop for an expected result type would fit here (topic 8)                                                 |
+| the root                                                      | root: `any`. A host prop for an expected result type would fit here (topic 8, do later)                                       |
 | `body: { name: X }`, `{ title: X, total: {…} }`               | data: `any`. Plain data inside an evaluated position is evaluated too (deep evaluation), so it can hold a reference or a node |
 
 Rows with no slot: the `operator` and `fragment` rows (grammar), a shorthand's payload row (the argument list or the named payload, not a value delivered anywhere; an argument list's ＋ works out what a new element binds with `positionalLayout` at length + 1), the `vars` block itself (a map of names), quoted content and `//`. So a row has a slot exactly when it is evaluated.
@@ -526,7 +528,7 @@ Options are listed in this order: the admitted types in declared order, the enum
 
 **Operator and Fragment are offered at every slot that is not literal-only,** Fragment only while at least one registered fragment can fit the slot (topic 6). Operator is not hidden where nothing could fit: every operator declares a `returns`, so some operator nearly always can, and ranking is the operator picker's. A host may register only a few fragments, and none of them may fit, so choosing Fragment there would create a call that is an error from the start. `literal` has no entry of its own; it is reached through Operator and the picker, which lists it (topic 1).
 
-**A new node starts as the default operator for its slot's type,** with its required parameters seeded, so the expression is legal from the start and the picker then opens on it (topic 2). "Operator"'s `defaultValue` is a function of the row, so it can do this. The built-in map, merged under a host prop (named in topic 8), maps each type to an operator name, seeded by the starting-value rule, or to a whole starting node:
+**A new node starts as the default operator for its slot's type,** with its required parameters seeded, so the expression is legal from the start and the picker then opens on it (topic 2). "Operator"'s `defaultValue` is a function of the row, so it can do this. The built-in map, merged under the host's `defaultOperators` (topic 8), maps each type to an operator name, seeded by the starting-value rule, or to a whole starting node:
 
 | Slot type           | Default       |
 | ------------------- | ------------- |
@@ -537,7 +539,7 @@ Options are listed in this order: the admitted types in declared order, the enum
 | `array`             | `map`         |
 | `object`            | `buildObject` |
 
-A slot finds its default by its type: an `any` slot the `any` entry; a basic type its own entry, `integer` falling back to `number`; a union its first non-null member with an entry, in declared order; a literal union of strings the `string` entry. If the operator found is not registered, or cannot fit the slot ("Slots"), the `any` entry is used, and if that cannot fit either, the first operator in category order that can. So a host's map can never create a node that is at once an error. A new node gets the canonical name (topic 2). A new fragment call starts as the host's default fragment, as v1's `defaultFragment`, where it is registered and can fit the slot, and otherwise as the first fragment in the picker's order that can (topic 6). The built-in choices are open to change.
+A slot finds its default by its type: an `any` slot the `any` entry; a basic type its own entry, `integer` falling back to `number`; a union its first non-null member with an entry, in declared order; a literal union of strings the `string` entry. If the operator found is not registered, or cannot fit the slot ("Slots"), the `any` entry is used, and if that cannot fit either, the first operator in category order that can. So a host's map can never create a node that is at once an error. A new node gets the canonical name (topic 2). A new fragment call starts as the host's default fragment, as v1's `defaultFragment`, where it is registered and can fit the slot, and otherwise as the first fragment in the picker's order that can (topic 6). The built-in choices are open to change once the editor can be tried.
 
 **The row's current type is always listed,** last, when its slot does not admit it (a string at `round.value`, loaded from outside). Otherwise json-edit-react shows a select whose value is not among its options. The row's error state already says the value is wrong, and keeping it stays possible.
 
@@ -567,7 +569,7 @@ The searchable list opened from a full node's toolbar (A3 and section J in the m
 - **Rejected: alphabetical by display name,** which breaks the canonical sequences (`and`, `or`, `not`, `if`; `plus`, `subtract`, `multiply`, `divide`) and scatters related operators.
 - **Rejected: core operators first, then host operators,** which goes against the first-class principle (topic 1) when the host already controls the order.
 
-**Host operators** have no marking and no group of their own; `category` is required on every definition, so they sit where authors look. Display data is layered, lowest first: the editor's built-ins (only `literal`), `./editor-hints`' `operatorHints`, the definition's `metadata` read as `OperatorHints`, then a host override prop (topic 8). A host operator with no display name shows its canonical name, and one with no colours takes a generic default, chosen in topic 8.
+**Host operators** have no marking and no group of their own; `category` is required on every definition, so they sit where authors look. Display data is layered, lowest first: the editor's built-ins (only `literal`), `./editor-hints`' `operatorHints`, the definition's `metadata` read as `OperatorHints`, then the host's `operatorHints` prop (topic 8, "Display overrides"). A host operator with no display name shows its canonical name, and one with no colours takes a light shade of its category's colour (topic 8).
 
 **Search** matches the display name, which carries the alias ("Plus (+)"), the canonical name, and the category name (typing "math" shows the whole group, as `Select` does with group labels). It does not match descriptions: "number" appears in most math descriptions, so they would bury the entry being looked for. Groups stay while searching, with empty ones hidden. After each keystroke the first match in list order that can be chosen is highlighted, so a symbol or name then Enter picks it; the list order already puts the likely operator first (`>` gives Greater than, `=` gives Equal).
 
@@ -594,7 +596,7 @@ The searchable list opened from a full node's toolbar (A3 and section J in the m
 
 **Do later: other changes to `Select`.** Category colour swatches on group headers, the canonical name as a second label (A3's monospace column), the ranked best match above, and descriptions cut to one line with the full text on hover.
 
-**For topic 8:** a prop to hide operators from the picker without unregistering them, for a host that keeps an operator evaluable but does not offer it to authors.
+**Hiding operators from the picker** without unregistering them, for a host that keeps an operator evaluable but does not offer it to authors: do later (topic 8, "Defaults and what the pickers offer").
 
 ### Adding parameters and starting values — **Agreed**, except where marked
 
@@ -617,7 +619,7 @@ The searchable list opened from a full node's toolbar (A3 and section J in the m
 
 **The starting-value rule.** One function gives the value of everything the editor creates: a parameter added from the picker or ＋, a required parameter fill-in completes, an element added with ＋, a row switched to Value (topic 2), and the parameters of a new node's default operator ("The type dropdown"). For a declared parameter of an operator or fragment, it is `./editor-hints`' rule:
 
-1. **Its seed**, from the layered display data ("The operator picker"): `operatorHints` for core operators, the definition's `metadata` for host operators, `FragmentHints` for fragments, then the host's override prop.
+1. **Its seed**, from the layered display data ("The operator picker"): `operatorHints` for core operators, the definition's `metadata` for host operators, `FragmentHints` for fragments, then the host's `operatorHints` (topic 8).
 2. **Otherwise a value for its declared type:** a literal union's first member; for a union, the type seed of its first non-null member; otherwise the type's `typeSeeds` entry.
 
 The runtime `default` is deliberately not a step, because a parameter is usually added to change it. For the same reason, **a boolean or literal union never starts at its effective default** (`instanceDefault ?? default`): where the rule gives exactly that value, a boolean starts as its negation and a literal union at its first member that is not the default. With the core metadata this changes `regex.mode` (`'test'` to `'extract'`), `http.method` (`'get'` to `'post'`) and `sql.shape` (`'rows'` to `'firstRow'`), and any parameter whose `instanceDefault` equals its starting value. The result is still a legal value, so fig-tree's drift tests hold, and the rule is documented on `OperatorHints.seeds` as the editor's to implement.
@@ -678,7 +680,7 @@ Mocked up as section K of the mockups.
 | Replacement | `replacesNullAt`                                 | on the replacement: "Used in place of a null in `values`"; on its target, the null line adds "unless `nullValueDefault` is set"                                                                                                                                                                                                                                                                 |
 
 - **The null line is omitted where null is nothing special,** a parameter typed `any` whose null is an ordinary value. fig-tree reports `nullPolicy: 'propagate'` on lazy `any` parameters such as `if.then` and `map.each`, but `propagate` is inert on any parameter that is not eager (fig-tree's operator contract), so the card reads their null as a value.
-- **The wording is the editor's, generated from metadata,** so host operators get the same cards. The Evaluated line is shown even where the description says the same (`map.each`: "Evaluated per element, with $element and $index bound"), since it is the one line worded the same across every operator. Whether hosts can replace the wording, for translation as json-edit-react's `translations` allows, is for topic 8.
+- **The wording is the editor's, generated from metadata,** so host operators get the same cards. The Evaluated line is shown even where the description says the same (`map.each`: "Evaluated per element, with $element and $index bound"), since it is the one line worded the same across every operator. Hosts cannot replace it in the first build; translation is designed in topic 8 ("Wording") and done later.
 
 **No persistent marker for required or optional.** The card says it, required parameters already have no ✕ (topic 2's guards), and modifiers already look different (topic 3). Rejected: an asterisk or bold key on required parameters, or muted optional ones, which style every row for a distinction rarely needed while reading.
 
@@ -863,7 +865,7 @@ The searchable list of registered fragments in a full fragment call's toolbar. I
 - Rejected: the host passing the fragment definitions to the editor, for the editor to infer result types itself. It duplicates fig-tree's work, needs a prop that exists only to get round `getFragments()` omitting the body, and still disagrees with `validate()` unless fig-tree extends its check anyway.
 - Not pursued for now: a `returns` declared on the fragment definition, which fig-tree's spec lists as maybe-later. It would give accurate types where a body returns `any`, but every author would have to write and maintain it. It could narrow an inferred `any` later.
 
-**Where it opens.** On a new fragment call, with its starting fragment selected and the search field focused. The starting fragment is the host's default (v1's `defaultNewFragment`, named in topic 8) where it is registered and can fit the slot, and otherwise the first fragment in list order that can. On a broken call (`fragment: 'alpah'`), with no current entry, and with `validate()`'s suggested name highlighted once F3 makes it machine-readable. The suggestion is in the message text today ("'alpah' names no registered fragment — did you mean 'alpha'?").
+**Where it opens.** On a new fragment call, with its starting fragment selected and the search field focused. The starting fragment is the host's default (`defaultFragment`, topic 8; v1's `defaultNewFragment`) where it is registered and can fit the slot, and otherwise the first fragment in list order that can. On a broken call (`fragment: 'alpah'`), with no current entry, and with `validate()`'s suggested name highlighted once F3 makes it machine-readable. The suggestion is in the message text today ("'alpah' names no registered fragment — did you mean 'alpha'?").
 
 **Re-selecting the current fragment closes the menu,** with nothing changed. Fragments have no aliases, so there is no spelling to toggle and no hint on the current entry.
 
@@ -871,7 +873,7 @@ The searchable list of registered fragments in a full fragment call's toolbar. I
 
 - Registration warnings (`getFragments()`' `warnings`) are not shown on entries. They are for the body's author, and the author of a call cannot act on them.
 - With no fragment registered, or none that can fit, Fragment is not offered in the type dropdown ("The type dropdown", topic 4) or in the node-type switch. A broken call on an instance with no fragments shows "No fragments registered" in the picker, and the node-type switch still offers Operator and Value.
-- Hiding registered fragments from the picker is for topic 8, with the same question for operators.
+- Hiding registered fragments from the picker: do later, with operators (topic 8).
 - In fragment-definition mode (parked, above), the fragment being defined and any fragment whose use would close a cycle would be left out or disabled, using `getFragments()`' transitive `dependencies.fragments`.
 
 ### Switching fragment — **Agreed**
@@ -926,7 +928,7 @@ Rejected: one treatment for all three in different colours, which tints every ne
 
 The region below the tree that topic 3 proposed, as a sibling of the `JsonEditor` (Phase 2).
 
-**It shows only when it has lines,** under a header of counts ("2 errors · 1 warning · 1 hint · 1 added") that collapses it, with a maximum height beyond which it scrolls, since a pasted expression can bring dozens of issues. The maximum height is a host prop (named in topic 8). A host prop hides the region entirely (topic 3). Rejected: always shown, reading "No issues" when clean, which takes permanent space on every host; and collapsed by default, which leaves a new error signalled only by a changing count.
+**It shows only when it has lines,** under a header of counts ("2 errors · 1 warning · 1 hint · 1 added") that collapses it, with a maximum height beyond which it scrolls, since a pasted expression can bring dozens of issues. The maximum height is a host prop, `messagesMaxHeight`, which also hides the region entirely when `0` (topic 8). Rejected: always shown, reading "No issues" when clean, which takes permanent space on every host; and collapsed by default, which leaves a new error signalled only by a changing count.
 
 **What it holds:** every `validate()` issue, hints included, since this is the only place hints appear ("Where issues attach"); the sample-data warnings, which appear only here until F12; and one line per value filled in on load (topic 2). Evaluation failures are decided with evaluation.
 
@@ -949,13 +951,13 @@ Do later: the same fixes in the row's hover card ("Where issues attach"), which 
 
 **The filled-in marker fades — Agreed.** The amber marker on a row filled in on load fades after about three seconds, needing no edit, and its line stays until dismissed, so the record is not lost if the marker is missed (topic 3's proposal). Rejected: keeping the marker until the line is dismissed, which leaves every row filled in on a large load amber indefinitely. The fade applies only to that marker: issues from `validate()`, warnings included, stay on their rows and in the list for as long as `validate()` reports them, whether they were present on load or caused by an edit.
 
-**For topic 8:** what the host receives for its own rendering. It can call `validate()` itself, but not get what the editor adds: the filled-in lines, each line's resolved row, tree order, and fixes that apply to the expression.
+**What the host receives for its own rendering** is `onStatusChange`'s `messages` (topic 8): what `validate()` alone does not give, the filled-in lines, each line's resolved row, tree order, and fixes that apply to the expression.
 
 ### Evaluating — **Agreed**, except where marked
 
 What an Evaluate affordance does: the node's button, a reference's ▶, a collapsed node's ▶, and the root container's bar (topic 3). How a sub-tree is turned into an expression is "Sub-tree evaluation" (below); failures are "Showing failures".
 
-**The editor shows the result, and also passes it to the host.** A built-in popover shows each result by default; a callback is always called with it, as v1's `onEvaluate` was; and a host prop turns the popover off for a host that shows results itself. This is the messages area's pattern (built in, with the same information to the host), and the extra machinery is one callback and one boolean. The callback's shape and the prop's name are for topic 8. Rejected: the host only, as in v1, which makes every host build a display before Evaluate appears to do anything; and the popover only, which leaves v1 hosts with nothing to wire.
+**The editor shows the result, and also passes it to the host.** A built-in popover shows each result by default; a callback is always called with it, as v1's `onEvaluate` was; and a host prop turns the popover off for a host that shows results itself. This is the messages area's pattern (built in, with the same information to the host), and the extra machinery is one callback and one boolean. The callback and the prop are `onEvaluate` and `showEvaluationResult` (topic 8, "Evaluation"). Rejected: the host only, as in v1, which makes every host build a display before Evaluate appears to do anything; and the popover only, which leaves v1 hosts with nothing to wire.
 
 **What the result display shows — Agreed.** The value printed by type, and sized by it:
 
@@ -983,7 +985,7 @@ A host prop could choose between placements, but each is its own component, so o
 
 **A node that cannot be evaluated has its Evaluate disabled,** with the reason on hover ("Fix the 2 errors in this node to evaluate it"). fig-tree refuses an evaluation whose expression has a static error, so the editor disables the affordance where the issue list has an error at or under the node's path, or in an ancestor `vars` block that sub-tree evaluation would wrap around it. Warnings never disable it. At the root, Evaluate is therefore disabled while any error exists anywhere, as fig-tree would refuse it. A broken node has no Evaluate at all (topic 1). Rejected: leaving it enabled and showing the refusal in the popover, which offers an action that cannot succeed.
 
-**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` (always on, "Showing failures"), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop's name is for topic 8 (v1's was `objectData`).
+**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` (always on, "Showing failures"), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop is `evaluationData` (topic 8; v1's was `objectData`).
 
 ### Sub-tree evaluation — **Agreed**
 
@@ -1065,14 +1067,14 @@ which, with `{ orders: [{ total: 100 }, { total: 20 }] }`, evaluates to `{ value
 
 **A standalone function.** Building the expression is a distinct, self-contained operation, and its logic is intricate, so it is one pure function in a module of its own, with no React and nothing from the components mixed in (Carl). It takes the tree, the row's path and the scope chain the walk recorded for it, and returns the expression with the two ways back: reading the row's result out of the wrappers, and translating a path in the synthesised expression to the tree's. It is tested on its own, as the classification walk is (plan, working rule 4), including evaluation against fig-tree for each kind of scope.
 
-**Evaluation mode — Agreed: report by default, with a host prop for throw** (named in topic 8). The two fig-tree options are independent. `mode` decides what happens to a failure no `fallback` caught: `'throw'` rejects with the first and discards the rest, while `'report'` never rejects, degrades the failed hole to `null`, completes everything else and returns `{ result, errors }` with every failure. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, errors, trace }` in either mode, and in throw mode a failure's thrown error carries the partial trace as `error.trace` (checked against 3.0.0-preview.1).
+**Evaluation mode — Agreed: report by default, with a host prop for throw** (`evaluationMode`, topic 8). The two fig-tree options are independent. `mode` decides what happens to a failure no `fallback` caught: `'throw'` rejects with the first and discards the rest, while `'report'` never rejects, degrades the failed hole to `null`, completes everything else and returns `{ result, errors }` with every failure. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, errors, trace }` in either mode, and in throw mode a failure's thrown error carries the partial trace as `error.trace` (checked against 3.0.0-preview.1).
 
 - **Report is the default:** it gives the partial results and full failure list of "Showing failures", and it is the combination fig-tree's spec intends for editors.
 - **Throw, through the prop,** makes the result display behave as a host's production evaluation does, for a host that evaluates in throw mode: one failure fails the whole row. The display then shows "Failed" with the one error, with no partial value and no failures list; the failed-row marker and the fallbacks used still work, from `error.trace`.
 - **`trace` is on in both modes.**
 - Rejected: following the host instance's own `mode` by default (`getOptions().mode`, `undefined` meaning throw unless the host set it). It matches production with no prop set, but most hosts set nothing, so most would get the poorer display without choosing it.
 
-**The callback — a sketch for topic 8.** The host's callback receives each evaluation as data. It returns nothing, and the editor never lets fig-tree's rejection escape to the host: in throw mode it catches the thrown error and passes it on, so the host never wraps the editor in a `try`.
+**The callback — sketched here, settled in topic 8 ("Evaluation").** The host's callback receives each evaluation as data. It returns nothing, and the editor never lets fig-tree's rejection escape to the host: in throw mode it catches the thrown error and passes it on, so the host never wraps the editor in a `try`.
 
 ```ts
 onEvaluate(evaluation: {
@@ -1089,7 +1091,7 @@ onEvaluate(evaluation: {
 })
 ```
 
-Every path it carries is in the tree's coordinates, the errors' included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Also for topic 8: v1's `onEvaluateStart`, for a host showing its own spinner, and whether a cancelled evaluation is reported (with a `cancelled` status) or not at all.
+Every path it carries is in the tree's coordinates, the errors' included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Topic 8 adds `onEvaluateStart` and a `cancelled` status.
 
 ### Showing failures — **Agreed**
 
@@ -1134,3 +1136,355 @@ Rejected: a few text lines in the result display for the first build ("Requests:
 
 - Do later: a "Reads" list beside the messages area ("Reads: `user.name`, `orders[*].total`, and reads that cannot be listed"; "Uses: `http` · fragments: `getCapital`"). Its paths could not link to the rows that read them, since `getDependencies()` gives paths but not where they are read, the same gap as the sample-data warnings; reading-node paths like F12's would close it.
 - Rejected: each node's reads in its operator hover card, for its sub-tree, which costs a `getDependencies()` call per hovered node on the synthesised sub-tree expression.
+
+---
+
+## 8. Public API
+
+The `FigTreeEditor` props, the callbacks and handle, theming, and what the package exports. Earlier topics deferred items here; they are worked through in this order, each building on the ones before:
+
+1. **How the props relate to json-edit-react's** (A1).
+2. **The expression and loading:** `expression` and `setExpression`, and completion on load and undo (topic 2, "Commit semantics").
+3. **Telling the host about state:** `onStatusChange` (topic 2, "Reporting state to the host"), what a host drawing its own messages receives (topic 7), and the messages area's hide and maximum-height props.
+4. **The handle and edit sessions:** the imperative handle, and whether the host needs edit-session boundaries for `useUndo` (topic 2, "Undo history"; J3).
+5. **Evaluation:** the sample-data prop (v1's `objectData`), the `onEvaluate` callback with v1's `onEvaluateStart` and cancelled evaluations, turning off the built-in result display, and the evaluation-mode prop (topic 7). The result display's placement stays open until it can be tried (topic 7), and is not decided here.
+6. **Defaults and what the pickers offer:** the default operator for each slot type (topic 4), the default fragment (topic 6), a preference for aliases on new operators (topic 2), hiding operators and fragments from the pickers (topics 4 and 6), an expected result type at the root (topic 4, "Slots"), v1's `addTopLevelFallback`, and the reserved name `isFragmentDefinition` (topic 6, parked).
+7. **Display overrides:** the host's display-data layer (topic 4, "The operator picker"; v1's `operatorDisplay`), and the default colour for host operators that have none.
+8. **Theming and CSS:** the editor's own tokens (topic 3; J5 in [v3-upstream.md](v3-upstream.md)), how they combine with json-edit-react's `theme`, and a standalone `./style.css` (plan, Phase 3).
+9. **Wording:** whether a host can replace the editor's text (topic 4, "Parameter metadata").
+10. **Package exports.**
+
+### How the props relate to json-edit-react's — **Agreed**
+
+**`FigTreeEditorProps` extends json-edit-react's props,** as in v1 and the Phase 2 skeleton, so every json-edit-react prop the editor does not need for itself is available to the host unchanged, new ones included as json-edit-react gains them. The cost, accepted: json-edit-react's prop names are part of the editor's public API, so a json-edit-react major that renames a prop is an editor break. The editor controls which json-edit-react it depends on, so it adopts such a bump deliberately: at a fig-tree major (the version policy), or keeping the old name as an alias until then.
+
+Every json-edit-react prop falls into one of four groups:
+
+| Group              | Props                                                                                                                                                                                    | Rule                                                                                                                                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Replaced**       | `data`, `setData`, `allowTypeSelection`, `newKeyOptions`, `defaultValue`; `customNodeDefinitions` until host definitions are built (below)                                               | Left out of the props type, so passing one is a type error. v1 silently ignored a host's `customNodeDefinitions`, `customText` and `theme`.                                                                                     |
+| **Combined**       | `allowEdit`, `allowDelete`, `allowAdd`, `allowDrag`, `collapse`, `editorRef`, `onEditEvent`, `className`, `theme`, `customText`, `customButtons`                                         | The host's applies, and the editor's is added: the guards only add restrictions (topic 2), handlers are both called, and `customText` uses the host's entry where the editor's returns `null`. `theme` is settled with theming. |
+| **Editor default** | `showArrayIndexes: false`, `indent`, the `collapse` depth, `stringTruncateLength`                                                                                                        | The editor sets them, as v1 did, and the host can override them. An override changes only how the tree looks.                                                                                                                   |
+| **Passed through** | everything else: `onUpdate` (below), `rootName`, search, `translations`, `keyboardControls`, `jsonParse`, `jsonStringify`, `TextEditor`, `Select`, `onCopy`, the width and font props, … | Unchanged.                                                                                                                                                                                                                      |
+
+**The editor's own props never reuse a json-edit-react name for another meaning.** Where the editor needs a json-edit-react name (`customNodeDefinitions`, `translations`), its meaning is json-edit-react's, extended.
+
+- Rejected: a curated subset of json-edit-react's props, which would free the editor's API from json-edit-react's but make every json-edit-react feature a host wants an addition to the editor, and break every v1 host.
+- Rejected: json-edit-react's props in a separate `jsonEditorProps` object, which removes the possibility of a name clash that careful naming already avoids, at the cost of a clumsier and v1-breaking API.
+
+**Host custom node definitions — Agreed, do later.** A host may want its own definitions for plain data in the tree, such as `@json-edit-react/components`' `booleanToggleDefinition()` on `useCache` or `caseInsensitive`, or a hyperlink or Markdown display inside a `literal`. The host's `customNodeDefinitions` would be combined with the editor's, in this order:
+
+1. **The editor's own definitions,** so a host definition can never take a node, a payload row, a reference or a comment.
+2. **The host's, each condition wrapped to match plain rows only:** rows with no kind of the editor's own (topic 1's map), which means plain values, in evaluated positions or quoted, and plain collections that contain no node or reference. A host collection definition on a container with holes would otherwise hide the nodes inside it.
+3. **The editor's catch-all,** which carries only the parameter hover card (topic 4, "Parameter metadata").
+
+To settle when it is built:
+
+- A host definition matched at a row with a slot gets the editor's hover-card `keyComponent` where it has no key component of its own, since a row takes only its first matching definition's.
+- A host definition's type-selector entry (`name` with `showInTypeSelector`) is not offered at first, since the editor's `allowTypeSelection` builds each row's options from its slot. Offering it at slots whose type fits could follow.
+- The editor memoises the combined array on the host's, so the host passes a stable array, as json-edit-react already asks: a new array re-renders every row (topic 1, finding 6).
+
+Adding the prop later is an addition, not a break, so the first build leaves it out of the props type. Do later: the editor using `@json-edit-react/components`' definitions itself, such as a boolean toggle on boolean parameters, which would add a dependency.
+
+### The expression and loading — **Agreed**
+
+**The expression is controlled:** `expression: unknown` and `setExpression`, as in the Phase 2 skeleton. Every change reaches `setExpression` whatever its route (json-edit-react's edits, the toolbar, conversions, quick fixes, Cancel's revert), complete, and invalid ones included (topic 2). `setExpression` is where a host saves.
+
+```ts
+setExpression: (expression: unknown, options?: { autoUpdate?: boolean }) => void
+```
+
+**Writes the author did not make are marked `{ autoUpdate: true }`.** An authored edit, the usual case, passes no second argument. The editor writes without an authored action only to apply the fill-in step to an expression it was given: one that arrives from outside (any `expression` value other than the last one the editor wrote, so undo and redo included), or whose completion changes because the registry did. The editor renders what it writes: json-edit-react's principle that the tree shows the data as it is holds, so the completed, ordered expression is written, not only displayed. An expression that arrives already complete and in order produces no write, so the editor never re-emits on re-render, expand or undo, as v1 did.
+
+The marker exists for hosts that keep history or track unsaved changes. With `useUndo`:
+
+```tsx
+setExpression={(expression, options) => (options?.autoUpdate ? replace(expression) : set(expression))}
+```
+
+and a host with a dirty flag sets it only when `autoUpdate` is absent. A plain `useState` setter ignores the argument.
+
+Why it is needed, with `useUndo`'s `set` passed straight in: the host calls `reset(E0)` with an incomplete expression; the editor completes it to E1 through `set`, recording E0 as a step; after an edit and two undos, E0 arrives again, the editor completes it again through `set`, which records a step and clears redo. So Undo appears to do nothing, loses the edit, and stays enabled. Conforma meets the same problem with v1, which re-emits key-reordered expressions, and works around it in every screen that uses the editor with undo (`useInitialiseMultipleExpressions`): a 500 ms initialisation phase that collects the first writes and applies them with one `reset`, then comparing every write, ignoring identical ones and sending reordered ones to `replace`. With the marker, that machinery goes.
+
+- Rejected: a separate `replaceExpression` prop for unrecorded writes, a second setter that means nothing to a host without history.
+- Rejected: always passing a `{ cause }` argument, when the authored edit is the usual case and needs nothing.
+- Rejected: exporting the fill-in step for the host to run before `reset`. The editor would then have nothing to mark as filled in on load, and it would not cover an expression arriving again through undo. Exporting it for other uses (normalising stored expressions) is for "Package exports".
+- Rejected: the editor never writing on its own, ordering keys for display only and completing only on structural actions. It breaks json-edit-react's principle that the editor shows the data as it is.
+
+**The host's `onUpdate` is json-edit-react's, passed through untouched.** It is json-edit-react's check on its own edits (edit, add, delete, rename, move), with which a host can reject an edit with a message on the row or confirm it asynchronously. The editor needs nothing from it: the fill-in step runs on the `setData` path. It sees every edit made in the tree, the toolbar's included, since the editor's components commit through `setValue` (topic 2, "Commit semantics"), and it does not see the editor's other writes: quick fixes from the messages area and `autoUpdate` writes. The docs say so, and that saving belongs in `setExpression`, which receives everything; the demo, which saves in `onUpdate`, moves its save there. If the "Update references" quick fix (topic 5, do later) reads the tree from before a rename through `onUpdate`'s `rename` event, `onUpdate` moves to Combined then, with no change for hosts.
+
+### Telling the host about state — **Agreed**
+
+Two kinds of host need the editor's state: one gating its own actions (a Save button disabled while there are errors or an edit is open), and one drawing its own messages in place of the built-in area. The second can call `validate()`, but not get what the editor adds (topic 7): the filled-in lines, the row each line marks, tree order, and the quick fixes. One callback serves both.
+
+```ts
+onStatusChange?: (status: EditorStatus) => void
+messagesMaxHeight?: number | string
+
+type EditorStatus = {
+  valid: boolean // no errors; warnings and hints do not count
+  counts: { errors: number; warnings: number; hints: number; filledIn: number }
+  editing: boolean // an edit session is open: a value, raw JSON or the toolbar
+  messages: EditorMessage[] // what the messages area lists, in its order
+}
+
+type EditorMessage = {
+  kind: 'issue' | 'filledIn'
+  row: Path // the row the line marks, resolved as the messages area resolves it
+  issue?: Issue // fig-tree's own, unchanged, on 'issue' lines
+  fixes: { label: string; apply: () => void }[] // Remove, Rename to `then`, Dismiss, …
+}
+```
+
+- **It is called when the status changes,** compared by content (counts, `editing`, a line added, removed or changed), not on every render.
+- **`editing` covers every session, the toolbar's included.** Toolbar changes are committed as they are made, but Cancel can still revert them, so a host saving mid-session would save an intermediate state. The toolbar's reopening after each commit happens in the same event handler, so `editing` does not flicker. Closing a session before saving is the handle's ("The handle and edit sessions").
+- **Each fix carries an `apply` function,** running the same code as the built-in button, so a host needs no logic of its own to offer it. The status is therefore not serialisable, which a callback does not need.
+- **Revealing a row** from a host's own line is a method on the handle, not a field on each message.
+- **`messagesMaxHeight`** sets the built-in area's maximum height, beyond which it scrolls, and **the number `0` hides the area entirely,** its header of counts included, for a host that renders its own. Only the number counts: a CSS string (`'0px'`, a `calc()`) is used as a height, since the editor cannot reliably tell whether one comes to zero. The default is settled when built. The name follows json-edit-react's `minWidth` and `maxWidth`.
+
+- Rejected: a separate `showMessages` boolean, one prop more for what `0` already says.
+- Rejected: separate callbacks (`onValidityChange`, `onEditingChange`, `onMessagesChange`), which a Save button needing two of them would have to combine.
+- Rejected: a render prop for the messages area (`renderMessages`), a second mechanism beside the callback a Save button needs anyway.
+- Rejected: `validate()`'s raw issues only, topic 2's first sketch, which leaves out the filled-in lines, resolved rows and fixes.
+
+### The handle and edit sessions — **Agreed**
+
+**The handle is json-edit-react's, extended,** since `editorRef` is json-edit-react's prop (Combined, "How the props relate to json-edit-react's"), merged with the editor's own ref (topic 5 uses `startEdit` on a new var):
+
+```ts
+editorRef?: React.Ref<FigTreeEditorHandle>
+
+interface FigTreeEditorHandle extends JsonEditorHandle {
+  // json-edit-react's collapse, startEdit, confirm and cancel, and:
+  reveal: (path: Path) => true | 'PATH_NOT_FOUND'
+}
+```
+
+- **`reveal(path)`** does what clicking a path in the messages area does (topic 7): expands the row's collapsed ancestors and scrolls to the nearest element the editor draws. It serves a host that draws its own messages, and returns what `startEdit` returns for a path that is gone.
+- **`confirm()` and `cancel()` keep json-edit-react's meaning on a toolbar session.** `confirm()` clicks the session's registered confirm control (`editConfirmRef`, which custom components receive), which on the toolbar is ✓, so it closes it. `cancel()` ends the session, and on the toolbar keeps its changes: they are already committed, and what is committed stays committed. Only the toolbar's own ✗ and Esc revert. Either way nothing is left uncommitted, which is what a host calling them before saving needs.
+- Do later: `evaluate(path?)` on the handle, for a host's own Evaluate button (the demo's).
+
+**Edit sessions need nothing from the editor.** Each toolbar action is its own json-edit-react session, committed and reopened ("Commit semantics", topic 2), so a host's `onEditEvent` sees it as json-edit-react reports any edit, and a host with undo records one step per action.
+
+- Rejected: an `onEditSession` callback reporting when the toolbar opens and closes, so a host could group a whole toolbar use into one undo step (J3 in [v3-upstream.md](v3-upstream.md), dropped). It is editor-specific API for a small nicety.
+- Rejected: `useUndo` grouping each session from the `onEditEvent` it already takes. Under json-edit-react's documented toolbar pattern every action is its own session, so it would group nothing.
+
+### Evaluation — **Agreed**
+
+The props for topic 7's evaluation design:
+
+```ts
+evaluationData?: unknown // what `$data` is in the editor's evaluations and validate()'s sample-data check
+evaluationMode?: 'report' | 'throw' // default 'report'
+showEvaluationResult?: boolean // default true; false turns off the built-in result display
+onEvaluateStart?: (start: { path: Path }) => void
+onEvaluate?: (evaluation: Evaluation) => void
+
+type Evaluation = {
+  path: Path // the row evaluated, in the tree
+  mode: 'report' | 'throw'
+  status: 'done' | 'failed' | 'cancelled'
+  result?: unknown // on 'done'; in report mode it may hold nulls where holes failed
+  failures: EvaluationFailure[] // report: every uncaught failure; throw: the one thrown; [] when clean or cancelled
+  fallbacks: { path: Path; error: FigTreeError }[] // the fallbacks that fired
+  trace?: TraceNode // fig-tree's own; absent when cancelled
+  toTreePath: (path: Path) => Path // maps a path in `trace` into the tree
+}
+
+type EvaluationFailure = {
+  message: string
+  path: Path // the failed row, in the tree
+  holePath?: Path
+  fragment?: string // for a failure inside a fragment body
+  fragmentPath?: Path
+  error: FigTreeError // fig-tree's original, in the synthesised expression's coordinates
+}
+```
+
+- **`evaluationData`,** given, is passed per call to `evaluate()` and `validate()`; absent, the instance's own `data` applies to both (topic 7, "What an evaluation uses"). It cannot be `data`, which is json-edit-react's ("How the props relate to json-edit-react's"). Rejected: v1's `objectData`, fig-tree v2's wording; and `sampleData`, topic 7's wording, which misdescribes a host such as Conforma that passes the application's real context.
+- **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure in throw mode, or in report mode a failure at the row itself (the result display's "Failed", topic 7). A partial result in report mode is `'done'` with its failures listed.
+- **One `failures` list in both modes,** in place of the sketch's separate `error` and `errors`.
+- **Every path is in the tree's coordinates except the trace's.** Translating a whole trace for a host that rarely reads it is wasted work, so the host gets `toTreePath`, built from the mapping sub-tree evaluation already records (topic 7). At a row with no enclosing scope it is the identity.
+- **Every `onEvaluateStart` is followed by exactly one `onEvaluate`,** with `'done'`, `'failed'` or `'cancelled'`. A cancel is clicking the running affordance again, or starting another evaluation, in which case the host sees the running one's `'cancelled'` before the new one's start. So a host drawing its own results (`showEvaluationResult: false`) can clear a stale one and show that one is running, as the built-in display does, and a spinner it shows is always stopped. Nothing in the v1 demo or Conforma uses v1's `onEvaluateStart`, but v1 had no built-in display, so no host yet drew results itself in the way topic 7 allows. v1's `onEvaluateError` is covered by `status: 'failed'`.
+- **`onEvaluate` returns nothing** and the editor never lets fig-tree's rejection escape to the host (topic 7).
+- **`evaluationMode`** is named after fig-tree's `mode` option, qualified because `mode` alone says little among the props. **`showEvaluationResult`** follows json-edit-react's `show…` props.
+- Rejected: dropping `onEvaluateStart` and not reporting cancelled evaluations. It leaves a host's own result display unable to follow the built-in one.
+
+### Defaults and what the pickers offer — **Agreed**
+
+```ts
+defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>
+defaultFragment?: string
+
+type SlotType = 'any' | 'number' | 'string' | 'boolean' | 'array' | 'object'
+type OperatorDefault = string | object // an operator name, or a whole starting node
+```
+
+**`defaultOperators`** sets the operator a new node starts as, by its slot's type (topic 4, "The type dropdown"). A map is merged over the built-in one; **a single value applies to every type**, as v1's one default did. It is plain data, so a host can keep it in a stored preference, as Conforma keeps its defaults. A name is used as written, and a whole node as given; either way the node is then completed by the fill-in step, and whether it fits is judged by its operator. A default that is not registered or cannot fit its slot falls back as topic 4 sets out (the `any` entry, then the first operator in category order that fits), so a host's defaults never create a node that is an error from the start. The built-in defaults, and the prop's shape, may be revised once the editor can be tried (Carl).
+
+With the built-in map and fig-tree 3.0.0-preview.1's seeds, choosing Operator in the type dropdown gives:
+
+| Row                         | Slot admits       | Type used                 | New node                                                                |
+| --------------------------- | ----------------- | ------------------------- | ----------------------------------------------------------------------- |
+| `if.condition`              | `any`             | `any`                     | `{ operator: 'plus', values: [1, 2, 3] }`                               |
+| `round.value`               | `number`, `null`  | `number`                  | `{ operator: 'plus', values: [1, 2, 3] }`                               |
+| `round.decimals`            | `integer`         | `number`, by fallback     | `{ operator: 'plus', values: [1, 2, 3] }`                               |
+| `upper.value`               | `string`, `null`  | `string`                  | `{ operator: 'buildString', template: 'Hello {{name}}' }`               |
+| `buildString.trim`          | `boolean`         | `boolean`                 | `{ operator: 'equal', values: ['These are equal', 'These are equal'] }` |
+| `map.input`                 | `array`           | `array`                   | `{ operator: 'map', input: [1, 2, 3], each: '$element' }`               |
+| `buildString.substitutions` | `array`, `object` | `array`, the first member | the same `map` node                                                     |
+
+One value for every type, as Conforma's setting would be in v3:
+
+```tsx
+<FigTreeEditor defaultOperators={{ operator: 'get', path: 'path.to.value', fallback: null }} />
+```
+
+gives that node at every row above, since `get` returns `any`. Switching it to `round` keeps `fallback: null` and drops `path` (topic 2), giving `{ operator: 'round', value: 3.14159, fallback: null }`.
+
+A partial map:
+
+```tsx
+<FigTreeEditor
+  defaultOperators={{
+    number: '+',
+    string: { operator: 'upper', value: '$data.name' },
+    array: 'round',
+  }}
+/>
+```
+
+gives `{ operator: '+', values: [1, 2, 3] }` at `round.value` and `round.decimals` (the name as written; picking `multiply` next gives `*`), `{ operator: 'upper', value: '$data.name' }` at `upper.value`, and at `map.input` the built-in `any` entry, `plus`, since `round` returns a number and cannot fit an array slot. `if.condition` and `buildString.trim` keep the built-ins.
+
+**The built-in `string` default reads poorly:** `buildString`'s required `template` is seeded as `'Hello {{name}}'`, and its optional `substitutions` is not seeded on a new node, so it evaluates to the literal `'Hello {{name}}'`. It is valid, so it stays, and fig-tree is asked for a template seed that needs no substitution (F13 in [v3-upstream.md](v3-upstream.md)). Rejected: seeding a new node's optional parameters wherever the operator's seeds cover them, which fixes this case but adds `else`, `from`, `default` and `as` to new `if`, `get` and `map` nodes.
+
+**Preferring aliases needs no prop of its own.** A host writing `'+'` in `defaultOperators` gets `+`, and topic 2's switching rule keeps the alias where the next operator has one. Rejected: a separate spelling-preference prop.
+
+**v1's `addTopLevelFallback` is dropped.** Its one known use, Conforma's `null`, is served by a default node carrying `fallback: null`, which topic 2's switching rule keeps through every operator switch. The difference, for the migration note: a root written as raw JSON does not gain the fallback. Rejected: a rule adding a fallback to any root without one, which would change the tree on content edits.
+
+**`defaultFragment`** names the fragment a new call starts as (v1's `defaultNewFragment`), where it is registered and can fit the slot, otherwise the first fragment in the picker's order that can (topic 6). Its arguments are seeded as usual. v1's `defaultNewCustomOperator` goes, since host operators are ordinary operators.
+
+**Do later:**
+
+- **Hiding operators and fragments from the pickers** (topics 4 and 6), as two lists of names, `hiddenOperators` and `hiddenFragments`: a hidden entry is left out of the pickers, their search and default resolution, and still shown as the current entry on a node that uses it. No v1 host needed it, and adding the props is not a break.
+- **An expected result type at the root** (topic 4, "Slots"), for a host such as Conforma whose visibility conditions expect a boolean. fig-tree has no notion of it, so `validate()` never reports a mismatch at the root, and moving operators to "Not valid here" there would block what `validate()` accepts (topic 4's rule). Built, it would steer the root's default operator and type dropdown only, or come with an issue of the editor's own; it needs its own design.
+- **`isFragmentDefinition`** stays parked with fragment-definition mode (topic 6), with no prop until that is designed.
+
+### Display overrides — **Agreed**
+
+**The host's display layer is two props, named and shaped after fig-tree's own exports:**
+
+```ts
+operatorHints?: { [operator: string]: Partial<OperatorHints> } // keyed by canonical name
+categoryHints?: { [category in OperatorCategory]?: Partial<CategoryHints> }
+```
+
+- **They are the top layer** of topic 4's display data: the editor's built-ins (only `literal`), `./editor-hints`, a host operator's `metadata` read as `OperatorHints`, then these. Each field is merged over the layers beneath, and `seeds` per parameter, so overriding one seed keeps the rest. `literal` is overridden like any operator.
+- **What a host uses them for:** its own display names (and translations of them, "Wording"), `docUrl`s into its own documentation, colours, and seeds that suit its data (an `http.url` on its own server). `categoryHints` relabels or reorders the picker's groups.
+- **Plain data** in fig-tree's shapes, so a host can type them with fig-tree's own types and keep them in a stored preference, as with `defaultOperators`.
+- **Fragments have no override prop.** A fragment's display is `FragmentHints` in its own `metadata` (exported from fig-tree's root: the operator shape with `docUrl` optional), which the host already controls. The editor reads each of its fields as optional, since it is a convention fig-tree never checks: a fragment with no display name shows "Fragment" (topic 3).
+- Rejected: v1's name, `operatorDisplay`; and one prop holding both (`displayHints={{ operators, categories }}`), a wrapper that gains nothing over two props named after what they mirror.
+
+**A host operator with no colours takes a light shade of its category's colour,** so it sits with its category's siblings, as topic 1's first-class principle wants. `categoryHints` gives each category its hue at full strength, with white text, and every operator button is a light shade of that hue, so the category's own colours would make a dark button, which reads as a fragment (topic 3, "Fragment default colour"). The shade is derived in CSS, the background as `color-mix(in srgb, <category colour> 18%, white)` and the text as `color-mix(in srgb, <category colour>, black 65%)`, with a test that the pair reaches 4.5:1 for each core category; the exact proportions are settled when built.
+
+- Rejected: asking fig-tree to add the light pair to `CategoryHints`, which keeps the colours in one place but is another upstream item for what CSS already does.
+- Rejected: one neutral colour for every host operator, which marks them as different.
+
+### Theming and CSS — **Agreed**
+
+**The editor's own colours are an `editorTheme` prop:** a short list of values specific to FigTree, mostly colours, applied inline as json-edit-react applies its theme, so a host sets them in the same place and the same way as json-edit-react's `theme`, rather than in a stylesheet disconnected from the component.
+
+```ts
+editorTheme?: Partial<EditorTheme>
+
+interface EditorTheme {
+  refData: string // reference namespaces (topic 3)
+  refVars: string
+  refParams: string
+  refBinding: string // $element, $index and `as` names
+  varsBlock: string // the vars block's tint and rule (topic 5)
+  modifierKey: string // fallback, useCache, vars keys (topic 3)
+  comment: string // comment notes (topic 5)
+  error: string // row tint and flag (topic 7)
+  warning: string // warning flag
+  filledIn: string // the filled-in-on-load marker
+  failed: string // the failed-row marker (topic 7, "Showing failures")
+  shorthandBorder: string // the dashed border (topic 3)
+  fragmentBackground: string // a fragment with no colours of its own (topic 3)
+  fragmentText: string
+}
+```
+
+- **The defaults are in the editor's code,** merged under the host's values, which are compared by content, so an inline object costs nothing. The key list is settled when the components are built.
+- **Operator and category colours are not here:** they are display data, in `operatorHints` and `categoryHints` ("Display overrides").
+- **A dark mode is a different object,** swapped by the host as it swaps json-edit-react's `theme`. Do later: `editorTheme` values to pair with `@json-edit-react/themes`' dark themes.
+- **How the values reach the editor's own components** (the DisplayBar, toolbar, messages area, result display and hover cards) is internal, for example as custom properties set inline on the editor's own elements, so its stylesheet can use them.
+
+**Everything else is json-edit-react's `theme`,** layered over the editor's own theme layer: the editor passes `theme={[editorLayer, hostTheme]}`, so the host's layer wins wherever they overlap. The editor's styling that depends on a row's kind (brackets hidden on nodes, the node border, reference colours, the vars block) is written as style functions, which json-edit-react applies after every static style, so a host's static styles recolour json-edit-react's own elements without undoing the editor's structure. Reference colours come from `editorTheme`, not from `theme`'s `string`. This replaces v1's separate `styles` prop.
+
+- Rejected: CSS custom properties that a host overrides in its own stylesheet. The tokens would be defined far from the component that uses them, and one part of the editor would be themed in CSS and the rest in props.
+- Rejected: the tokens as json-edit-react theme `fragments`, so one `theme` object carries everything. Custom components cannot read a fragment by name (`getStyles` takes json-edit-react's own elements only), so it would need new json-edit-react API (J5 in [v3-upstream.md](v3-upstream.md), dropped).
+
+**A standalone `./style.css`,** as json-edit-react publishes one. The editor injects its stylesheet into the document `<head>` on mount (plan, 1.6 and 2.1), which does not cross a Shadow DOM boundary, so the same text is also exported as `fig-tree-editor-react/style.css` for a host to inject into its shadow root, beside json-edit-react's own `style.css`. It costs an `exports` entry and a build step, checked by `scripts/entries.mjs` and `check:package`. The docs note that a Shadow DOM host needs both stylesheets. The colour defaults are not in it, since they are in code.
+
+### Wording — **Agreed** for now
+
+**The first build is English only, with the mechanism for translation decided.** When it is built, the editor's strings join json-edit-react's `translations` under a prefix of their own (`FT_TO_SHORTHAND: 'To shorthand'`, `FT_MESSAGES_ERRORS: '{{count}} errors'`), with json-edit-react's `{{placeholder}}` style, following the rule that a json-edit-react prop keeps its meaning, extended ("How the props relate to json-edit-react's"). Adding them is not a break. **The rule from the start:** every string the editor shows sits in one module, under the key it would have, so translation is later a lookup.
+
+What it covers: the DisplayBar's and toolbar's labels, the pickers' group names, "Not valid here" and its reasons, the spelling-toggle hint, the modifier descriptions, the hover card's lines, the messages area's header, fixes and dismissals, the result display's captions, collapsed summaries and the disabled-Evaluate reason. Operator and category names are display data, already replaceable through `operatorHints` and `categoryHints` ("Display overrides").
+
+- **The hover card's generated lines** join lists ("one of 'test', 'extract' or 'match'") and describe types, which does not reduce to placeholders, so when translation is built they take a function hook of their own rather than a template.
+- **`validate()`'s messages are fig-tree's,** in English, shown as they come (topic 7, "Where issues attach"), so a translated editor still shows them in English until fig-tree offers otherwise.
+- Rejected for now: translations in the first build, work on text no host has asked to translate.
+- Rejected: a separate `editorTranslations` prop, which makes a host translating the whole component fill in two objects where `translations` can hold both.
+
+### Package exports — **Agreed**
+
+| Kind    | From `fig-tree-editor-react`                                                                                                                                                                                            |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Values  | `FigTreeEditor`; `Select`, the generic searchable dropdown, as in v1; `defaultEditorTheme`, as json-edit-react exports `defaultTheme`, for a host building a dark variant                                               |
+| Types   | `FigTreeEditorProps`, `FigTreeEditorHandle`, `SetExpressionOptions`, `EditorStatus`, `EditorMessage`, `Evaluation`, `EvaluationFailure`, `EditorTheme`, `OperatorDefault`, `SlotType`, `Path`, and `Select`'s own types |
+| Subpath | `./style.css` ("Theming and CSS")                                                                                                                                                                                       |
+
+- **`Path` is the editor's own,** `(string | number)[]`. fig-tree has one internally but does not export it; the two are structurally the same, so nothing is needed upstream.
+- **fig-tree is not re-exported,** as the Phase 2 skeleton already decided (plan, 2.1): it is a peer the host installs, and re-exporting it would make every fig-tree name part of the editor's API. For the migration note: Conforma imports `FigTreeEvaluator`, `EvaluatorNode`, `Fragment`, `FragmentMetadata`, `dequal`, `isFigTreeError` and `truncateString` from the editor through v1's `export *`; most are renamed in v3 (`FigTree`, `deepEqual`, `FragmentDefinition`), `truncateString` is gone, and all come from `fig-tree-evaluator`.
+- **The editor's internals are not exported:** the fill-in step, the classification walk, the sub-tree expression builder, `displayPath`. Do later: the fill-in step as a pure function, if a host needs to normalise stored expressions outside the editor.
+
+**`json-edit-react` becomes a peer dependency** (`^2.0.0`, kept as a devDependency), as json-edit-react's own companion packages (`@json-edit-react/utils`, `/components`, `/themes`) take it. Plan 0.3 kept it a regular dependency because hosts did not touch it; since the props are json-edit-react's ("How the props relate to json-edit-react's"), hosts pass its props, want its types (`ThemeInput`, `NodeData`, `JsonEditorHandle`) and use its companions (`useUndo`, themes), each of which needs it installed anyway. As the editor's own dependency, a host could get two copies at different versions, with types from one that do not match the other. As a peer, the host lists `json-edit-react` in its own dependencies and nothing more: the editor imports it as usual, and the package manager resolves it to the host's copy (npm 7+ and pnpm also install a missing peer automatically). `@json-edit-react/utils` stays a regular dependency, since it takes json-edit-react as a peer and so shares the host's copy. `check:package`'s consumer installs it as a peer.
+
+- Rejected: keeping it a dependency and re-exporting the json-edit-react types the props use. It saves the host one entry in `package.json`, but does not prevent a second copy for a host using the companions, and every json-edit-react type in the props becomes a name the editor re-exports.
+
+### The props, together — **Summary**
+
+Every prop the editor adds, from the sections above, beside json-edit-react's own (grouped in "How the props relate to json-edit-react's"):
+
+```ts
+interface FigTreeEditorProps extends Omit<
+  JsonEditorProps,
+  | 'data'
+  | 'setData'
+  | 'allowTypeSelection'
+  | 'newKeyOptions'
+  | 'defaultValue'
+  | 'customNodeDefinitions'
+> {
+  figTree: FigTree
+  expression: unknown
+  setExpression: (expression: unknown, options?: SetExpressionOptions) => void // { autoUpdate?: boolean }
+  onStatusChange?: (status: EditorStatus) => void
+  messagesMaxHeight?: number | string // 0 hides the messages area
+  editorRef?: React.Ref<FigTreeEditorHandle> // json-edit-react's handle, plus reveal(path)
+  evaluationData?: unknown
+  evaluationMode?: 'report' | 'throw'
+  showEvaluationResult?: boolean
+  onEvaluateStart?: (start: { path: Path }) => void
+  onEvaluate?: (evaluation: Evaluation) => void
+  defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>
+  defaultFragment?: string
+  operatorHints?: { [operator: string]: Partial<OperatorHints> }
+  categoryHints?: { [category in OperatorCategory]?: Partial<CategoryHints> }
+  editorTheme?: Partial<EditorTheme>
+}
+```
+
+Gone from v1: `objectData` (now `evaluationData`), `onEvaluateError` (`status: 'failed'`), `operatorDisplay` (`operatorHints`), `styles` (json-edit-react's `theme`), `defaultNewOperatorExpression` (`defaultOperators`), `defaultNewFragment` (`defaultFragment`), `defaultNewCustomOperator` and `addTopLevelFallback`. Do later: `customNodeDefinitions` from the host, `hiddenOperators` and `hiddenFragments`, an expected root type, `evaluate` on the handle, translations, and `isFragmentDefinition` (parked).

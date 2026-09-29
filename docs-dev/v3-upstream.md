@@ -28,11 +28,12 @@ An entry also records whether its issue has been filed, and when the change has 
 | F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         |
 | F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | Not filed                                                         |
 | F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                 | Wanted   | Not filed                                                         |
+| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution             | Maybe    | Not filed                                                         |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    |
-| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Wanted   | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
+| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
 | J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    |
-| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Open     | Not filed                                                         |
+| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Dropped  | Not filed                                                         |
 | J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         |
 | J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         |
 | J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         |
@@ -207,6 +208,16 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Issue.** Not filed.
 
+### F13 · A `buildString` template seed that needs no substitution — **Maybe**
+
+**The change.** `operatorHints.buildString.seeds.template` is `'Hello {{name}}'`, paired with a `substitutions` seed of `{ name: 'World' }`. The change is a template that reads well on its own, such as `'Hello World'` or `'Hello {{$data.name}}'`, keeping or dropping the `substitutions` seed.
+
+**Why.** A new node is seeded with its required parameters only ("Adding parameters and starting values" in [v3-design.md](v3-design.md)), and `substitutions` is optional, so a new `buildString` is `{ operator: 'buildString', template: 'Hello {{name}}' }`, which evaluates to the literal `'Hello {{name}}'`. It is the built-in default operator at every string slot ("Defaults and what the pickers offer"), so it is the node authors see most often when they create one at a string position.
+
+**Without it.** A new `buildString` shows an unsubstituted token until the author edits it. It is valid, so nothing else is affected.
+
+**Issue.** Not filed.
+
 ---
 
 ## json-edit-react
@@ -235,15 +246,17 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Issue.** [CarlosNZ/json-edit-react#411](https://github.com/CarlosNZ/json-edit-react/issues/411).
 
-### J3 · Transactions in `useUndo` — **Wanted**
+### J3 · Transactions in `useUndo` — **Dropped**
 
 **The change.** In `@json-edit-react/utils`, a transaction on `useUndo`: `begin()` records the current value as a checkpoint, writes during the transaction are not recorded, `end()` records the checkpoint as one step if the value changed, and `end({ discard: true })` records nothing.
 
-**Why.** A full node's toolbar writes each change through as it is made and reverts to a snapshot on ✗ or Esc ("Commit semantics" in [v3-design.md](v3-design.md)). With `useUndo` as it is, each toolbar action is its own undo step and the revert is one more, so Undo straight after a Cancel brings back the cancelled state. The existing `replace` cannot group the writes from outside, since `set` records the value in its render closure, the latest intermediate state. The editor reports its session boundaries to the host, which a host using `useUndo` wires to a transaction.
+**Why it came up.** A full node's toolbar commits each change as it is made and reverts to a snapshot on ✗ or Esc ("Commit semantics" in [v3-design.md](v3-design.md)). With `useUndo` as it is, each toolbar action is its own undo step and the revert is one more, so Undo straight after a Cancel brings back the cancelled state. The editor was to report its toolbar sessions' boundaries, which a host using `useUndo` would wire to a transaction.
 
-**Without it.** History behaves as in v1, one step per toolbar action, plus the surprising Undo after Cancel.
+**Why it was dropped.** The toolbar follows json-edit-react's documented pattern for a `showOnEdit` collection (the README's "Collection nodes" and its Playlist example): each action commits through `setValue`, which closes the session, and the component reopens it. So each action is its own json-edit-react session, and json-edit-react cannot see where a toolbar use begins and ends. Grouping one would need the editor to report the toolbar's opening and closing to the host, editor-specific API for a small nicety, and driving the grouping from `onEditEvent` would group nothing. History is one step per toolbar action, as in v1, plus one for Cancel's revert, which is consistent, since Cancel is itself an edit ("The handle and edit sessions" in [v3-design.md](v3-design.md)).
 
-**Issue.** [CarlosNZ/json-edit-react#412](https://github.com/CarlosNZ/json-edit-react/issues/412).
+**Revisit.** If one step per toolbar action proves annoying in use. Whether #412 stays open for json-edit-react's own sake (wizards, drags) is a json-edit-react decision.
+
+**Issue.** [CarlosNZ/json-edit-react#412](https://github.com/CarlosNZ/json-edit-react/issues/412), filed with the fig-tree editor as its motivating case.
 
 ### J4 · A target-aware drop filter — **Wanted**
 
@@ -255,13 +268,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Issue.** [CarlosNZ/json-edit-react#413](https://github.com/CarlosNZ/json-edit-react/issues/413).
 
-### J5 · Theme tokens for custom components — **Open**
+### J5 · Theme tokens for custom components — **Dropped**
 
-**The change, to be investigated.** A way for a json-edit-react theme to carry tokens that a custom component defines for itself, alongside the built-in elements (`string`, `number`, `property` and the rest), so that one theme object styles both.
+**The change.** A way for a json-edit-react theme to carry tokens that a custom component defines for itself, alongside the built-in elements (`string`, `number`, `property` and the rest), so that one theme object styles both. json-edit-react's theme `fragments` are close, but a fragment is resolved only where a `styles` entry references it, and a custom component's `getStyles` takes json-edit-react's own elements only, so a component cannot read one by name.
 
-**Why.** Each reference namespace has its own colour (`$data`, `$vars`, `$params`, and the iterator bindings), and the colours must be tokens a host can swap ("Kinds" under topic 3 in [v3-design.md](v3-design.md)). The same goes for the vars block, the modifier keys and the error and filled-in states. json-edit-react's `ThemeableElement` list is fixed, so today such tokens would live in a separate editor prop, and a host would theme the editor in two places.
+**Why it came up.** Each reference namespace has its own colour, and the colours must be tokens a host can swap ("Kinds" under topic 3 in [v3-design.md](v3-design.md)), as must the vars block, the modifier keys and the error and filled-in states.
 
-**Without it.** The editor defines its own token set, as CSS custom properties or a prop, beside json-edit-react's theme.
+**Why it was dropped.** The editor takes an `editorTheme` prop of its own, a short list of FigTree-specific values applied inline, beside json-edit-react's `theme` ("Theming and CSS" in [v3-design.md](v3-design.md)). A host sets both in props, so nothing is gained from new json-edit-react API.
 
 **Issue.** Not filed.
 
