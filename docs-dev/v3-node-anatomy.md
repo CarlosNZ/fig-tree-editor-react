@@ -394,12 +394,13 @@ The `//` key, legal on any object. Its value is never evaluated.
     fallback: 1                                 ✎ ✕
 ```
 
-- **`['rate', '//']`:** a value row with the **Comment** component and `showKey: false`, so there is no `//:` label. The component renders the text as a note belonging to the node. JER's edit tools appear on hover, as on any row, and on ✎ its string input appears.
+- **`['rate', '//']`:** a value row with the **Comment line** component and `showKey: false`, so there is no `//:` label. The component renders the text, unquoted and untruncated, as a note belonging to the node. JER's edit tools appear on hover, as on any row, and on ✎ its string input appears.
 - The fill-in step places `//` first among the node's keys, so the note sits directly under the DisplayBar.
 
 **Variants:**
 
-- **Several lines:** `'//': ['First line', 'Second line']`. This is an array, so it would normally be a collection row. The Comment definition uses `renderCollectionAsValue`, so JER renders it through the value path as one unit, and the component draws the lines as one note. How a multi-line note is edited is for topic 5.
+- **Several lines:** `'//': ['First line', 'Second line']`. A plain JER array, with `showKey: false` and no component. Its header row keeps only the edit tools (its ＋ adds a line, its ✕ deletes the comment), the theme hides its chevron and brackets and styles the whole array as one note block, and each line is a **Comment line** value row, edited in JER's own input. It never starts collapsed.
+- **Another value** (`'//': { ticket: 123 }`): plain JER data, with modifier styling on the `//` key and no note style.
 - **On a plain object, or inside `vars` or `parameters`:** the same.
 - **Inside quoted content:** plain data.
 
@@ -422,10 +423,10 @@ The `vars` key on an operator node, a fragment call or a plain object.
   ┃     limit: 5                                ✎ ✕
 ```
 
-- **`['…', 'vars']`:** a collection row with the **Vars** component. JER draws the header row. The block comes **last** among the node's rows (the fill-in step orders keys: `//`, the parameters, `fallback` and `useCache`, then `vars`), is set slightly apart from the rows above it, and takes the colour of `$vars` references, so a var and its uses look related.
-- **The child rows:** each key is a var name, and each value is classified as usual: here a shorthand node and a plain number. A key must follow the name-legality rule (no `.`, `[`, `]`, no leading `$`), which the diagnostics report.
+- **`['…', 'vars']`:** a plain JER collection row, with no definition of its own. The theme styles it: the `vars` key takes the colour of `$vars` references, and the block gets a left rule and a tinted background, set slightly apart from the rows above it. JER draws the header row and its edit tools as usual, and the collapsed summary (`{ 2 vars }`) comes from `customText`. The block comes **last** among the node's rows (the fill-in step orders keys: `//`, the parameters, `fallback` and `useCache`, then `vars`). On a plain object it stays where it was written.
+- **The child rows:** plain JER rows on the block's tint. Each key is a var name, and each value is classified as usual: here a shorthand node and a plain number. A key must follow the name-legality rule (no `.`, `[`, `]`, no leading `$`), which the diagnostics report.
 
-The rest of this block's design is for topic 5.
+The block's ＋ asks for a name, and the new var starts as `'Replace me'` with its value open for editing ("The vars block" in the design doc).
 
 ---
 

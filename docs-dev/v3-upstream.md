@@ -14,17 +14,24 @@ An entry also records whether its issue has been filed, and when the change has 
 
 ## Summary
 
-| ID  | Package            | Change                                                               | State    | Issue                                                          |
-| --- | ------------------ | -------------------------------------------------------------------- | -------- | -------------------------------------------------------------- |
-| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | Not filed                                                      |
-| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                      |
-| F3  | fig-tree-evaluator | A machine-readable suggestion on `unknown-node-key` issues           | Wanted   | Not filed                                                      |
-| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | Not filed                                                      |
-| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                      |
-| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411) |
-| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Wanted   | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412) |
-| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413) |
-| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Open     | Not filed                                                      |
+| ID  | Package            | Change                                                               | State    | Issue                                                             |
+| --- | ------------------ | -------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- |
+| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | Not filed                                                         |
+| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                         |
+| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                 | Wanted   | Not filed                                                         |
+| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | Not filed                                                         |
+| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                            | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
+| F6  | fig-tree-evaluator | Export `typesIntersect`                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
+| F7  | fig-tree-evaluator | A description on every parameter                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
+| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                            | Maybe    | Not filed                                                         |
+| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         |
+| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    |
+| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Wanted   | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
+| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    |
+| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Open     | Not filed                                                         |
+| J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         |
+| J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         |
+| J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         |
 
 ---
 
@@ -58,7 +65,7 @@ The subpath's value-import lint rule and its exports test would need extending, 
 
 **Issue.** Not filed.
 
-### F3 · A machine-readable suggestion on `unknown-node-key` issues — **Wanted**
+### F3 · A machine-readable suggestion on unknown-name issues — **Wanted**
 
 **The change.** `validate()` already works out which declared parameter an unknown key is probably a misspelling of, but reports it only in the message text:
 
@@ -79,17 +86,65 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 - **The typo guard.** The fill-in step does not insert a missing required parameter when an unknown key on the node is its suggested misspelling, so a seed does not appear beside the typo.
 - **The rename quick fix.** "Rename `thn` to `then`", which clears both errors at once.
 
-**Without it.** No typo guard, so a seed appears beside the typo, and the unknown key's only quick fix is "Remove".
+**Extended (topic 4): unknown operator and fragment names.** `unknown-operator` (`'plsu' names no registered operator — did you mean 'plus'?`), `unknown-fragment` and the shorthand's `unrecognized-identifier` warning carry the same kind of suggestion in their message text. With it as a field too, the operator picker opens a broken node with the suggested operator highlighted ("The operator picker" in [v3-design.md](v3-design.md)).
+
+**Without it.** No typo guard, so a seed appears beside the typo, and the unknown key's only quick fix is "Remove". A broken node's picker opens with nothing highlighted.
 
 **Issue.** Not filed.
 
 ### F4 · A `literal` entry in `./editor-hints` — **Maybe**
 
-**The change.** A display entry for `literal` (display name, `docUrl`, colours) in `./editor-hints`, although `literal` is grammar rather than an operator definition.
+**The change.** A display entry for `literal` (display name, `docUrl`, colours, and the seed for `value`) in `./editor-hints`, although `literal` is grammar rather than an operator definition. 3.0.0-preview.1's `operatorHints` has 43 entries, the 40 core operators plus the three I/O ones, and none for `literal`.
 
 **Why.** `literal` is absent from `getOperators()` and from the hints, which cover the 40 operator definitions, so the editor has no display data for it. ("Kinds" in [v3-design.md](v3-design.md).)
 
-**Without it.** The editor hard-codes `literal`'s display data. That works, but keeps one operator's presentation apart from all the others', and its `docUrl` would not move with fig-tree's documentation.
+**Without it.** The editor hard-codes `literal`'s display data, including its seed (`'No content inside a literal node is evaluated'`, "`literal`" in [v3-design.md](v3-design.md)). That works, but keeps one operator's presentation apart from all the others', and its `docUrl` would not move with fig-tree's documentation.
+
+**Issue.** Not filed.
+
+### F5 · `plus` declares `homogeneous` on `values` — **Maybe**
+
+**The change.** `constraints: { homogeneous: ['number', 'string', 'array', 'object'] }` on `plus.values`. `plus`'s own description already states the rule ("all operands must share one type"), but only its body enforces it, so the metadata declares `values` as a plain `array`.
+
+**Why.** An element of an array parameter admits what its constraints say ("Slots" in [v3-design.md](v3-design.md)), so with the constraint `plus`'s elements admit the four types rather than `any`: the type dropdown narrows, a new element can be seeded to match its siblings, and `validate()` reports a mixed literal payload through the generic constraint check. fig-tree may have reasons not to (its own mixed-type message, the `expect` pin, `runtimeTypeCheck: false` skipping constraints), which the issue lists.
+
+**Without it.** `plus`'s elements admit `any`, as the metadata says.
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 1.
+
+### F6 · Export `typesIntersect` — **Maybe**
+
+**The change.** Export `typesIntersect` (`src/typeCheck.ts`) from `./format`, beside F1's functions.
+
+**Why.** An operator cannot fit a slot when its declared `returns` and the slot's type share no value, which is exactly `validate()`'s `returns-mismatch` check, so the picker's test must agree with it to the letter, including the `integer`/`number` bridge and literal-union members matching by runtime type ("Slots" in [v3-design.md](v3-design.md)). Exporting the function keeps the rules in one place as the type vocabulary grows. A containment companion may be asked for later, if the operator picker gets a "Suggested" section.
+
+**Without it.** The editor re-implements it (about 40 lines), with a parity test against `validate()`'s `returns-mismatch` over every core operator at every typed parameter.
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 2.
+
+### F7 · A description on every parameter — **Maybe**
+
+**The change.** Descriptions for the nine parameters that have none in 3.0.0-preview.1 (`power.base`, `power.exponent`, and `value` on `round`, `floor`, `ceil`, `abs`, `lower`, `upper` and `trim`), and a test that every core and I/O parameter has one.
+
+**Why.** A row's tooltip is its declaration's `description` ("Slots" in [v3-design.md](v3-design.md)).
+
+**Without it.** Those rows have no tooltip.
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 3.
+
+### F8 · A scope-aware rename helper in `./format` — **Maybe**
+
+**The change.** A function beside `toCanonical`, `toGet` and the rest, for example `renameBinding(expression, fig, { at, from, to })`, where `at` is the path of a `vars` block or an iterator. It renames the declaration and every reference that resolves to it, and returns the new expression with the paths it updated and the paths it refused. It covers:
+
+- **a var:** reference strings in its scope (a `get`'s `from` and sibling vars included) and `{{$vars.…}}` tokens in `buildString` templates, leaving references that read a shadowing var alone and keeping short spellings (`$v.`);
+- **an iterator's `as`,** changed, added or removed: `$order` / `$orderIndex`, or `$element` / `$index` where they resolve to that iterator;
+- **a declared fragment parameter,** in a fragment body: `$params.name`.
+
+It refuses a reference where the new name is declared closer, since rewriting it would silently read the wrong binding, and one that would need a name the author cannot write (the outer element inside a nested iterator without `as`, when `as` is removed).
+
+**Why.** The editor's "Update references" quick fix, offered after a rename breaks references ("Renaming a var" in [v3-design.md](v3-design.md)), and renaming a fragment parameter in fragment-definition mode (topic 6). fig-tree already has what it needs: its static checks resolve each reference to its declaring block (`resolveVar` in `src/compile/staticChecks.ts`), and its compiler turns template tokens into reference nodes with paths. Doing it in the editor would need the unexported template-token grammar and a second copy of the resolution rules.
+
+**Without it.** No quick fix: a rename renames nothing, and each broken reference is fixed by hand. The quick fix itself is do-later, to be reconsidered once the built editor can be tried.
 
 **Issue.** Not filed.
 
@@ -148,5 +203,37 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Why.** Each reference namespace has its own colour (`$data`, `$vars`, `$params`, and the iterator bindings), and the colours must be tokens a host can swap ("Kinds" under topic 3 in [v3-design.md](v3-design.md)). The same goes for the vars block, the modifier keys and the error and filled-in states. json-edit-react's `ThemeableElement` list is fixed, so today such tokens would live in a separate editor prop, and a host would theme the editor in two places.
 
 **Without it.** The editor defines its own token set, as CSS custom properties or a prop, beside json-edit-react's theme.
+
+**Issue.** Not filed.
+
+### J6 · A type selector for collection rows — **Maybe**
+
+**The change.** A type selector for a row holding an object or array, for example in its edit session, so it can be switched to a primitive, an enum or a named custom type, as a value row can. Today json-edit-react offers type selection on value rows only (`ValueNodeWrapper.tsx`), and a collection's edit session is the raw-JSON textarea.
+
+**Why.** Parameters that usually hold arrays or objects (`values: [1, 2]`, `buildObject.entries`, `http.body`) cannot be turned into a reference or a node from the type dropdown ("The type dropdown" in [v3-design.md](v3-design.md)).
+
+**Without it.** The author uses raw JSON, as in v1. Accepted for now (Carl, September 2026); to revisit once the editor is in use.
+
+**Issue.** Not filed.
+
+### J7 · A key component for array elements while indexes are hidden — **Maybe**
+
+**The change.** Render a matching definition's `keyComponent` for an array element even when `showArrayIndexes` is false, leaving what to show to the component. Today an element row renders no key at all in that case (`showLabel` is false in `CollectionNode.tsx`), so a key component has nowhere to render.
+
+**Why.** Two features want a label slot on array elements: the parameter hover card ("Parameter metadata" in [v3-design.md](v3-design.md)), for elements of array parameters and positional arguments; and topic 1's dimmed parameter names on positional elements (`condition`, `then`, `else` beside `$if`'s arguments).
+
+**Without it.** Elements have no card and positional arguments no labels, as now.
+
+**Issue.** Not filed.
+
+### J8 · Open an add-key input from the editor handle — **Dropped**
+
+**The change.** A `startAdd({ path })` on `JsonEditorHandle`, beside `startEdit`, opening an object row's add-key input as its ＋ does. Today `startEdit` opens value edits only, and the ＋ appears on hover only.
+
+**Why it came up.** Adding a var takes two steps: "Add parameter → `vars`" creates `vars: {}`, then the author finds the empty block's ＋ to name the first var. With `startAdd`, creating the block could open its name input at once ("The vars block" in [v3-design.md](v3-design.md)).
+
+**Why it was dropped.** Two steps are acceptable for now (Carl, September 2026).
+
+**Revisit.** If the two steps prove awkward once the editor is in use.
 
 **Issue.** Not filed.
