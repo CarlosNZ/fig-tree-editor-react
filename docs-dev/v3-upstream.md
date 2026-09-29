@@ -24,6 +24,9 @@ An entry also records whether its issue has been filed, and when the change has 
 | F6  | fig-tree-evaluator | Export `typesIntersect`                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
 | F7  | fig-tree-evaluator | A description on every parameter                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) |
 | F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                            | Maybe    | Not filed                                                         |
+| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                               | Open     | Not filed                                                         |
+| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         |
+| F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | Not filed                                                         |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Wanted   | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    |
@@ -145,6 +148,50 @@ It refuses a reference where the new name is declared closer, since rewriting it
 **Why.** The editor's "Update references" quick fix, offered after a rename breaks references ("Renaming a var" in [v3-design.md](v3-design.md)), and renaming a fragment parameter in fragment-definition mode (topic 6). fig-tree already has what it needs: its static checks resolve each reference to its declaring block (`resolveVar` in `src/compile/staticChecks.ts`), and its compiler turns template tokens into reference nodes with paths. Doing it in the editor would need the unexported template-token grammar and a second copy of the resolution rules.
 
 **Without it.** No quick fix: a rename renames nothing, and each broken reference is fixed by hand. The quick fix itself is do-later, to be reconsidered once the built editor can be tried.
+
+**Issue.** Not filed.
+
+### F9 · A fragment-body option on `validate()` — **Open**
+
+**The change, to be decided.** A `validate()` option that checks an expression as the body of a fragment, for example `validate(body, { fragment: { name, parameters } })`. With the declared parameters, `$params` references resolve against them as at registration: the static checker already takes the names (`runStaticChecks(artifact, { fragmentParams })` in `src/compile/staticChecks.ts`), which only `registerFragments` passes today. With the fragment's name, a call that would close a cycle through the fragment being defined can be reported, which a nameless body cannot be. It may also need to check the declarations themselves (shape, defaults against their types, `required` with a `default`), which are otherwise checked only by `new FigTree()` and `updateOptions()`.
+
+**Why.** In fragment-definition mode, `validate()` reports every `$params` reference as `unresolved-param`, declared or not, and the editor cannot run registration's checks itself: it cannot build a scratch instance, since an instance never returns its operator definitions, and `updateOptions()` on the host's instance would change it ("Fragment-definition mode" in [v3-design.md](v3-design.md), parked).
+
+**Without it.** A body edited in the editor shows an error on every `$params` reference, and its other registration errors appear only when the host registers it.
+
+**Open because** fragment-definition mode is parked, including what belongs in the editor and what the host handles around it.
+
+**Issue.** Not filed.
+
+### F10 · Supplying `$params` values to `evaluate()` — **Open**
+
+**The change, to be decided.** A way to evaluate an expression as a fragment body with given arguments, for example an `evaluate()` option carrying the declared parameters and test values for them, applying declared defaults and null-means-unset as a real call does.
+
+**Why.** `evaluate()` refuses any `$params` reference with `unresolved-param`, so neither a whole body nor a sub-tree of one can be evaluated in the editor. Conforma's fragment editor evaluates a body with test parameters entered in a separate JSON editor ("Fragment-definition mode" in [v3-design.md](v3-design.md), parked). Rewriting `$params` references into `$vars` would need fig-tree's unexported template-token grammar, as a rename would (F8).
+
+**Without it.** Evaluating a body means registering it: on a separate instance the host builds with its own operator definitions, which the host can do and the editor cannot.
+
+**Open because** fragment-definition mode is parked.
+
+**Issue.** Not filed.
+
+### F11 · Infer and report a fragment's result type — **Wanted**
+
+**The change.** At registration, infer each fragment's result type from its body, report it on `getFragments()` (as `returns`, the operator field's name), and extend `validate()`'s `returns-mismatch` check to fragment calls in parameter positions. Registration already compiles every body, and its rollup pass already visits fragments in reverse topological order, so a body that calls another fragment can use that fragment's inferred type. The type is read from the body's root:
+
+- an operator node, in any face: its declared `returns`;
+- a fragment call: the called fragment's inferred type;
+- `literal`: its content's type;
+- a constant: its own type;
+- a plain object or array: `object` or `array`;
+- a reference: `any`, since references are untyped;
+- a `fallback` on the root is ignored, as the operator check ignores it today (`{ $upper: '$data.x', fallback: 0 }` at `round.value` is reported).
+
+**Also, the same check for plain containers.** `{ $round: { value: { a: '$data.x' } } }` is not reported in 3.0.0-preview.1, though an object can never be a number. It is the same feeding-position check, with the container's type known statically.
+
+**Why.** The fragment picker moves fragments that cannot fit their position to "Not valid here", as the operator picker does for operators ("The fragment picker" in [v3-design.md](v3-design.md)). The editor cannot infer the type itself, because `getFragments()` deliberately omits the body. And the picker blocks only what `validate()` rejects, which today never includes a fragment call: its feeding check runs only where the supplied node is an operator (`supplied.kind === 'operator'` in `src/compile/staticChecks.ts`). So `{ $round: { value: { fragment: 'str' } } }` validates cleanly even where `str`'s body is `{ $upper: 'x' }`.
+
+**Without it.** Every fragment fits every position: the picker offers all of them, a new call starts as the host's default fragment wherever it is, and Fragment is offered in the type dropdown wherever a fragment is registered.
 
 **Issue.** Not filed.
 

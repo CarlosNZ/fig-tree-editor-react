@@ -1,6 +1,6 @@
 # fig-tree-editor-react v3 — design
 
-_Working document for Phase 3 of [v3-plan.md](v3-plan.md). It records what the v3 editor looks like and does, topic by topic, with the reasoning behind each decision and the options rejected. Sections marked **Agreed** are settled, **Proposed** ones are drafted and awaiting a decision, and **Open** ones have not been discussed yet._
+_Working document for Phase 3 of [v3-plan.md](v3-plan.md). It records what the v3 editor looks like and does, topic by topic, with the reasoning behind each decision and the options rejected. Sections marked **Agreed** are settled, **Proposed** ones are drafted and awaiting a decision, **Parked** ones have been discussed and deliberately set aside to revisit later, and **Open** ones have not been discussed yet._
 
 Topics, in the order they are worked through:
 
@@ -408,7 +408,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **Plain containers with holes** get the bare Evaluate button **at the root only,** for now.
 - **Comments** render as a note beneath the header, with json-edit-react's edit tools on hover like any row.
 - **Row order:** the node's parameters, then `fallback` and `useCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
-- **Fragment display name:** the "· fragment" suffix shows where there is room, and is hidden when the editor is narrow.
+- **Fragment display name:** as on an operator, the button shows the name as written (`getCapital`) and the top right shows the display name from `FragmentHints` ("Capital city · fragment"), so neither repeats the other. The "· fragment" suffix shows where there is room, and is hidden when the editor is narrow. **A fragment with no display name** shows "Fragment" alone at the top right, as in v1, rather than falling back to its name, which the button already shows. Nothing extra is shown while the toolbar is open, although the picker then shows only the display name (topic 6). Rejected: "Fragment | getCapital" in place of the display name, and "Capital city | getCapital", both of which repeat the button.
 - **Fragment default colour:** a generic colour for every fragment whose metadata defines none: v1's default for now, to be tweaked later, a dark steel blue with yellow text (`#477799` on `#ebdf5a`), for every fragment whose metadata carries no colours. Every operator button is a light shade of its category's hue, so a dark button stands apart by treatment without borrowing any category's hue. Deriving a colour from the fragment's name (hashing the name to a hue, then making a light background and dark text as editor-hints' palette does) would tell fragments apart, but an arbitrary hue can land on an operator category's colour and suggest a category the fragment does not belong to, and renaming a fragment would change its colour. A host that wants fragments told apart gives them `FragmentHints` colours.
 
 ### Collapsed nodes — **Agreed**
@@ -478,7 +478,7 @@ Rows with no slot: the `operator` and `fragment` rows (grammar), a shorthand's p
 - **Rejected: per-operator element tables in the editor.** They bring back the operator-specific knowledge v3 moved into metadata, and cannot cover host operators.
 - `plus` declaring `homogeneous` on `values` would give its elements a real type (F5 in [v3-upstream.md](v3-upstream.md)). It is not needed now.
 
-**An operator "cannot fit" a slot when its declared `returns` and the slot's `admits` share no value.** That is exactly `validate()`'s `returns-mismatch` check, so choosing such an operator would produce an error straight away, and the test must agree with `validate()` to the letter. Everything else can fit. References are untyped and fragments declare no `returns`, so both can always fit. How the picker treats operators that cannot fit (hidden, dimmed or listed last) is the operator picker's question. The test is fig-tree's `typesIntersect`, which is not exported (F6); without it the editor re-implements it, with a parity test against `validate()`'s `returns-mismatch` over every core operator at every typed parameter.
+**An operator "cannot fit" a slot when its declared `returns` and the slot's `admits` share no value.** That is exactly `validate()`'s `returns-mismatch` check, so choosing such an operator would produce an error straight away, and the test must agree with `validate()` to the letter. Everything else can fit. References are untyped, so they can always fit. A fragment is tested the same way, against the result type fig-tree infers for its body (F11 in [v3-upstream.md](v3-upstream.md), topic 6); without F11 every fragment can fit. How the picker treats operators that cannot fit (hidden, dimmed or listed last) is the operator picker's question. The test is fig-tree's `typesIntersect`, which is not exported (F6); without it the editor re-implements it, with a parity test against `validate()`'s `returns-mismatch` over every core operator at every typed parameter.
 
 - **Deferred to the operator picker: a containment tier.** Telling operators certain to produce an admitted value (`round` at a number slot) from those that only might (`get`, `if`, `match`) matters only if the picker has a "Suggested" section. With the picker grouped by category, the two mostly follow the categories anyway.
 - **Rejected: containment alone as the test.** It would count `get`, `if` and `match`, which return `any`, as not fitting at every typed slot, where they are among the commonest choices.
@@ -524,7 +524,7 @@ Options are listed in this order: the admitted types in declared order, the enum
 - **Rejected: offering `string` wherever a reference is possible.** At a number slot it presents literal strings as legal when `validate()` rejects them, and a reference row would show "string" as its type.
 - **Rejected: references only where `string` is admitted,** and through raw JSON elsewhere. It blocks the commonest dynamic value at typed slots.
 
-**Operator and Fragment are offered at every slot that is not literal-only,** Fragment only while fragments are registered. They are not hidden where nothing could fit: every operator declares a `returns`, so some operator nearly always can, and ranking is the operator picker's. `literal` has no entry of its own; it is reached through Operator and the picker, which lists it (topic 1).
+**Operator and Fragment are offered at every slot that is not literal-only,** Fragment only while at least one registered fragment can fit the slot (topic 6). Operator is not hidden where nothing could fit: every operator declares a `returns`, so some operator nearly always can, and ranking is the operator picker's. A host may register only a few fragments, and none of them may fit, so choosing Fragment there would create a call that is an error from the start. `literal` has no entry of its own; it is reached through Operator and the picker, which lists it (topic 1).
 
 **A new node starts as the default operator for its slot's type,** with its required parameters seeded, so the expression is legal from the start and the picker then opens on it (topic 2). "Operator"'s `defaultValue` is a function of the row, so it can do this. The built-in map, merged under a host prop (named in topic 8), maps each type to an operator name, seeded by the starting-value rule, or to a whole starting node:
 
@@ -537,7 +537,7 @@ Options are listed in this order: the admitted types in declared order, the enum
 | `array`             | `map`         |
 | `object`            | `buildObject` |
 
-A slot finds its default by its type: an `any` slot the `any` entry; a basic type its own entry, `integer` falling back to `number`; a union its first non-null member with an entry, in declared order; a literal union of strings the `string` entry. If the operator found is not registered, or cannot fit the slot ("Slots"), the `any` entry is used, and if that cannot fit either, the first operator in category order that can. So a host's map can never create a node that is at once an error. A new node gets the canonical name (topic 2). Fragments declare no `returns`, so Fragment keeps one default, as v1's `defaultFragment`. The built-in choices are open to change.
+A slot finds its default by its type: an `any` slot the `any` entry; a basic type its own entry, `integer` falling back to `number`; a union its first non-null member with an entry, in declared order; a literal union of strings the `string` entry. If the operator found is not registered, or cannot fit the slot ("Slots"), the `any` entry is used, and if that cannot fit either, the first operator in category order that can. So a host's map can never create a node that is at once an error. A new node gets the canonical name (topic 2). A new fragment call starts as the host's default fragment, as v1's `defaultFragment`, where it is registered and can fit the slot, and otherwise as the first fragment in the picker's order that can (topic 6). The built-in choices are open to change.
 
 **The row's current type is always listed,** last, when its slot does not admit it (a string at `round.value`, loaded from outside). Otherwise json-edit-react shows a select whose value is not among its options. The row's error state already says the value is wrong, and keeping it stays possible.
 
@@ -813,15 +813,73 @@ Topics 1, 3 and 4 settled its display (the editor's own display name, descriptio
 
 ## 6. Fragments
 
-### Fragment-definition mode — **Agreed in principle** (details below are for this topic)
+### Fragment-definition mode — **Parked**
 
-The editor is also used to author fragment definitions (Conforma does). A host prop, working name `isFragmentDefinition`, puts the editor in that mode, so the rules that apply only inside a fragment body (`$params` above all) are switched on explicitly rather than inferred. Authoring a fragment is a distinct task, and the host always knows when it is doing it.
+The editor is also used to author fragment definitions (Conforma does). Agreed in principle: a host prop, working name `isFragmentDefinition`, puts the editor in that mode, so the rules that apply only inside a fragment body (`$params` above all) are switched on explicitly rather than inferred. Authoring a fragment is a distinct task, and the host always knows when it is doing it.
 
-To settle in this topic:
+The rest is set aside, to be revisited further into the work (Carl, September 2026). It needs deciding what belongs in this editor and what the host handles around it, and designing it inside the editor risks bending decisions already made for expressions.
 
-- **What the editor edits:** the body (`expression`) alone, with the declared parameters passed in by the host, or the whole definition wrapper (`{ expression, parameters, description, metadata }`), declarations included. Most of the rest depends on it.
-- **`$params`:** the Parameter entry in the type dropdown ("The type dropdown", topic 4) and its scope, the declared parameters.
-- **Validation:** checking the body as registration will (undeclared `$params` references, unknown names, cycles), and whether `validate()` can do that today or needs an upstream option.
-- **The fragment picker:** never offering the fragment being defined, or any fragment whose use would close a cycle, since recursion is banned.
-- **Sub-tree evaluation:** sample arguments for `$params`, from the host or from the editor.
+**What Conforma's fragment editor does.** The body is edited in the expression editor. Beside it, a separate JSON editor holds test parameters, and an "Evaluate with params" button evaluates the body as a call to the fragment with those arguments would. There is no validation of the body beyond what the expression editor itself shows. Something similar, outside the expression editor, is the likely starting point, but the validation problems below still have to be dealt with.
+
+**What fig-tree 3.0.0-preview.1 does with a body,** checked against the installed package:
+
+- **`validate()` cannot check a body.** It takes only `data`, `signal`, `timeout`, `mode` and `trace`, and it reports every `$params` reference as `unresolved-param` ("$params is only available inside a fragment body"), declared or not, bare `$params` and `$p.x` included. So a body in the editor today shows an error on every `$params` row.
+- **The check exists but only registration reaches it.** The static checker resolves `$params` against a set of declared names (`runStaticChecks(artifact, { fragmentParams })`, `src/compile/staticChecks.ts`), which only `registerFragments` passes. A `validate()` option would pass the names through (F9 in [v3-upstream.md](v3-upstream.md)).
+- **Registration's other checks cannot be reproduced by the editor.** The wrapper's strict shape, the declarations, defaults type-checked against their type, `required` with a `default`, and name legality are checked only by `new FigTree()` and `updateOptions()`. Both collect every issue (at paths such as `['fragments', name, 'parameters', 'x', 'default']`), and a failed `updateOptions()` leaves the instance unchanged. But the editor cannot build a scratch instance to run them, since an instance never returns its operator definitions (`getOptions()` omits them, and `getOperators()` returns info, not definitions), and calling `updateOptions()` on the host's instance would change it.
+- **Cycles.** A body passed to `validate()` has no name, so if the fragment being edited is already registered, a call to itself compiles as a call to the registered version and nothing flags it. `getFragments()`' `dependencies.fragments` is transitive, though, so the editor can find every fragment whose use would close a cycle (the fragment itself, and every fragment whose dependencies include it) with no upstream change.
+- **`evaluate()` refuses `$params`** with the same `unresolved-param` error, so evaluating a body, or a sub-tree of one, needs a way to supply the arguments (F10 in [v3-upstream.md](v3-upstream.md)).
+- **Body warnings** survive registration on `getFragments()`' `warnings`, at paths relative to the definition (`['expression', 'vars', 'unused']`).
+
+**Questions for when it is picked up:**
+
+- **What the editor edits:** the body (`expression`) alone, with the declared parameters passed in by the host; the whole definition wrapper (`{ expression, parameters, description, metadata }`); or the body, with the declarations edited separately. And what stays outside the editor: the test parameters, the declarations, and evaluating with test parameters.
+- **Validation:** checking the body as registration will, through F9, and where declaration errors are shown if the declarations are edited alongside.
+- **`$params`:** the Parameter entry in the type dropdown ("The type dropdown", topic 4) and its scope, the declared parameters; and renaming a declared parameter, which F8 would serve.
+- **The fragment picker in this mode:** never offering the fragment being defined, or any fragment whose use would close a cycle.
+- **Evaluation:** of the whole body and of sub-trees, with test arguments, through F10.
 - **Display:** the fragment's own `FragmentHints`, if the wrapper is edited.
+
+**Until it is picked up,** nothing in Phases 4 to 9 depends on it: the Parameter entry is not offered, and a `$params` reference carries `validate()`'s `unresolved-param` error, as it would in any expression.
+
+### The fragment picker — **Agreed**
+
+The searchable list of registered fragments in a full fragment call's toolbar. It follows the operator picker (topic 4) wherever fragments allow.
+
+**One flat list, in `getFragments()` order.** That is the order of the host's `fragments` object: `updateOptions()` appends new names at the end, and a replaced fragment keeps its place. Fragments have no category, so there are no groups. The host controls the order, as it controls the order of operators within a group, and a host that wants them alphabetical sorts them before registering them.
+
+- Rejected: alphabetical by label. A host can always sort its own fragments, but it cannot undo a sort the editor imposes, such as putting the most-used fragments first or related ones together.
+- Do later: groups from a host-supplied key, for example a `category` string in each fragment's `FragmentHints`, if hosts with long lists want them. `FragmentHints` is fig-tree's type in `./editor-hints`, so that is an upstream addition.
+
+**Each entry shows the display name, with the description beneath.** The display name is `FragmentHints.displayName`, and falls back to the fragment's name where there is none. The name is not added to the label.
+
+- Rejected: "Display name (name)" as the label, following "Plus (+)".
+- Rejected: the name as the label, as in v1, which throws away the host's display name where it helps most.
+- Do later: a line listing the declared parameters ("country, fields?"), if descriptions prove too thin for choosing.
+
+**Search** is always on, with its field focused when the picker opens, so typing then Enter works however many fragments there are (v1 showed search only from five). It matches the display name and the name, the name through `Select`'s extra search terms (topic 4, "Changes to `Select`"), and not the description, for the same reason as operators.
+
+**Fragments that cannot fit the slot** move to a final "Not valid here" group, cannot be chosen, and show their reason in place of the description, exactly as operators do. The slot supplies what the position admits, as for operators. The fragment's side is its result type, which the editor cannot work out, since `getFragments()` deliberately omits the body: fig-tree infers it at registration and reports it (F11 in [v3-upstream.md](v3-upstream.md)), and `validate()`'s `returns-mismatch` check covers fragment calls with the same type, so the picker still blocks only what `validate()` rejects. The current fragment stays in its place and can be chosen even if it cannot fit. Many bodies have `get`, `if`, `match` or `http` at their root, which return `any`, so they fit everywhere. Without F11, every fragment fits every slot.
+
+- Rejected: the host passing the fragment definitions to the editor, for the editor to infer result types itself. It duplicates fig-tree's work, needs a prop that exists only to get round `getFragments()` omitting the body, and still disagrees with `validate()` unless fig-tree extends its check anyway.
+- Not pursued for now: a `returns` declared on the fragment definition, which fig-tree's spec lists as maybe-later. It would give accurate types where a body returns `any`, but every author would have to write and maintain it. It could narrow an inferred `any` later.
+
+**Where it opens.** On a new fragment call, with its starting fragment selected and the search field focused. The starting fragment is the host's default (v1's `defaultNewFragment`, named in topic 8) where it is registered and can fit the slot, and otherwise the first fragment in list order that can. On a broken call (`fragment: 'alpah'`), with no current entry, and with `validate()`'s suggested name highlighted once F3 makes it machine-readable. The suggestion is in the message text today ("'alpah' names no registered fragment — did you mean 'alpha'?").
+
+**Re-selecting the current fragment closes the menu,** with nothing changed. Fragments have no aliases, so there is no spelling to toggle and no hint on the current entry.
+
+**Other rules:**
+
+- Registration warnings (`getFragments()`' `warnings`) are not shown on entries. They are for the body's author, and the author of a call cannot act on them.
+- With no fragment registered, or none that can fit, Fragment is not offered in the type dropdown ("The type dropdown", topic 4) or in the node-type switch. A broken call on an instance with no fragments shows "No fragments registered" in the picker, and the node-type switch still offers Operator and Value.
+- Hiding registered fragments from the picker is for topic 8, with the same question for operators.
+- In fragment-definition mode (parked, above), the fragment being defined and any fragment whose use would close a cycle would be left out or disabled, using `getFragments()`' transitive `dependencies.fragments`.
+
+### Switching fragment — **Agreed**
+
+Choosing another fragment in the picker is a structural action (topic 2), so it cleans, by the same rule as switching operator:
+
+- **The modifiers are kept:** `//`, `vars` and `fallback`. `useCache` is not legal on a fragment call.
+- **Static arguments whose name the new fragment also declares are kept,** even where the kept value no longer type-checks against the new declaration, so the error shows and the author's work is not lost. The others are dropped, and the new fragment's missing required arguments are seeded by the starting-value rule (its `FragmentHints` seeds, then the type rule).
+- **Dynamic arguments are kept unchanged** (`parameters: '$data.form'`, or a node): the editor cannot know what they compute, and they are checked at runtime.
+- **An emptied `parameters` map is removed,** so switching to a fragment with no parameters leaves `{ fragment: 'today' }` rather than `parameters: {}`. The editor removes what the editor made obsolete (topic 2).
+- **There is no confirmation step,** even when the switch drops argument subtrees. Cancel while the toolbar is open reverts it (topic 2, "Commit semantics").
