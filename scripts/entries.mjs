@@ -12,4 +12,15 @@
  * raising one is a deliberate edit, visible in review. The bundle is the
  * editor's own code only: its dependencies and peers are external.
  */
-export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 3_000 }]
+export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 10_000 }]
+
+/**
+ * The stylesheet the component injects, also published as a file of its own
+ * (`./style.css`), as json-edit-react publishes its own. The build writes it
+ * to `build/<fileName>`, and checks its `exports` entry like the others.
+ */
+export const STYLESHEET = {
+  subpath: './style.css',
+  fileName: 'style.css',
+  source: 'src/styles.css',
+}

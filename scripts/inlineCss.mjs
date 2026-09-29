@@ -3,6 +3,11 @@ import { transformSync } from 'esbuild'
 
 const INLINE = '?inline'
 
+// A stylesheet's text as the package ships it: minified with esbuild, both
+// where the component injects it and as the standalone `./style.css`
+export const minifyCss = (file) =>
+  transformSync(readFileSync(file, 'utf8'), { loader: 'css', minify: true }).code.trim()
+
 // Turn `import css from './styles.css?inline'` into a module whose default
 // export is the minified stylesheet text. The same plugin as json-edit-react's
 // scripts/rollup-inline-css.mjs.
@@ -32,7 +37,19 @@ export const inlineCss = () => ({
     if (!id.endsWith(`.css${INLINE}`)) return null
     const file = id.slice(0, -INLINE.length)
     this.addWatchFile(file)
-    const { code } = transformSync(readFileSync(file, 'utf8'), { loader: 'css', minify: true })
-    return { code: `export default ${JSON.stringify(code.trim())}`, map: { mappings: '' } }
+    return { code: `export default ${JSON.stringify(minifyCss(file))}`, map: { mappings: '' } }
+  },
+})
+
+// Emit a stylesheet into the build as a file of its own: the same text the
+// component injects, for a host to add to a shadow root, where the injected
+// sheet in the document's <head> does not reach
+export const emitCss = ({ source, fileName }) => ({
+  name: 'emit-css',
+  buildStart() {
+    this.addWatchFile(source)
+  },
+  generateBundle() {
+    this.emitFile({ type: 'asset', fileName, source: minifyCss(source) })
   },
 })

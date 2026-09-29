@@ -3,20 +3,21 @@ import typescript from '@rollup/plugin-typescript'
 import terser from '@rollup/plugin-terser'
 import dts from 'rollup-plugin-dts'
 import { collectBundleSize, printBundleSize } from './scripts/bundleSize.mjs'
-import { ENTRIES } from './scripts/entries.mjs'
-import { inlineCss } from './scripts/inlineCss.mjs'
+import { ENTRIES, STYLESHEET } from './scripts/entries.mjs'
+import { emitCss, inlineCss } from './scripts/inlineCss.mjs'
 
 // package.json must name exactly the entries built here, with the paths the
 // build writes — checked before building anything
 const manifest = JSON.parse(readFileSync('package.json', 'utf8'))
 const declarations = (name) => `./build/${name}.d.ts`
 const expected = {
-  exports: Object.fromEntries(
-    ENTRIES.map(({ subpath, name }) => [
+  exports: Object.fromEntries([
+    ...ENTRIES.map(({ subpath, name }) => [
       subpath,
       { types: declarations(name), default: `./build/${name}.js` },
-    ])
-  ),
+    ]),
+    [STYLESHEET.subpath, `./build/${STYLESHEET.fileName}`],
+  ]),
   types: declarations(ENTRIES.find(({ subpath }) => subpath === '.').name),
 }
 for (const [field, value] of Object.entries(expected))
@@ -42,7 +43,7 @@ export default [
     output: { dir: 'build', format: 'esm', entryFileNames: '[name].js' },
     external,
     // Compiler settings come from tsconfig.json — the single source of truth
-    plugins: [inlineCss(), typescript(), terser(), collectBundleSize()],
+    plugins: [inlineCss(), emitCss(STYLESHEET), typescript(), terser(), collectBundleSize()],
   },
   // Bundle each entry's per-file declarations (build/dts, emitted by the pass
   // above) into one self-contained .d.ts beside its bundle

@@ -14,7 +14,8 @@
  *     so an import of anything undeclared fails here as it would for a real
  *     consumer. There, every entry imports by name as ESM, `require()`s from
  *     CommonJS (Node >= 22.12's require(esm)), and typechecks from
- *     TypeScript under the nodenext, bundler and legacy node resolutions —
+ *     TypeScript under the nodenext, bundler and legacy node resolutions,
+ *     and the standalone stylesheet resolves and holds the current styles —
  *     the package as npm delivers it, which none of the other checks see.
  *
  * Every check runs and reports; the script fails at the end if any did.
@@ -34,7 +35,8 @@ import {
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { entryBrotli } from './bundleSize.mjs'
-import { ENTRIES } from './entries.mjs'
+import { ENTRIES, STYLESHEET } from './entries.mjs'
+import { minifyCss } from './inlineCss.mjs'
 
 const ROOT = resolve(import.meta.dirname, '..')
 const MANIFEST = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'))
@@ -123,6 +125,18 @@ try {
   writeFileSync(join(consumer, 'cjs.cjs'), requireAll)
   run('node', ['--disable-warning=ExperimentalWarning', 'cjs.cjs'], consumer)
   pass(`require()s from CommonJS: ${specifiers.join(', ')}`)
+
+  // Read through the `exports` map, as a host adding it to a shadow root
+  // would, and compared with the minified source, which is also what the
+  // component injects
+  const stylesheet = specifier(STYLESHEET.subpath)
+  writeFileSync(
+    join(consumer, 'css.cjs'),
+    `process.stdout.write(require('fs').readFileSync(require.resolve('${stylesheet}'), 'utf8'))`
+  )
+  if (run('node', ['css.cjs'], consumer) === minifyCss(join(ROOT, STYLESHEET.source)))
+    pass(`resolves ${stylesheet}, matching ${STYLESHEET.source}`)
+  else fail(`${stylesheet} does not match ${STYLESHEET.source}`)
 
   // A browser host's view: the DOM library and no @types/node, so a
   // declaration that leans on a Node type fails here. Through the `exports`

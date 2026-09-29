@@ -1436,7 +1436,7 @@ interface EditorTheme {
 - **The defaults are in the editor's code,** merged under the host's values, which are compared by content, so an inline object costs nothing. The key list is settled when the components are built.
 - **Operator and category colours are not here:** they are display data, in `operatorHints` and `categoryHints` ("Display overrides").
 - **A dark mode is a different object,** swapped by the host as it swaps json-edit-react's `theme`. Do later: `editorTheme` values to pair with `@json-edit-react/themes`' dark themes.
-- **How the values reach the editor's own components** (the DisplayBar, toolbar, messages area, result display and hover cards) is internal, for example as custom properties set inline on the editor's own elements, so its stylesheet can use them.
+- **How the values reach the editor's own components** (the DisplayBar, toolbar, messages area, result display and hover cards) is as json-edit-react applies its theme: each component reads the merged values and sets them as inline styles on its own elements. The stylesheet holds none of them, and no custom properties are involved.
 
 **Everything else is json-edit-react's `theme`,** layered over the editor's own theme layer: the editor passes `theme={[editorLayer, hostTheme]}`, so the host's layer wins wherever they overlap. The editor's styling that depends on a row's kind (brackets hidden on nodes, the node border, reference colours, the vars block) is written as style functions, which json-edit-react applies after every static style, so a host's static styles recolour json-edit-react's own elements without undoing the editor's structure. Reference colours come from `editorTheme`, not from `theme`'s `string`. This replaces v1's separate `styles` prop.
 

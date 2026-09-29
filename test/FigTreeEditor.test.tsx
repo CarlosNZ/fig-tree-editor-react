@@ -28,7 +28,7 @@ describe('FigTreeEditor', () => {
       </>
     )
     expect(styleSheets()).toHaveLength(1)
-    expect(styleSheets()[0]?.textContent).toContain('.ft-editor')
+    expect(styleSheets()[0]?.textContent).toContain('.ft-select')
   })
 
   it("adds the host's class name to its own", () => {
@@ -36,6 +36,70 @@ describe('FigTreeEditor', () => {
       <FigTreeEditor figTree={figTree} expression={1} setExpression={vi.fn()} className="host" />
     )
     expect(container.querySelector('.ft-editor.host')).toBeInTheDocument()
+  })
+
+  it('hides array indexes, which the host can show', () => {
+    const { rerender } = render(
+      <FigTreeEditor figTree={figTree} expression={['a', 'b']} setExpression={vi.fn()} />
+    )
+    expect(screen.queryByText('1')).not.toBeInTheDocument()
+    rerender(
+      <FigTreeEditor
+        figTree={figTree}
+        expression={['a', 'b']}
+        setExpression={vi.fn()}
+        showArrayIndexes
+      />
+    )
+    expect(screen.getByText('1')).toBeInTheDocument()
+  })
+
+  it("applies the host's json-edit-react theme", () => {
+    render(
+      <FigTreeEditor
+        figTree={figTree}
+        expression={{ $plus: [1, 2] }}
+        setExpression={vi.fn()}
+        theme={{ property: 'rgb(1, 2, 3)' }}
+      />
+    )
+    expect(screen.getByText('$plus')).toHaveStyle({ color: 'rgb(1, 2, 3)' })
+  })
+
+  it('refuses the json-edit-react props the editor replaces, by type', () => {
+    // Never rendered: the file's typecheck (`pnpm typecheck`) is the test
+    const refused = () => (
+      <>
+        {/* @ts-expect-error `data` is the editor's `expression` */}
+        <FigTreeEditor figTree={figTree} expression={1} setExpression={vi.fn()} data={1} />
+        {/* @ts-expect-error `setData` is the editor's `setExpression` */}
+        <FigTreeEditor figTree={figTree} expression={1} setExpression={vi.fn()} setData={vi.fn()} />
+        <FigTreeEditor
+          figTree={figTree}
+          expression={1}
+          setExpression={vi.fn()}
+          // @ts-expect-error the editor builds each row's type options
+          allowTypeSelection
+        />
+        <FigTreeEditor
+          figTree={figTree}
+          expression={1}
+          setExpression={vi.fn()}
+          // @ts-expect-error the editor offers each node's parameters
+          newKeyOptions={['a']}
+        />
+        {/* @ts-expect-error the editor gives every new value */}
+        <FigTreeEditor figTree={figTree} expression={1} setExpression={vi.fn()} defaultValue={1} />
+        <FigTreeEditor
+          figTree={figTree}
+          expression={1}
+          setExpression={vi.fn()}
+          // @ts-expect-error the editor's own definitions
+          customNodeDefinitions={[]}
+        />
+      </>
+    )
+    expect(refused).toBeTypeOf('function')
   })
 
   describe('validation', () => {

@@ -258,7 +258,7 @@ function App() {
           </Flex>
           {/** EXPRESSION EDITOR COLUMN */}
           <Flex h={'100%'} minW="45%" direction="column" alignItems="center" flexGrow={1} mb={10}>
-            <Box maxW={500}>
+            <Box maxW={500} w="100%">
               <Heading size="md" alignSelf="flex-start">
                 FigTree expression
               </Heading>

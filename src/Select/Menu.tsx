@@ -1,4 +1,5 @@
 import React from 'react'
+import { strings } from '../strings'
 import { type OptionGroup, type SelectOption } from './types'
 
 interface CommonMenuProps<T> {
@@ -35,7 +36,7 @@ export function DropdownMenu<T>({
     <div ref={optionsRef} className="ft-select-dropdown">
       {allVisibleOptions?.length === 0 && (
         <div className={`ft-select-option ft-select-no-options`} tabIndex={0}>
-          No results
+          {strings.FT_SELECT_NO_RESULTS}
         </div>
       )}
       {optionGroups
