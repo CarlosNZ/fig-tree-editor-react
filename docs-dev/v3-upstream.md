@@ -38,6 +38,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         |
 | J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         |
 | J9  | json-edit-react    | Reveal a row from the editor handle                                  | Maybe    | Not filed                                                         |
+| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                 | Open     | Not filed                                                         |
 
 ---
 
@@ -242,7 +243,11 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Why.** A full node's component owns both of its editors, the structured toolbar and raw JSON, from one definition ("Two editors per node" in [v3-design.md](v3-design.md)). J2 lets that component use json-edit-react's own raw-JSON editor rather than a copy of it.
 
-**Without it.** The component renders its own `AutogrowTextArea` and re-implements the parse error, keyboard handling and `TextEditor` support, and JSON typed into it is lost when another node's edit displaces the session, since json-edit-react commits the row's own buffer on displace.
+**Shipped** in json-edit-react 2.0.1 ([#414](https://github.com/CarlosNZ/json-edit-react/pull/414)), as the second shape. With `passOriginalNode: true`, a `showOnEdit` collection component receives the raw-JSON editor as `originalNode` while editing, and `undefined` otherwise. The editor carries its own ✓ and ✗, which attach `editConfirmRef`, so the handle's `confirm()` works on a raw-JSON session. It must be rendered at most once. Three fixes in the same release matter here:
+
+- Closing a session nobody typed into is a no-op, with no `onUpdate` and no `setData`. So a displaced toolbar session reaches the host only through its own commits.
+- A rejected raw-JSON commit drops the typed text, so a later session on the node cannot re-submit it.
+- Tab in a component's own input is left to the browser.
 
 **Issue.** [CarlosNZ/json-edit-react#411](https://github.com/CarlosNZ/json-edit-react/issues/411).
 
@@ -317,5 +322,15 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Why.** Clicking a line's path in the messages area reveals its row ("The messages area" in [v3-design.md](v3-design.md)). json-edit-react's rows carry no marker of their path, so the editor can expand the ancestors through `collapse` but can only scroll to an element it draws itself. The editor's own handle already has a `reveal({ path })` with the same signature ("The handle and edit sessions" in [v3-design.md](v3-design.md)), which would call json-edit-react's once it exists.
 
 **Without it.** The editor scrolls to the nearest element it draws: the row where it has a component, otherwise the enclosing node's header. Expected to be adequate in most cases (Carl, September 2026); to revisit if it proves not to be.
+
+**Issue.** Not filed.
+
+### J10 · Report a rejected `setValue` to the custom component — **Open**
+
+**The change.** Type a custom component's `setValue` as returning the commit's outcome (`Promise<UpdateOutcome | undefined>`), and export `UpdateOutcome`. At runtime it already returns `submit`'s promise; only the type says `void`. Possibly also report the rejection as json-edit-react's other edits do, through `onError` and the row's error slug.
+
+**Why.** When the host's `onUpdate` rejects a toolbar commit, json-edit-react leaves `data` unchanged and fires `updateError` through `onEditEvent`, but calls no `onError` and shows no error on the row (checked against 2.0.1). So the toolbar can't tell the author why an action had no effect. On ✗, it can't tell that the revert failed and keep itself open ("Commit semantics" in [v3-design.md](v3-design.md)).
+
+**Without it.** The component treats the returned value as a promise of the outcome regardless of the type, or watches its `value` for the change that didn't land. Whether it's needed depends on whether hosts reject toolbar edits in practice.
 
 **Issue.** Not filed.
