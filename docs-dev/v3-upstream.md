@@ -132,9 +132,9 @@ The change is a field carrying it, for example `suggestion: 'then'`. It might al
 
 **The change.** Descriptions for the nine parameters that have none in 3.0.0-preview.1 (`power.base`, `power.exponent`, and `value` on `round`, `floor`, `ceil`, `abs`, `lower`, `upper` and `trim`), and a test that every core and I/O parameter has one.
 
-**Why.** A row's tooltip is its declaration's `description` ("Slots" in [v3-design.md](v3-design.md)).
+**Why.** A parameter's hover card carries its declaration's `description` ("Parameter metadata" in [v3-design.md](v3-design.md)).
 
-**Without it.** Those rows have no tooltip.
+**Without it.** Those parameters' hover cards have no description line.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198), item 3.
 
@@ -230,7 +230,7 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Why it came up.** json-edit-react hides a row's edit tools while that row is editing (`showEditButtons = !isEditing`), so a full node's ✎ ＋ ✕ disappear while its toolbar or raw-JSON editor is open. It is a known wart carried from v1, and a cost of anchoring nodes on their own object.
 
-**Why it was dropped.** The code change would be small, but each tool needs a defined meaning mid-session: ✎ would reopen a session already open, ＋ would open an add session that displaces it, and ✕ would delete the node being edited, leaving only copy harmless. The benefit is small: the toolbar has its own add-parameter control, and deleting or copying the node can wait until it closes. The one tool that would be useful mid-session, switching to raw JSON, the node's component can offer in its toolbar with no json-edit-react change, since it owns both editors (J2).
+**Why it was dropped.** The code change would be small, but each tool needs a defined meaning mid-session: ✎ would reopen a session already open, ＋ would open an add session that displaces it, and ✕ would delete the node being edited, leaving only copy harmless. The benefit is small: the toolbar has its own add-parameter control, and deleting or copying the node can wait until it closes. The one tool that would be useful mid-session, switching to raw JSON, was considered as a toolbar control and dropped: each editor has one way in ("Two editors per node" in [v3-design.md](v3-design.md)).
 
 **Revisit.** Carl may reverse this once the toolbar can be tried in the built editor, which counts as new grounds.
 
@@ -240,9 +240,9 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **The change.** The collection counterpart of `StringEdit`: json-edit-react's raw-JSON editor, as an element a custom collection component can render, wired to the row's own edit buffer so that parsing, the invalid-JSON error, commit on displace, keyboard handling and the host's `TextEditor` all keep working. The issue sets out two possible shapes: expose the buffer and export an element, or pass a pre-wired element as `passOriginalNode` does for value rows.
 
-**Why.** A full node's component owns both of its editors, the structured toolbar and raw JSON, from one definition ("Two editors per node" in [v3-design.md](v3-design.md)). That replaces v1's variant pair, its `displayBarEditPath` state and the whole-tree re-render that switching variants needs.
+**Why.** A full node's component owns both of its editors, the structured toolbar and raw JSON, from one definition ("Two editors per node" in [v3-design.md](v3-design.md)). J2 lets that component use json-edit-react's own raw-JSON editor rather than a copy of it.
 
-**Without it.** The component renders its own `AutogrowTextArea` and re-implements the parse error, keyboard handling and `TextEditor` support, and JSON typed into it is lost when another node's edit displaces the session, since json-edit-react commits the row's own buffer on displace. Or the editor keeps v1's variant pair.
+**Without it.** The component renders its own `AutogrowTextArea` and re-implements the parse error, keyboard handling and `TextEditor` support, and JSON typed into it is lost when another node's edit displaces the session, since json-edit-react commits the row's own buffer on displace.
 
 **Issue.** [CarlosNZ/json-edit-react#411](https://github.com/CarlosNZ/json-edit-react/issues/411).
 
@@ -314,7 +314,7 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **The change.** A `reveal({ path })` on `JsonEditorHandle`, which expands the row's collapsed ancestors and scrolls the row into view without opening an edit. `startEdit` already reveals a target collapsed below the mount frontier, so the logic exists; this exposes it on its own.
 
-**Why.** Clicking a line's path in the messages area reveals its row ("The messages area" in [v3-design.md](v3-design.md)). json-edit-react's rows carry no marker of their path, so the editor can expand the ancestors through `collapse` but can only scroll to an element it draws itself.
+**Why.** Clicking a line's path in the messages area reveals its row ("The messages area" in [v3-design.md](v3-design.md)). json-edit-react's rows carry no marker of their path, so the editor can expand the ancestors through `collapse` but can only scroll to an element it draws itself. The editor's own handle already has a `reveal({ path })` with the same signature ("The handle and edit sessions" in [v3-design.md](v3-design.md)), which would call json-edit-react's once it exists.
 
 **Without it.** The editor scrolls to the nearest element it draws: the row where it has a component, otherwise the enclosing node's header. Expected to be adequate in most cases (Carl, September 2026); to revisit if it proves not to be.
 

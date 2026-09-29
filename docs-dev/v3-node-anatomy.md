@@ -1,6 +1,6 @@
 # Node anatomy — what each kind is made of
 
-_A companion to [v3-design.md](v3-design.md) ("Node model"). The design doc records the decisions; this file spells out, kind by kind, exactly how each node is built from json-edit-react's rows and the editor's own components, so it is always clear which part is ours and which is core json-edit-react. It describes the proposed design and changes with it._
+_A companion to [v3-design.md](v3-design.md) ("Node model"). The design doc records the decisions; this file spells out, kind by kind, exactly how each node is built from json-edit-react's rows and the editor's own components, so it is always clear which part is ours and which is core json-edit-react. It describes the design agreed as the starting point for Phase 4, and changes with it. Its sketches are schematic: the DisplayBar's actual layout is in v3-design.md ("Header and toolbar")._
 
 ## How to read this
 
@@ -25,7 +25,7 @@ For every row, JER looks through `customNodeDefinitions` and applies the **first
 
 When a definition gives the row a **custom component**, the component renders inside the inner block, and JER passes it the child rows as `children`, which it places wherever it likes. The JER header row stays above it unless the definition says `showCollectionWrapper: false`.
 
-**A value row** is one line: the key label, then the value, then the edit tools. When a definition gives the row a custom component, the component replaces **only the value**; the key label and the edit tools are still JER's. While the value is being edited, JER shows its own input in place of the component (the definitions here all use `showOnEdit: false` for value rows), plus its type dropdown.
+**A value row** is one line: the key label, then the value, then the edit tools. When a definition gives the row a custom component, the component replaces **only the value**; the key label and the edit tools are still JER's. While the value is being edited, JER shows its own input in place of the component (comment lines use `showOnEdit: false`; the reference definitions use `showOnEdit: true` and render the standard input they are passed, so that `editOnTypeSwitch` works, topic 4), plus its type dropdown.
 
 ### Terms
 
@@ -34,13 +34,13 @@ When a definition gives the row a **custom component**, the component renders in
 - **Flattened payload:** a collection row with `showCollectionWrapper: false` and `showKey: false` and no component. JER then draws neither its header row nor its brackets: its child rows appear directly beneath whatever is above. It has no edit tools of its own.
 - **Unlabelled:** a row whose definition is a copy of its usual one with `showKey: false`, so it renders exactly as usual minus its key label. Used on a shorthand's `$name` row when that row holds a single value.
 - **Quoted:** inside a `literal` payload or a `//` value. No definition matches a quoted row, so everything there is plain JER.
-- **Modifier styling:** the `//`, `vars`, `fallback` and `useCache` keys are styled through the theme (a style function on the key), not through a custom definition. Styling and definitions are separate mechanisms in JER, so a `fallback` row can be any kind of row and still have its key marked as a modifier.
+- **Modifier styling:** the `//`, `fallback` and `useCache` keys are styled (the `vars` key takes the `$vars` colour instead) through the theme (a style function on the key), not through a custom definition. Styling and definitions are separate mechanisms in JER, so a `fallback` row can be any kind of row and still have its key marked as a modifier.
 
 In the sketches, `✎ ＋ ✕` stands for JER's edit tools, `▾` for its chevron, and `▶` for an Evaluate affordance. The theme hides the brackets of node rows, as v1's does. JER's edit tools, the DisplayBar's pencil and the conversion buttons all appear on hover only; the sketches draw them permanently.
 
 ### Collapsed
 
-A collapsed node shows only JER's header row, as in v1: the chevron, the key, and the brackets with a summary between them in place of the item count, such as `total: { Operator: plus }`, `greeting: { Fragment: greet }` or `label: { Shorthand: $if }`. A node with an issue colours its summary line as an error. The summaries for each kind are sketched in section I of the mockups.
+A collapsed node shows only JER's header row, as in v1: the chevron, the key, and the brackets with a summary between them in place of the item count, such as `total: { Operator: plus }`, `greeting: { Fragment: greet }` or `label: { Shorthand: $if }`. A collapsed row with issues beneath it, plain collections included, colours its summary by the most severe of them, with a count where there is more than one ("Where issues attach" in the design). The summaries for each kind are sketched in section I of the mockups.
 
 ---
 
@@ -121,7 +121,7 @@ One visual consequence: a modifier such as `fallback` sits beside `parameters` i
 - **No arguments:** `{ fragment: 'greet' }`. There is no `parameters` row, so the node is just the DisplayBar.
 - **Dynamic arguments from a reference:** `{ fragment: 'greet', parameters: '$data.formValues' }`.
   - The `parameters` row is **not** flattened. It is a **Reference** row with its key shown, because it is one expression that computes the whole arguments object, not a list of arguments.
-  - "Add parameter" is not offered, and neither is "To shorthand", since this call has no shorthand form.
+  - "Add parameter" offers the modifiers only, with no arguments, and "To shorthand" is not offered, since this call has no shorthand form.
 - **Dynamic arguments from a node:** `{ fragment: 'greet', parameters: { $buildObject: [ … ] } }`. As above, but the `parameters` row is that node's own kind (here a shorthand node, kind 5) with its key shown.
 - **Broken:** `{ fragment: 'nope' }`. As for operators: the name is shown as an error, and the toolbar opens so a registered fragment can be picked.
 
@@ -185,7 +185,7 @@ The structure is exactly that of kind 3, with the **Shorthand** component on `['
 
 - **No arguments:** `{ $greet: {} }`. The flattened payload has no children, so the node is just the DisplayBar.
 - **Dynamic arguments:** `{ $greet: { $buildObject: [ … ] } }`. The payload is itself a node, so the `$greet` row is **not** flattened: it is an unlabelled node row (here a positional shorthand, kind 5). Flattening it would remove that inner node's own header.
-- **Broken:** `{ $greet: '$data.x' }`, since a fragment's shorthand payload must be an object. The Shorthand component shows the error. There is no Evaluate or conversion, and the fix is made through raw JSON.
+- **Broken:** `{ $greet: '$data.x' }`, since a fragment's shorthand payload must be an object (`malformed-node` at the `$greet` row). The Shorthand component shows the error. There is no Evaluate or conversion, and the fix is made through raw JSON.
 
 ---
 
@@ -221,7 +221,7 @@ The most compact form, and the one "To shorthand" produces wherever it is allowe
 
 The elements have no labels, since array indexes are hidden throughout the editor. Their type dropdowns are filtered by the parameter each position binds to, which the editor works out from the operator's `positionalParams`.
 
-It would help to show, dimmed, the parameter each position binds (`condition`, `then`, `else` for `$if`). JER's key slot cannot do it: it is never drawn for array elements while array indexes are hidden, so a `keyComponent` has nowhere to render. It would need either a component on every element row, or a JER option for labelling individual array elements. Left open.
+It would help to show, dimmed, the parameter each position binds (`condition`, `then`, `else` for `$if`). JER's key slot cannot do it: it is never drawn for array elements while array indexes are hidden, so a `keyComponent` has nowhere to render. It would need either a component on every element row, or a JER option for labelling individual array elements. Do later, with J7 in v3-upstream.md.
 
 ### With a single value
 
@@ -254,7 +254,7 @@ The `$name` row holds one value rather than a list, so it is **unlabelled**: it 
 
 - **With sibling modifiers:** `{ $http: 'https://api.example.com/rates', fallback: null }`. The `$http` row is an unlabelled plain value row holding the URL, and the `fallback` row follows with modifier styling.
 - **Symbolic alias:** `{ '$+': [1, 2] }`. The button shows `$+`.
-- **Broken:** a non-reserved sibling (`{ $plus: [1], extra: 2 }`), two `$name` keys (`{ $plus: 1, $minus: 2 }`), or the wrong number of arguments (`{ $if: ['$data.x'] }`). The Shorthand component shows the error. There is no Evaluate or conversion, and the fix is made through raw JSON.
+- **Broken:** a non-reserved sibling (`{ $plus: [1], extra: 2 }`) or two `$name` keys (`{ $plus: 1, $minus: 2 }`), each `malformed-node` at the offending key. The Shorthand component shows the error. There is no Evaluate or conversion, and the fix is made through raw JSON. Too few arguments (`{ $if: ['$data.x'] }`) is not broken: it is `missing-required` on a well-formed node, which flags its header and still converts.
 
 ---
 
@@ -333,7 +333,7 @@ name: $data.user.name ▶                       ✎ ✕ [→ get]
   - JER draws the key label (`name:`) and the edit tools.
   - The component replaces only the value: the string in its namespace's colour, and a small inline Evaluate affordance. Each namespace has its own colour: `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names).
   - "To get node" is a JER custom button on reference rows, so it appears on hover with the other edit tools.
-  - On ✎, the component steps aside and JER's ordinary string input appears, with the type dropdown (filtered by the parameter's type, where the reference is a parameter). So a reference is edited by typing, like any string.
+  - On ✎, the component renders JER's ordinary string input, which it is passed (`passOriginalNode`), with the type dropdown (filtered by the parameter's type, where the reference is a parameter). So a reference is edited by typing, like any string.
 
 **Variants:**
 
@@ -408,7 +408,7 @@ The `//` key, legal on any object. Its value is never evaluated.
 
 ## 12. Vars block
 
-The `vars` key on an operator node, a fragment call or a plain object.
+The `vars` key on an operator node, a fragment call, a shorthand node (as a sibling of the `$name` key) or a plain object.
 
 ```js
 { operator: 'if', …, fallback: null, vars: { country: { $http: 'https://…' }, limit: 5 } }
