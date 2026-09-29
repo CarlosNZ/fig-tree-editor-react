@@ -43,7 +43,7 @@ export const FigTreeEditor = ({
   )
 }
 
-// TO-DO: replace with the diagnostics UI from the design phase (plan, Phase 9)
+// TO-DO: replace with the diagnostics UI from the design phase (plan, Phase 10)
 const IssueList = ({ issues }: { issues: Issue[] }) => (
   <ul className="ft-issues">
     {issues.map((issue, index) => (

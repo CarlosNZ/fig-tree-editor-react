@@ -51,7 +51,7 @@ Two layers let you swap between local source and published packages without code
 
 ## Architecture
 
-This section describes **v1**, whose components are in `v1-src/` (reference only, never imported or built), so read its `src/` paths as `v1-src/`. The v3 rewrite is planned in `docs-dev/v3-plan.md`, and Phase 10 rewrites this section for it.
+This section describes **v1**, whose components are in `v1-src/` (reference only, never imported or built), so read its `src/` paths as `v1-src/`. The v3 rewrite is planned in `docs-dev/v3-plan.md`, and Phase 11 rewrites this section for it.
 
 ### Entry point: `src/FigTreeEditor.tsx`
 

@@ -271,7 +271,7 @@ Evaluating a sub-tree compiles and evaluates a synthesised expression: the sub-t
 
 ### The fill-in step — **Agreed**, except where marked
 
-The editor's step that changes the tree, run over the whole expression after every update and when the host passes an expression in. It is not called "validate" (plan, Phase 5).
+The editor's step that changes the tree, run over the whole expression after every update and when the host passes an expression in. It is not called "validate" (plan, 4.5).
 
 - **Complete: insert missing required parameters with their starting values** (the seed rule from `./editor-hints`), on load and after every update. For a fragment call with static arguments, the same applies to its required arguments, with the fragment's `FragmentHints` seeds. It is form-aware: a named payload gains a key, and a positional payload gains trailing elements, since supplied positional arguments are always an unbroken prefix. It cannot apply to dynamic arguments.
 - **Clean: remove parameters that do not belong only on a structural action,** never on load and never on a content edit.
@@ -330,7 +330,7 @@ Each full node (operator, fragment call and `literal`) can be edited two ways: t
 
 **Rejected: editor modes on json-edit-react's edit session**, so that a definition could show its own editor only in sessions opened in a "custom" mode. It would remove the same bookkeeping, but it is more public API than composition needs, and composition already serves value rows through `StringEdit`.
 
-**Without J2**, the component renders `AutogrowTextArea` itself and re-implements the parse error, keyboard handling and the host's `TextEditor`, and JSON typed into it is lost when another node's edit displaces the session. The details are to be proved on one node early in Phase 4.
+**Without J2**, the component renders `AutogrowTextArea` itself and re-implements the parse error, keyboard handling and the host's `TextEditor`, and JSON typed into it is lost when another node's edit displaces the session. The details are to be proved on one node early in Phase 5.
 
 **Each editor has one way in:** the DisplayBar's pencil opens the toolbar, and json-edit-react's ✎ opens raw JSON. There is no switch between them inside a session: the toolbar's "Edit as JSON" and the raw-JSON editor's "Use the toolbar" were mocked up (topic 3) and dropped, since each only saves closing the session and reopening it from the other control.
 
@@ -520,7 +520,7 @@ Options are listed in this order: the admitted types in declared order, the enum
 | Parameter | `$params` (`$p`)                                  | in fragment-definition mode (topic 6)  | the fragment's first declared parameter                                                         |
 
 - **Each entry is its own named definition** (a Leaf, topic 1), sharing one component and differing in `name` and `condition`, which reads the namespace from the kind map (`recognizeReference`). json-edit-react shows a row's matching named definition as its current type, so a `$vars` reference shows "Variable", and a broken `'$vars.nope'` outside any scope still does. Scope comes from the scope chain the walk records (topic 1).
-- **Choosing one keeps the input open for the path,** through json-edit-react's `editOnTypeSwitch`, which needs the definition to render json-edit-react's own string input while editing (`showOnEdit: true` with `passOriginalNode`). To be proved in Phase 7. If it cannot be, choosing Data commits bare `'$data'` (the whole data object, which is valid) rather than an incomplete `'$data.'`, and the author edits the row again.
+- **Choosing one keeps the input open for the path,** through json-edit-react's `editOnTypeSwitch`, which needs the definition to render json-edit-react's own string input while editing (`showOnEdit: true` with `passOriginalNode`). To be proved in Phase 8. If it cannot be, choosing Data commits bare `'$data'` (the whole data object, which is valid) rather than an incomplete `'$data.'`, and the author edits the row again.
 - **Choosing `string` on a reference row keeps the text,** which is still reference-shaped, so the row stays a reference until its text is edited. Accepted: a string's meaning is what it says.
 - Suggesting names while a reference is typed: do later ("Editing references", topic 5).
 - **Rejected: offering `string` wherever a reference is possible.** At a number slot it presents literal strings as legal when `validate()` rejects them, and a reference row would show "string" as its type.
@@ -731,7 +731,7 @@ A `vars` block on an operator node, a fragment call, a shorthand node or a plain
 
 **Drawn by the theme, with no component of its own.** json-edit-react renders the block as the plain collection it is, with its own edit tools (✎ for raw JSON, ＋, ✕). The editor's theme style functions, which receive each row's data and read the kind map, colour the `vars` key and give the block its left rule and tinted background, and `customText` gives the collapsed summary. The `vars` key carries topic 4's hover card, with the modifier's description ("Named values for this node and everything inside it"). So the vars block has no definition of its own, only theme styling, as for `fallback` and `useCache` (topic 1's table).
 
-- Whether a collection's style can draw the rule and tint down the whole block is to be proved in Phase 8. If it cannot, the fallback is a Vars component that only wraps the child rows, with no caption.
+- Whether a collection's style can draw the rule and tint down the whole block is to be proved in Phase 9. If it cannot, the fallback is a Vars component that only wraps the child rows, with no caption.
 - Rejected: a Vars component with a caption line ("vars · for this node and everything inside it"). Always-visible text goes against topic 3's uncluttered tree, and the hover card already says it.
 
 **Var names are plain json-edit-react keys.** Only the `vars` key takes the `$vars` colour. The vars are ordinary rows, sitting on the block's tint, which already marks every row in it as a declaration. Rejected: names in the `$vars` colour to match their uses (`country` and `$vars.country`), which styles content the tint already sets apart.
@@ -813,7 +813,7 @@ A comment's value is quoted content, so it stays plain json-edit-react data, edi
 **A string comment** is a value row. **A multi-line comment** (`'//': ['line 1', 'line 2']`) is a plain json-edit-react array, one row per line, each line edited in json-edit-react's own input, with the array's ＋ adding a line and its ✕ deleting the comment. The theme gives the array the look of one note block. Going from one line to several is the comment row's type dropdown ("array", which json-edit-react turns `'x'` into `['x']`, then ＋), or Shift-Enter inside the string, which the note's `white-space: pre-wrap` shows as a line break. Going back to a single string takes raw JSON, since collection rows have no type dropdown.
 
 - **Each line has a thin view-only definition:** json-edit-react's exported `StringDisplay` with quotes off and no truncation, since json-edit-react writes a string's quotes as literal text, which CSS cannot remove, and cuts strings off at `stringTruncateLength`. With `showOnEdit: false`, editing is json-edit-react's own input. The same definition serves a string comment.
-- **The array keeps its json-edit-react header row,** which is where its ＋ and ✕ are: flattening it would lose both. A definition with `showKey: false` and no component, and the theme hiding its chevron and brackets, leave that row holding only the hover tools. Whether CSS can fold it into the block's top edge is proved in Phase 8, with the vars block's tint.
+- **The array keeps its json-edit-react header row,** which is where its ＋ and ✕ are: flattening it would lose both. A definition with `showKey: false` and no component, and the theme hiding its chevron and brackets, leave that row holding only the hover tools. Whether CSS can fold it into the block's top edge is proved in Phase 9, with the vars block's tint.
 - **Comments never start collapsed.** A multi-line comment is one level deeper than its node's parameters, so at the host's `collapse` depth it would open as `[ 2 items ]`. The editor wraps the host's `collapse` filter to keep comment rows open.
 - Rejected: drawing the array as one note through `renderCollectionAsValue`, which needs an editor of the editor's own. json-edit-react has no editor for an array on a value row, so with `showOnEdit: false` its "invalid value" input appears. The component would join the lines into one textarea and split them on commit (`fromStandardType`).
 - Rejected: editing a multi-line comment only through its node's raw JSON.
@@ -860,7 +860,7 @@ The rest is set aside, to be revisited further into the work (Carl, September 20
 - **Evaluation:** of the whole body and of sub-trees, with test arguments, through F10.
 - **Display:** the fragment's own `FragmentHints`, if the wrapper is edited.
 
-**Until it is picked up,** nothing in Phases 4 to 9 depends on it: the Parameter entry is not offered, and a `$params` reference carries `validate()`'s `unresolved-param` error, as it would in any expression.
+**Until it is picked up,** nothing in Phases 4 to 10 depends on it: the Parameter entry is not offered, and a `$params` reference carries `validate()`'s `unresolved-param` error, as it would in any expression.
 
 ### The fragment picker — **Agreed**
 

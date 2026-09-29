@@ -77,7 +77,7 @@ function App() {
     setLocalStorage('options', newOptions)
   }
 
-  // TO-DO: remove once the editor evaluates nodes itself (plan, Phase 9)
+  // TO-DO: remove once the editor evaluates nodes itself (plan, Phase 10)
   const evaluate = async () => {
     setIsEvaluating(true)
     try {

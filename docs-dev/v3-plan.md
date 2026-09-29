@@ -47,7 +47,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 
 ## Phase 0 — Housekeeping
 
-- **0.1 · Branching.** `main` stays the active 1.x branch while v3 is developed, and patch releases go out from it as usual. `v3.0-dev` takes v1 fixes from `main` only where they still apply, such as fixes to the demo or tooling, since the v3 components are new code. The `v1.x` maintenance branch is cut at release (Phase 10).
+- **0.1 · Branching.** `main` stays the active 1.x branch while v3 is developed, and patch releases go out from it as usual. `v3.0-dev` takes v1 fixes from `main` only where they still apply, such as fixes to the demo or tooling, since the v3 components are new code. The `v1.x` maintenance branch is cut at release (Phase 11).
 - **0.2 · Freeze v1 as reference.** Move `src/` to `v1-src/`. Exclude it from `tsconfig`, rollup and eslint, and add a lint rule that bans imports from it. Copy `Select/`, `Icons.tsx` and `styles.css` into the new `src/`.
 - **0.3 · Dependencies.**
   - Move `fig-tree-evaluator` to `peerDependencies` as `^3.0.0` (or the current preview range until 3.0.0 is out), and keep it as a devDependency for development. `json-edit-react` and `@json-edit-react/utils` stay as regular dependencies, since consumers don't touch them directly.
@@ -59,7 +59,7 @@ These v3 specs matter most for the editor. They are in the fig-tree-evaluator re
 - **0.5 · Version.** Set the version to `3.0.0-dev` to mark a development phase with no releases planned for a while. It is never published: in semver, `dev` sorts above `alpha` and `beta`, so a published `3.0.0-dev` would outrank later pre-releases. The first published pre-release sets its own version. `package.json` also sets `"private": true`, so `npm publish` refuses outright while `npm pack` (and so `demo:pack`) still works. Remove it when the first pre-release goes out.
 - **0.6 · Demo deployment guard.** `demo`'s `deploy` script publishes to the live v2 playground (`carlosnz.github.io/fig-tree-evaluator`). Make sure a v3 demo can't be deployed there before release, for example by disabling the script on this branch or pointing it at a separate preview location.
   - Done by disabling it: `deploy` prints why and exits with an error, and `predeploy` is removed so nothing builds first. A preview location can be added later if a hosted v3 preview is wanted before release.
-  - The live scripts, to restore in Phase 10: `"predeploy": "pnpm build"` (`yarn build` before 1.1) and `"deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"`.
+  - The live scripts, to restore in Phase 11: `"predeploy": "pnpm build"` (`yarn build` before 1.1) and `"deploy": "gh-pages -d dist -r https://github.com/CarlosNZ/fig-tree-evaluator.git"`.
 
 ## Phase 1 — Tooling
 
@@ -71,7 +71,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
   - Add `engines` and `.nvmrc` with fig-tree's Node floor (22.12), and `pnpm.onlyBuiltDependencies` where install scripts need it.
   - Replace every `yarn` call in scripts: the root `package.json`, `demo/package.json` and `scripts/pack.mjs`.
   - Done. Both lockfiles were merged and imported in one `pnpm import` at the workspace root (1.2). Where the two resolved a transitive dependency to different versions within the same range (62 specifiers, all patch or minor), the root's version was kept. `esbuild` is the only dependency whose install script needs allowing. The root gains explicit `react` and `react-dom` devDependencies at `^18.3.1`: under yarn it had no `react` and a stray `react-dom@19`.
-  - pnpm runs pre/post hooks for ordinary scripts (`enable-pre-post-scripts` defaults to true), so the demo's `prebuild` still fires, and so will `predeploy` when Phase 10 restores it.
+  - pnpm runs pre/post hooks for ordinary scripts (`enable-pre-post-scripts` defaults to true), so the demo's `prebuild` still fires, and so will `predeploy` when Phase 11 restores it.
 - **1.2 · Decide: should the demo be a pnpm workspace?**
   - For: one lockfile and one install, and no need to bump a shared dependency in two places. A `workspace:` link could also replace the demo's `local` alias mode.
   - Against: the demo's `npm` and `pack` modes rely on it resolving the editor independently of the root, and it deploys on its own.
@@ -100,14 +100,14 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
 - **1.8 · CI.** Add a GitHub Actions workflow modelled on fig-tree's `ci.yml` that runs `format:check`, `lint`, `typecheck`, `test` and `build`. Consider fig-tree's PR bundle-size comment (`pr-bundle-size.yml`) as well.
   - Done: `.github/workflows/ci.yml`, one job on pushes to `main` and `v3.0-dev` and on every pull request, running the checks in `release`'s order and taking Node from `.nvmrc`. It doesn't lint or typecheck `demo/` yet, because the demo can't typecheck until Phase 2 gives `src/` a `FigTreeEditor`. Add both in 2.3.
   - Deferred: the PR bundle-size comment. `bundleSize.mjs --json` already emits what it needs, so fig-tree's `pr-bundle-size.yml` and `formatSizeDiff.mjs` can be ported when wanted.
-- **1.9 · Docs.** Update the Commands section of `CLAUDE.md` straight away, since the commands change here and it shouldn't wait for the Phase 10 rewrite.
-  - Done. The Commands and dependency-source sections of `CLAUDE.md` describe the Phase 1 tooling. Architecture carries a note that it describes v1, in `v1-src/`, until Phase 10.
+- **1.9 · Docs.** Update the Commands section of `CLAUDE.md` straight away, since the commands change here and it shouldn't wait for the Phase 11 rewrite.
+  - Done. The Commands and dependency-source sections of `CLAUDE.md` describe the Phase 1 tooling. Architecture carries a note that it describes v1, in `v1-src/`, until Phase 11.
 
 ## Phase 2 — Skeleton
 
 - **2.1 · Minimal `FigTreeEditor`.** A new component with the same outline of props as v1 (the expression, a `FigTree` instance, `onUpdate`, and options). It renders a JER `<JsonEditor>` over the expression with **no custom nodes**. That's a working v3 editor, just an unstyled JSON one.
   - Port JER's `injectStyles` with it (called from a `useInsertionEffect`, deduplicated on a marked `<style>` element), importing `styles.css?inline` (see 1.6).
-  - Done. The props are `figTree` (a `FigTree`, unused until 2.2), `expression` and `setExpression`, plus JER's own props passed straight through, `onUpdate` among them. Expressions are typed `unknown`, as fig-tree's methods take them. The evaluation props (`objectData`, `onEvaluate` and the rest) wait for Phase 9. The editor adds the `ft-editor` class to any `className` the host passes. The package no longer re-exports fig-tree, which is a peer the host imports itself. Phase 3 can revisit that under "Public API". So the demo imports its fig-tree names from `fig-tree-evaluator` directly, and in `local` mode it runs the new editor on its own fig-tree v2 (through `dedupe`) until 2.3.
+  - Done. The props are `figTree` (a `FigTree`, unused until 2.2), `expression` and `setExpression`, plus JER's own props passed straight through, `onUpdate` among them. Expressions are typed `unknown`, as fig-tree's methods take them. The evaluation props (`objectData`, `onEvaluate` and the rest) wait for Phase 10. The editor adds the `ft-editor` class to any `className` the host passes. The package no longer re-exports fig-tree, which is a peer the host imports itself. Phase 3 can revisit that under "Public API". So the demo imports its fig-tree names from `fig-tree-evaluator` directly, and in `local` mode it runs the new editor on its own fig-tree v2 (through `dedupe`) until 2.3.
   - Vitest's `css` option is on, since vitest otherwise resolves stylesheets to empty strings. The size budget is 2.7 kB, up from 1.35 kB, mostly the stylesheet. `check:package`'s legacy `node` consumer sets `allowSyntheticDefaultImports`, which `bundler` and `nodenext` already imply, because JER's declarations default-import React.
 - **2.2 · Validation wired in.** Run `fig.validate()` on every update, and show its issues in a simple list for now, with each issue's path and message.
   - Done, together with 2.3. The editor calls `validate()` on every render and lists the issues below the editor, each with its severity, its path and its message. It doesn't memoise on the expression, because `updateOptions()` can change the registry without changing the instance. The list is a sibling of the `JsonEditor` rather than wrapped with it, so the host's layout props (`minWidth` and the rest) still apply to the editor itself. Paths are shown by `displayPath` (`src/paths.ts`), since JER's `toPathString` is an ID format, not a display one. The size budget is 3.0 kB.
@@ -121,7 +121,7 @@ Bring the repo's tooling in line with fig-tree-evaluator's, so both repos work t
     - **Custom functions and fragments.** The three custom functions are operators made with `defineOperator()`. The fragments are v3 definitions from `migrateV2Fragments`, reviewed. The Fragments demo's duplicate copy is gone, along with its stray `metadata` "fragment".
     - **Instance and options.** `src/figTree.ts` builds the instance with the core operators, `httpOperators()`, `sqlOperators()` over the Postgres bridge, which still applies, and the custom operators. The demo keeps its options in React state and builds a new instance when they change: operators can only be given at construction, `updateOptions()` merges fragments, so a fragment can't be removed, and `getOptions()` no longer reports them. The Configuration panel edits v3's options (`http`, `graphQL`, `cache`, `runtimeTypeCheck`, `strictDataPaths`), and refuses a configuration that FigTree won't construct. v2's cache persistence is gone.
     - **Storage.** Every key is prefixed `v3:`, so what the v2 playground left in the same origin's storage is never read.
-    - **Evaluation.** An Evaluate button in the demo, not the library, evaluates the whole expression until the editor does it (Phase 9).
+    - **Evaluation.** An Evaluate button in the demo, not the library, evaluates the whole expression until the editor does it (Phase 10).
     - **npm mode.** No published editor runs on v3, so the demo no longer depends on `fig-tree-editor-react`, and the `npm` mode stops with a message naming `pnpm dev` and `pnpm demo:pack`. Restore the dependency with the first v3 pre-release.
     - **Catalogs (from 1.2): still none.** `scripts/checkPackage.mjs` packs with `pnpm pack`, which rewrites `catalog:`, but `release` publishes with `npm publish`, which doesn't.
     - **Tests and CI.** jest, ts-jest and the demo's only test (`src/test/utils.test.ts`, which nothing ran, for a helper this rewrite removes) are gone, with the unused `setupTests.ts` and v1-era `testExpressions.ts`. The demo gains a `typecheck` script, and CI runs it and the demo's lint. The demo also picks up JER v2's prop renames (`baseFontSize`, `"when-collapsed"`), which typechecking surfaced.
@@ -146,55 +146,73 @@ Questions to work through (a starting list, not exhaustive):
 - **Public API.** The `FigTreeEditor` props, theming and overriding display, and what the package exports (keeping `Select`, for example). Whether to also export a standalone `./style.css`, as JER does for hosts that inject styles themselves (a Shadow DOM, say).
 - **Dependencies on JER.** Anything the design needs that JER doesn't support yet. Each one becomes an upstream change (working rule 3).
 
-Done (September 2026). The design is in [v3-design.md](v3-design.md), topics 1 to 8, with the per-kind breakdown in [v3-node-anatomy.md](v3-node-anatomy.md) and the mockups listed in [artifacts.md](artifacts.md). Phases 4 onwards were revised to match. Two things stay open by design: where the result display sits, settled by trying it in Phase 9, and fragment-definition mode, parked (topic 6). Upstream changes are in [v3-upstream.md](v3-upstream.md); F1, the one marked Required, is filed as [fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
+Done (September 2026). The design is in [v3-design.md](v3-design.md), topics 1 to 8, with the per-kind breakdown in [v3-node-anatomy.md](v3-node-anatomy.md) and the mockups listed in [artifacts.md](artifacts.md). Phases 4 onwards were revised to match. Two things stay open by design: where the result display sits, settled by trying it in Phase 10, and fragment-definition mode, parked (topic 6). Upstream changes are in [v3-upstream.md](v3-upstream.md); F1, the one marked Required, is filed as [fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
 
-## Phase 4 — Foundations and the full operator node
+## Phase 4 — Foundations
 
 Each phase from here builds what [v3-design.md](v3-design.md) specifies; the design is the reference for the detail, and these steps order the work.
 
+This phase builds what every node relies on, and ends with every definition in place behind a placeholder component, so the classification can be checked against the demo's expressions before any FigTree UI exists.
+
 - **4.1 · Dependencies.** Move `json-edit-react` to `peerDependencies` (0.3, as revised), with `check:package`'s consumer installing it as a peer. File F1 in [v3-upstream.md](v3-upstream.md), which is Required: the classification walk reads each object and string through fig-tree's own functions. Until a fig-tree release exports them, work against the local checkout (0.4).
-- **4.2 · The classification walk.** The path-to-kind map, each row's slot and each node's scope chain, in one top-down walk per update (topics 1 and 4). A pure module with its own tests, including the parity test against `inspect()`. `customNodeDefinitions` keeps its identity while the map's content is unchanged.
-- **4.3 · The operator node.** The Operator component, anchored on the object, with the DisplayBar: the Evaluate button showing the name as written (evaluation itself is Phase 9), the display name linked to `docUrl`, the operator's hover card, and hover-only controls (topic 3). Display data in its layers, `operatorHints` and `categoryHints` props included, and the derived colour for host operators without their own (topic 8, "Display overrides"). The broken state (topic 7, "Where issues attach"). The collapsed summary.
-- **4.4 · Two editors and the toolbar.** One definition owning both editors, proved on this node first, with J2 or its fallback (topic 2, "Two editors per node"). The toolbar commits each action with `setValue` and reopens the session; ✗ and Esc commit the snapshot ("Commit semantics"). The handle's `confirm()` and `cancel()` behave as topic 8 describes.
-- **4.5 · The operator picker.** The `Select` changes (topic 4, "Changes to `Select`"), then the picker: category groups, `keywords`, "Not valid here" from the slots (with F6 or its local copy and parity test), the spelling toggle and its hint, and `literal`'s entry.
-- **4.6 · The props that shape every later phase.** `setExpression`'s `autoUpdate` marker, the four prop groups over json-edit-react's props (topic 8, "How the props relate to json-edit-react's"), `editorTheme` and the theme layering ("Theming and CSS"), the standalone `./style.css`, and one module holding every user-visible string ("Wording").
+- **4.2 · The props, display data, theming and wording.**
+  - The props type from topic 8's summary, carrying only the props that work by the end of this phase. The rest join it in the phase that gives them behaviour, so no prop is accepted and ignored.
+  - The four groups over json-edit-react's props: the Replaced ones left out of the type, the Combined ones merged with the editor's, and the editor's defaults (topic 8, "How the props relate to json-edit-react's").
+  - Display data in its layers, with the `operatorHints` and `categoryHints` props and the derived colour for host operators without their own (topic 8, "Display overrides"). A pure module with its own tests, since the starting-value rule (4.5) reads seeds from it.
+  - `editorTheme` and the theme layering ("Theming and CSS"), and the standalone `./style.css`.
+  - One module holding every user-visible string ("Wording").
+- **4.3 · The classification walk.** The path-to-kind map, each row's slot and each node's scope chain, in one top-down walk per update (topics 1 and 4). A pure module with its own tests, including the parity test against `inspect()`.
+- **4.4 · Every definition, behind placeholders.**
+  - The definitions of topic 1's "Node shapes and their definitions", as [v3-node-anatomy.md](v3-node-anatomy.md) lists them: nodes, flattened payloads, leaves, the unlabelled copies and the rows `filterChildren` removes, in first-match order, each condition reading the path-to-kind map.
+  - Each component is a placeholder: a border labelled with the row's kind, around the child rows, or around the original node (`passOriginalNode`) for a leaf. So the demo's expressions show the classification, along with the definitions' own flags (`showCollectionWrapper`, `showKey`).
+  - `customNodeDefinitions` keeps its identity while the map's content is unchanged (topic 1, finding 6).
+  - How components reach the editor's shared state: the `FigTree` instance, the map, the display data and the strings.
+  - Each later phase replaces placeholders with their components.
+- **4.5 · The fill-in step.** Complete, clean and order (topic 2, "The fill-in step"): completion on load written with `setExpression`'s `autoUpdate` marker, the rows it filled recorded for Phase 10's markers, cleaning only on structural actions, and key order with `positionalParams` first (topic 4). Not called "validate" (fig-tree's `validate()` already has the name). With it, the starting-value rule for declared parameters, including the defaults never at their effective default (topic 4, "Adding parameters and starting values"). Both are pure modules with their own tests. It comes before the operator picker (5.3), because switching operator is a structural action.
+
+At the end of this phase the demo shows every expression with each row's kind marked, and loading an incomplete expression completes it.
+
+## Phase 5 — The full operator node
+
+- **5.1 · The operator node.** The Operator component, anchored on the object, with the DisplayBar: the Evaluate button showing the name as written (evaluation itself is Phase 10), the display name linked to `docUrl`, the operator's hover card, and hover-only controls (topic 3). The broken state (topic 7, "Where issues attach"). The collapsed summary.
+- **5.2 · Two editors and the toolbar.** One definition owning both editors, proved on this node first, with J2 or its fallback (topic 2, "Two editors per node"). The toolbar commits each action with `setValue` and reopens the session; ✗ and Esc commit the snapshot ("Commit semantics"). The handle's `confirm()` and `cancel()` behave as topic 8 describes.
+- **5.3 · The operator picker.** The `Select` changes (topic 4, "Changes to `Select`"), then the picker: category groups, `keywords`, "Not valid here" from the slots (with F6 or its local copy and parity test), the spelling toggle and its hint, and `literal`'s entry. Switching operator cleans and completes the node through the fill-in step (4.5).
 - Host operators registered with `defineOperator()` work with no special handling.
 
-## Phase 5 — Parameters
+## Phase 6 — Parameters
 
-- **5.1 · The fill-in step.** Complete, clean and order (topic 2, "The fill-in step"): completion on load written with `autoUpdate`, the rows it filled recorded for Phase 9's markers, cleaning only on structural actions, and key order with `positionalParams` first (topic 4). Not called "validate" (fig-tree's `validate()` already has the name).
-- **5.2 · Starting values.** The starting-value rule, including the rule for a new array element and the defaults never at their effective default (topic 4, "Adding parameters and starting values"), and `defaultOperators` (topic 8).
-- **5.3 · Adding parameters.** The toolbar's "Add parameter" and json-edit-react's ＋ through `newKeyOptions` and `defaultValue`, offering the same list.
-- **5.4 · The type dropdown.** `allowTypeSelection` from each row's slot, with the reference entries and Operator and Fragment where they fit (topic 4, "The type dropdown"). A new node's picker opens on it (topic 2, "Node lifecycle").
-- **5.5 · Guards.** Deleting, adding and renaming, including array constraints (topics 2 and 4). Dragging is disabled until J4 lands.
-- **5.6 · Parameter hover cards,** on every definition at a parameter row and the catch-all (topic 4, "Parameter metadata").
+- **6.1 · Starting values.** The rule for a new array element (topic 4, "Adding parameters and starting values"), and `defaultOperators` (topic 8). The rule for declared parameters is 4.5's.
+- **6.2 · Adding parameters.** The toolbar's "Add parameter" and json-edit-react's ＋ through `newKeyOptions` and `defaultValue`, offering the same list.
+- **6.3 · The type dropdown.** `allowTypeSelection` from each row's slot, with the reference entries and Operator and Fragment where they fit (topic 4, "The type dropdown"). A new node's picker opens on it (topic 2, "Node lifecycle").
+- **6.4 · Guards.** Deleting, adding and renaming, including array constraints (topics 2 and 4). Dragging is disabled until J4 lands.
+- **6.5 · Parameter hover cards,** on every definition at a parameter row and the catch-all (topic 4, "Parameter metadata").
 
-## Phase 6 — Fragments
+## Phase 7 — Fragments
 
 - The fragment call, static and dynamic, with `FragmentHints` display (topics 1, 3 and 6), and its broken state.
 - The fragment picker, `defaultFragment`, switching fragment, and the node-type switch between operator, fragment and value (topics 2 and 6).
 - Fragment-definition mode stays parked (topic 6): nothing here depends on it.
 
-## Phase 7 — Shorthand forms and references
+## Phase 8 — Shorthand forms and references
 
 - Shorthand nodes, named and positional, with the flattened and unlabelled definitions (topic 1, "Node shapes and their definitions"), the dashed border, and the value on the button's line (topic 3).
 - The conversion button cycling full, named and positional, and "To get node" and back (topic 1, "Conversions").
 - References: the Leaf definitions, one per namespace, with `editorTheme`'s colours, the inline ▶ and `editOnTypeSwitch` (topics 3, 4 and 5).
 
-## Phase 8 — `vars`, comments and `literal`
+## Phase 9 — `vars`, comments and `literal`
 
 - The vars block through the theme, proving the tint and rule, and a new var opening for editing (topic 5).
 - Comments, single and multi-line, never starting collapsed (topic 5).
 - `literal`, full and shorthand, with its seed (topic 5).
 
-## Phase 9 — Diagnostics and evaluation
+## Phase 10 — Diagnostics and evaluation
 
-- **9.1 · Diagnostics.** Issues on rows (tint, flag, the collapsed roll-up), the filled-in marker and its fade, and the messages area in tree order with its quick fixes and `messagesMaxHeight`, replacing Phase 2's plain list (topic 7). `onStatusChange` and the handle's `reveal` (topic 8).
-- **9.2 · Sub-tree evaluation.** The pure module that builds the wrapped expression and maps paths back, with its own tests against fig-tree (topic 7, "Sub-tree evaluation").
-- **9.3 · Evaluating.** Every Evaluate affordance, one evaluation at a time with cancel, disabled while errors block it, the result display (settling its placement by trying it), failures and the fallbacks that fired, and the failed-row marker (topic 7). The evaluation props and callbacks (topic 8, "Evaluation"). The demo's own Evaluate button (2.3) goes.
+- **10.1 · Diagnostics.** Issues on rows (tint, flag, the collapsed roll-up), the filled-in marker and its fade, and the messages area in tree order with its quick fixes and `messagesMaxHeight`, replacing Phase 2's plain list (topic 7). `onStatusChange` and the handle's `reveal` (topic 8).
+- **10.2 · Sub-tree evaluation.** The pure module that builds the wrapped expression and maps paths back, with its own tests against fig-tree (topic 7, "Sub-tree evaluation").
+- **10.3 · Evaluating.** Every Evaluate affordance, one evaluation at a time with cancel, disabled while errors block it, the result display (settling its placement by trying it), failures and the fallbacks that fired, and the failed-row marker (topic 7). The evaluation props and callbacks (topic 8, "Evaluation"). The demo's own Evaluate button (2.3) goes.
 - The trace views and a dependencies view are do-later (topic 7).
 
-## Phase 10 — Release prep
+## Phase 11 — Release prep
 
 - Delete `v1-src/`.
 - README (including the version-alignment policy, theming with `editorTheme` and `theme`, and wiring `useUndo` with `autoUpdate`), CHANGELOG, and a migration note for v1 consumers: the renamed and removed props (the summary at the end of topic 8 in [v3-design.md](v3-design.md)), `Select`'s groups as labels only, fig-tree no longer re-exported, and json-edit-react as a peer.
