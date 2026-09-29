@@ -560,7 +560,7 @@ A slot finds its default by its type: an `any` slot the `any` entry; a basic typ
 
 **Collection rows: raw JSON — Agreed.** A parameter holding an array or object (`values: [1, 2]`, `entries`, `body`) has no type dropdown, so turning it into a reference or a node goes through raw JSON, as in v1. A type selector for collection rows is logged as J6 in [v3-upstream.md](v3-upstream.md), Maybe, to revisit once the editor is in use.
 
-### The operator picker — **Agreed**, except where marked
+### The operator picker — **Agreed**
 
 The searchable list opened from a full node's toolbar (A3 and section J in the mockups). Topic 2 fixed its behaviour: one entry per operator, re-selecting the current entry toggles its spelling, and switching keeps the parameters the new operator also declares. "Slots" supplies the test for operators that cannot fit, and "The type dropdown" the operator a new node starts as.
 
@@ -587,18 +587,20 @@ The searchable list opened from a full node's toolbar (A3 and section J in the m
 
 **Each entry** shows the display name and the description. The current entry carries the spelling-toggle hint as part of its label text ("Multiply (*) ⇄ select again to write as *"), which needs no change to `Select`.
 
-**Changes to `Select` for the first build — Proposed.** The smallest set that makes the picker work, all additions, since `Select` is exported:
+**Changes to `Select` for the first build — Agreed.** The smallest set that makes the picker work. `Select` is exported, and the second change is breaking for it, which v3 as a major release allows:
 
-1. **A disabled state on options,** skipped by click, Enter and the arrow keys, and styled as unavailable. Group headers use it too: today a header can be selected (`handleSelect(group)`), which would choose a category.
-2. **A fix for keyboard highlighting in grouped lists.** Each option compares the highlighted index with its index inside its own group, so ↓ highlights the first option of every group, and Enter picks from the flattened list, which may not be the option that looks highlighted.
-3. **Highlighting the first match that can be chosen** after each keystroke, where today the highlight resets.
-4. **Extra search terms on each option** (`searchTerms`), checked by the one matching function, to hold the canonical name. Without it, typing `if`, `greaterThan` or `buildString` finds nothing, since only the display label is matched.
+1. **`disabled?: boolean` on options.** A disabled option cannot be clicked, is skipped by the arrow keys and Enter, and is styled as unavailable (`ft-select-disabled`); it is still shown and found by search. The picker uses it for "Not valid here", with the reason in `description`.
+2. **Group headers are labels only,** never clicked or reached by keyboard, and **every selectable option has one index in display order,** which highlighting, Enter and scroll-into-view all use. Today a header can be clicked (`handleSelect(group)`), each option compares the highlighted index with its index inside its own group, so ↓ highlights the same position in every group, a header highlights when the index equals its group's, Enter picks from the flattened list, which may not be the option that looks highlighted, and scroll-into-view finds an element by the per-group index. v1 used groups the other way round, each operator a selectable group with its aliases as options (`getOperatorOptions` in `v1-src/Operator.tsx`); the v3 editor has one entry per operator, so for the migration note, that use is not supported.
+3. **The first selectable match is highlighted after each keystroke,** so typing then Enter picks it, where today the highlight resets and Enter does nothing until ↓. Nothing is highlighted when the list opens, as now, so opening the operator picker and pressing Enter does not re-select the current operator, which would toggle its spelling (topic 2). An optional `highlighted` value, to open a broken node's picker on fig-tree's suggestion, comes with F3.
+4. **`keywords?: string` on options:** text that search matches but that is not shown, to hold the canonical name (`greaterThan` for "Greater than (>)") or a fragment's name. Without it, typing `if`, `greaterThan` or `buildString` finds nothing, since only the display label is matched. An option matches when the typed text, lowercased, is a substring of its label, its `keywords` or its group's label (so "math" shows the whole group): `greatert` finds Greater than through its keywords, `compar` through its group, and `gt` finds nothing. One string, since every case needs one term; named apart from `Select`'s own `search` prop.
+
+Each change has a case in `Select`'s test suite (plan, 1.7).
 
 **Do later: other changes to `Select`.** Category colour swatches on group headers, the canonical name as a second label (A3's monospace column), the ranked best match above, and descriptions cut to one line with the full text on hover.
 
 **Hiding operators from the picker** without unregistering them, for a host that keeps an operator evaluable but does not offer it to authors: do later (topic 8, "Defaults and what the pickers offer").
 
-### Adding parameters and starting values — **Agreed**, except where marked
+### Adding parameters and starting values — **Agreed**
 
 **"Parameter", not "property".** The editor's word for an operator's or fragment's declared inputs is fig-tree v3's: the declarations, `getOperators()`, the specs and `validate()`'s messages ("'thn' is not a parameter of 'if'") all say "parameter". v1 said "property", which is JSON's word for any key, `fallback` and `vars` included. The toolbar control is labelled "Add parameter", and lists the modifiers in a second group. A fragment call's argument map is also called `parameters`, and its entries are the fragment's declared parameters, so the label holds on both kinds of node.
 
@@ -640,13 +642,30 @@ Examples:
 
 **The modifiers** start as: `//`, `'Comment...'` (never evaluated, so an unedited note is harmless); `fallback`, `null`, the common "degrade to null"; `useCache`, the negation of its effective value (`instanceUseCache ?? the useCache option ?? the definition's useCache`), so `false` on `http`; `vars`, `{}`, whose ＋ then asks for a name.
 
-**An element added to an array — Proposed.** Editor-hints' seeds are for whole parameters, so a new element needs its own rule, in this order:
+**An element added to an array — Agreed.** Editor-hints' seeds are for whole parameters, so a new element needs its own rule. The first that applies:
 
-1. **In a homogeneous array, the type seed of the type its literal siblings share,** so an add never breaks the constraint: ＋ on `{ $min: ['apple', 'pear'] }` gives `'Replace me'`, not a number.
-2. **An element of the parameter's seed:** the seed's element at the new index if it has one, otherwise its last. So `and.values` gives `true`, `or.values` `false`, `plus.values` `[1, 2]` gives `3`, `join.values` `'Charlie'`, and `buildObject.entries` its seeded entry. A positional payload's elements bind a parameter, so `{ $and: [...] }` gives `true` too.
+1. **In a homogeneous array, the type seed of the type its literal siblings share,** so an add never breaks the constraint. Skipped where no sibling is a literal (all references or nodes), or where they share no type.
+2. **An element of the parameter's seed:** the seed's element at the new index, otherwise its last, so every add beyond the seed's length gives its last element again. Rejected: cycling through the seed, which makes the value depend on how many elements there happen to be.
 3. **The type rule for what the element admits,** an `elementShape` giving an object with each required field started by the same rule (`{ key: 'Replace me', value: 'Replace me' }`).
 
-A positional element added with ＋ starts as the parameter it would bind would ("Slots"). Rejected: a special case making truthiness positions start as `true`, which this rule makes unnecessary: the core truthiness parameters all have seeds, and a host operator that wants something better than `'Replace me'` gives its own.
+With fig-tree 3.0.0-preview.1's seeds:
+
+| ＋ on                                        | Rule                   | New element                                                |
+| -------------------------------------------- | ---------------------- | ---------------------------------------------------------- |
+| `{ $min: ['apple', 'pear'] }` (homogeneous)  | 1                      | `'Replace me'`, the string seed                            |
+| `{ $multiply: [5, 5] }` (homogeneous number) | 1                      | `1`, the number seed                                       |
+| `{ $min: ['$data.a', '$data.b'] }`           | 2, no literal siblings | `2`, the seed `[3, 1, 2]` at index 2; `2` again after that |
+| `{ $and: [a, b] }`                           | 2                      | `true`, the seed `[true, true]`'s last                     |
+| `{ $or: [a, b] }`                            | 2                      | `false`, the seed `[true, false]`'s last                   |
+| `{ $plus: [1, 2] }`                          | 2                      | `3`, the seed `[1, 2, 3]` at index 2                       |
+| `join.values: ['a', 'b']`                    | 2                      | `'Charlie'`                                                |
+| `firstOf.values: [x, y]`                     | 2                      | `'The first non-null value'`                               |
+| `buildObject.entries` with two entries       | 2                      | `{ key: 'secondKey', value: 'secondValue' }`               |
+| a plain array in an evaluated position       | 3                      | `'Replace me'`, since it admits `any`                      |
+
+A third `buildObject` entry repeats `secondKey` if the author kept it; at runtime the later entry wins, and the trace records the overwrite. Accepted, since the author renames it at once, and rule 3 would repeat `'Replace me'` just the same.
+
+A positional element added with ＋ starts as the parameter it would bind would ("Slots"): an element of the rest parameter by this rule, a leading position by that parameter's own seed (`then`'s, as the second element of `$if`). A declared fixed length blocks the add first ("Array constraints"). Rejected: a special case making truthiness positions start as `true`, which this rule makes unnecessary: the core truthiness parameters all have seeds, and a host operator that wants something better than `'Replace me'` gives its own.
 
 **Key order.** Fill-in orders a node's parameters by `positionalParams` first, then the rest in declared order: `map` becomes `input, each, as, nullInputDefault`, `get` becomes `path, default, from`, `plus` becomes `values, expect, nullValueDefault`. An operator without `positionalParams` uses declared order. The `…Default` parameters land after the main inputs on every core operator without a rule of their own. The picker lists missing parameters in the same order. It is enforced on every update, raw-JSON submits included, since reordering removes nothing: key order carries no meaning in FigTree, it undoes the reordering a database applies (Postgres `jsonb` stores keys in its own order, which is why v1 sorted them), and every node reads the same way. It applies to node keys only; plain objects, `vars` blocks and quoted content keep their order.
 
@@ -858,7 +877,7 @@ The searchable list of registered fragments in a full fragment call's toolbar. I
 - Rejected: the name as the label, as in v1, which throws away the host's display name where it helps most.
 - Do later: a line listing the declared parameters ("country, fields?"), if descriptions prove too thin for choosing.
 
-**Search** is always on, with its field focused when the picker opens, so typing then Enter works however many fragments there are (v1 showed search only from five). It matches the display name and the name, the name through `Select`'s extra search terms (topic 4, "Changes to `Select`"), and not the description, for the same reason as operators.
+**Search** is always on, with its field focused when the picker opens, so typing then Enter works however many fragments there are (v1 showed search only from five). It matches the display name and the name, the name through `Select`'s `keywords` (topic 4, "Changes to `Select`"), and not the description, for the same reason as operators.
 
 **Fragments that cannot fit the slot** move to a final "Not valid here" group, cannot be chosen, and show their reason in place of the description, exactly as operators do. The slot supplies what the position admits, as for operators. The fragment's side is its result type, which the editor cannot work out, since `getFragments()` deliberately omits the body: fig-tree infers it at registration and reports it (F11 in [v3-upstream.md](v3-upstream.md)), and `validate()`'s `returns-mismatch` check covers fragment calls with the same type, so the picker still blocks only what `validate()` rejects. The current fragment stays in its place and can be chosen even if it cannot fit. Many bodies have `get`, `if`, `match` or `http` at their root, which return `any`, so they fit everywhere. Without F11, every fragment fits every slot.
 
