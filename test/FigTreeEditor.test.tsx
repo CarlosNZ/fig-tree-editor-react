@@ -12,12 +12,12 @@ describe('FigTreeEditor', () => {
     render(
       <FigTreeEditor
         figTree={figTree}
-        expression={{ $plus: [1, 2], '//': 'Adds two numbers' }}
+        expression={{ title: 'Hello', count: 2 }}
         setExpression={vi.fn()}
       />
     )
-    expect(screen.getByText('$plus')).toBeInTheDocument()
-    expect(screen.getByText('"Adds two numbers"')).toBeInTheDocument()
+    expect(screen.getByText('title')).toBeInTheDocument()
+    expect(screen.getByText('"Hello"')).toBeInTheDocument()
   })
 
   it('injects its stylesheet once, however many editors mount', () => {
@@ -58,12 +58,12 @@ describe('FigTreeEditor', () => {
     render(
       <FigTreeEditor
         figTree={figTree}
-        expression={{ $plus: [1, 2] }}
+        expression={{ title: 'Hello' }}
         setExpression={vi.fn()}
         theme={{ property: 'rgb(1, 2, 3)' }}
       />
     )
-    expect(screen.getByText('$plus')).toHaveStyle({ color: 'rgb(1, 2, 3)' })
+    expect(screen.getByText('title')).toHaveStyle({ color: 'rgb(1, 2, 3)' })
   })
 
   it('refuses the json-edit-react props the editor replaces, by type', () => {

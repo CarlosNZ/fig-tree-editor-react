@@ -46,7 +46,8 @@ export const mergeEditorTheme = (theme: Partial<EditorTheme> = {}): EditorTheme 
 // The editor's layer of json-edit-react's theme, beneath the host's.
 // json-edit-react stacks `theme` over its own default, later layers winning
 // wherever they overlap, so the host's styles apply over the editor's. TO-DO:
-// the styles that depend on a row's kind, as style functions (plan, 4.4).
+// the styles that depend on a row's kind, as style functions, each with the
+// component that needs it (plan, Phases 5 to 9).
 const editorThemeLayer: Theme = { styles: {} }
 
 export const layerTheme = (hostTheme: ThemeInput | undefined): ThemeInput =>

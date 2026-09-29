@@ -1,11 +1,14 @@
 import { useInsertionEffect, useMemo } from 'react'
 import { JsonEditor, type JsonEditorProps } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
-import { type CategoryHintsProp, type OperatorHintsProp } from './displayData'
-import { layerTheme, type EditorTheme } from './editorTheme'
+import { classify } from './classify'
+import { customNodeDefinitions } from './customNodeDefinitions'
+import { buildDisplayData, type OperatorHintsProp } from './displayData'
+import { layerTheme } from './editorTheme'
 import { injectStyles } from './injectStyles'
 import { displayPath } from './paths'
 import { strings } from './strings'
+import { useStableValue } from './useStableValue'
 
 // Expressions are typed `unknown`, as fig-tree's own methods take them: any
 // JSON value is an expression, and `validate()` is what says whether it's a
@@ -24,18 +27,13 @@ export interface FigTreeEditorProps extends Omit<
   expression: unknown
   setExpression: (expression: unknown) => void
   operatorHints?: OperatorHintsProp
-  categoryHints?: CategoryHintsProp
-  editorTheme?: Partial<EditorTheme>
 }
 
 export const FigTreeEditor = ({
   figTree,
   expression,
   setExpression,
-  // TO-DO: hand these to the editor's components (plan, 4.4)
-  operatorHints: _operatorHints,
-  categoryHints: _categoryHints,
-  editorTheme: _editorTheme,
+  operatorHints,
   className,
   theme,
   ...props
@@ -49,6 +47,20 @@ export const FigTreeEditor = ({
   // changes without changing the instance's identity.
   const { issues } = figTree.validate(expression)
 
+  // The classification and display data are worked out on every render for
+  // the same reason, and keep their identity while their content is
+  // unchanged. So the definitions keep theirs through most edits, and change
+  // only when a row's kind, slot or scope does, which has to re-render every
+  // row (design, topic 1, finding 6).
+  const operators = figTree.getOperators()
+  const fragments = figTree.getFragments()
+  const classification = useStableValue(classify(expression, { operators, fragments }))
+  const displayData = useStableValue(buildDisplayData({ operators, fragments, operatorHints }))
+  const definitions = useMemo(
+    () => customNodeDefinitions({ figTree, classification, displayData }),
+    [figTree, classification, displayData]
+  )
+
   const layeredTheme = useMemo(() => layerTheme(theme), [theme])
 
   return (
@@ -58,6 +70,7 @@ export const FigTreeEditor = ({
         {...props}
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
+        customNodeDefinitions={definitions}
         data={expression}
         setData={setExpression}
       />
