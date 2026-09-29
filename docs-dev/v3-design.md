@@ -247,7 +247,7 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 - **A bare reference can be turned into a `get` node** (`toGet`), so the author can add `default` or `from`. A `get` node can be turned back into a reference (`toReference`) wherever that returns a value; `null` means the affordance is not offered.
 - Conversions are not offered inside quoted subtrees.
 
-### Sub-tree evaluation — **Agreed** (direction; mechanics in topic 7)
+### Sub-tree evaluation — **Agreed** (direction; the mechanics are in topic 7, "Sub-tree evaluation")
 
 Evaluating a sub-tree compiles and evaluates a synthesised expression: the sub-tree, wrapped in the scope its ancestors give it, so the compiler sees a self-contained expression while the author sees the value they expect from the tree.
 
@@ -983,4 +983,154 @@ A host prop could choose between placements, but each is its own component, so o
 
 **A node that cannot be evaluated has its Evaluate disabled,** with the reason on hover ("Fix the 2 errors in this node to evaluate it"). fig-tree refuses an evaluation whose expression has a static error, so the editor disables the affordance where the issue list has an error at or under the node's path, or in an ancestor `vars` block that sub-tree evaluation would wrap around it. Warnings never disable it. At the root, Evaluate is therefore disabled while any error exists anywhere, as fig-tree would refuse it. A broken node has no Evaluate at all (topic 1). Rejected: leaving it enabled and showing the refusal in the popover, which offers an action that cannot succeed.
 
-**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` where the display needs it (decided with failures and trace display), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop's name is for topic 8 (v1's was `objectData`).
+**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` (always on, "Showing failures"), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop's name is for topic 8 (v1's was `objectData`).
+
+### Sub-tree evaluation — **Agreed**
+
+The mechanics for topic 1's direction: a row is evaluated as a synthesised expression, the row wrapped in the scope its ancestors give it.
+
+**How the expression is built.** The classification walk records each row's scope chain, the enclosing `vars` blocks and iterators, outermost first (topic 1). The row is wrapped from the inside out:
+
+- **The row's value, as it stands,** with its own modifiers (its own `vars`, `fallback` and `//`).
+- **For each enclosing iterator whose `each` contains the row:** a `map` over a copy of that iterator's `input`, with the same `as`, and the row as its `each`. All five iterators in fig-tree 3.0.0-preview.1 (`map`, `filter`, `find`, `some`, `every`) evaluate `each` per element over `input`, which `getOperators()` reports (`evaluation: 'perElement'`, `over: 'input'`), so host iterators work too. A row in `filter`'s `each` gives each element's predicate value.
+- **For each enclosing `vars` block:** a plain object holding a copy of the block and the inner expression, `{ vars: <the block>, value: <inner> }`. A plain object's `vars` is consumed and its other keys evaluated in that scope, so the wrapper evaluates to `{ value: <result> }`; `value` is only the key that holds the row, and the editor reads the result back out of it. Wrappers nest in the chain's order, not merged, so shadowing and vars that read outer vars behave as in the tree.
+- **A row with no enclosing scope is evaluated as itself,** the root included.
+
+For example, evaluating the `multiply` node in
+
+```js
+{
+  vars: {
+    rate: 0.15
+  },
+  operator: 'map',
+  input: '$data.orders',
+  as: 'order',
+  each: {
+    vars: {
+      shipping: 5
+    },
+    operator: 'plus',
+    values: [
+      '$order.total',
+      {                                          // ← evaluated
+        operator: 'multiply',
+        values: ['$order.total', '$vars.rate']
+      },
+      '$vars.shipping'
+    ]
+  }
+}
+```
+
+builds
+
+```js
+{
+  vars: {                              // the root's vars block
+    rate: 0.15
+  },
+  value: {
+    operator: 'map',                   // standing in for the root map
+    input: '$data.orders',
+    as: 'order',
+    each: {
+      vars: {                          // the each node's vars block
+        shipping: 5
+      },
+      value: {                         // the row, unchanged
+        operator: 'multiply',
+        values: ['$order.total', '$vars.rate']
+      }
+    }
+  }
+}
+```
+
+which, with `{ orders: [{ total: 100 }, { total: 20 }] }`, evaluates to `{ value: [{ value: 15 }, { value: 3 }] }`, shown as `[15, 3]` (checked against 3.0.0-preview.1; the whole expression gives `[120, 28]`).
+
+**Which scope is taken.**
+
+- **Every enclosing `vars` block is wrapped whole.** Vars are lazy, so those the row does not read cost nothing, but an error in any var of a wrapped block disables Evaluate ("Evaluating"). Rejected: keeping only the vars the row reads, transitively, which needs each reference resolved to its declaration, which the walk does not do (topic 5, "Showing scope").
+- **The row's position decides the rest,** from the walk: a var's own row is wrapped with its own block too, since a var can read its siblings; an iterator's `input` and `as` are outside that iterator's bindings (`as` is literal-only, so it has no Evaluate); a `fallback` row has its node's scope; a branch that is not running (`if`'s `else` while the condition holds, a `match` branch) is evaluated anyway, giving what it would produce.
+- **Ancestors' `fallback`s are not applied** (topic 1), so a failure inside the row is shown, not caught. **`$data`** is the sample data, or the instance's own ("Evaluating"). **`$params`** is parked with fragment-definition mode (topic 6).
+
+**A result with one value per element** (a row inside an iterator's `each`) is shown as the array it is, with a caption saying what it is, "one per element of `input` · 2 items", in place of "array · 2 items", so it is not read as the row returning an array. Nested iterators give nested arrays, captioned to match. A row that does not read the binding still gives one value per element (`'$vars.shipping'` in the example gives `[5, 5]`), since the row does run once per element.
+
+- Do later: stepping through the elements, one element's value at a time beside the element itself, with ‹ ›.
+- Do later: wrapping in an iterator only where the row reads its binding. The walk sees references written as strings, but not `{{$order.total}}` tokens in a template, whose grammar fig-tree does not export, and one missed would make the evaluation fail with `unresolved-binding`.
+- Rejected: a two-column table of elements and values.
+
+**Paths are mapped back to the tree.** Error and trace paths come back in the synthesised expression's coordinates. For each wrapper, the editor records which part of the tree its pieces stand for, and translates every path through that record: the `value` chain to the row's own path, a wrapper's `vars` to the real block's path, a `map` wrapper's `input` to the real iterator's `input`. So a failure in an ancestor's var or input is shown at its real row ("Showing failures").
+
+**A standalone function.** Building the expression is a distinct, self-contained operation, and its logic is intricate, so it is one pure function in a module of its own, with no React and nothing from the components mixed in (Carl). It takes the tree, the row's path and the scope chain the walk recorded for it, and returns the expression with the two ways back: reading the row's result out of the wrappers, and translating a path in the synthesised expression to the tree's. It is tested on its own, as the classification walk is (plan, working rule 4), including evaluation against fig-tree for each kind of scope.
+
+**Evaluation mode — Agreed: report by default, with a host prop for throw** (named in topic 8). The two fig-tree options are independent. `mode` decides what happens to a failure no `fallback` caught: `'throw'` rejects with the first and discards the rest, while `'report'` never rejects, degrades the failed hole to `null`, completes everything else and returns `{ result, errors }` with every failure. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, errors, trace }` in either mode, and in throw mode a failure's thrown error carries the partial trace as `error.trace` (checked against 3.0.0-preview.1).
+
+- **Report is the default:** it gives the partial results and full failure list of "Showing failures", and it is the combination fig-tree's spec intends for editors.
+- **Throw, through the prop,** makes the result display behave as a host's production evaluation does, for a host that evaluates in throw mode: one failure fails the whole row. The display then shows "Failed" with the one error, with no partial value and no failures list; the failed-row marker and the fallbacks used still work, from `error.trace`.
+- **`trace` is on in both modes.**
+- Rejected: following the host instance's own `mode` by default (`getOptions().mode`, `undefined` meaning throw unless the host set it). It matches production with no prop set, but most hosts set nothing, so most would get the poorer display without choosing it.
+
+**The callback — a sketch for topic 8.** The host's callback receives each evaluation as data. It returns nothing, and the editor never lets fig-tree's rejection escape to the host: in throw mode it catches the thrown error and passes it on, so the host never wraps the editor in a `try`.
+
+```ts
+onEvaluate(evaluation: {
+  path: Path                  // the row evaluated, in the tree
+  mode: 'report' | 'throw'
+  // report mode, and throw mode when it succeeds:
+  result?: unknown
+  errors?: FigTreeError[]     // report mode: every uncaught failure (empty on success)
+  // throw mode, when it fails:
+  error?: FigTreeError        // the one failure fig-tree threw
+  // both:
+  fallbacks: { path: Path, error: FigTreeError }[]   // the fallbacks that fired
+  trace: TraceNode            // the raw trace, for a host that wants more
+})
+```
+
+Every path it carries is in the tree's coordinates, the errors' included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Also for topic 8: v1's `onEvaluateStart`, for a host showing its own spinner, and whether a cancelled evaluation is reported (with a `cancelled` status) or not at all.
+
+### Showing failures — **Agreed**
+
+How a failure shows, for an evaluation in report mode (the default, "Evaluating"), with `trace: true`; in throw mode the display shows "Failed" with the one error. fig-tree returns a result and `errors`, one for each failure no `fallback` caught, with the failed row's `path` (mapped back to the tree, "Sub-tree evaluation") and the `holePath` that degraded to `null`.
+
+**In the result display** ("Evaluating"):
+
+- **When the row itself failed** (an error's `holePath` is the row's own path), "Failed" in place of the value, with the error's message.
+- **When part of it failed** (a container, or a hole inside a wrapped row: `{ title: 'Ada', total: null }`), the value as usual, with a list of the failures beneath.
+- **Each failure line** gives the message and the path of the row that failed, which reveals the row, as in the messages area; the path is left out where the failure is the row itself. Where fig-tree adds detail: a failed fallback's `cause` ("the fallback also failed: …"), and an `and` or `or`'s `related` failures as "+1 more", listed on hover. I/O detail (`errorData`: status, URL) goes to the host with the result; showing it is do-later.
+
+**The failed row is marked in the tree, in a style of its own,** distinct from `validate()`'s tint and flag (a red outline and a "failed" flag with the message, the exact style settled when built), for exactly as long as the result display is open, so it goes when the display closes. An evaluation failure is a fact about one run, often data-dependent (a 404, a missing field), not a lasting problem with the expression, so it neither looks like an issue nor outlives its result. Only the failed row is marked, not the hole that degraded: `holePath` serves production hosts splicing their own markers, and in the editor the hole is usually the evaluated row. Rejected: no marking, which leaves the author clicking through to find where it failed; and `validate()`'s error style until the next edit, which mixes a run's failure with the expression's static state.
+
+**Failures stay out of the messages area,** which holds the expression's static state (`validate()` issues and filled-in values), as `onStatusChange` reports it. They belong to the result display and reach the host with the result. Rejected: "evaluation" lines in the messages area until the next edit, which would mix a run's failures with lasting issues and make the status report problems `validate()` does not.
+
+**Fallbacks that fired are listed in the result display:** "Fallback used at `rate`: `http` failed: …", each with its row's path to reveal it. A fallback's catch succeeds, so nothing is in `errors`, and the author sees `1.0` without knowing the request failed; the trace records it (`status: 'fallback'`, with the error caught). So every editor evaluation runs with `trace: true`, settling "Evaluating"'s open point; the trace is read and discarded, so holding values by reference costs nothing lasting. Do later: marking those rows in the tree, in the failed marker's style in amber, for as long as the display is open.
+
+**A failure inside a fragment body** is shown on the call: its `path` is the call node, so the call row is the failed row, and the failure line adds "in fragment `getCountryData` at `url.$buildString[1]`", with `fragmentPath` in display form, as text, since the body is not in the tree. The host receives `fragment` and `fragmentPath` with the result, so a host that edits fragment definitions (Conforma) can open the body there.
+
+**Do later: which element failed,** for a failure inside an iterator's `each` ("for element 2 of 3"). fig-tree's error does not say, but the trace has one entry per element.
+
+### Trace display — **Agreed**
+
+What the result display and the tree show from an evaluation's trace. The trace records, for every node instance in the evaluated row (the wrapped ancestor vars and inputs included): its status (`value`, `failed`, `fallback`, `cancelled` or `skipped`), its value, one entry per iterator element, each reference's resolved value, the nodes inside fragment bodies, events (requests with method, URL and header names; SQL query text; cache hits and misses; template-token renders; `buildObject` key overwrites) and timing.
+
+**The first build shows nothing from it beyond what "Showing failures" uses:** the fallbacks that fired, and in throw mode the failed row. Those answer the two commonest questions, "why did I get the fallback?" and "where did it fail?". A host wanting more has the raw trace with each evaluation ("Evaluating", the callback).
+
+**Do later, in this order:**
+
+1. **The evaluated path in the tree.** While the result display is open, each row inside the evaluated row shows what it evaluated to, dimmed after it ("→ 15"), and skipped branches are greyed out, so a run lights up the paths that evaluated and shades the rest (Carl likes this: it is where the trace pays off most). It is the largest piece of UI in this topic: every row needs something drawn on it, plain value rows included, which have no component of their own; a row inside an iterator has one value per element; and the marks come and go with the display. It is designed once the result display exists and can be tried.
+2. **Which element failed,** and stepping through per-element results (both in "Sub-tree evaluation" and "Showing failures").
+3. **The requests and queries made,** as lines in the result display.
+4. **Timing for each node.**
+
+Rejected: a few text lines in the result display for the first build ("Requests: …", "Skipped: `else`"), detached from the rows and, apart from requests, explaining little.
+
+### The dependencies view — **Agreed**
+
+`getDependencies(expression)` gives the `$data` paths an expression reads, in traversal order, a `dynamic` flag where not every read can be listed (a computed `get` path, a bare `$data`, dynamic fragment arguments), and the operators and fragments it uses, all transitively through the fragments it calls. It is synchronous and cheap. An author would use it to see what data an expression needs (which form fields a Conforma expression reads, what the sample data must cover), and the operators list shows whether it does I/O.
+
+**Nothing is built in.** The host already has the instance and the expression, so it calls `getDependencies()` itself and shows the result as it likes: unlike the messages area, the editor would add nothing a host cannot get directly.
+
+- Do later: a "Reads" list beside the messages area ("Reads: `user.name`, `orders[*].total`, and reads that cannot be listed"; "Uses: `http` · fragments: `getCapital`"). Its paths could not link to the rows that read them, since `getDependencies()` gives paths but not where they are read, the same gap as the sample-data warnings; reading-node paths like F12's would close it.
+- Rejected: each node's reads in its operator hover card, for its sub-tree, which costs a `getDependencies()` call per hovered node on the synthesised sub-tree expression.
