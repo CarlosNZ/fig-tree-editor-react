@@ -14,31 +14,32 @@ An entry also records whether its issue has been filed, and when the change has 
 
 ## Summary
 
-| ID  | Package            | Change                                                               | State    | Issue                                                             | Shipped         |
-| --- | ------------------ | -------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
-| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout` | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
-| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`            | Dropped  | Not filed                                                         | —               |
-| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                 | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                            | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F6  | fig-tree-evaluator | Export `typesIntersect`                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F7  | fig-tree-evaluator | A description on every parameter                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                            | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
-| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                               | Open     | Not filed                                                         | —               |
-| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                           | Open     | Not filed                                                         | —               |
-| F11 | fig-tree-evaluator | Infer and report a fragment's result type                            | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                 | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution             | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open    | Dropped  | Not filed                                                         | —               |
-| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components           | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
-| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                 | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
-| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                         | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    | —               |
-| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens     | Dropped  | Not filed                                                         | —               |
-| J6  | json-edit-react    | A type selector for collection rows                                  | Maybe    | Not filed                                                         | —               |
-| J7  | json-edit-react    | A key component for array elements while indexes are hidden          | Maybe    | Not filed                                                         | —               |
-| J8  | json-edit-react    | Open an object's add-key input from the editor handle                | Dropped  | Not filed                                                         | —               |
-| J9  | json-edit-react    | Reveal a row from the editor handle                                  | Maybe    | Not filed                                                         | —               |
-| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                 | Open     | Not filed                                                         | —               |
+| ID  | Package            | Change                                                                     | State    | Issue                                                             | Shipped         |
+| --- | ------------------ | -------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
+| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout`       | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
+| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`                  | Dropped  | Not filed                                                         | —               |
+| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                      | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                                  | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F6  | fig-tree-evaluator | Export `typesIntersect`                                                    | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F7  | fig-tree-evaluator | A description on every parameter                                           | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                                  | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
+| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                     | Open     | Not filed                                                         | —               |
+| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                 | Open     | Not filed                                                         | —               |
+| F11 | fig-tree-evaluator | Infer and report a fragment's result type                                  | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
+| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
+| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
+| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
+| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                               | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    | —               |
+| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens           | Dropped  | Not filed                                                         | —               |
+| J6  | json-edit-react    | A type selector for collection rows                                        | Maybe    | Not filed                                                         | —               |
+| J7  | json-edit-react    | A key component for array elements while indexes are hidden                | Maybe    | Not filed                                                         | —               |
+| J8  | json-edit-react    | Open an object's add-key input from the editor handle                      | Dropped  | Not filed                                                         | —               |
+| J9  | json-edit-react    | Reveal a row from the editor handle                                        | Maybe    | Not filed                                                         | —               |
+| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
 
 ---
 
@@ -241,6 +242,21 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Shipped** in fig-tree 3.0.0-preview.2 (d227952). The template seed is `'Hello {{$data.name}}'`, and the `substitutions` seed is dropped. Without data it renders `'Hello '`, and under `strictDataPaths` it throws.
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 6.
+
+### F14 · Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` — **Maybe**
+
+**The change.** Two more of the compiler's reading rules, for the classification walk (4.3 in [v3-plan.md](v3-plan.md)), following F1:
+
+- Export `singlePositionalTarget(shape)` (`src/compile/grammar.ts`) from `./format`, beside `positionalLayout`: the parameter a shorthand node's single value binds. `{ $not: X }` binds `not.value`, and `{ $and: X }` binds `and.values` as a whole, since `and`'s first positional parameter is its rest parameter. `positionalLayout` can't stand in for it, since it lays out an array of arguments.
+- An optional second argument to `recognizeReference` naming the `as` bindings in scope (`{ bindings: ['item'] }`), so that `'$item.name'` reads the element and `'$itemIndex'` the index. Today it returns `unrecognized` for both, and the compiler recognises renamed bindings separately (`recognizeRenamedBinding` in `src/compile/compile.ts`).
+
+**Why.** The walk records each row's slot, which for a single shorthand value needs the parameter it binds, and marks binding references, which for a renamed binding needs the `as` names in scope ("Classification" and "Slots" in [v3-design.md](v3-design.md)).
+
+**Without it.** The editor keeps copies of both rules in `src/upstream.ts`, each marked for replacement: the three lines of `singlePositionalTarget`, and a match on a binding's name, leaving a malformed drill to `validate()`. The rules are small and settled, and the parity test against `inspect()` guards them, so the fallback is workable.
+
+**Shipped** in fig-tree 3.0.0-preview.3 (d20ec99), as asked. `./format` exports `singlePositionalTarget`, and `recognizeReference(value, { bindings })` reads each `as` name as the element and its `…Index` form as the index, returning the reference with its `binding`. A drilled index binding, or a malformed drill, is `invalid`. `ReferenceScope` exports from the root. The compiler reads its own bindings through the same function, so the editor and the compiler can't disagree. The editor's stand-ins in `src/upstream.ts` are gone.
+
+**Issue.** [CarlosNZ/fig-tree-evaluator#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201).
 
 ---
 

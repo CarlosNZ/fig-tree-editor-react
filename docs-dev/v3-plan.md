@@ -173,6 +173,20 @@ This phase builds what every node relies on, and ends with every definition in p
     - **Wording** is `src/strings.ts`: English strings under their `FT_…` keys, with no translation mechanism.
     - **The size budget** is 10 kB for now.
 - **4.3 · The classification walk.** The path-to-kind map, each row's slot and each node's scope chain, in one top-down walk per update (topics 1 and 4). A pure module with its own tests, including the parity test against `inspect()`.
+  - Done. It isn't called from the component yet; 4.4 wires it in, where its output is used.
+    - **The walk** is `classify(expression, { operators, fragments })` in `src/classify.ts`. It returns a map keyed by json-edit-react's `toPathString`, with `rowAt(map, path)` to look a row up. A row with no entry is plain data. Each entry can hold the row's kind (with form, names, a fragment call's arguments mode and a reference's namespace), a payload role (`flattened` or `unlabelled`) on `$name` rows and static `parameters` rows, `filtered` on `operator` and `fragment` rows, its slot, and its scope chain.
+    - **Slots** are `src/slots.ts`, with the design's `Slot` type. `Path` is in `src/paths.ts`.
+    - **fig-tree 3.0.0-preview.3** ships F14 ([fig-tree-evaluator#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201)): `singlePositionalTarget` from `./format`, and `recognizeReference` with the `as` bindings in scope, which the walk passes from its scope chain. Both `package.json` files are on `^3.0.0-preview.3`. The editor's stand-ins for them, briefly in `src/upstream.ts`, are gone.
+    - **Settled in building:**
+      - An unknown operator's or fragment's parameters are walked as undeclared, admitting `any`, where the compiler stops, so the nodes inside them still show as nodes.
+      - A malformed object (`classifyObject`'s `malformed`) is marked by the kind its keys suggest, carrying the message, and isn't walked.
+      - A reference-shaped string that `recognizeReference` rejects (`'$vars'`) is a reference marked `invalid`, so it can take its namespace's colour beside its error.
+      - A literal-only slot (`as`, `useCache`) is recorded but its value isn't read.
+      - A literal array is a list of elements only where its parameter's type takes an array. Elsewhere (`if.then: [1, 2]`) it's plain data.
+      - Plain data's `ownerPath` is the nearest enclosing node, or null outside any node. A var's is the node or object holding the block. A field's declaration is its `elementShape` entry.
+      - The dead modifiers on a `literal` aren't walked.
+    - **Tests:** `test/classify.test.ts` covers the anatomy doc's shapes, the contexts and the scope chains. `test/slots.test.ts` covers the slot table.
+    - **The parity test** compares the map with `inspect()` on 17 anatomy shapes and the demo's nine expressions, which `test/fixtures.ts` copies with a registry like the demo's. Disabling binding recognition fails it, so it catches drift.
 - **4.4 · Every definition, behind placeholders.**
   - The definitions of topic 1's "Node shapes and their definitions", as [v3-node-anatomy.md](v3-node-anatomy.md) lists them: nodes, flattened payloads, leaves, the unlabelled copies and the rows `filterChildren` removes, in first-match order, each condition reading the path-to-kind map.
   - Each component is a placeholder: a border labelled with the row's kind, around the child rows, or around the original node (`passOriginalNode`) for a leaf. So the demo's expressions show the classification, along with the definitions' own flags (`showCollectionWrapper`, `showKey`).
