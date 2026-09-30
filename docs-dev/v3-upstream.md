@@ -31,6 +31,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
 | F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
+| F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | —               |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -44,6 +45,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
 | J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
 | J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | —               |
+| J14 | json-edit-react    | A compact array view                                                       | Open     | Not filed                                                         | —               |
 
 ---
 
@@ -272,6 +274,16 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 
 **Issue.** Not filed.
 
+### F16 · A commented `get` stays a node in `toShorthand` — **Wanted**
+
+**The change.** Under `toShorthand`'s default `getAsReference`, a `get` carrying a `//`, on the node or inside a named payload, keeps its node form, as one with a `fallback`, `useCache` or `vars` already does, rather than becoming a reference and losing the comment. `toReference`, called directly, still drops it.
+
+**Why.** The conversion button converts the whole subtree (plan, 8.3), so a comment can be lost on a `get` deep inside the node the author clicked. It's the one place a conversion drops what the author wrote (Carl: it should be fig-tree's behaviour). The spec's own suggestion, asking before converting, doesn't suit a one-click button, and `getAsReference` can't be set for one node.
+
+**Without it.** The drop is accepted for now, since a comment on a `get` is rare.
+
+**Issue.** Filed as [fig-tree-evaluator#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203).
+
 ---
 
 ## json-edit-react
@@ -421,3 +433,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Without it.** The Reference component draws the control itself, after its ▶, and commits with `handleEdit(node)`, so it sits by the value rather than among the edit tools. That is the stand-in 8.3 builds, `ToGetNodeButton` in `src/upstream.tsx`.
 
 **Issue.** Filed as [#418](https://github.com/CarlosNZ/json-edit-react/issues/418).
+
+### J14 · A compact array view — **Open**
+
+**The change.** To be designed: a way for json-edit-react to draw a short array compactly, its elements on one line rather than one row each, with each element still its own editable row and the array's edit tools kept.
+
+**Why.** A positional shorthand's argument list takes more rows in the tree than the named form it came from (plan, 8.3, "Revisit later"), so converting to shorthand makes the JSON more compact but not the tree. Drawn compactly, `{ $plus: [1, '$data.tax'] }` could sit on its button's line, as a single value does (C3).
+
+**Without it.** Argument lists stay one row per element. Whether to pursue it is to be revisited once the conversions have been tried (Carl).
+
+**Issue.** Not filed.
