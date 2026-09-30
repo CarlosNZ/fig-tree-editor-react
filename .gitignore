@@ -4,6 +4,9 @@ build/
 # Extracted `npm pack` output for the demo's `pack` mode
 pack-output/
 
+# Page snapshots, console logs and screenshots from the Playwright MCP server
+.playwright-mcp/
+
 # Logs
 logs
 *.log

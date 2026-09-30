@@ -64,13 +64,18 @@ export interface ThemeContext {
 // TO-DO: the other kinds' styles, each with the component that needs it
 // (plan, Phases 7 to 10).
 const editorThemeLayer = ({ classification, issues, editorTheme }: ThemeContext): Theme => {
+  // A full operator node or fragment call
   const isNode = ({ path }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
-    return kind?.kind === 'operator' && kind.form === 'full'
+    return (kind?.kind === 'operator' || kind?.kind === 'fragment') && kind.form === 'full'
   }
 
   return {
     styles: {
+      // A flattened payload's rows line up as the node's own, so its row adds
+      // no indent (design, topic 1, finding 7)
+      collection: ({ path }) =>
+        rowAt(classification, path)?.payload === 'flattened' ? { marginLeft: 0 } : null,
       // A node's header stands in for its brackets, which show again only
       // around a collapsed node's summary
       bracket: (nodeData) => (isNode(nodeData) && !nodeData.collapsed ? { display: 'none' } : null),

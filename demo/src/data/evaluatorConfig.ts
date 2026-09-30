@@ -11,6 +11,7 @@ const fragments: Record<string, FragmentDefinition> = {
     },
     parameters: { country: { type: 'string' } },
     description: "Gets a country's capital city",
+    metadata: { displayName: 'Capital city' },
   },
   getFlag: {
     expression: {

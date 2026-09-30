@@ -40,6 +40,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J8  | json-edit-react    | Open an object's add-key input from the editor handle                      | Dropped  | Not filed                                                         | —               |
 | J9  | json-edit-react    | Reveal a row from the editor handle                                        | Maybe    | Not filed                                                         | —               |
 | J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
+| J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | —               |
 
 ---
 
@@ -375,3 +376,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **A host that holds commits.** When the host's `onUpdate` calls `hold()`, the session goes to `held`, and `open()` does nothing while a commit is held. So the toolbar's reopen, straight after `setValue`, is dropped, and the toolbar closes after each action. With the outcome from `setValue`, the component could reopen once the commit settles. Accepted until then, since holding is for hosts that confirm each edit with a server (plan, 5.2).
 
 **Issue.** Not filed.
+
+### J11 · A row without the collection wrapper is never collapsed — **Required**
+
+**The change.** A bug fix: a collection row whose definition sets `showCollectionWrapper: false` starts open whatever the `collapse` filter says, and stays open when `collapse` changes. `CollectionNode` reads the filter for its first render (`startCollapsed`, which sets `hasBeenOpened`) and in its `collapseFilter` effect, and neither considers the wrapper. So a matched row renders no child rows until something re-renders it, which, as the node is memoised, may never happen (checked against 2.0.1).
+
+**Why.** The flattened payload (plan, 7.1) is such a row: a fragment call's static `parameters` and a shorthand's named payload. Under the demo's `collapse: 2`, a fragment call's arguments at level 2 don't show.
+
+**Without it.** The editor could wrap the host's `collapse` so flattened rows never match, which would make `collapse` a Combined prop. Not done, since the fix is json-edit-react's (Carl).
+
+**Issue.** Filed as [#415](https://github.com/CarlosNZ/json-edit-react/issues/415).

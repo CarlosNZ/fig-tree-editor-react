@@ -161,19 +161,20 @@ describe('display data', () => {
   })
 
   describe('fragments', () => {
-    it("reads each fragment's hints from its metadata, every field optional", () => {
+    it("reads each fragment's hints from its metadata, every field optional, and its description", () => {
       const { fragments } = displayData({
         fragments: {
           greet: {
             expression: { $plus: ['Hello ', '$params.name'] },
             parameters: { name: { type: 'string' } },
+            description: 'Says hello',
             metadata: { displayName: 'Greeting', seeds: { name: 'World' } },
           },
           plain: { expression: 1 },
         },
       })
       expect(fragments).toEqual({
-        greet: { displayName: 'Greeting', seeds: { name: 'World' } },
+        greet: { displayName: 'Greeting', description: 'Says hello', seeds: { name: 'World' } },
         plain: { seeds: {} },
       })
     })

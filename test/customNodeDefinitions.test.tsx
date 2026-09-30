@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
 import { classify } from '../src/classify'
 import { demoExpressions, figTree, registry } from './fixtures'
+import { keyLabel } from './queries'
 
 // Each render's definitions array, to check its identity
 const definitionArrays = vi.hoisted(() => [] as unknown[])
@@ -48,10 +49,10 @@ describe('the custom node definitions', () => {
   it('flatten a named payload, and leave an argument list unlabelled', () => {
     expect(shown({ $if: { condition: '$data.ok', then: 'Yes' } })).toEqual([
       ['shorthand', 'Shorthand · $if (Conditional (?))'],
-      ['flattened', 'Flattened payload'],
       ['reference', 'Reference · data'],
     ])
     expect(screen.queryByText('$if')).not.toBeInTheDocument()
+    expect(keyLabel('condition')).toBeInTheDocument()
     expect(shown({ $plus: [1, 2] })).toEqual([
       ['shorthand', 'Shorthand · $plus (Plus (+))'],
       ['unlabelled', 'Unlabelled'],
@@ -72,15 +73,20 @@ describe('the custom node definitions', () => {
     ])
   })
 
-  it('mark fragment calls by their arguments', () => {
-    expect(shown({ fragment: 'greet', parameters: { name: 'Ada' } })).toEqual([
-      ['fragment', 'Fragment · greet · static arguments'],
-      ['flattened', 'Flattened payload'],
-    ])
+  it('give a full fragment call its component, and flatten its static arguments', () => {
+    const { container } = render(editor({ fragment: 'greet', parameters: { name: 'Ada' } }))
+    expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
+    expect(placeholders(container)).toEqual([])
+    expect(keyLabel('name')).toBeInTheDocument()
+    expect(screen.queryByText('fragment')).not.toBeInTheDocument()
+    expect(screen.queryByText('parameters')).not.toBeInTheDocument()
+  })
+
+  it("keep a dynamic call's `parameters` row, with its key", () => {
     expect(shown({ fragment: 'greet', parameters: '$data.form' })).toEqual([
-      ['fragment', 'Fragment · greet · dynamic arguments'],
       ['reference', 'Reference · data'],
     ])
+    expect(keyLabel('parameters')).toBeInTheDocument()
   })
 
   it('quote the content of a literal', () => {

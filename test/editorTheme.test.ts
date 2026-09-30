@@ -10,7 +10,14 @@ import {
   type ThemeContext,
 } from '../src/editorTheme'
 
-const figTree = new FigTree()
+const figTree = new FigTree({
+  fragments: {
+    greet: {
+      expression: { $plus: ['Hello ', '$params.name'] },
+      parameters: { name: { type: 'string' } },
+    },
+  },
+})
 const registry = { operators: figTree.getOperators(), fragments: figTree.getFragments() }
 
 const contextFor = (expression: unknown): ThemeContext => {
@@ -28,7 +35,7 @@ const empty = contextFor(null)
 // applied to a row
 const style = (
   expression: unknown,
-  element: 'bracket' | 'collectionInner',
+  element: 'bracket' | 'collectionInner' | 'collection',
   path: (string | number)[],
   collapsed = false
 ) => {
@@ -84,6 +91,35 @@ describe('editor theme', () => {
       expect(style({ total: { operator: 'if' } }, 'collectionInner', ['total'])).toMatchObject({
         borderColor: defaultEditorTheme.nodeBorder,
       })
+    })
+  })
+
+  describe('fragment calls', () => {
+    const call = { total: { fragment: 'greet', parameters: { name: 'Ada' } } }
+
+    it('hide their brackets and draw their border as operator nodes do', () => {
+      expect(style(call, 'bracket', ['total'])).toEqual({ display: 'none' })
+      expect(style(call, 'bracket', ['total'], true)).toBeNull()
+      expect(style(call, 'collectionInner', ['total'])).toMatchObject({
+        borderColor: defaultEditorTheme.nodeBorder,
+      })
+      expect(style({ total: { fragment: 'nope' } }, 'collectionInner', ['total'])).toMatchObject({
+        borderColor: defaultEditorTheme.error,
+        borderLeftWidth: '0.3em',
+      })
+    })
+  })
+
+  describe('flattened payloads', () => {
+    it("take out their row's indent, and only theirs", () => {
+      const call = { fragment: 'greet', parameters: { name: 'Ada' } }
+      expect(style(call, 'collection', ['parameters'])).toEqual({ marginLeft: 0 })
+      expect(style({ ...call, parameters: '$data.form' }, 'collection', ['parameters'])).toBeNull()
+      expect(style({ $if: { condition: true, then: 1 } }, 'collection', ['$if'])).toEqual({
+        marginLeft: 0,
+      })
+      expect(style({ $plus: [1, 2] }, 'collection', ['$plus'])).toBeNull()
+      expect(style({ total: { operator: 'plus' } }, 'collection', ['total'])).toBeNull()
     })
   })
 })

@@ -38,6 +38,7 @@ export interface CategoryDisplay extends CategoryHints {
 // fig-tree never checks, so every field may be missing. Its fallbacks (the
 // "Fragment" label, `editorTheme`'s fragment colours) apply where it is drawn.
 export interface FragmentDisplay extends Partial<Omit<OperatorHints, 'seeds'>> {
+  description?: string // the definition's own
   seeds: Record<string, unknown>
 }
 
@@ -104,7 +105,10 @@ export const buildDisplayData = ({
     ),
     categories,
     fragments: Object.fromEntries(
-      fragments.map(({ name, metadata }) => [name, mergeHints([readHints(metadata)])])
+      fragments.map(({ name, description, metadata }) => [
+        name,
+        { ...mergeHints([readHints(metadata)]), ...(description !== undefined && { description }) },
+      ])
     ),
   }
 }

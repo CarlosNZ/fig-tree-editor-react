@@ -176,7 +176,10 @@ input.ft-select-input::placeholder {
   flex-direction: column;
 }
 
+/* The header is a size container, so the display name's suffix can be left
+   out where the node is narrow */
 .ft-display-bar {
+  container-type: inline-size;
   position: relative;
   display: flex;
   align-items: center;
@@ -231,6 +234,12 @@ input.ft-select-input::placeholder {
   font-variant: small-caps;
   font-weight: 600;
   color: gray;
+}
+
+@container (max-width: 24em) {
+  .ft-display-name-suffix {
+    display: none;
+  }
 }
 
 .ft-display-name a {

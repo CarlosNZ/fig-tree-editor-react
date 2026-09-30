@@ -10,6 +10,7 @@ import { rowAt, type Classification, type Row } from './classify'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { getStartingNode, type DefaultOperators } from './getStartingNode'
+import { Fragment } from './Fragment'
 import { Operator } from './Operator'
 import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
@@ -67,9 +68,14 @@ export interface ComponentConfig extends Shared {
 type Condition = (row: Row, nodeData: NodeData) => boolean
 
 // Each definition's component, where it has one yet; the rest show the
-// placeholder
-const COMPONENTS: Partial<Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>>>> = {
+// placeholder. A flattened payload has none: json-edit-react draws its rows,
+// and its flags hide the row itself.
+const COMPONENTS: Partial<
+  Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null>
+> = {
   operator: Operator,
+  fragment: Fragment,
+  flattened: null,
 }
 
 export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] => {
@@ -86,7 +92,9 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     flags: Partial<CustomNodeDefinition> = {}
   ): CustomNodeDefinition => ({
     condition,
-    component: (COMPONENTS[name] ?? Placeholder) as unknown as CustomNodeDefinition['component'],
+    ...(COMPONENTS[name] !== null && {
+      component: (COMPONENTS[name] ?? Placeholder) as unknown as CustomNodeDefinition['component'],
+    }),
     keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
     componentProps: { ...shared, definition: name } satisfies ComponentConfig,
     ...flags,
@@ -201,6 +209,9 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
             isComment({ ...nodeData, path: nodeData.path.slice(0, -1) }))),
       { showKey: false, passOriginalNode: true }
     ),
+    // A shorthand's named payload or a fragment call's static arguments, whose
+    // rows show as the node's own; the theme takes out the indent its row
+    // would add (design, topic 1, "Flattened payloads and unlabelled rows")
     definition(
       'flattened',
       matches((row) => row.payload === 'flattened'),

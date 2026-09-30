@@ -360,15 +360,41 @@ At the end of this phase every parameter can be added from the toolbar or ＋ at
 
 ## Phase 7 — Fragments
 
-- The fragment call, static and dynamic, with `FragmentHints` display (topics 1, 3 and 6), and its broken state.
-- The fragment picker, `defaultFragment`, switching fragment, and the node-type switch between operator, fragment and value (topics 2 and 6).
-- The type dropdown's Fragment entry (moved from 6.3), offered only while a registered fragment can fit the slot, starting as `defaultFragment` (topic 4, "The type dropdown").
-- Fragment-definition mode stays parked (topic 6): nothing here depends on it.
-- **A cosmetic pass over the toolbar,** once it has all its controls (the operator and fragment pickers, "Add parameter" and the node-type switch), with Carl's style tweaks, held until then so the shared `Select` styles are tuned once. It includes the picker's text wrapping short of the space available: the option width comes from v1's `max-width: 20em` on options, the inline left padding in `Menu.tsx` and a dropdown sized to its content, so measure which of them causes it before changing any.
+Fragment-definition mode stays parked (topic 6): nothing here depends on it. fig-tree needs nothing new: F11 shipped in 3.0.0-preview.2, so `getFragments()` reports each fragment's `returns`.
+
+- **7.1 · The fragment call.** The Fragment component on the `fragment` definition and its unlabelled copy, following the Operator's (topics 1, 3 and 6; [v3-node-anatomy.md](v3-node-anatomy.md), section 2).
+  - The DisplayBar: the button showing the name as written, in the `FragmentHints` colours or `editorTheme`'s fragment colours; the display name with "· fragment" at the top right, the suffix hidden when the editor is narrow, or "Fragment" alone; the `docUrl` link; and the hover card with the description.
+  - Static arguments directly beneath the header. A dynamic call's `parameters` row, with its key shown.
+  - The broken state (`unknown-fragment`, malformed). The collapsed summary, `{ Fragment: greet }`. The theme's bracket and border style functions extended to full fragment calls.
+  - **The flattened payload's component, moved up from Phase 8** (agreed with Carl): a static `parameters` map is its first user. It renders its child rows and nothing else, and the theme removes json-edit-react's extra indent (topic 1, finding 7), so the arguments line up as an operator's parameters do. Phase 8 reuses it for named shorthand.
+  - Done.
+    - **The component** is `src/Fragment.tsx`, on the `fragment` definition and its unlabelled copy. It has no edit flags yet, so json-edit-react's ✎ opens its standard raw-JSON editor until 7.2, as the Operator's did in 5.1, and the DisplayBar has no pencil.
+    - **The header** is the Operator's DisplayBar, whose `display` is a `HeaderDisplay` (the display name, an optional suffix, the link and the colours), so a fragment's fallbacks apply where it is drawn, as `displayData.ts` has it. The display data carries each fragment's `description`, the definition's own, which is the whole hover card. An unregistered name is never looked up in the display data, since it may be anything (`toString`).
+    - **Settled in building:** a broken call keeps "Fragment" at the top right, since that label names the kind rather than the fragment, where a broken operator shows nothing there. The "· fragment" suffix is left out by a container query on the header, below 24em, so it goes where the node is narrow, not only the editor.
+    - **The flattened payload has no component:** a definition without one leaves json-edit-react to draw its rows, and its flags (`showCollectionWrapper: false`, `showKey: false`) already hide the row itself. The theme's `collection` style function sets its row's `marginLeft` to 0. That applies to a shorthand's named payload too, still inside its placeholder until Phase 8.
+    - **The theme's style functions** (brackets, the node border, the broken state's border and stripe) take full fragment calls with full operator nodes. The collapsed summary is `FT_SUMMARY_FRAGMENT`, "Fragment: greet".
+    - **Found in the demo (Carl): a flattened row starting collapsed shows no rows.** json-edit-react applies the `collapse` filter to a row without the collection wrapper on its first render, so under the demo's `collapse: 2` a fragment call's arguments at level 2 didn't show. It's a json-edit-react bug, J11 in [v3-upstream.md](v3-upstream.md) ([#415](https://github.com/CarlosNZ/json-edit-react/issues/415)), Required, with no workaround here. The editor moves to the release that fixes it, with a test under `collapse: 2`.
+    - **The demo's `getCapital`** has the display name "Capital city", so its fragments show both cases. The demo keeps its FigTree options, the fragment definitions included, in local storage (`v3:options`), so a browser that has saved them shows the definitions from then until they are cleared.
+    - **Tests:** `test/Fragment.test.tsx` covers the hints and their fallbacks, the host's fragment colours, static arguments as the call's rows and their indent, a dynamic call's `parameters` row, a call with no arguments, one in a shorthand payload, the broken state and the collapsed summary. `test/editorTheme.test.ts` covers the fragment call's styles and the flattened row's indent. `test/customNodeDefinitions.test.tsx` checks the fragment call's component and no placeholder on flattened rows.
+    - **The size budget** stays at 16.8 kB; the bundle is 16.28 kB brotli.
+- **7.2 · The toolbar, the fragment picker and switching fragment.**
+  - The two editors, through `useNodeEditor`.
+  - The picker's options, a pure module with its own tests: one flat list in `getFragments()` order, labelled with the display name, the description beneath, the name searched through `keywords`; "Not valid here" from the slot and `returns` (`typesIntersect`), the current fragment can still be chosen; a broken call opening on F3's suggestion; "No fragments registered". Re-selecting the current fragment closes the menu unchanged (topic 6, "The fragment picker").
+  - Switching fragment, a pure module with its own tests: the modifiers and the shared static arguments kept, dynamic arguments unchanged, an emptied `parameters` removed, then `cleanNode` and the fill (topic 6, "Switching fragment").
+  - "Add parameter": the missing declared arguments, required first, written into `parameters` and creating it where absent, then `vars`, `fallback` and `//`; the modifiers alone on a dynamic call ([v3-node-anatomy.md](v3-node-anatomy.md), section 2). `addableKeys` offers the arguments in place of the `parameters` key. ＋ comes off full fragment calls, as 6.4 planned.
+- **7.3 · The starting fragment and the type dropdown's Fragment entry** (moved from 6.3; topic 4, "The type dropdown", and topic 8, "Defaults and what the pickers offer").
+  - The starting fragment, a pure function with its own tests: `defaultFragment` where it is registered and can fit the slot, otherwise the first fragment in the picker's order that can, with its required arguments seeded.
+  - A Fragment definition named for the entry, with that function as its `defaultValue`, offered only while a registered fragment can fit. The new call's picker opens through 6.3's mark, and ✗ restores the value it replaced.
+  - The `defaultFragment` prop joins the props.
+  - It comes before the node-type switch, which starts fragments the same way.
+- **7.4 · The node-type switch,** first in both toolbars (topic 2, "Node lifecycle"; topic 3, "Header and toolbar").
+  - Switching, a pure module with its own tests: Operator to Fragment keeps `//`, `vars` and `fallback` and drops `useCache`; Fragment to Operator starts as `getStartingNode` for the slot, keeping the same modifiers; either to Value writes the position's starting value. Fragment is offered only where a registered fragment can fit.
+  - **After a switch to the other node type** (agreed with Carl): the node belongs to the other definition, so the toolbar can't carry on. The switch sets 6.3's mark, and the new node opens its toolbar with the picker open. ✗ there restores the node as it was when the session opened. A switch to Value commits and closes.
+- **7.5 · A cosmetic pass over the toolbar,** once it has all its controls (the operator and fragment pickers, "Add parameter" and the node-type switch), with Carl's style tweaks, held until then so the shared `Select` styles are tuned once. It includes the picker's text wrapping short of the space available: the option width comes from v1's `max-width: 20em` on options, the inline left padding in `Menu.tsx` and a dropdown sized to its content, so measure which of them causes it before changing any.
 
 ## Phase 8 — Shorthand forms and references
 
-- Shorthand nodes, named and positional, with the flattened and unlabelled definitions (topic 1, "Node shapes and their definitions"), the dashed border, and the value on the button's line (topic 3).
+- Shorthand nodes, named and positional, with the unlabelled definitions and 7.1's flattened payload (topic 1, "Node shapes and their definitions"), the dashed border, and the value on the button's line (topic 3).
 - The conversion button cycling full, named and positional, and "To get node" and back (topic 1, "Conversions").
 - References: the Leaf definitions, one per namespace, with `editorTheme`'s colours, the inline ▶ and `editOnTypeSwitch` (topics 3, 4 and 5).
 

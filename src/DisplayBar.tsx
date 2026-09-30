@@ -6,17 +6,25 @@ import { Icon, Icons } from './Icons'
 import { strings } from './strings'
 
 // A node's header (design, topic 3, "Header and toolbar"): the Evaluate
-// button showing the name as written, with the operator's card on hover, the
+// button showing the name as written, with the node's card on hover, the
 // pencil that opens the toolbar, shown on hover, and the display name at the
 // top right, linked to its documentation. A broken node shows its name as an
 // error with the issue's message, and no Evaluate button, since the compiler
-// refuses it; its pencil stays, so a valid operator can be picked.
+// refuses it; its pencil stays, so a valid operator or fragment can be picked.
 //
 // TO-DO: evaluating (plan, Phase 10), and the conversion button (Phase 8).
 
+// What the header shows of an operator or fragment
+export interface HeaderDisplay extends Pick<
+  OperatorDisplay,
+  'displayName' | 'docUrl' | 'backgroundColor' | 'textColor'
+> {
+  suffix?: string // after the display name, where there is room
+}
+
 interface DisplayBarProps {
   name: string | null // as written; null when it isn't a string
-  display: OperatorDisplay | undefined // undefined when nothing is registered
+  display: HeaderDisplay | undefined // undefined when nothing is registered
   card: string[] // the hover card's lines
   broken: Issue | undefined
   editorTheme: EditorTheme
@@ -62,6 +70,7 @@ export const DisplayBar = ({
           ) : (
             display.displayName
           )}
+          {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
         </span>
       )}
     </div>
