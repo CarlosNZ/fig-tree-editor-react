@@ -30,6 +30,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
+| F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -261,6 +262,16 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201).
 
+### F15 · `as` bindings in `toGet` and `toReference` — **Maybe**
+
+**The change.** The `bindings` option `recognizeReference` takes (F14), on `toGet` and `toReference` too, so that `toGet('$item.price', { bindings: ['item'] })` gives `{ operator: 'get', path: 'price', from: '$item' }`, and `toReference` reads that node back.
+
+**Why.** "To get node" (plan, 8.3) is offered wherever `toGet` gives a node. Without the `as` names in scope, `toGet` reads `'$item.price'` as no reference and returns `null` (checked against 3.0.0-preview.3), so a reference through an `as` name has no "To get node", while `$element.price` does.
+
+**Without it.** No "To get node" on those references; the node is written through the type dropdown or raw JSON.
+
+**Issue.** Not filed.
+
 ---
 
 ## json-edit-react
@@ -407,6 +418,6 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Why.** "To get node" is a custom button on reference rows ("Kinds" under topic 3 in [v3-design.md](v3-design.md); plan, Phase 8). Written through the editor's own `setData`, it would skip the host's `onUpdate`, which every other write the editor makes goes through ("Commit semantics").
 
-**Without it.** The Reference component draws the control itself, after its ▶, and commits with `handleEdit(node)`, so it sits by the value rather than among the edit tools.
+**Without it.** The Reference component draws the control itself, after its ▶, and commits with `handleEdit(node)`, so it sits by the value rather than among the edit tools. That is the stand-in 8.3 builds, `ToGetNodeButton` in `src/upstream.tsx`.
 
 **Issue.** Filed as [#418](https://github.com/CarlosNZ/json-edit-react/issues/418).

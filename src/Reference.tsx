@@ -1,17 +1,20 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useLayoutEffect, useMemo, useRef } from 'react'
 import { StringDisplay, toPathString, type CustomComponentProps } from 'json-edit-react'
 import { recognizeReference } from 'fig-tree-evaluator/format'
 import { bindings, rowAt, type Row, type RowKind } from './classify'
+import { getNodeFor } from './conversions'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type EditorTheme } from './editorTheme'
 import { Icons } from './Icons'
 import { strings } from './strings'
+import { ToGetNodeButton } from './upstream'
 
 type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 
 // A reference (design, topic 3, "Kinds"; topic 5, "Editing references"): the
 // string in its namespace's colour, without the quotes a plain string has,
-// then the ▶ that evaluates it. It is shown by json-edit-react's own string
+// then the ▶ that evaluates it, and "To get node", on hover, where the
+// reference has a `get` form. It is shown by json-edit-react's own string
 // display, so double-click and Cmd-click open it for editing, and a long one
 // is cut short, as any string is.
 //
@@ -25,10 +28,14 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 //
 // TO-DO: evaluating (plan, Phase 10).
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
-  const { componentProps, nodeData, isEditing, originalNode, getStyles } = props
-  const { classification, editorTheme, entry } = componentProps!
+  const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
+  const { classification, editorTheme, entry, referenceNames } = componentProps!
   const row = rowAt(classification, nodeData.path)
   const input = useRef<HTMLDivElement>(null)
+  const getNode = useMemo(
+    () => (canEdit ? getNodeFor(value as string, referenceNames) : null),
+    [value, canEdit, referenceNames]
+  )
 
   // As the input opens, or takes another entry's text, after json-edit-react's
   // own focus handler, which selects the whole text
@@ -57,7 +64,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
         pathString={toPathString(nodeData.path)}
         showStringQuotes={false}
         stringTruncateLength={props.stringTruncateLength}
-        canEdit={props.canEdit}
+        canEdit={canEdit}
         setIsEditing={props.setIsEditing}
         translate={props.translate}
         showIconTooltips={props.showIconTooltips}
@@ -70,6 +77,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
       >
         {Icons.evaluate}
       </button>
+      {getNode && <ToGetNodeButton onClick={() => props.handleEdit(getNode)} colour={colour} />}
     </span>
   )
 }

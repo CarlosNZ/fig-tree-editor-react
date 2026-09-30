@@ -14,9 +14,10 @@ import { strings } from './strings'
 // A modifier-click on the button, with json-edit-react's clipboard modifier
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
 // other spelling. A shorthand node's name is in italics, and its single value
-// can sit on the button's line.
+// can sit on the button's line. The conversion button, shown on hover, sits
+// beneath the display name, in the node's colours.
 //
-// TO-DO: evaluating (plan, Phase 10), and the conversion button (Phase 8).
+// TO-DO: evaluating (plan, Phase 10).
 
 // What the header shows of an operator or fragment
 export interface HeaderDisplay extends Pick<
@@ -35,6 +36,7 @@ interface DisplayBarProps {
   editorTheme: EditorTheme
   shorthand?: boolean
   inline?: React.ReactNode // after the button, on its line
+  conversion?: { label: string; onConvert: () => void }
   onEdit?: () => void // opens the toolbar; absent where the node can't be edited
   // A modifier-click on the button: an operator's other spelling, where it
   // has one and the node can be edited
@@ -51,6 +53,7 @@ export const DisplayBar = ({
   editorTheme,
   shorthand = false,
   inline,
+  conversion,
   onEdit,
   onRespell,
   respellModifiers = [],
@@ -93,6 +96,18 @@ export const DisplayBar = ({
             display.displayName
           )}
           {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
+        </span>
+      )}
+      {conversion && display && (
+        <span className="ft-convert-area">
+          <button
+            type="button"
+            className="ft-convert-button"
+            onClick={conversion.onConvert}
+            style={{ backgroundColor: display.backgroundColor, color: display.textColor }}
+          >
+            {conversion.label}
+          </button>
         </span>
       )}
     </div>

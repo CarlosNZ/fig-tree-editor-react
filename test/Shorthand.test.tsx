@@ -228,6 +228,40 @@ describe('the shorthand node', () => {
     })
   })
 
+  describe('its conversion button', () => {
+    const convertButton = (label: string) => screen.getByRole('button', { name: label })
+
+    it('steps through the forms, each commit converting the node where it stands', () => {
+      const { written } = host({ x: { $if: { condition: true, then: 'Yes', else: 'No' } } })
+      fireEvent.click(convertButton('To positional'))
+      expect(latest(written)).toEqual({ x: { $if: [true, 'Yes', 'No'] } })
+      fireEvent.click(convertButton('To full'))
+      expect(latest(written)).toEqual({
+        x: { operator: 'if', condition: true, then: 'Yes', else: 'No' },
+      })
+      fireEvent.click(convertButton('To shorthand'))
+      expect(latest(written)).toEqual({ x: { $if: { condition: true, then: 'Yes', else: 'No' } } })
+    })
+
+    it('goes from named back to full where there is no positional form', () => {
+      // `from` has no position, and `default` no reference form
+      editor({ $get: { path: 'a', from: '$data.x', default: 0 } })
+      expect(convertButton('To full')).toBeInTheDocument()
+    })
+
+    it('shows only where converting is allowed and succeeds', () => {
+      const locked = editor({ $plus: [1, 2] }, { allowEdit: false })
+      expect(screen.queryByRole('button', { name: 'To full' })).not.toBeInTheDocument()
+      locked.unmount()
+      const broken = editor({ $plus: [1], extra: 2 })
+      expect(screen.queryByRole('button', { name: 'To full' })).not.toBeInTheDocument()
+      broken.unmount()
+      // `./format` refuses the node beneath, so neither has a button
+      editor({ $not: { operator: 'flibble' } })
+      expect(screen.queryByRole('button', { name: /^To / })).not.toBeInTheDocument()
+    })
+  })
+
   it('summarises itself when collapsed, as written', () => {
     editor({ a: { $if: { condition: true, then: 1 } }, b: { '$+': [1, 2] } }, { collapse: 1 })
     expect(screen.getByText('Shorthand: $if')).toBeInTheDocument()

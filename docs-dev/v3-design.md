@@ -418,7 +418,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **A positional payload keeps its brackets** (C2): the argument array is unlabelled rather than flattened, keeping its chevron and edit tools, since it is still one value beneath the `$name`. A named payload stays flattened (C1).
 - **One conversion button cycles the forms:** "To shorthand" on a full node (giving the named form), "To positional" on a named shorthand, "To full" on a positional one; a node with no positional form swaps between full and named ("Conversions", topic 1). Going from named back to full takes two clicks, by way of positional.
 - **`literal` keeps its Evaluate button,** for consistency, though it only returns the content.
-- **References:** Evaluate is a small ▶ inline after the text (reopened by Carl: inline, or among the edit tools; plan, 10.3). "To get node" is a json-edit-react custom button on reference rows, appearing on hover with the other edit tools. **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** through the `editorTheme` prop (topic 8, "Theming and CSS").
+- **References:** Evaluate is a small ▶ inline after the text (reopened by Carl: inline, or among the edit tools; plan, 10.3). "To get node" is a json-edit-react custom button on reference rows, appearing on hover with the other edit tools, once a custom button can commit through `onUpdate` (J13); until then the Reference component draws it after the ▶ (plan, 8.3). **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** through the `editorTheme` prop (topic 8, "Theming and CSS").
 - **Plain containers with holes** get the bare Evaluate button **at the root only,** for now.
 - **Comments** render as a note beneath the header, with json-edit-react's edit tools on hover like any row.
 - **Row order:** the node's parameters, then `fallback` and `useCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
@@ -1394,6 +1394,8 @@ gives `{ operator: '+', values: [1, 2, 3] }` at `round.value` and `round.decimal
 
 **Preferring aliases needs no prop of its own.** A host writing `'+'` in `defaultOperators` gets `+`, and topic 2's switching rule keeps the alias where the next operator has one. Rejected: a separate spelling-preference prop.
 
+**`referenceNames`** (plan, 8.3; Carl) sets how the editor spells every reference it writes: `'canonical'` (`$data`, `$vars`, `$element`, `$index`, `$params`), the default, or `'alias'` (`$d`, `$v`, `$e`, `$i`, `$p`), in fig-tree's own terms (`./format`'s `referenceNames`). It covers the type dropdown's starts (`$data.` or `$d.`) and the conversions, which respell every reference in the subtree they convert, the author's own included, as fig-tree's option does. Only typing writes the other spelling. Unlike an operator's alias, a reference's spelling can't be given through a default, since the editor makes references up itself. No switcher: a reference is easily retyped.
+
 **v1's `addTopLevelFallback` is dropped.** Its one known use, Conforma's `null`, is served by a default node carrying `fallback: null`, which topic 2's switching rule keeps through every operator switch. The difference, for the migration note: a root written as raw JSON does not gain the fallback. Rejected: a rule adding a fallback to any root without one, which would change the tree on content edits.
 
 **`defaultFragment`** names the fragment a new call starts as (v1's `defaultNewFragment`), where it is registered and can fit the slot, otherwise the first fragment in the picker's order that can (topic 6). Its arguments are seeded as usual. v1's `defaultNewCustomOperator` goes, since host operators are ordinary operators.
@@ -1518,6 +1520,7 @@ interface FigTreeEditorProps extends Omit<
   operatorHints?: { [operator: string]: Partial<OperatorHints> }
   categoryHints?: { [category in OperatorCategory]?: Partial<CategoryHints> }
   editorTheme?: Partial<EditorTheme>
+  referenceNames?: 'canonical' | 'alias' // $data or $d, wherever the editor writes a reference
 }
 ```
 

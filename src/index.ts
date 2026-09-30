@@ -1,3 +1,4 @@
+import { type ReferenceNames } from './conversions'
 import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } from './FigTreeEditor'
 import { defaultEditorTheme, type EditorTheme } from './editorTheme'
 import { type DefaultOperators, type OperatorDefault, type SlotType } from './getStartingNode'
@@ -11,6 +12,7 @@ export {
   type EditorTheme,
   type FigTreeEditorProps,
   type OperatorDefault,
+  type ReferenceNames,
   type SetExpressionOptions,
   type SlotType,
 }

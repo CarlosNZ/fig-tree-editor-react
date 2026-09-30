@@ -40,7 +40,9 @@ const shown = (expression: unknown) => placeholders(render(editor(expression)).c
 
 // Every reference in the tree, by its text
 const references = (container: HTMLElement) =>
-  [...container.querySelectorAll('.ft-reference')].map((element) => element.textContent)
+  [...container.querySelectorAll('.ft-reference .jer-value-string')].map(
+    (element) => element.textContent
+  )
 
 describe('the custom node definitions', () => {
   it('give a full operator node its component, and drop its operator row', () => {

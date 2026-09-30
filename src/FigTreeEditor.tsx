@@ -11,6 +11,7 @@ import {
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
 import { classify, rowAt, type Classification } from './classify'
+import { type ReferenceNames } from './conversions'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
   buildDisplayData,
@@ -63,6 +64,7 @@ export interface FigTreeEditorProps extends Omit<
   editorTheme?: Partial<EditorTheme>
   defaultOperators?: DefaultOperators
   defaultFragment?: string
+  referenceNames?: ReferenceNames // $data or $d, wherever the editor writes a reference
 }
 
 export const FigTreeEditor = ({
@@ -71,6 +73,7 @@ export const FigTreeEditor = ({
   setExpression,
   defaultOperators,
   defaultFragment,
+  referenceNames = 'canonical',
   operatorHints,
   categoryHints,
   editorTheme,
@@ -139,6 +142,7 @@ export const FigTreeEditor = ({
         editorTheme: mergedEditorTheme,
         defaultOperators: stableDefaultOperators,
         defaultFragment,
+        referenceNames,
         created,
       }),
     [
@@ -149,6 +153,7 @@ export const FigTreeEditor = ({
       mergedEditorTheme,
       stableDefaultOperators,
       defaultFragment,
+      referenceNames,
     ]
   )
 

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -229,6 +229,15 @@ describe('the fragment call', () => {
       expect(bar.queryByRole('button', { name: 'greet' })).not.toBeInTheDocument()
       expect(bar.getByText(/'useCache' is not available on fragment calls/)).toBeInTheDocument()
     })
+  })
+
+  it('converts a static call to shorthand, and offers nothing on a dynamic one', () => {
+    const { written } = host({ call: { fragment: 'greet', parameters: { name: 'Ada' } } })
+    fireEvent.click(screen.getByRole('button', { name: 'To shorthand' }))
+    expect(latest(written)).toEqual({ call: { $greet: { name: 'Ada' } } })
+    cleanup()
+    editor({ fragment: 'greet', parameters: '$data.form' })
+    expect(screen.queryByRole('button', { name: /^To (shorthand|full)$/ })).not.toBeInTheDocument()
   })
 
   it('summarises itself when collapsed', () => {

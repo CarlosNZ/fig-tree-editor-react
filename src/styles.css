@@ -320,6 +320,26 @@ input.ft-select-input::placeholder {
   cursor: pointer;
 }
 
+/* A reference's "To get node", shown while its row is hovered */
+.ft-to-get-button {
+  padding: 0.2em 0.4em;
+  border: 1px solid;
+  border-radius: 5px;
+  background: none;
+  font-family: sans-serif;
+  font-size: 0.65em;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.jer-value-main-row:hover .ft-to-get-button,
+.ft-to-get-button:focus-visible {
+  opacity: 1;
+}
+
 /* Holds json-edit-react's input while a reference is edited, adding no box */
 .ft-reference-input {
   display: contents;
@@ -429,6 +449,35 @@ input.ft-select-input::placeholder {
 
 .ft-display-bar:hover .ft-edit-button,
 .ft-edit-button:focus-visible {
+  opacity: 1;
+}
+
+/* The conversion button, beneath the display name, where v1 had it: 1em
+   below the header's top, lined up with the display name on the right. Shown
+   while the header is hovered. */
+.ft-convert-area {
+  position: absolute;
+  top: 1em;
+  right: 0;
+}
+
+.ft-convert-button {
+  display: block;
+  padding: 0.3em 0.5em;
+  line-height: normal;
+  border: none;
+  border-radius: 5px;
+  font-family: sans-serif;
+  font-size: 0.65em;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ft-display-bar:hover .ft-convert-button,
+.ft-convert-button:focus-visible {
   opacity: 1;
 }
 

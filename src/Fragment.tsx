@@ -12,6 +12,7 @@ import { withoutFilteredRows } from './nodeRows'
 import { addKey, addableKeys } from './parameterOptions'
 import { strings } from './strings'
 import { Toolbar } from './Toolbar'
+import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 
 type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
@@ -27,6 +28,7 @@ type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 // an operator node.
 export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
+  const { setValue } = props
   const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
   const {
     editor,
@@ -46,6 +48,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const hints = kind.registered ? displayData.fragments[kind.name!] : undefined
   const node = value as Record<string, unknown>
   const broken = brokenIssue(issues, classification, path, node)
+  const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
 
   // Arguments are added once the call names a fragment the editor knows, so a
   // broken call's toolbar offers the picker alone
@@ -99,6 +102,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
           broken={broken}
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}
+          conversion={conversion}
         />
       )}
       {withoutFilteredRows(children, classification, path)}

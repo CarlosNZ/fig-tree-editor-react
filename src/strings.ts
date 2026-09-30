@@ -16,6 +16,13 @@ export const strings = {
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎
   FT_EVALUATE: 'Evaluate', // a reference's ▶
+
+  // The conversion buttons
+  FT_TO_SHORTHAND: 'To shorthand',
+  FT_TO_POSITIONAL: 'To positional',
+  FT_TO_FULL: 'To full',
+  FT_TO_REFERENCE: 'To reference',
+  FT_TO_GET_NODE: 'To get node',
   FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes
   FT_TOOLBAR_CANCEL: 'Cancel', // ✗, undoing them
 

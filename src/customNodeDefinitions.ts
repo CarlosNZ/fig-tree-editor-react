@@ -6,6 +6,7 @@ import {
 import { type FC } from 'react'
 import { type FigTree, type ReferenceNamespace } from 'fig-tree-evaluator'
 import { type IssueIndex } from './attachIssues'
+import { type ReferenceNames } from './conversions'
 import { rowAt, type Classification, type Row } from './classify'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
@@ -41,6 +42,7 @@ export interface Shared {
   editorTheme: EditorTheme // merged over the defaults
   defaultOperators: DefaultOperators | undefined
   defaultFragment: string | undefined
+  referenceNames: ReferenceNames
   // The node the type dropdown has just created, which its component opens
   // its picker on (design, topic 2, "Node lifecycle")
   created: { current: CreatedNode | null }
@@ -194,7 +196,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
               : referenceStart(
                   start,
                   rowAt(shared.classification, nodeData.path),
-                  nodeData.fullData
+                  nodeData.fullData,
+                  shared.referenceNames
                 ),
         }
       )

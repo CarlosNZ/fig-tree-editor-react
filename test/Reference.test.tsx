@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -19,7 +19,7 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
 
 // A host holding the expression, so each commit comes back as the editor's
 // next expression, in StrictMode
-const host = (initial: unknown) => {
+const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
   const written: unknown[] = []
   const Host = () => {
     const [expression, setExpression] = useState(initial)
@@ -32,6 +32,7 @@ const host = (initial: unknown) => {
           setExpression(next)
         }}
         collapse={false}
+        {...props}
       />
     )
   }
@@ -109,6 +110,52 @@ describe('a reference', () => {
     expect(
       container.querySelector('.ft-display-bar-value')!.querySelector('.ft-reference')
     ).toHaveTextContent('$data.user')
+  })
+
+  describe('"To get node"', () => {
+    it("replaces the reference with its `get` node, through the host's onUpdate", () => {
+      const onUpdate = vi.fn()
+      const { written } = host({ name: '$data.user.name' }, { onUpdate })
+      fireEvent.click(screen.getByRole('button', { name: 'To get node' }))
+      expect(latest(written)).toEqual({ name: { operator: 'get', path: 'user.name' } })
+      expect(onUpdate).toHaveBeenCalledOnce()
+    })
+
+    it('comes back through the node\'s own button, which reads "To reference"', () => {
+      const { written } = host({ name: '$data.user.name' })
+      fireEvent.click(screen.getByRole('button', { name: 'To get node' }))
+      fireEvent.click(screen.getByRole('button', { name: 'To reference' }))
+      expect(latest(written)).toEqual({ name: '$data.user.name' })
+    })
+
+    it('is offered only where there is a `get` form and the row can be edited', () => {
+      const { container } = editor({ i: '$index', item: '$item.price', ok: '$data.ok' })
+      expect(screen.getAllByRole('button', { name: 'To get node' })).toHaveLength(1)
+      container.remove()
+      editor({ ok: '$data.ok' }, { allowEdit: false })
+      expect(screen.queryByRole('button', { name: 'To get node' })).not.toBeInTheDocument()
+    })
+  })
+
+  describe('spelled by `referenceNames`', () => {
+    it('starts Data as `$d.` where the host prefers the short form', async () => {
+      const { user } = host({ operator: 'round', value: 3 }, { referenceNames: 'alias' })
+      await chooseType(user, 1, 'Data')
+      expect(screen.getByRole('textbox')).toHaveValue('$d.')
+      expect(selection()).toEqual([3, 3])
+    })
+
+    it("respells the references in a converted subtree, and a get node's source", () => {
+      const { written } = host(
+        { x: { operator: 'not', value: '$data.ok' }, y: '$vars.row.a' },
+        { referenceNames: 'alias' }
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'To shorthand' }))
+      expect(latest(written)).toMatchObject({ x: { $not: { value: '$d.ok' } } })
+      const toGet = screen.getAllByRole('button', { name: 'To get node' }).at(-1)!
+      fireEvent.click(toGet)
+      expect(latest(written)).toMatchObject({ y: { operator: 'get', path: 'a', from: '$v.row' } })
+    })
   })
 
   describe('while editing', () => {

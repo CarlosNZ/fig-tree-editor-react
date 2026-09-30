@@ -7,6 +7,7 @@ import {
 import { typesIntersect } from 'fig-tree-evaluator/format'
 import { type EnumDefinition, type TypeOptions } from 'json-edit-react'
 import { type Row, type ScopeEntry } from './classify'
+import { type ReferenceNames } from './conversions'
 import { valueAt } from './paths'
 import { strings } from './strings'
 
@@ -94,22 +95,30 @@ const currentType = (row: Row | undefined, value: unknown, options: TypeOptions)
 
 // Data is `$data.`, for the path to be typed after it; a var is the first of
 // the nearest block that has one; an element is the innermost iterator's, by
-// its `as` name where it has one. Each is valid where it's offered.
+// its `as` name where it has one. Each is valid where it's offered, and
+// spelled by `referenceNames`.
 export const referenceStart = (
   namespace: 'data' | 'vars' | 'element',
   row: Row | undefined,
-  data: unknown
+  data: unknown,
+  referenceNames: ReferenceNames = 'canonical'
 ) => {
   const scope = row?.scope ?? []
+  const token = NAMESPACE_TOKENS[referenceNames]
   if (namespace === 'vars') {
     const name = nearestVar(scope, data)
-    return name === undefined ? '$vars' : `$vars.${name}`
+    return name === undefined ? token.vars : `${token.vars}.${name}`
   }
   if (namespace === 'element') {
     const iterator = nearestIterator(scope)
-    return iterator?.as === undefined ? '$element' : `$${iterator.as}`
+    return iterator?.as === undefined ? token.element : `$${iterator.as}`
   }
-  return '$data.'
+  return `${token.data}.`
+}
+
+const NAMESPACE_TOKENS = {
+  canonical: { data: '$data', vars: '$vars', element: '$element' },
+  alias: { data: '$d', vars: '$v', element: '$e' },
 }
 
 const nearestVar = (scope: readonly ScopeEntry[], data: unknown) => {

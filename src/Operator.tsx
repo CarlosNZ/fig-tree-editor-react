@@ -12,6 +12,7 @@ import { addKey, addableKeys } from './parameterOptions'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
 import { Toolbar } from './Toolbar'
+import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 
 type OperatorKind = Extract<RowKind, { kind: 'operator' }>
@@ -46,6 +47,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
   const node = value as Record<string, unknown>
   const broken = brokenIssue(issues, classification, path, node)
+  const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
 
   // Parameters are added once the node has an operator the editor knows, so
   // a broken node's toolbar offers the picker alone
@@ -123,6 +125,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           onEdit={canEdit ? () => openToolbar() : undefined}
           onRespell={respell}
           respellModifiers={keyboardControls.clipboardModifier}
+          conversion={conversion}
         />
       )}
       {withoutFilteredRows(children, classification, path)}

@@ -9,6 +9,7 @@ import { operatorDefaultsLine } from './parameterCard'
 import { type Path } from './paths'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
+import { useConversion } from './useConversion'
 
 type ShorthandKind = Extract<RowKind, { kind: 'operator' | 'fragment' }>
 
@@ -31,6 +32,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const node = value as Record<string, unknown>
   const key = `$${kind.name}`
   const broken = brokenIssue(issues, classification, path, node)
+  const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
 
   const operator =
     kind.kind === 'operator'
@@ -79,6 +81,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
         inline={row}
         onRespell={respell}
         respellModifiers={keyboardControls.clipboardModifier}
+        conversion={conversion}
       />
       {rest}
     </div>
