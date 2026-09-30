@@ -91,3 +91,18 @@ Nested, and showing every node kind and row role the classification walk records
 | Plain data in an evaluated position                                                 | `details`                                                                                               |
 
 Left out, since each is an error of its own: a malformed node (`{ "operator": "plus", "fragment": "x" }`), a shorthand fragment call with dynamic arguments, and a bare `"$vars"`, which reads as an invalid reference. `$params` belongs in fragment bodies only.
+
+## Broken nodes
+
+One of each way a node can be broken (design, topic 7, "Where issues attach"). Each shows its name in the error colour with the issue's message, and no button. The shorthand ones keep their dashed border, in the error colour. A root key named `operator` or `fragment` would make the root itself a node, so the keys here avoid them.
+
+```json
+{
+  "strayKey": { "$plus": [1], "extra": 2 },
+  "twoNames": { "$plus": 1, "$minus": 2 },
+  "stringPayload": { "$getFlag": "$data.x" },
+  "cachedCall": { "$getFlag": { "country": "Peru" }, "useCache": true },
+  "parametersKey": { "operator": "plus", "values": [1], "parameters": {} },
+  "unknown": { "operator": "flibble", "values": [1] }
+}
+```

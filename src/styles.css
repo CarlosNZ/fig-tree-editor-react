@@ -295,6 +295,7 @@ input.ft-select-input::placeholder {
 }
 
 .ft-broken .ft-name {
+  flex-shrink: 0;
   font-size: 1.2em;
 }
 
@@ -369,6 +370,22 @@ input.ft-select-input::placeholder {
   display: flex;
   align-items: center;
   gap: 0.6em;
+  min-width: 0;
+}
+
+/* A shorthand node's name is in italics */
+.ft-shorthand .ft-name {
+  font-style: italic;
+}
+
+/* A shorthand's single value, on the button's line. json-edit-react indents
+   the row with an inline margin, which the line has no use for. */
+.ft-display-bar-value {
+  min-width: 0;
+}
+
+.ft-display-bar-value > .jer-collection-element > .jer-component {
+  margin-left: 0 !important;
 }
 
 .ft-edit-button,

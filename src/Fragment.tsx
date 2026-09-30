@@ -1,6 +1,6 @@
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
-import { brokenIssue, issuesAt } from './attachIssues'
+import { brokenIssue } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar, type HeaderDisplay } from './DisplayBar'
@@ -44,8 +44,8 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const kind = row?.kind as FragmentKind
   // An unregistered name is looked up nowhere, since it may be anything
   const hints = kind.registered ? displayData.fragments[kind.name!] : undefined
-  const broken = brokenIssue(issuesAt(issues, path))
   const node = value as Record<string, unknown>
+  const broken = brokenIssue(issues, classification, path, node)
 
   // Arguments are added once the call names a fragment the editor knows, so a
   // broken call's toolbar offers the picker alone
@@ -110,7 +110,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
 // them. The button's name already shows the fragment's name, so a fragment
 // with no display name shows "Fragment" alone, and one with no colours takes
 // the editor's fragment colours, as does a call to no registered fragment.
-const fragmentHeader = (
+export const fragmentHeader = (
   hints: FragmentDisplay | undefined,
   editorTheme: EditorTheme
 ): HeaderDisplay => ({

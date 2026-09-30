@@ -44,8 +44,28 @@ const drawnRow = (path: Path, classification: Classification) => {
 // malformed, or names no registered operator or fragment. The compiler and
 // `./format` both refuse it, so it has no Evaluate and no conversion.
 //
-// TO-DO: a shorthand node's stray keys, where `malformed-node` sits on the
-// key's own row (plan, Phase 8).
+// `validate()` reports some malformations on the node's own key, and the
+// key's row shows the issue too: a stray key beside a shorthand's `$name`, a
+// second `$name`, a fragment's `$name` row holding a string, `useCache` on a
+// fragment call, `parameters` on an operator node. A key whose row is a node
+// is left out, since an issue there may be that node's own
+// (`condition: { operator: 42 }`).
 const BROKEN = new Set<string>(['malformed-node', 'unknown-operator', 'unknown-fragment'])
 
-export const brokenIssue = (issues: readonly Issue[]) => issues.find(({ code }) => BROKEN.has(code))
+const NODE_KINDS = new Set(['operator', 'fragment', 'literal'])
+
+export const brokenIssue = (
+  index: IssueIndex,
+  classification: Classification,
+  path: Path,
+  node: unknown
+) =>
+  issuesAt(index, path).find(({ code }) => BROKEN.has(code)) ??
+  ownKeys(node)
+    .map((key) => [...path, key])
+    .filter((keyPath) => !NODE_KINDS.has(rowAt(classification, keyPath)?.kind?.kind ?? ''))
+    .flatMap((keyPath) => issuesAt(index, keyPath))
+    .find(({ code }) => code === 'malformed-node')
+
+const ownKeys = (node: unknown) =>
+  typeof node === 'object' && node !== null && !Array.isArray(node) ? Object.keys(node) : []

@@ -9,6 +9,7 @@ import {
   mergeEditorTheme,
   type ThemeContext,
 } from '../src/editorTheme'
+import { valueAt } from '../src/paths'
 
 const figTree = new FigTree({
   fragments: {
@@ -41,7 +42,7 @@ const style = (
 ) => {
   const { styles } = layerTheme(undefined, contextFor(expression)) as Theme
   const styleFunction = styles[element] as (nodeData: NodeData) => unknown
-  return styleFunction({ path, collapsed } as NodeData)
+  return styleFunction({ path, value: valueAt(expression, path), collapsed } as NodeData)
 }
 
 describe('editor theme', () => {
@@ -107,6 +108,33 @@ describe('editor theme', () => {
         borderColor: defaultEditorTheme.error,
         borderLeftWidth: '0.3em',
       })
+    })
+  })
+
+  describe('shorthand nodes', () => {
+    it('hide their brackets, and draw a dashed border', () => {
+      for (const node of [{ $plus: [1, 2] }, { $greet: { name: 'Ada' } }]) {
+        expect(style({ total: node }, 'bracket', ['total'])).toEqual({ display: 'none' })
+        expect(style({ total: node }, 'bracket', ['total'], true)).toBeNull()
+        expect(style({ total: node }, 'collectionInner', ['total'])).toMatchObject({
+          borderStyle: 'dashed',
+          borderColor: defaultEditorTheme.shorthandBorder,
+        })
+        expect(style({ total: node }, 'collectionInner', ['total'], true)).toBeNull()
+      }
+      expect(style({ total: { operator: 'plus' } }, 'collectionInner', ['total'])).toMatchObject({
+        borderStyle: 'solid',
+      })
+    })
+
+    it("draw a broken node's border dashed, in the error colour, with the stripe", () => {
+      for (const broken of [{ $plus: [1], extra: 2 }, { $greet: '$data.x' }]) {
+        expect(style({ total: broken }, 'collectionInner', ['total'])).toMatchObject({
+          borderStyle: 'dashed',
+          borderColor: defaultEditorTheme.error,
+          borderLeftWidth: '0.3em',
+        })
+      }
     })
   })
 

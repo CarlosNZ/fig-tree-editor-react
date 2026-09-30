@@ -199,8 +199,8 @@ describe('the fragment call', () => {
   })
 
   it('renders in a shorthand payload, without the `$name` key', () => {
-    const { container } = editor({ $not: { fragment: 'greet', parameters: { name: 'Ada' } } })
-    expect(within(displayBar(container)).getByRole('button', { name: 'greet' })).toBeVisible()
+    editor({ $not: { fragment: 'greet', parameters: { name: 'Ada' } } })
+    expect(screen.getByRole('button', { name: 'greet' })).toBeVisible()
     expect(() => keyLabel('$not')).toThrow()
   })
 
@@ -217,6 +217,17 @@ describe('the fragment call', () => {
     it('shows "invalid node" for a name that is not a string', () => {
       const { container } = editor({ fragment: 42 })
       expect(within(displayBar(container)).getByText('invalid node')).toBeInTheDocument()
+    })
+
+    it('is broken by `useCache`, which fragment calls may not have', () => {
+      const { container } = editor({
+        fragment: 'greet',
+        parameters: { name: 'Ada' },
+        useCache: true,
+      })
+      const bar = within(displayBar(container))
+      expect(bar.queryByRole('button', { name: 'greet' })).not.toBeInTheDocument()
+      expect(bar.getByText(/'useCache' is not available on fragment calls/)).toBeInTheDocument()
     })
   })
 

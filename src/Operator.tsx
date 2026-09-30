@@ -1,6 +1,6 @@
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
-import { brokenIssue, issuesAt } from './attachIssues'
+import { brokenIssue } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
@@ -9,6 +9,7 @@ import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { OperatorPicker } from './OperatorPicker'
 import { operatorDefaultsLine } from './parameterCard'
 import { addKey, addableKeys } from './parameterOptions'
+import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
 import { Toolbar } from './Toolbar'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
@@ -43,8 +44,8 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const row = rowAt(classification, path)
   const kind = row?.kind as OperatorKind
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
-  const broken = brokenIssue(issuesAt(issues, path))
   const node = value as Record<string, unknown>
+  const broken = brokenIssue(issues, classification, path, node)
 
   // Parameters are added once the node has an operator the editor knows, so
   // a broken node's toolbar offers the picker alone
@@ -65,15 +66,10 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   // Where the operator has an alias, a modifier-click on the button writes
   // the other spelling (design, topic 2, "Name or alias")
   const operator = figTree.getOperators().find(({ name }) => name === kind.operator)
-  const otherSpelling =
-    operator?.alias === undefined
-      ? undefined
-      : kind.name === operator.alias
-        ? operator.name
-        : operator.alias
+  const spelling = otherSpelling(operator, kind.name)
   const respell =
-    canEdit && !broken && otherSpelling !== undefined
-      ? () => setValue({ ...node, operator: otherSpelling })
+    canEdit && !broken && spelling !== undefined
+      ? () => setValue({ ...node, operator: spelling })
       : undefined
 
   // The operator's description, then what the host sets on every such node
@@ -120,10 +116,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           card={operatorCard()}
           cardNote={
             respell &&
-            strings.FT_CARD_RESPELL(
-              modifierNames(keyboardControls.clipboardModifier),
-              otherSpelling!
-            )
+            strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), spelling!)
           }
           broken={broken}
           editorTheme={editorTheme}
@@ -136,12 +129,3 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     </div>
   )
 }
-
-// The modifier keys as a card names them: "Cmd/Ctrl". Any other key is named
-// as the browser names it.
-const MODIFIER_NAMES: Partial<Record<React.ModifierKey, string>> = {
-  Meta: 'Cmd',
-  Control: 'Ctrl',
-}
-const modifierNames = (keys: readonly React.ModifierKey[]) =>
-  keys.map((key) => MODIFIER_NAMES[key] ?? key).join('/')

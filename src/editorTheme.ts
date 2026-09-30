@@ -1,5 +1,5 @@
 import { type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
-import { brokenIssue, issuesAt, type IssueIndex } from './attachIssues'
+import { brokenIssue, type IssueIndex } from './attachIssues'
 import { rowAt, type Classification } from './classify'
 
 // The editor's own colours, which json-edit-react's theme has no element for.
@@ -62,12 +62,13 @@ export interface ThemeContext {
 // recolour json-edit-react's elements without undoing the editor's structure.
 //
 // TO-DO: the other kinds' styles, each with the component that needs it
-// (plan, Phases 7 to 10).
+// (plan, Phases 8 to 10).
 const editorThemeLayer = ({ classification, issues, editorTheme }: ThemeContext): Theme => {
-  // A full operator node or fragment call
-  const isNode = ({ path }: NodeData) => {
+  // The form of an operator node or fragment call; undefined on any other
+  // row
+  const nodeForm = ({ path }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
-    return (kind?.kind === 'operator' || kind?.kind === 'fragment') && kind.form === 'full'
+    return kind?.kind === 'operator' || kind?.kind === 'fragment' ? kind.form : undefined
   }
 
   return {
@@ -78,15 +79,25 @@ const editorThemeLayer = ({ classification, issues, editorTheme }: ThemeContext)
         rowAt(classification, path)?.payload === 'flattened' ? { marginLeft: 0 } : null,
       // A node's header stands in for its brackets, which show again only
       // around a collapsed node's summary
-      bracket: (nodeData) => (isNode(nodeData) && !nodeData.collapsed ? { display: 'none' } : null),
-      // A collapsed node is its summary alone, with no border
+      bracket: (nodeData) =>
+        nodeForm(nodeData) !== undefined && !nodeData.collapsed ? { display: 'none' } : null,
+      // A collapsed node is its summary alone, with no border. A shorthand
+      // node's border is dashed, and a broken node has an error border and
+      // stripe, whatever its form (topic 3).
       collectionInner: (nodeData) => {
-        if (!isNode(nodeData) || nodeData.collapsed) return null
-        // A broken node has an error border and stripe (topic 3)
-        const broken = brokenIssue(issuesAt(issues, nodeData.path)) !== undefined
+        const form = nodeForm(nodeData)
+        if (form === undefined || nodeData.collapsed) return null
+        const broken =
+          brokenIssue(issues, classification, nodeData.path, nodeData.value) !== undefined
+        const shorthand = form === 'shorthand'
         return {
           ...NODE_BORDER,
-          borderColor: broken ? editorTheme.error : editorTheme.nodeBorder,
+          borderStyle: shorthand ? 'dashed' : 'solid',
+          borderColor: broken
+            ? editorTheme.error
+            : shorthand
+              ? editorTheme.shorthandBorder
+              : editorTheme.nodeBorder,
           ...(broken && { borderLeftWidth: '0.3em' }),
         }
       },
@@ -96,7 +107,6 @@ const editorThemeLayer = ({ classification, issues, editorTheme }: ThemeContext)
 
 const NODE_BORDER = {
   borderWidth: '1px',
-  borderStyle: 'solid',
   borderRadius: '0.75em',
   padding: '0.5em',
   marginBottom: '0.5em',

@@ -87,7 +87,7 @@ describe('the operator node', () => {
     const names = [...container.querySelectorAll('.ft-display-bar .ft-name')].map(
       (name) => name.textContent
     )
-    expect(names).toEqual(['if', 'greaterThan', 'and'])
+    expect(names).toEqual(['if', 'greaterThan', '$not', 'and'])
   })
 
   it('shows a host operator by its name, with no link when it has no docUrl', () => {
@@ -173,6 +173,14 @@ describe('the operator node', () => {
     it('shows "invalid node" for a name that is not a string', () => {
       const { container } = editor({ operator: 42 })
       expect(within(displayBar(container)).getByText('invalid node')).toBeInTheDocument()
+    })
+
+    it('is broken by a malformed key, whose row stays', () => {
+      const { container } = editor({ operator: 'plus', values: [1], parameters: {} })
+      const bar = within(displayBar(container))
+      expect(bar.queryByRole('button', { name: 'plus' })).not.toBeInTheDocument()
+      expect(bar.getByText(/'parameters' is reserved/)).toBeInTheDocument()
+      expect(keyLabel('parameters')).toBeInTheDocument()
     })
 
     it("takes the host's error colour", () => {

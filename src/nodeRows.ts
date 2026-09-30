@@ -14,3 +14,12 @@ export const withoutFilteredRows = (
   Array.isArray(children)
     ? children.filter((child) => !rowAt(classification, [...path, String(child.key)])?.filtered)
     : children
+
+// A node's child row at `key`, apart from its other rows
+export const takeRow = (children: CustomComponentProps['children'], key: string) => {
+  if (!Array.isArray(children)) return { row: undefined, rest: children }
+  return {
+    row: children.find((child) => String(child.key) === key),
+    rest: children.filter((child) => String(child.key) !== key),
+  }
+}

@@ -11,6 +11,7 @@ export const strings = {
   FT_INVALID_NODE: 'invalid node', // an operator or fragment that isn't a string
   FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node
   FT_SUMMARY_FRAGMENT: (name: string) => `Fragment: ${name}`,
+  FT_SUMMARY_SHORTHAND: (name: string) => `Shorthand: ${name}`, // with its `$`
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎

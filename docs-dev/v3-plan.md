@@ -432,9 +432,40 @@ Fragment-definition mode stays parked (topic 6): nothing here depends on it. fig
 
 ## Phase 8 — Shorthand forms and references
 
-- Shorthand nodes, named and positional, with the unlabelled definitions and 7.1's flattened payload (topic 1, "Node shapes and their definitions"), the dashed border, and the value on the button's line (topic 3).
-- The conversion button cycling full, named and positional, and "To get node" and back (topic 1, "Conversions").
-- References: the Leaf definitions, one per namespace, with `editorTheme`'s colours, the inline ▶ and `editOnTypeSwitch` (topics 3, 4 and 5).
+Most of what shorthand needs is already built: the walk's forms and `$name` roles (4.3), the unlabelled copies (4.4), the flattened payload (7.1), and the fill-in step, guards, slots and type dropdown. So the phase is two components and one pure module. The conversions come last, since their button sits on both the shorthand node and the reference rows.
+
+- **8.1 · The shorthand node.** The Shorthand component on the `shorthand` definition and its unlabelled copy (topic 1, "Shorthand nodes"; topic 3, "Kinds"; [v3-node-anatomy.md](v3-node-anatomy.md), sections 3 to 5).
+  - The DisplayBar: the name as written, with its `$`, in italics; the operator's display data, or the fragment's header as a full call has it; the hover card. No pencil or toolbar: json-edit-react's ✎ opens raw JSON.
+  - The rows: a named payload is 7.1's flattened rows; a positional argument list keeps its brackets and edit tools; a single plain value or reference sits on the button's line (C3), and a nested node beneath (C4), as do `//` and the modifier rows. The `unlabelled` catch-all loses its placeholder, so json-edit-react draws the row without its key.
+  - The theme: the dashed border, and brackets hidden. The collapsed summary, `Shorthand: $if`.
+  - The broken state: `{ $plus: [1], extra: 2 }`, `{ $plus: 1, $minus: 2 }`, `{ $greet: '$data.x' }`.
+  - **Settled before building** (agreed with Carl):
+    - **A node is broken by `malformed-node` on one of its own keys,** as topic 7 has it, not only at its own path. `classifyObject` reads a shorthand with a stray sibling as an ordinary shorthand, and `validate()` puts `malformed-node` on the stray key's row (`extra`, a second `$name`, `useCache` beside a fragment, or a fragment's `$name` row holding a string). So `brokenIssue` also reads the node's own keys, for every node kind: `parameters` on an operator node and `useCache` on a fragment call make a full node broken too.
+    - **A modifier-click on the button writes the other spelling** (`$plus` and `$+`), as on a full node, with the same note on its card.
+    - **A broken shorthand keeps its dashed border,** in the error colour, with the stripe.
+  - Done.
+    - **The component** is `src/Shorthand.tsx`, on the `shorthand` definition and its unlabelled copy. It has no edit flags, so json-edit-react's ✎ opens its standard raw-JSON editor. Where the `$name` row holds a plain value or reference, the component takes it out of its children (`takeRow` in `src/nodeRows.ts`) and passes it to the DisplayBar's new `inline` slot, after the button. On a broken node every row goes beneath, since the header's line holds the message.
+    - **The header:** the DisplayBar's `shorthand` flag sets the name in italics. An operator's card is its description and the host-defaults line, which reads the parameters the payload binds from the classification's slots. A fragment's header is the full call's `fragmentHeader`, now exported.
+    - **Spelling:** `otherSpelling` and `modifierNames` move to `src/spelling.ts`, shared with the Operator. A modifier-click renames the `$name` key in place.
+    - **Broken:** `brokenIssue(index, classification, path, node)`, read by all three components and the theme. A key whose row is itself a node is left out, since a `malformed-node` there may be that node's own (`condition: { operator: 42 }`). Accepted: in `{ $plus: [1], extra: { operator: 42 } }` both issues sit at `extra`, so the outer node isn't marked broken, while the `extra` row shows its error.
+    - **The `unlabelled` catch-all** has no component, so json-edit-react draws a plain value or argument list without its key.
+    - **The theme's** bracket and border style functions take shorthand nodes: the border is dashed in `shorthandBorder`, or in the error colour with the stripe when broken. The collapsed summary is `FT_SUMMARY_SHORTHAND`, "Shorthand: $if".
+    - **Found in the demo:** a broken node's name shrank beside a long message, since `.ft-name`'s `min-width: 1em` let the flex item shrink below its text, so the text ran into the message. It no longer shrinks. The value row on the button's line loses json-edit-react's indent through the stylesheet, which needs `!important`, since json-edit-react sets the margin inline.
+    - **Seen in the demo,** in a headless Chrome: named, positional, a plain value, a reference and a URL on the button's line with `fallback` beneath, a nested node, a fragment shorthand, an alias, a long value wrapping clear of the display name, and the shapes in [example-expressions.md](example-expressions.md)'s new "Broken nodes".
+    - **Tests:** `test/Shorthand.test.tsx` covers the header and card, an alias, raw JSON from ✎ and no toolbar, each payload's rows, the value on the line and what goes beneath, a fragment shorthand's hints and fallbacks, the host-defaults line, the spelling (key order kept, the card's note, none on a fragment or where editing is off), each broken shape, and the collapsed summary. `test/attachIssues.test.ts` covers the broken rule on a node's own keys and a parameter holding a broken node; `test/editorTheme.test.ts` the dashed and broken borders; `test/Operator.test.tsx` and `test/Fragment.test.tsx` a full node broken by `parameters` or `useCache`.
+    - **The size budget** is 19.6 kB, the measured 18.65 kB plus about 5%.
+- **8.2 · References.** The Reference component on the four reference definitions and their unlabelled copies (topic 3, "Kinds"; topic 5, "Editing references").
+  - The string in its namespace's `editorTheme` colour, an invalid reference's included, and the inline ▶, doing nothing until Phase 10, as the node buttons do. While editing, json-edit-react's own input (`showOnEdit`, `passOriginalNode`).
+  - `editOnTypeSwitch` on Data, Variable and Element, so choosing one keeps the input open, and Data starts as `'$data.'` (topic 4's table), replacing 6.3's bare `'$data'`.
+  - **To prove, found in json-edit-react 2.0.2's source:**
+    - It finds the switched-to definition by name, first match, which is the unlabelled copy, so the row's key would disappear mid-switch. The base definition goes first, its condition excluding unlabelled rows.
+    - Its text input selects its whole text on focus when it is under 40 characters, so typing after `'$data.'` would replace it. The cursor has to land at the end, through the component if that can be done cleanly, otherwise through a json-edit-react option.
+- **8.3 · Conversions** (topic 1, "Conversions"; topic 3, "Kinds").
+  - A pure module with its own tests: what each node's button offers, and the result. A full node's reads "To shorthand" (`toShorthand`, named); a named shorthand's "To positional" (`toShorthand`, positional), or "To full" where that gives this node no positional payload; a positional one's "To full" (`toCanonical`). No button where there is no other form, such as a dynamic call whose `parameters` is a reference. Memoised on the node's value.
+  - The button on the DisplayBar, on hover, on the Operator, the Fragment and the Shorthand (`literal`'s comes with Phase 9's component). It commits with `setValue`, and isn't cleaned (4.5).
+  - "To get node" on reference rows (`toGet`; none on `$index`), and "To reference" on `get` nodes, wherever `toReference` returns a string.
+  - **"To get node" is a json-edit-react custom button** (Carl), committing through J13 in [v3-upstream.md](v3-upstream.md) ([json-edit-react#418](https://github.com/CarlosNZ/json-edit-react/issues/418)), so the host's `onUpdate` sees it as it sees every other edit. A custom button's `onClick` gets only `nodeData` today, and json-edit-react's own example writes with the host's `setData`, which would skip `onUpdate`.
+  - **To settle:** where a node beneath makes the conversion throw, hiding the button or showing it disabled with the reason; and `get` nodes in the form conversions (`toShorthand` turns every `get` it can into a reference by default), with the spelling of the references the conversions write.
 
 ## Phase 9 — `vars`, comments and `literal`
 

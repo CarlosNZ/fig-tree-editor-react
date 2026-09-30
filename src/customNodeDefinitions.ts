@@ -17,6 +17,7 @@ import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
 import { Placeholder } from './Placeholder'
+import { Shorthand } from './Shorthand'
 import { strings } from './strings'
 import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
 
@@ -27,7 +28,7 @@ import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
 // a row's kind is worked out once per update rather than per row.
 //
 // TO-DO: each phase replaces the placeholder components with its own (plan,
-// Phases 7 to 9).
+// Phases 8 to 10).
 
 // What every component reads, through `componentProps`: json-edit-react's
 // route for configuration a component needs
@@ -71,13 +72,16 @@ type Condition = (row: Row, nodeData: NodeData) => boolean
 
 // Each definition's component, where it has one yet; the rest show the
 // placeholder. A flattened payload has none: json-edit-react draws its rows,
-// and its flags hide the row itself.
+// and its flags hide the row itself. Nor has an unlabelled row: json-edit-react
+// draws it, without its key.
 const COMPONENTS: Partial<
   Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null>
 > = {
   operator: Operator,
   fragment: Fragment,
+  shorthand: Shorthand,
   flattened: null,
+  unlabelled: null,
 }
 
 export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] => {
@@ -245,7 +249,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     definition(
       'unlabelled',
       matches((row) => row.payload === 'unlabelled'),
-      { showKey: false, passOriginalNode: true }
+      { showKey: false }
     ),
     // Any other row with a hover card, such as a plain value at a parameter,
     // keeps json-edit-react's rendering, and gains only the card on its key

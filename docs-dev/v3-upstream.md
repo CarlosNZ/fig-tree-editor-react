@@ -42,6 +42,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
 | J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
 | J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
+| J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | —               |
 
 ---
 
@@ -399,3 +400,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Without it.** The editor could give the zone `pointer-events: none` through a class on its container while the zones exclude `'left'`. Not done, since the fix is json-edit-react's (Carl). Until it ships, a wrapped toolbar line's first control is partly covered.
 
 **Issue.** Filed as [#417](https://github.com/CarlosNZ/json-edit-react/issues/417).
+
+### J13 · A commit function for custom buttons — **Wanted**
+
+**The change.** A custom button's `onClick` gets a third argument holding `setValue`, bound to the row's path, which submits an edit as a custom collection component's `setValue` does. Possibly also `canEdit` for the button's `Element`, so a button that edits can hide itself on a read-only row. Today `onClick` gets only `nodeData` and the event, and json-edit-react's README writes from a button with the host's `setData` (checked against 2.0.2).
+
+**Why.** "To get node" is a custom button on reference rows ("Kinds" under topic 3 in [v3-design.md](v3-design.md); plan, Phase 8). Written through the editor's own `setData`, it would skip the host's `onUpdate`, which every other write the editor makes goes through ("Commit semantics").
+
+**Without it.** The Reference component draws the control itself, after its ▶, and commits with `handleEdit(node)`, so it sits by the value rather than among the edit tools.
+
+**Issue.** Filed as [#418](https://github.com/CarlosNZ/json-edit-react/issues/418).

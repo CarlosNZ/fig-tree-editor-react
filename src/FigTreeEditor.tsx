@@ -313,8 +313,8 @@ const typesFor =
 const editorText = (classification: Classification): CustomTextDefinitions => {
   const summary = ({ path }: { path: (string | number)[] }) => {
     const kind = rowAt(classification, path)?.kind
-    if ((kind?.kind !== 'operator' && kind?.kind !== 'fragment') || kind.form !== 'full')
-      return null
+    if (kind?.kind !== 'operator' && kind?.kind !== 'fragment') return null
+    if (kind.form === 'shorthand') return strings.FT_SUMMARY_SHORTHAND(`$${kind.name}`)
     const text =
       kind.kind === 'operator' ? strings.FT_SUMMARY_OPERATOR : strings.FT_SUMMARY_FRAGMENT
     return text(kind.name ?? strings.FT_INVALID_NODE)

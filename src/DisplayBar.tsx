@@ -13,7 +13,8 @@ import { strings } from './strings'
 // refuses it; its pencil stays, so a valid operator or fragment can be picked.
 // A modifier-click on the button, with json-edit-react's clipboard modifier
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
-// other spelling.
+// other spelling. A shorthand node's name is in italics, and its single value
+// can sit on the button's line.
 //
 // TO-DO: evaluating (plan, Phase 10), and the conversion button (Phase 8).
 
@@ -32,6 +33,8 @@ interface DisplayBarProps {
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
   editorTheme: EditorTheme
+  shorthand?: boolean
+  inline?: React.ReactNode // after the button, on its line
   onEdit?: () => void // opens the toolbar; absent where the node can't be edited
   // A modifier-click on the button: an operator's other spelling, where it
   // has one and the node can be edited
@@ -46,13 +49,15 @@ export const DisplayBar = ({
   cardNote,
   broken,
   editorTheme,
+  shorthand = false,
+  inline,
   onEdit,
   onRespell,
   respellModifiers = [],
 }: DisplayBarProps) => {
   const label = name ?? strings.FT_INVALID_NODE
   return (
-    <div className="ft-display-bar">
+    <div className={shorthand ? 'ft-display-bar ft-shorthand' : 'ft-display-bar'}>
       <span className="ft-display-bar-start">
         <NameOrButton
           label={label}
@@ -76,6 +81,7 @@ export const DisplayBar = ({
             <Icon name="edit" style={{ color: 'rgb(42, 161, 152)' }} />
           </button>
         )}
+        {inline && <div className="ft-display-bar-value">{inline}</div>}
       </span>
       {display && (
         <span className="ft-display-name">

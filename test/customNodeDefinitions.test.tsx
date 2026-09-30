@@ -46,31 +46,27 @@ describe('the custom node definitions', () => {
     expect(screen.queryByText('operator')).not.toBeInTheDocument()
   })
 
-  it('flatten a named payload, and leave an argument list unlabelled', () => {
-    expect(shown({ $if: { condition: '$data.ok', then: 'Yes' } })).toEqual([
-      ['shorthand', 'Shorthand · $if (Conditional (?))'],
-      ['reference', 'Reference · data'],
-    ])
-    expect(screen.queryByText('$if')).not.toBeInTheDocument()
+  it('give a shorthand node its component, and flatten a named payload', () => {
+    const { container } = render(editor({ $if: { condition: '$data.ok', then: 'Yes' } }))
+    expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
+    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
+    expect(() => keyLabel('$if')).toThrow()
     expect(keyLabel('condition')).toBeInTheDocument()
-    expect(shown({ $plus: [1, 2] })).toEqual([
-      ['shorthand', 'Shorthand · $plus (Plus (+))'],
-      ['unlabelled', 'Unlabelled'],
-    ])
+  })
+
+  it('leave an argument list to json-edit-react, without the `$name` key', () => {
+    const { container } = render(editor({ $plus: [1, 2] }))
+    expect(placeholders(container)).toEqual([])
+    expect(() => keyLabel('$plus')).toThrow()
+    expect(container.querySelectorAll('.jer-collection-header-row')).toHaveLength(2)
   })
 
   it('render a single value as its own kind, without the `$name` key', () => {
-    expect(shown({ $not: '$data.x' })).toEqual([
-      ['shorthand', 'Shorthand · $not (Logical NOT (!))'],
-      ['reference', 'Reference · data · unlabelled'],
-    ])
-    expect(screen.queryByText('$not')).not.toBeInTheDocument()
-    expect(shown({ $not: { $greaterThan: ['$data.age', 18] } })).toEqual([
-      ['shorthand', 'Shorthand · $not (Logical NOT (!))'],
-      ['shorthand', 'Shorthand · $greaterThan (Greater than (>)) · unlabelled'],
-      ['unlabelled', 'Unlabelled'],
-      ['reference', 'Reference · data'],
-    ])
+    expect(shown({ $not: '$data.x' })).toEqual([['reference', 'Reference · data · unlabelled']])
+    expect(() => keyLabel('$not')).toThrow()
+    const { container } = render(editor({ $not: { $greaterThan: ['$data.age', 18] } }))
+    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
+    expect(container.querySelectorAll('.ft-display-bar')).toHaveLength(2)
   })
 
   it('give a full fragment call its component, and flatten its static arguments', () => {
@@ -95,7 +91,6 @@ describe('the custom node definitions', () => {
     ])
     expect(shown({ $literal: { $plus: ['$data.x'] } })).toEqual([
       ['literal', 'Literal · shorthand'],
-      ['unlabelled', 'Unlabelled'],
     ])
   })
 
@@ -106,11 +101,9 @@ describe('the custom node definitions', () => {
       ['reference', 'Reference · data'],
     ])
     expect(shown({ '//': ['One', '$data.x'], $plus: [1] })).toEqual([
-      ['shorthand', 'Shorthand · $plus (Plus (+))'],
       ['comment', 'Comment'],
       ['commentLine', 'Comment line'],
       ['commentLine', 'Comment line'],
-      ['unlabelled', 'Unlabelled'],
     ])
   })
 

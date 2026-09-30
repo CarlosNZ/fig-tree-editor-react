@@ -46,9 +46,10 @@ describe('attaching issues to rows', () => {
 })
 
 describe('a broken node', () => {
-  const brokenAt = (expression: unknown) => {
-    const index = attachIssues(figTree.validate(expression).issues, classify(expression, registry))
-    return brokenIssue(issuesAt(index, []))?.code
+  const brokenAt = (expression: unknown, path: (string | number)[] = []) => {
+    const classification = classify(expression, registry)
+    const index = attachIssues(figTree.validate(expression).issues, classification)
+    return brokenIssue(index, classification, path, expression)?.code
   }
 
   it('is one that is malformed, or names nothing registered', () => {
@@ -57,8 +58,27 @@ describe('a broken node', () => {
     expect(brokenAt({ operator: 'plus', fragment: 'x', values: [1] })).toBe('malformed-node')
   })
 
+  it('is one malformed on one of its own keys', () => {
+    expect(brokenAt({ $plus: [1], extra: 2 })).toBe('malformed-node')
+    expect(brokenAt({ $plus: 1, $minus: 2 })).toBe('malformed-node')
+    expect(brokenAt({ $greet: '$data.x' })).toBe('malformed-node')
+    expect(brokenAt({ $greet: { name: 'Ada' }, useCache: true })).toBe('malformed-node')
+    expect(brokenAt({ operator: 'plus', values: [1], parameters: {} })).toBe('malformed-node')
+    expect(brokenAt({ fragment: 'greet', parameters: { name: 'Ada' }, useCache: true })).toBe(
+      'malformed-node'
+    )
+  })
+
+  it("is not one whose parameter holds a broken node, which is that node's", () => {
+    const expression = { operator: 'if', condition: { operator: 42 }, then: 1 }
+    expect(brokenAt(expression)).toBeUndefined()
+    expect(brokenAt(expression, ['condition'])).toBe('malformed-node')
+  })
+
   it('is not one that is only missing something, or holds an unknown key', () => {
     expect(brokenAt({ operator: 'if', condition: true })).toBeUndefined()
     expect(brokenAt({ operator: 'plus', values: [1], extra: 2 })).toBeUndefined()
+    expect(brokenAt({ $if: ['$data.x'] })).toBeUndefined()
+    expect(brokenAt({ $plus: { values: [1], fallback: 0 } })).toBeUndefined()
   })
 })
