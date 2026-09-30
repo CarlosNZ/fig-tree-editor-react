@@ -400,7 +400,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **The DisplayBar keeps v1's layout:** the Evaluate button showing the name as written, the pencil beside it, the display name at the top right linking to `docUrl`, and the conversion button beneath it.
 - **The pencil and the conversion button appear on hover only,** as in v1, keeping the tree uncluttered when it is only being read.
 - **The toolbar replaces the DisplayBar** while it is open: node type, operator or fragment picker, add parameter, ✓ and ✗. It has no switch to the raw-JSON editor ("Two editors per node").
-- **The raw-JSON editor's surround** (the "Editing as JSON" label in A4) is a formatting choice left until it is built.
+- **The raw-JSON editor stands alone — Agreed** (Phase 5): json-edit-react's textarea and its ✓ and ✗ in the node's border, with no DisplayBar or label above it (A4's "Editing as JSON" dropped). The operator is in the JSON, so a header above it would show the saved one while another is typed.
 
 ### States — **Agreed**
 

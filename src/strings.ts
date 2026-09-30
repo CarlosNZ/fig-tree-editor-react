@@ -10,4 +10,7 @@ export const strings = {
   FT_SELECT_NO_RESULTS: 'No results',
   FT_INVALID_NODE: 'invalid node', // an operator or fragment that isn't a string
   FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node
+  FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎
+  FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes
+  FT_TOOLBAR_CANCEL: 'Cancel', // ✗, undoing them
 }

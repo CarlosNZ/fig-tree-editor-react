@@ -264,3 +264,48 @@ input.ft-select-input::placeholder {
 .ft-hover-card-anchor:focus-within .ft-hover-card {
   display: block;
 }
+
+/* The DisplayBar's pencil, shown while the header is hovered */
+.ft-display-bar-start {
+  display: flex;
+  align-items: center;
+  gap: 0.6em;
+}
+
+.ft-edit-button,
+.ft-toolbar-buttons button {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: none;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.ft-edit-button {
+  /* A wider target than the icon alone */
+  padding-right: 2em;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.ft-display-bar:hover .ft-edit-button,
+.ft-edit-button:focus-visible {
+  opacity: 1;
+}
+
+/* A full node's toolbar, in place of its DisplayBar */
+.ft-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6em;
+  min-height: 2.5em;
+  margin-bottom: 0.25em;
+}
+
+.ft-toolbar-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}

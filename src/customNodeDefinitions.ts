@@ -98,7 +98,16 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   const isComment = matches(isKind('comment'))
 
   return [
-    ...unlabelledVariants(definition('operator', matches(isKind('operator', 'full')))),
+    // A full node owns both its editors: every edit session renders the
+    // component, which shows json-edit-react's raw-JSON editor as
+    // `originalNode` or its own toolbar (design, topic 2, "Two editors per
+    // node")
+    ...unlabelledVariants(
+      definition('operator', matches(isKind('operator', 'full')), {
+        showOnEdit: true,
+        passOriginalNode: true,
+      })
+    ),
     ...unlabelledVariants(definition('fragment', matches(isKind('fragment', 'full')))),
     ...unlabelledVariants(
       definition(

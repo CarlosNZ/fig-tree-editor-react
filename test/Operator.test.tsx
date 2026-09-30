@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
@@ -82,10 +82,10 @@ describe('the operator node', () => {
   })
 
   describe('when broken', () => {
-    it('shows an unknown name as an error, with the message and no button', () => {
+    it('shows an unknown name as an error, with the message and no Evaluate button', () => {
       const { container } = editor({ operator: 'plsu', values: [1] })
       const bar = within(displayBar(container))
-      expect(bar.queryByRole('button')).not.toBeInTheDocument()
+      expect(bar.queryByRole('button', { name: 'plsu' })).not.toBeInTheDocument()
       expect(bar.getByText('plsu')).toHaveStyle({ color: 'rgb(192, 57, 43)' })
       expect(bar.getByText(/names no registered operator/)).toBeInTheDocument()
     })
@@ -123,6 +123,53 @@ describe('the operator node', () => {
       expect(screen.getByText('list').closest('.jer-collection-header-row')).toHaveTextContent(
         'many'
       )
+    })
+  })
+
+  describe('editing', () => {
+    const node = { total: { operator: 'plus', values: [1, 2] } }
+    const pencil = () => screen.getByRole('button', { name: 'Open toolbar' })
+    const toolbar = (container: HTMLElement) => container.querySelector('.ft-toolbar')
+
+    it('opens the toolbar from the pencil, with the name as written', () => {
+      const { container } = editor(node)
+      fireEvent.click(pencil())
+      expect(within(toolbar(container) as HTMLElement).getByText('plus')).toBeInTheDocument()
+      expect(displayBar(container)).toBeUndefined()
+      // The rows stay beneath it
+      expect(screen.getByText('values')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+      expect(toolbar(container)).toBeNull()
+      expect(displayBar(container)).toBeInTheDocument()
+    })
+
+    it("shows json-edit-react's raw-JSON editor alone from its ✎", () => {
+      const { container } = editor(node)
+      // json-edit-react's ✎ on the node's row, after the root's
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+      expect(container.querySelector('.ft-node textarea')).toBeInTheDocument()
+      expect(displayBar(container)).toBeUndefined()
+      expect(toolbar(container)).toBeNull()
+    })
+
+    it('offers the pencil on a broken node, and none where editing is not allowed', () => {
+      editor({ operator: 'plsu', values: [1] })
+      expect(pencil()).toBeInTheDocument()
+      const { container } = editor(node, { allowEdit: false })
+      expect(
+        within(displayBar(container)).queryByRole('button', { name: 'Open toolbar' })
+      ).toBeNull()
+    })
+
+    it("follows the host's keyboard controls", async () => {
+      const { container } = editor(node, { keyboardControls: { cancel: 'q' } })
+      fireEvent.click(pencil())
+      // json-edit-react's listener attaches shortly after a session opens
+      await act(() => new Promise((resolve) => setTimeout(resolve, 150)))
+      fireEvent.keyDown(window, { key: 'Escape' })
+      expect(toolbar(container)).toBeInTheDocument()
+      fireEvent.keyDown(window, { key: 'q' })
+      await waitFor(() => expect(toolbar(container)).toBeNull())
     })
   })
 })
