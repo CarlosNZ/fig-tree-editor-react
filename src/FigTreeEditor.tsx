@@ -6,11 +6,20 @@ import {
   type FilterFunction,
   type JsonEditorProps,
   type NewKeyOptionsFunction,
+  type OnCollapseFunction,
   type TypeFilterFunction,
 } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
-import { classify, rowAt, type Classification } from './classify'
+import { canonicalPath, classify, rowAt, type Classification } from './classify'
+import {
+  clearCollapseRecord,
+  emptyCollapseRecord,
+  pruneCollapseRecord,
+  recordToggle,
+  recordedState,
+  type CollapseRecord,
+} from './collapseRecord'
 import { type ReferenceNames } from './conversions'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
@@ -83,6 +92,7 @@ export const FigTreeEditor = ({
   allowDelete,
   allowAdd,
   collapse = DEFAULT_COLLAPSE,
+  onCollapse,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -188,9 +198,28 @@ export const FigTreeEditor = ({
     setExpression(fill(data))
   }
 
+  // The author's collapse toggles, recorded by canonical path, so rows keep
+  // their state through a conversion (plan, 8.4)
+  const collapseRecord = useRef(emptyCollapseRecord())
+  const recordCollapse: OnCollapseFunction = (nodeData) => {
+    const { path, collapsed, includeChildren } = nodeData
+    const at = canonicalPath(latestClassification.current, path)
+    recordToggle(collapseRecord.current, at, collapsed, includeChildren)
+    onCollapse?.(nodeData)
+  }
   // json-edit-react resets every row to its collapse filter when the filter
-  // changes, so it changes only with the host's `collapse`
-  const collapseFilter = useMemo(() => combineCollapse(collapse, latestClassification), [collapse])
+  // changes, so it changes only with the host's `collapse`, and the record
+  // goes with it, as the reset replaces every toggle. It goes during the
+  // render, since the rows reset in their own effects, before this
+  // component's would run.
+  const collapseFilter = useMemo(() => {
+    clearCollapseRecord(collapseRecord.current)
+    return combineCollapse(collapse, latestClassification, collapseRecord)
+  }, [collapse])
+  // The toggles of rows no longer in the tree go
+  useEffect(() => {
+    pruneCollapseRecord(collapseRecord.current, shown, classification)
+  }, [shown, classification])
 
   const layeredTheme = useMemo(
     () =>
@@ -215,6 +244,7 @@ export const FigTreeEditor = ({
         theme={layeredTheme}
         customText={combinedText}
         collapse={collapseFilter}
+        onCollapse={recordCollapse}
         customNodeDefinitions={definitions}
         defaultValue={defaultValue}
         newKeyOptions={newKeyOptions}
@@ -242,17 +272,30 @@ const editorDefaults = {
 
 const DEFAULT_COLLAPSE = 2
 
-// A numeric `collapse` counts levels as drawn (design, topic 1, "Flattened
-// payloads and unlabelled rows"): a flattened payload's rows show as its
-// node's own, so its row isn't a level, and a fragment call's arguments
-// collapse where an operator's parameters do. json-edit-react never collapses
-// the flattened row itself, which has no collection wrapper. A boolean or a
-// host's filter applies as it is.
+// A row the author has toggled mounts as they left it; any other takes the
+// host's `collapse`. A numeric `collapse` counts levels as drawn (design,
+// topic 1, "Flattened payloads and unlabelled rows"): a flattened payload's
+// rows show as its node's own, so its row isn't a level, and a fragment
+// call's arguments collapse where an operator's parameters do.
+// json-edit-react never collapses the flattened row itself, which has no
+// collection wrapper. A boolean or a host's filter applies as it is.
 const combineCollapse = (
   host: boolean | number | FilterFunction,
+  classification: { current: Classification },
+  record: { current: CollapseRecord }
+): FilterFunction => {
+  const hostCollapses = hostFilter(host, classification)
+  return (nodeData) =>
+    recordedState(record.current, canonicalPath(classification.current, nodeData.path)) ??
+    hostCollapses(nodeData)
+}
+
+const hostFilter = (
+  host: boolean | number | FilterFunction,
   classification: { current: Classification }
-): boolean | FilterFunction => {
-  if (typeof host !== 'number') return host
+): FilterFunction => {
+  if (typeof host === 'function') return host
+  if (typeof host === 'boolean') return () => host
   const flattened = (path: Path) => rowAt(classification.current, path)?.payload === 'flattened'
   return ({ path, level }) => {
     const hidden = path.filter((_, index) => flattened(path.slice(0, index)))

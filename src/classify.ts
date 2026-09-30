@@ -90,6 +90,9 @@ export interface Row {
   filtered?: true // the `operator` or `fragment` row, which the header shows
   slot?: Slot // on every evaluated row
   scope?: readonly ScopeEntry[] // on every row with a slot
+  // Where the form moves a row from where its full form has it, the path the
+  // full form gives it (see `canonicalPath`)
+  canonical?: Path
 }
 
 // Keyed by json-edit-react's `toPathString`, the form a definition's
@@ -98,6 +101,25 @@ export type Classification = ReadonlyMap<string, Row>
 
 export const rowAt = (classification: Classification, path: Path) =>
   classification.get(toPathString(path))
+
+// A row's path as its nodes' full forms have it (plan, 8.4), which a
+// conversion doesn't change: a shorthand's named payload holds its node's
+// parameters, a positional element is the parameter it binds or its place in
+// the rest, a single value is the parameter it binds, and a fragment's
+// arguments are under `parameters`. It is the path the walk gave the nearest
+// row it moved, then the rest of the row's own, so rows the walk doesn't
+// record, in quoted content, follow their nearest recorded ancestor.
+export const canonicalPath = (classification: Classification, path: Path): Path => {
+  for (let length = path.length; length > 0; length--) {
+    const moved = rowAt(classification, path.slice(0, length))?.canonical
+    if (moved !== undefined) return [...moved, ...path.slice(length)]
+  }
+  return path
+}
+
+// An argument list binding leading parameters has no row in the full form,
+// so its canonical path ends in a key no parameter can have
+export const ARGUMENT_LIST = '$arguments'
 
 interface Registry {
   operators: readonly OperatorInfo[]
@@ -132,6 +154,10 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
   }
   const mark = (path: Path, kind: RowKind) => {
     row(path).kind = kind
+  }
+  // A row the form moves, under its node's canonical path
+  const move = (path: Path, nodePath: Path, ...within: Path) => {
+    row(path).canonical = [...canonicalPath(rows, nodePath), ...within]
   }
 
   // ── Values ────────────────────────────────────────────────────────────
@@ -315,6 +341,7 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
     if (name === 'literal') {
       mark(path, { kind: 'literal', form: 'shorthand' })
       row(payloadPath).payload = 'unlabelled'
+      move(payloadPath, path, 'value')
       if ('//' in value) mark([...path, '//'], { kind: 'comment' })
       return
     }
@@ -331,6 +358,7 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
     }
     const payload = value[key]
     if (fragment !== undefined) {
+      move(payloadPath, path, 'parameters')
       mark(path, {
         kind: 'fragment',
         form: 'shorthand',
@@ -346,7 +374,9 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
       row(payloadPath).payload = 'unlabelled'
       positional(payload, payloadPath, path, operator!, inner)
     } else if (isObject(payload) && !isNode(payload)) {
+      // Its rows are the node's own parameters
       row(payloadPath).payload = 'flattened'
+      move(payloadPath, path)
       const as = asName(operator, payload)
       for (const param in payload) {
         const paramPath = [...payloadPath, param]
@@ -357,6 +387,7 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
       // A single value binds the first position, or the whole rest parameter
       row(payloadPath).payload = 'unlabelled'
       const target = singlePositionalTarget(operator!)
+      move(payloadPath, path, target ?? ARGUMENT_LIST)
       if (target === null) visit(payload, payloadPath, dataSlot(payloadPath, path), inner)
       else parameter(operator, target, payload, payloadPath, path, inner, undefined)
     }
@@ -373,26 +404,25 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
   ) => {
     const layout = positionalLayout(operator, payload.length)
     const rest = operator.restParam
+    // A list that is all rest is the rest parameter's array; one with leading
+    // parameters has no row of its own in the full form
+    const allRest = layout?.bound === 0 && layout.restAt === 0 && rest !== null
+    move(path, nodePath, allRest ? rest : ARGUMENT_LIST)
     payload.forEach((element, index) => {
       const elementPath = [...path, index]
-      if (layout !== null && index < layout.bound)
-        parameter(
-          operator,
-          operator.positionalParams![index],
-          element,
-          elementPath,
-          nodePath,
-          inner,
-          undefined
-        )
-      else if (layout?.restAt != null && rest !== null)
+      if (layout !== null && index < layout.bound) {
+        const name = operator.positionalParams![index]
+        move(elementPath, nodePath, name)
+        parameter(operator, name, element, elementPath, nodePath, inner, undefined)
+      } else if (layout?.restAt != null && rest !== null) {
+        if (!allRest) move(elementPath, nodePath, rest, index - layout.restAt)
         visit(
           element,
           elementPath,
           elementSlot(elementPath, nodePath, rest, operator.parameters[rest]),
           inner
         )
-      else visit(element, elementPath, dataSlot(elementPath, nodePath), inner)
+      } else visit(element, elementPath, dataSlot(elementPath, nodePath), inner)
     })
   }
 

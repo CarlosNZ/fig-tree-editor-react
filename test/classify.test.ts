@@ -1,7 +1,8 @@
 import { inspect } from 'fig-tree-evaluator'
+import { toCanonical, toShorthand } from 'fig-tree-evaluator/format'
 import { toPathString } from 'json-edit-react'
 import { describe, expect, it } from 'vitest'
-import { classify, rowAt, type Classification } from '../src/classify'
+import { canonicalPath, classify, rowAt, type Classification } from '../src/classify'
 import { type Path } from '../src/paths'
 import { demoExpressions, figTree, registry } from './fixtures'
 
@@ -92,7 +93,7 @@ describe('the classification walk', () => {
         name: 'if',
         operator: 'if',
       })
-      expect(row(node, ['$if'])).toEqual({ payload: 'flattened' })
+      expect(row(node, ['$if'])).toEqual({ payload: 'flattened', canonical: [] })
       expect(row(node, ['$if', 'condition'])).toMatchObject({
         kind: { kind: 'reference', namespace: 'data' },
         slot: { role: 'parameter', parameter: 'condition', ownerPath: [] },
@@ -101,7 +102,7 @@ describe('the classification walk', () => {
 
     it('leaves an argument array unlabelled, with no slot of its own', () => {
       const node = { $plus: [1, 2] }
-      expect(row(node, ['$plus'])).toEqual({ payload: 'unlabelled' })
+      expect(row(node, ['$plus'])).toEqual({ payload: 'unlabelled', canonical: ['values'] })
       expect(row(node, ['$plus', 0])?.slot).toMatchObject({ role: 'element', parameter: 'values' })
       expect(kind({ '$+': [1, 2] })).toMatchObject({ name: '+', operator: 'plus' })
     })
@@ -133,7 +134,10 @@ describe('the classification walk', () => {
         form: 'shorthand',
         arguments: 'static',
       })
-      expect(row({ $greet: {} }, ['$greet'])).toEqual({ payload: 'flattened' })
+      expect(row({ $greet: {} }, ['$greet'])).toEqual({
+        payload: 'flattened',
+        canonical: ['parameters'],
+      })
       const dynamic = { $greet: { $buildObject: [] } }
       expect(kind(dynamic)).toMatchObject({ arguments: 'dynamic' })
       expect(row(dynamic, ['$greet'])).toMatchObject({
@@ -142,7 +146,10 @@ describe('the classification walk', () => {
       })
       const byReference = { $greet: '$data.x' }
       expect(kind(byReference)).toMatchObject({ arguments: 'invalid' })
-      expect(row(byReference, ['$greet'])).toEqual({ payload: 'unlabelled' })
+      expect(row(byReference, ['$greet'])).toEqual({
+        payload: 'unlabelled',
+        canonical: ['parameters'],
+      })
     })
   })
 
@@ -155,7 +162,7 @@ describe('the classification walk', () => {
       expect(row(full, ['value', '$plus'])).toBeUndefined()
       const short = { $literal: { $plus: [1] } }
       expect(kind(short)).toEqual({ kind: 'literal', form: 'shorthand' })
-      expect(row(short, ['$literal'])).toEqual({ payload: 'unlabelled' })
+      expect(row(short, ['$literal'])).toEqual({ payload: 'unlabelled', canonical: ['value'] })
       expect(row(short, ['$literal', '$plus'])).toBeUndefined()
     })
   })
@@ -296,6 +303,78 @@ describe('the classification walk', () => {
   // fragment call and reference it reports must be in the map at the same
   // path, and no others. Its report shape is outside semver, which suits a
   // test pinned to the fig-tree the editor depends on.
+  describe('canonical paths', () => {
+    const canonical = (expression: unknown, path: Path) =>
+      canonicalPath(classified(expression), path)
+
+    it("are a full node's own paths", () => {
+      const node = { operator: 'plus', values: [1, { operator: 'not', value: true }] }
+      expect(canonical(node, ['values', 1])).toEqual(['values', 1])
+      expect(canonical(node, ['values', 1, 'value'])).toEqual(['values', 1, 'value'])
+    })
+
+    it("put a named payload's parameters on the node", () => {
+      expect(canonical({ $if: { condition: true, then: [1] } }, ['$if', 'then'])).toEqual(['then'])
+    })
+
+    it('give a positional element the parameter it binds, or its place in the rest', () => {
+      expect(canonical({ $if: [true, [1], 2] }, ['$if', 1])).toEqual(['then'])
+      expect(canonical({ $plus: [1, [2]] }, ['$plus', 1])).toEqual(['values', 1])
+      const mixed = { $buildString: ['%1 %2', 'a', ['b']] }
+      expect(canonical(mixed, ['$buildString', 0])).toEqual(['template'])
+      expect(canonical(mixed, ['$buildString', 2])).toEqual(['substitutions', 1])
+    })
+
+    it("make an argument list that is all rest the rest parameter's, and any other none", () => {
+      expect(canonical({ $plus: [1, 2] }, ['$plus'])).toEqual(['values'])
+      expect(canonical({ $if: [true, 1, 2] }, ['$if'])).toEqual(['$arguments'])
+    })
+
+    it('give a single value the parameter it binds', () => {
+      expect(canonical({ $not: { $plus: [1] } }, ['$not'])).toEqual(['value'])
+      expect(canonical({ $not: { $plus: [1] } }, ['$not', '$plus'])).toEqual(['value', 'values'])
+      expect(canonical({ $min: '$data.scores' }, ['$min'])).toEqual(['values'])
+    })
+
+    it("put a fragment's arguments under `parameters`, in either form", () => {
+      expect(canonical({ $greet: { name: [1] } }, ['$greet', 'name'])).toEqual([
+        'parameters',
+        'name',
+      ])
+      expect(
+        canonical({ fragment: 'greet', parameters: { name: [1] } }, ['parameters', 'name'])
+      ).toEqual(['parameters', 'name'])
+    })
+
+    it("follow the nearest recorded row into quoted content, and keep a shorthand's modifiers", () => {
+      expect(canonical({ $literal: { a: [1] } }, ['$literal', 'a'])).toEqual(['value', 'a'])
+      expect(canonical({ $plus: [1], vars: { x: [1] } }, ['vars', 'x'])).toEqual(['vars', 'x'])
+    })
+
+    // Every node, by the canonical path each form gives it
+    const nodes = (expression: unknown) => {
+      const classification = classified(expression)
+      return [...classification.values()]
+        .filter(({ kind }) => ['operator', 'fragment', 'literal'].includes(kind?.kind ?? ''))
+        .map(({ slot }) => toPathString(canonicalPath(classification, slot!.path)))
+        .sort()
+    }
+
+    it.each(demoExpressions)(
+      'keep every node in $name where it is, through each conversion',
+      ({ expression }) => {
+        const full = toCanonical(expression, figTree)
+        const options = { getAsReference: false }
+        expect(nodes(toShorthand(full, figTree, { ...options, arguments: 'named' }))).toEqual(
+          nodes(full)
+        )
+        expect(nodes(toShorthand(full, figTree, { ...options, arguments: 'positional' }))).toEqual(
+          nodes(full)
+        )
+      }
+    )
+  })
+
   describe('parity with the compiler', () => {
     const shapes = [
       { operator: 'plus', values: [1, '$data.x'] },
