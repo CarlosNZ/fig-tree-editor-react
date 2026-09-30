@@ -97,6 +97,8 @@ describe('FigTreeEditor', () => {
           // @ts-expect-error the editor's own definitions
           customNodeDefinitions={[]}
         />
+        {/* @ts-expect-error dragging is disabled until json-edit-react's J4 */}
+        <FigTreeEditor figTree={figTree} expression={1} setExpression={vi.fn()} allowDrag />
       </>
     )
     expect(refused).toBeTypeOf('function')
@@ -164,31 +166,30 @@ describe('FigTreeEditor', () => {
       return { select, options: options.filter((value) => value !== '') }
     }
 
-    it("offers a node's parameters and modifiers by name, and starts the one chosen", () => {
+    it("leaves a full operator node's adding to its toolbar", () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'round', value: 3.14 }}
+          setExpression={vi.fn()}
+        />
+      )
+      expect(screen.queryAllByRole('button', { name: 'Add' })).toEqual([])
+    })
+
+    it('offers a shorthand node its modifiers by name, and starts the one chosen', () => {
       const setExpression = vi.fn()
       render(
         <FigTreeEditor
           figTree={figTree}
-          expression={{ operator: 'round', value: 3.14, fallback: null }}
+          expression={{ $plus: [1, 2] }}
           setExpression={setExpression}
         />
       )
       const { select, options } = keyOptions()
-      expect(options).toEqual(['decimals', '//', 'useCache', 'vars'])
-      fireEvent.change(select, { target: { value: 'decimals' } })
-      expect(setExpression).toHaveBeenCalledExactlyOnceWith({
-        operator: 'round',
-        value: 3.14,
-        decimals: 2,
-        fallback: null,
-      })
-    })
-
-    it('offers a shorthand node its modifiers only', () => {
-      render(
-        <FigTreeEditor figTree={figTree} expression={{ $plus: [1, 2] }} setExpression={vi.fn()} />
-      )
-      expect(keyOptions().options).toEqual(['//', 'fallback', 'useCache', 'vars'])
+      expect(options).toEqual(['//', 'fallback', 'useCache', 'vars'])
+      fireEvent.change(select, { target: { value: 'fallback' } })
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ $plus: [1, 2], fallback: null })
     })
 
     it('starts a free-typed key as anything', () => {
@@ -231,6 +232,62 @@ describe('FigTreeEditor', () => {
         operator: 'join',
         values: ['$data.a', 'Bravo'],
       })
+    })
+  })
+
+  describe('guards', () => {
+    const buttons = (name: string) => screen.queryAllByRole('button', { name })
+
+    it('blocks deleting a required parameter, and allows an optional one', () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'round', value: 3.14, decimals: 2 }}
+          setExpression={setExpression}
+        />
+      )
+      expect(buttons('Delete')).toHaveLength(1)
+      fireEvent.click(buttons('Delete')[0])
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ operator: 'round', value: 3.14 })
+    })
+
+    it('holds an array parameter at its fixed length', () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'lessThan', values: [1, 2] }}
+          setExpression={vi.fn()}
+        />
+      )
+      expect(buttons('Add')).toEqual([])
+      expect(buttons('Delete')).toEqual([])
+    })
+
+    it("applies the host's filter as well", () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'round', value: 3.14, decimals: 2 }}
+          setExpression={vi.fn()}
+          allowDelete={({ key }) => key !== 'decimals'}
+        />
+      )
+      expect(buttons('Delete')).toEqual([])
+    })
+
+    it("renames a payload's optional parameter, but not a required one", () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ $round: { value: 3.14, decimals: 2 } }}
+          setExpression={vi.fn()}
+        />
+      )
+      fireEvent.doubleClick(screen.getByText('value'))
+      expect(screen.queryByDisplayValue('value')).toBeNull()
+      fireEvent.doubleClick(screen.getByText('decimals'))
+      expect(screen.getByDisplayValue('decimals')).toBeInTheDocument()
     })
   })
 

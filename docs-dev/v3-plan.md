@@ -305,7 +305,7 @@ Out of scope, though the DisplayBar and toolbar leave room for them: "Add parame
     - **Seen in the demo:** "Add parameter" on a complete `if` lists the four modifiers with their descriptions, and choosing `fallback` adds `fallback: null` after `else` with the toolbar still open. Its styling waits for the toolbar's cosmetic pass (Phase 7).
     - **Tests:** `test/parameterOptions.test.ts` covers each kind of node, the order, broken nodes and the starting values, `useCache` under an instance's settings included. `test/Operator.test.tsx` covers the toolbar's adds, their revert on ✗, the required marking and when the control is left out. `test/FigTreeEditor.test.tsx` covers ＋ on a full and a shorthand node, and a free-typed key.
     - **The size budget** is 13.1 kB, the measured 12.5 kB plus about 5%.
-  - **Likely refinement: hiding json-edit-react's ＋ on a full node** (Carl), where the toolbar's "Add parameter" offers the same list, so two controls do one job. Left for now. It would be the editor's `allowAdd` returning false on those rows (6.4), leaving ＋ where the toolbar can't reach: shorthand nodes, vars blocks, arrays and plain data.
+  - **Refined in 6.4: no ＋ on a full operator node** (Carl), where the toolbar's "Add parameter" offers the same list, so two controls did one job. ＋ stays where the toolbar can't reach: shorthand nodes, vars blocks, arrays and plain data.
 - **6.3 · The type dropdown.** `allowTypeSelection` from each row's slot, with the reference entries and Operator and Fragment where they fit (topic 4, "The type dropdown"). A new node's picker opens on it (topic 2, "Node lifecycle").
   - **Settled before building** (agreed with Carl):
     - **The Fragment entry moves to Phase 7,** with `defaultFragment`, the fragment call's component and its picker. Offered now, it would create a placeholder with no picker to open.
@@ -324,6 +324,19 @@ Out of scope, though the DisplayBar and toolbar leave room for them: "Add parame
     - **Tests:** `test/typeOptions.test.ts` has the design's examples table (less Fragment), the current type, and the reference starting values. `test/Operator.test.tsx` covers the options on a row, creating a node with its picker open, ✗ restoring the value, a host's `defaultOperators`, Data and Variable, and a rejected switch leaving no mark.
     - **The size budget** is 14.4 kB, the measured 13.7 kB plus about 5%, now `getStartingNode` is bundled.
 - **6.4 · Guards.** Deleting, adding and renaming, including array constraints (topics 2 and 4). Dragging is disabled until J4 lands.
+  - **Settled before building** (agreed with Carl):
+    - **No ＋ on a full operator node,** broken ones included, since the toolbar's "Add parameter" does the job (6.2's refinement, taken now). A broken node's fix is the picker. A full fragment call and a `literal` keep ＋ until their toolbars gain "Add parameter" (Phases 7 and 9). So the "nothing left to add" guard applies to shorthand nodes and those two.
+    - **Renaming follows from json-edit-react's rule,** a key being renamable where its row can be deleted and its parent accepts adds, so the guards have no rename rule of their own. Accepted: with no ＋, a full operator node's keys can't be renamed in the tree, only through raw JSON, or deleted and added again; a typo such as `thn` waits for Phase 10's "Rename" quick fix.
+    - **Flattened payloads keep `allowAdd`,** so their optional parameters stay renamable. They have no header row, so they show no ＋ anyway.
+    - **`allowDrag` leaves the props type until J4 ships,** since dragging is disabled completely and a host's value would be ignored. The editor passes `false`.
+    - **Still parked: a host's `insertAtTop`** (6.1).
+    - **Not here: a `literal`'s `value` row,** which has no slot, since the walk doesn't enter `literal`, so nothing marks it required. Phase 9's, with the `literal` component. Deleting it is harmless meanwhile: the fill-in step puts it back.
+  - Done.
+    - **The rules** are `canDelete` and `canAdd` in `src/guards.ts`, reading each row's slot, kind and payload role from the classification, and an argument list's operator's `positionalLayout`. A fixed length on a positional payload counts the rest parameter's elements only.
+    - **The editor** combines them with the host's `allowDelete` and `allowAdd` (a boolean or a function), memoised on the classification, and passes `allowDrag={false}`. `allowDrag` joins the refused props' type test.
+    - **Seen in the demo:** on its `if`, the node and its required `condition` have neither ＋ nor ✕; `then`, holding `{ $plus: [1, '$typo'] }`, has ＋ for the shorthand node's modifiers but no ✕; the argument list has ＋ and no ✕; its elements and the optional `else` have ✕.
+    - **Tests:** `test/guards.test.ts` covers each blocked and allowed case of both rules, a fixed length from either side included. `test/FigTreeEditor.test.tsx` covers the ✕ on a required and an optional parameter, a fixed-length array, the host's filter, renaming in a named payload, and no ＋ on a full operator node, which replaces 6.2's test of ＋ there.
+    - **The size budget** stays at 14.4 kB; the bundle is 14.12 kB brotli.
 - **6.5 · Parameter hover cards,** on every definition at a parameter row and the catch-all (topic 4, "Parameter metadata").
 
 ## Phase 7 — Fragments

@@ -3,6 +3,7 @@ import {
   JsonEditor,
   type CustomTextDefinitions,
   type DefaultValueFunction,
+  type FilterFunction,
   type JsonEditorProps,
   type NewKeyOptionsFunction,
   type TypeFilterFunction,
@@ -20,6 +21,7 @@ import {
 import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
 import { type DefaultOperators } from './getStartingNode'
+import { canAdd, canDelete, type GuardContext } from './guards'
 import { getStartingElement } from './getStartingValue'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
@@ -49,6 +51,9 @@ export interface FigTreeEditorProps extends Omit<
   | 'newKeyOptions'
   | 'defaultValue'
   | 'customNodeDefinitions'
+  // Until json-edit-react can keep a drop within its own array (J4), dragging
+  // is disabled
+  | 'allowDrag'
 > {
   figTree: FigTree
   expression: unknown
@@ -70,6 +75,8 @@ export const FigTreeEditor = ({
   className,
   theme,
   customText,
+  allowDelete,
+  allowAdd,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -138,6 +145,13 @@ export const FigTreeEditor = ({
   )
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
   const allowTypeSelection = useMemo(() => typesFor(classification), [classification])
+  const guards = useMemo(() => {
+    const context: GuardContext = { classification, operators: figTree.getOperators() }
+    return {
+      allowDelete: combineFilter(allowDelete, (nodeData) => canDelete(nodeData, context)),
+      allowAdd: combineFilter(allowAdd, (nodeData) => canAdd(nodeData, context)),
+    }
+  }, [figTree, classification, allowDelete, allowAdd])
 
   // A node the type dropdown created is marked for this commit only: where
   // the commit doesn't carry it, the host's `onUpdate` rejected it
@@ -173,6 +187,8 @@ export const FigTreeEditor = ({
         defaultValue={defaultValue}
         newKeyOptions={newKeyOptions}
         allowTypeSelection={allowTypeSelection}
+        {...guards}
+        allowDrag={false}
         data={shown}
         setData={commit}
       />
@@ -218,6 +234,16 @@ const newKeys =
     })
     return keys && [...keys.parameters, ...keys.modifiers].map(({ key }) => key)
   }
+
+// The host's filter, and the editor's: the editor only adds restrictions
+const combineFilter = (
+  host: boolean | FilterFunction | undefined,
+  editor: FilterFunction
+): FilterFunction => {
+  if (host === false) return () => false
+  if (typeof host === 'function') return (nodeData) => host(nodeData) && editor(nodeData)
+  return editor
+}
 
 // Each value row's type dropdown, from its slot
 const typesFor =
