@@ -109,6 +109,58 @@ describe('the operator node', () => {
     )
   })
 
+  describe('its spelling', () => {
+    const button = (container: HTMLElement, name: string) =>
+      within(displayBar(container)).getByRole('button', { name })
+
+    it('switches between name and alias on a Cmd- or Ctrl-click on the button', () => {
+      const { container, written } = host({ operator: 'plus', values: [1, 2] })
+      fireEvent.click(button(container, 'plus'), { metaKey: true })
+      expect(latest(written)).toEqual({ operator: '+', values: [1, 2] })
+      fireEvent.click(button(container, '+'), { ctrlKey: true })
+      expect(latest(written)).toEqual({ operator: 'plus', values: [1, 2] })
+    })
+
+    it("leaves a plain click, or another modifier, to the button's own action", () => {
+      const { container, written } = host({ operator: 'plus', values: [1, 2] })
+      fireEvent.click(button(container, 'plus'))
+      fireEvent.click(button(container, 'plus'), { altKey: true })
+      expect(written).toEqual([])
+    })
+
+    it("takes the host's clipboard modifier", () => {
+      const { container, written } = host(
+        { operator: 'plus', values: [1, 2] },
+        { keyboardControls: { clipboardModifier: 'Shift' } }
+      )
+      fireEvent.click(button(container, 'plus'), { metaKey: true })
+      expect(written).toEqual([])
+      fireEvent.click(button(container, 'plus'), { shiftKey: true })
+      expect(latest(written)).toEqual({ operator: '+', values: [1, 2] })
+    })
+
+    it('says so on the card, and does nothing without an alias or where editing is off', () => {
+      const plus = editor({ operator: 'plus', values: [1, 2] })
+      expect(
+        within(displayBar(plus.container)).getByRole('tooltip', { hidden: true })
+      ).toHaveTextContent('Cmd/Ctrl-click to write it as +')
+      // As a note, set apart from the description
+      expect(plus.container.querySelector('.ft-hover-card-note')).toHaveTextContent(
+        /^Cmd\/Ctrl-click to write it as \+$/
+      )
+      plus.unmount()
+      const round = host({ operator: 'round', value: 1 })
+      fireEvent.click(button(round.container, 'round'), { metaKey: true })
+      expect(round.written).toEqual([])
+      expect(
+        within(displayBar(round.container)).getByRole('tooltip', { hidden: true })
+      ).not.toHaveTextContent('click to write')
+      const locked = host({ operator: 'plus', values: [1] }, { allowEdit: false })
+      fireEvent.click(button(locked.container, 'plus'), { metaKey: true })
+      expect(locked.written).toEqual([])
+    })
+  })
+
   describe('when broken', () => {
     it('shows an unknown name as an error, with the message and no Evaluate button', () => {
       const { container } = editor({ operator: 'plsu', values: [1] })
@@ -232,12 +284,11 @@ describe('the operator node', () => {
       expect(latest(written)).toEqual({ operator: 'plus', values: [1, 2] })
     })
 
-    it('toggles the spelling when the current operator is chosen again', async () => {
+    it('changes nothing when the current operator is chosen again', async () => {
       const { written, user } = host({ operator: 'plus', values: [1, 2] })
       await openPicker(user, 'Plus (+)')
-      expect(screen.getByText('⇄ select again to write as +')).toBeInTheDocument()
-      await user.click(screen.getByText('⇄ select again to write as +'))
-      expect(latest(written)).toEqual({ operator: '+', values: [1, 2] })
+      await user.click(screen.getByText('Plus (+)', { selector: '.ft-select-option-title' }))
+      expect(written).toEqual([])
     })
 
     it("opens on a broken node with fig-tree's suggestion, so Enter repairs it", async () => {

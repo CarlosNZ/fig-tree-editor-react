@@ -35,12 +35,11 @@ describe('switchOperator', () => {
     expect(switched({ operator: 'match' }, 'multiply', 'match').operator).toBe('multiply')
   })
 
-  it('toggles the spelling when the current operator is chosen again', () => {
+  it('changes nothing when the current operator is chosen again', () => {
     const node = { operator: 'plus', values: [1, 2], extra: 1 }
-    expect(switched(node, 'plus', 'plus')).toEqual({ ...node, operator: '+' })
-    expect(switched({ ...node, operator: '+' }, 'plus', 'plus')).toEqual(node)
-    const round = { operator: 'round', value: 1.5 }
-    expect(switched(round, 'round', 'round')).toBe(round)
+    expect(switched(node, 'plus', 'plus')).toBe(node)
+    const alias = { ...node, operator: '+' }
+    expect(switched(alias, 'plus', 'plus')).toBe(alias)
   })
 
   it('repairs a broken node', () => {

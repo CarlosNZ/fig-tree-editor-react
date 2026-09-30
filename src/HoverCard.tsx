@@ -19,17 +19,35 @@ export const HoverCard = ({ card, children }: { card: ReactNode; children: React
 }
 
 // A card's lines, one to a line, with the names in backticks shown as code.
-// A parameter's card starts with a title line.
-export const CardLines = ({ lines, titled = false }: { lines: string[]; titled?: boolean }) =>
-  lines.map((line, index) => (
-    <span
-      className={
-        titled && index === 0 ? 'ft-hover-card-line ft-hover-card-title' : 'ft-hover-card-line'
-      }
-      key={index}
-    >
-      {line
-        .split('`')
-        .map((segment, part) => (part % 2 === 1 ? <code key={part}>{segment}</code> : segment))}
-    </span>
-  ))
+// A parameter's card starts with a title line, and a node's can end with a
+// note, a tip about the control set smaller than what the card describes.
+export const CardLines = ({
+  lines,
+  titled = false,
+  note,
+}: {
+  lines: string[]
+  titled?: boolean
+  note?: string
+}) => (
+  <>
+    {lines.map((line, index) => (
+      <span
+        className={
+          titled && index === 0 ? 'ft-hover-card-line ft-hover-card-title' : 'ft-hover-card-line'
+        }
+        key={index}
+      >
+        {withCode(line)}
+      </span>
+    ))}
+    {note !== undefined && (
+      <span className="ft-hover-card-line ft-hover-card-note">{withCode(note)}</span>
+    )}
+  </>
+)
+
+const withCode = (line: string) =>
+  line
+    .split('`')
+    .map((segment, part) => (part % 2 === 1 ? <code key={part}>{segment}</code> : segment))

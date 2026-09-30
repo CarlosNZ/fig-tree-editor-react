@@ -44,8 +44,10 @@ export function Select<T>({
   )
 
   useEffect(() => {
+    // Anywhere outside the whole select, so its own trigger or search field
+    // doesn't count
     const handleClickOutside = (event: MouseEvent) => {
-      if (optionsRef.current && !optionsRef.current?.contains(event.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         handleClose()
       }
     }
@@ -53,10 +55,11 @@ export function Select<T>({
     return () => window.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Puts focus on text input when drop-down opens up
+  // Puts focus on the search field when the list opens, or on the trigger,
+  // which takes the keys, where there's no search
   useEffect(() => {
-    if (open && searchInputRef.current) {
-      searchInputRef.current.focus()
+    if (open) {
+      ;(searchInputRef.current ?? triggerRef.current)?.focus()
       currentSelectionRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
     }
   }, [open])
@@ -155,26 +158,31 @@ export function Select<T>({
     e.currentTarget.title = text && text.scrollWidth > text.clientWidth ? (label ?? '') : ''
   }
 
-  // Some additional props for the input area when "search" is disabled
-  const additionalInputProps = search
-    ? {}
-    : {
-        className: 'ft-select-input ft-select-placeholder',
-        value: '',
-        onChange: () => {},
-      }
-
   return (
     <div className={`ft-select-container ${className}`} ref={containerRef}>
       <div className="ft-select-select-wrapper">
-        {!open ? (
+        {open && search ? (
+          <input
+            ref={searchInputRef}
+            type="text"
+            className="ft-select-input"
+            placeholder={placeholder}
+            value={searchText}
+            onChange={(e) => handleSearch(e.target.value)}
+            onKeyDown={handleKeyDown}
+            style={{ width: openWidth }}
+          />
+        ) : (
+          // Without search, the trigger stays while the list is open, showing
+          // the current value, and takes the keys
           <div
             ref={triggerRef}
-            className="ft-select-trigger ft-select-input"
-            onClick={handleOpen}
-            onKeyDown={handleTriggerKeyDown}
+            className={`ft-select-trigger ft-select-input${open ? ' ft-select-open' : ''}`}
+            onClick={open ? handleClose : handleOpen}
+            onKeyDown={open ? handleKeyDown : handleTriggerKeyDown}
             onMouseEnter={titleIfCut}
             tabIndex={0}
+            aria-expanded={open}
           >
             <span className="ft-select-trigger-label">
               {label ?? <span className="ft-select-placeholder">{placeholder}</span>}
@@ -183,35 +191,23 @@ export function Select<T>({
               <Icon name="collection" scale={0.7} />
             </span>
           </div>
-        ) : (
-          <>
-            <input
-              ref={searchInputRef}
-              type="text"
-              className="ft-select-input"
-              placeholder={placeholder}
-              value={searchText}
-              onChange={(e) => handleSearch(e.target.value)}
-              onKeyDown={handleKeyDown}
-              {...additionalInputProps}
-              style={{ width: openWidth, ...(search ? {} : { cursor: 'default' }) }}
-            />
-            <DropdownMenu
-              optionsRef={optionsRef}
-              currentSelectionRef={currentSelectionRef}
-              groups={groups}
-              selected={selected}
-              handleSelect={handleSelect}
-              highlightedIndex={highlightedIndex}
-              border={border}
-              search={search}
-              emptyText={
-                emptyText !== undefined && allOptions(optionGroups, options).length === 0
-                  ? emptyText
-                  : strings.FT_SELECT_NO_RESULTS
-              }
-            />
-          </>
+        )}
+        {open && (
+          <DropdownMenu
+            optionsRef={optionsRef}
+            currentSelectionRef={currentSelectionRef}
+            groups={groups}
+            selected={selected}
+            handleSelect={handleSelect}
+            highlightedIndex={highlightedIndex}
+            border={border}
+            search={search}
+            emptyText={
+              emptyText !== undefined && allOptions(optionGroups, options).length === 0
+                ? emptyText
+                : strings.FT_SELECT_NO_RESULTS
+            }
+          />
         )}
       </div>
     </div>

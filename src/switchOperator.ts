@@ -4,9 +4,8 @@ import { cleanNode } from './cleanNode'
 // A full operator node switched to `target`, a canonical name, from the
 // operator picker (design, topic 2, "Node lifecycle"):
 //
-// - Choosing the node's own operator again toggles its spelling between name
-//   and alias, and changes nothing else. With no alias, the node comes back
-//   as it was.
+// - Choosing the node's own operator again changes nothing. The toolbar's
+//   spelling toggle writes its name or alias.
 // - Choosing another keeps the node's spelling where the new operator allows
 //   it (`+` to `*`, and `+` to `?` for `if`), otherwise takes the canonical
 //   name, then cleans the node: the parameters the new operator also declares
@@ -33,10 +32,7 @@ export const switchOperator = (
   if (next === undefined) return node
   const written = node.operator
 
-  if (target === current) {
-    if (next.alias === undefined) return node
-    return { ...node, operator: written === next.alias ? next.name : next.alias }
-  }
+  if (target === current) return node
 
   const from = find(current)
   const usesAlias = from?.alias !== undefined && written === from.alias

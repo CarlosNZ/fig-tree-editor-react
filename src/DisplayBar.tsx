@@ -11,6 +11,9 @@ import { strings } from './strings'
 // top right, linked to its documentation. A broken node shows its name as an
 // error with the issue's message, and no Evaluate button, since the compiler
 // refuses it; its pencil stays, so a valid operator or fragment can be picked.
+// A modifier-click on the button, with json-edit-react's clipboard modifier
+// (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
+// other spelling.
 //
 // TO-DO: evaluating (plan, Phase 10), and the conversion button (Phase 8).
 
@@ -26,18 +29,26 @@ interface DisplayBarProps {
   name: string | null // as written; null when it isn't a string
   display: HeaderDisplay | undefined // undefined when nothing is registered
   card: string[] // the hover card's lines
+  cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
   editorTheme: EditorTheme
   onEdit?: () => void // opens the toolbar; absent where the node can't be edited
+  // A modifier-click on the button: an operator's other spelling, where it
+  // has one and the node can be edited
+  onRespell?: () => void
+  respellModifiers?: readonly React.ModifierKey[]
 }
 
 export const DisplayBar = ({
   name,
   display,
   card,
+  cardNote,
   broken,
   editorTheme,
   onEdit,
+  onRespell,
+  respellModifiers = [],
 }: DisplayBarProps) => {
   const label = name ?? strings.FT_INVALID_NODE
   return (
@@ -47,8 +58,13 @@ export const DisplayBar = ({
           label={label}
           display={display}
           card={card}
+          cardNote={cardNote}
           broken={broken}
           editorTheme={editorTheme}
+          onClick={(e) => {
+            const modifier = pressedModifier(e)
+            if (onRespell && modifier && respellModifiers.includes(modifier)) onRespell()
+          }}
         />
         {onEdit && (
           <button
@@ -81,19 +97,31 @@ const NameOrButton = ({
   label,
   display,
   card,
+  cardNote,
   broken,
   editorTheme,
-}: Omit<DisplayBarProps, 'name' | 'onEdit'> & { label: string }) =>
+  onClick,
+}: Pick<DisplayBarProps, 'display' | 'card' | 'cardNote' | 'broken' | 'editorTheme'> & {
+  label: string
+  onClick: (e: React.MouseEvent) => void
+}) =>
   broken || !display ? (
     <span className="ft-broken" style={{ color: editorTheme.error }}>
       <span className="ft-name">{label}</span>
       {broken && <span className="ft-broken-message">{broken.message}</span>}
     </span>
   ) : (
-    <HoverCard card={card.length > 0 ? <CardLines lines={card} /> : undefined}>
+    <HoverCard
+      card={
+        card.length > 0 || cardNote !== undefined ? (
+          <CardLines lines={card} note={cardNote} />
+        ) : undefined
+      }
+    >
       <button
         type="button"
         className="ft-evaluate-button"
+        onClick={onClick}
         style={{ backgroundColor: display.backgroundColor, color: display.textColor }}
       >
         <span className="ft-name" style={{ fontSize: nameSize(label) }}>
@@ -112,4 +140,14 @@ const nameSize = (name: string) => {
   if (name.length < 7) return '1.2em'
   if (name.length < 15) return '1em'
   return '0.9em'
+}
+
+// The modifier held on a click, one only, as json-edit-react reads it for its
+// own modifier-clicks (copying a path, collapsing everything)
+const pressedModifier = (e: React.MouseEvent): React.ModifierKey | undefined => {
+  if (e.shiftKey) return 'Shift'
+  if (e.metaKey) return 'Meta'
+  if (e.ctrlKey) return 'Control'
+  if (e.altKey) return 'Alt'
+  return undefined
 }

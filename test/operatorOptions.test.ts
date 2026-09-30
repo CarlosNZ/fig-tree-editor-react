@@ -66,24 +66,8 @@ describe('operatorOptions', () => {
   })
 
   it('keeps the current operator in its group where it can choose it', () => {
-    const current = { operator: 'upper', written: 'upper' }
-    const strings = group(groupsAt(['number', 'null'], current), 'Strings')
+    const strings = group(groupsAt(['number', 'null'], 'upper'), 'Strings')
     expect(strings.find(({ value }) => value === 'upper')).toMatchObject({ disabled: false })
-  })
-
-  it('hints that choosing the current operator again toggles its spelling', () => {
-    const hint = (written: string) =>
-      group(groupsAt('any', { operator: 'plus', written }), 'Arithmetic & math').find(
-        ({ value }) => value === 'plus'
-      )?.hint
-    expect(hint('plus')).toBe('⇄ select again to write as +')
-    expect(hint('+')).toBe('⇄ select again to write as plus')
-    // No hint where there's no alias
-    const current = { operator: 'round', written: 'round' }
-    const round = group(groupsAt('any', current), 'Arithmetic & math').find(
-      ({ value }) => value === 'round'
-    )
-    expect(round?.hint).toBeUndefined()
   })
 
   it("puts a host's operator in its own category", () => {

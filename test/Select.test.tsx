@@ -211,6 +211,33 @@ describe('Select', () => {
     expect(screen.getByRole('textbox')).toHaveStyle({ width: '123px' })
   })
 
+  describe('without search', () => {
+    it('keeps showing the current value while open, and lists every option', async () => {
+      const { user } = setup({ search: false, selected: '-' })
+      await user.click(screen.getByText('Subtraction'))
+      const trigger = document.querySelector('.ft-select-trigger')!
+      expect(trigger).toHaveTextContent('Subtraction')
+      expect(trigger).toHaveAttribute('aria-expanded', 'true')
+      expect(screen.queryByRole('textbox')).toBeNull()
+      const listed = [...document.querySelectorAll('.ft-select-option-title')].map(
+        (option) => option.textContent
+      )
+      expect(listed).toEqual(['Addition', 'Subtraction', 'Multiplication'])
+      expect(document.querySelector('.ft-select-selected')).toHaveTextContent('Subtraction')
+    })
+
+    it('takes the keys on its trigger, and closes when the trigger is clicked again', async () => {
+      const { user, setSelected } = setup({ search: false })
+      await user.click(screen.getByText('Pick one'))
+      expect(document.querySelector('.ft-select-trigger')).toHaveFocus()
+      await user.keyboard('{ArrowDown}{ArrowDown}{Enter}')
+      expect(setSelected).toHaveBeenCalledWith(options[1])
+      await user.click(screen.getByText('Pick one'))
+      await user.click(screen.getByText('Pick one'))
+      expect(screen.queryByText('Addition')).toBeNull()
+    })
+  })
+
   it('opens from the keyboard, keeping the key from what surrounds it', async () => {
     const outer = vi.fn()
     const setSelected = vi.fn()

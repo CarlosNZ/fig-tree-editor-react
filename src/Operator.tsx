@@ -9,6 +9,7 @@ import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { OperatorPicker } from './OperatorPicker'
 import { operatorDefaultsLine } from './parameterCard'
 import { addKey, addableKeys } from './parameterOptions'
+import { strings } from './strings'
 import { Toolbar } from './Toolbar'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 
@@ -25,6 +26,7 @@ type OperatorKind = Extract<RowKind, { kind: 'operator' }>
 // while another is typed.
 export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
+  const { setValue, keyboardControls } = props
   const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
   const {
     editor,
@@ -60,14 +62,26 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     )
   }
 
+  // Where the operator has an alias, a modifier-click on the button writes
+  // the other spelling (design, topic 2, "Name or alias")
+  const operator = figTree.getOperators().find(({ name }) => name === kind.operator)
+  const otherSpelling =
+    operator?.alias === undefined
+      ? undefined
+      : kind.name === operator.alias
+        ? operator.name
+        : operator.alias
+  const respell =
+    canEdit && !broken && otherSpelling !== undefined
+      ? () => setValue({ ...node, operator: otherSpelling })
+      : undefined
+
   // The operator's description, then what the host sets on every such node
   // that doesn't set its own
-  const operatorCard = () => {
-    const operator = figTree.getOperators().find(({ name }) => name === kind.operator)
-    return [display?.description, operator && operatorDefaultsLine(operator, node)].filter(
+  const operatorCard = () =>
+    [display?.description, operator && operatorDefaultsLine(operator, node)].filter(
       (line): line is string => line !== undefined
     )
-  }
 
   if (editor === 'json') return <div className="ft-node">{originalNode}</div>
 
@@ -104,12 +118,30 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           name={kind.name}
           display={display}
           card={operatorCard()}
+          cardNote={
+            respell &&
+            strings.FT_CARD_RESPELL(
+              modifierNames(keyboardControls.clipboardModifier),
+              otherSpelling!
+            )
+          }
           broken={broken}
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}
+          onRespell={respell}
+          respellModifiers={keyboardControls.clipboardModifier}
         />
       )}
       {withoutFilteredRows(children, classification, path)}
     </div>
   )
 }
+
+// The modifier keys as a card names them: "Cmd/Ctrl". Any other key is named
+// as the browser names it.
+const MODIFIER_NAMES: Partial<Record<React.ModifierKey, string>> = {
+  Meta: 'Cmd',
+  Control: 'Ctrl',
+}
+const modifierNames = (keys: readonly React.ModifierKey[]) =>
+  keys.map((key) => MODIFIER_NAMES[key] ?? key).join('/')

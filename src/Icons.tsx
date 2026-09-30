@@ -48,17 +48,19 @@ export const Icon = ({
   name,
   style,
   scale,
+  viewBox,
 }: {
   name: keyof ThemeIcons
   style?: React.CSSProperties
   scale?: number
+  viewBox?: string // in place of the definition's, to crop to the glyph
 }): JSX.Element => {
   const icons = defaultTheme.icons
   const def = icons?.[name]
   if (!def) return <p>NO ICON</p>
   return (
     <IconSvg
-      viewBox={def.viewBox}
+      viewBox={viewBox ?? def.viewBox}
       {...def.svgProps}
       scale={scale ?? def.scale}
       // The collapse chevron (`collection`) is positioned and animated by its
@@ -71,5 +73,9 @@ export const Icon = ({
   )
 }
 
-export const IconOk = <Icon name="ok" style={{ color: 'green' }} scale={1.4} />
-export const IconCancel = <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)' }} scale={2} />
+// ✓ and ✗, each cropped to its glyph (its stroke included), so the stylesheet
+// can give both the height of the toolbar's inputs
+export const IconOk = <Icon name="ok" style={{ color: 'green' }} viewBox="1 1 22 22" />
+export const IconCancel = (
+  <Icon name="cancel" style={{ color: 'rgb(203, 75, 22)' }} viewBox="4 4 16 16" />
+)

@@ -15,14 +15,13 @@ import { strings } from './strings'
 // position admits goes in a final "Not valid here" group, which can't be
 // chosen, with the reason as its description. Sharing only `null` counts as
 // fitting, since `validate()` would accept it. The current operator stays in
-// its group, and can be chosen, even where it doesn't fit, so choosing it
-// again still toggles its spelling, which its hint says.
+// its group, and can be chosen, even where it doesn't fit.
 
 export interface PickerContext {
   operators: readonly OperatorInfo[]
   displayData: DisplayData
   admits: ExpectedType // what the node's own position admits
-  current: { operator: string; written: string } | null // null on a broken node
+  current: string | null // the canonical operator; null on a broken node
 }
 
 type Candidate = Pick<OperatorInfo, 'name' | 'alias' | 'category' | 'returns'>
@@ -43,13 +42,8 @@ export const operatorOptions = ({
 
   const option = ({ name, alias, returns }: Candidate, fits: boolean): SelectOption<string> => {
     const display = displayData.operators[name]
-    const isCurrent = name === current?.operator
     return {
       label: display?.displayName ?? name,
-      hint:
-        isCurrent && alias !== undefined
-          ? strings.FT_PICKER_TOGGLE_HINT(current.written === alias ? name : alias)
-          : undefined,
       description: fits
         ? display?.description
         : strings.FT_PICKER_NOT_VALID_REASON(describeType(returns), describeType(admits)),
@@ -60,7 +54,7 @@ export const operatorOptions = ({
   }
 
   const fits = (candidate: Candidate) =>
-    candidate.name === current?.operator || typesIntersect(candidate.returns, admits)
+    candidate.name === current || typesIntersect(candidate.returns, admits)
 
   const groups = displayData.categories.map(({ category, displayName }) => ({
     label: displayName,

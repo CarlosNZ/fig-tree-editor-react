@@ -38,6 +38,11 @@
   display: flex;
   flex-shrink: 0;
   color: #718096;
+  transition: transform 0.2s;
+}
+
+.ft-select-open .ft-select-chevron {
+  transform: rotate(180deg);
 }
 
 .ft-select-input,
@@ -46,7 +51,6 @@ input.ft-select-input {
   padding: 0.5em;
   border: 1px solid #ccc !important;
   border-radius: 4px !important;
-  margin-bottom: 0.25rem;
   background-color: white;
   display: flex;
   justify-content: flex-start;
@@ -231,11 +235,17 @@ input.ft-select-input::placeholder {
   transition: 0.3s;
 }
 
+/* Hovering darkens it a little; pressing sinks it */
 .ft-evaluate-button:hover {
+  filter: brightness(0.95);
+}
+
+.ft-evaluate-button:active {
   box-shadow:
     rgba(0, 0, 0, 0.1) 0 0 5px 0,
     rgba(0, 0, 0, 0.1) 0 0 1px 0;
-  transform: scale(0.99);
+  transform: scale(0.97);
+  transition-duration: 0.05s;
 }
 
 .ft-name {
@@ -314,20 +324,30 @@ input.ft-select-input::placeholder {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-family: sans-serif;
   font-size: 0.8em;
-  line-height: 1.4;
+  line-height: 1.25;
   color: #333;
   white-space: normal;
   pointer-events: none;
 }
 
-/* One line each, under a parameter's title line */
+/* One paragraph each, set a little apart, under a parameter's title line */
 .ft-hover-card-line {
   display: block;
 }
 
+.ft-hover-card-line + .ft-hover-card-line {
+  margin-top: 0.35em;
+}
+
 .ft-hover-card-title {
-  margin-bottom: 0.2em;
   font-weight: bold;
+}
+
+/* A tip about the control, below what the card describes */
+.ft-hover-card-note {
+  font-size: 0.9em;
+  font-style: italic;
+  color: #6b7280;
 }
 
 .ft-hover-card code {
@@ -387,6 +407,13 @@ input.ft-select-input::placeholder {
   display: flex;
   align-items: center;
   gap: 0.4em;
+}
+
+/* ✓ and ✗ are the height of the inputs beside them: a select's 2.4em at its
+   0.8em size */
+.ft-toolbar-buttons svg {
+  width: 1.92em;
+  height: 1.92em;
 }
 
 /* The operator or fragment picker gives up width before anything wraps: it

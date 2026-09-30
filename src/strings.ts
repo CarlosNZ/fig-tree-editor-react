@@ -29,7 +29,6 @@ export const strings = {
     `Returns ${returns}; this position takes ${takes}`,
   FT_FRAGMENT_PICKER_PLACEHOLDER: 'Search fragments',
   FT_NO_FRAGMENTS: 'No fragments registered',
-  FT_PICKER_TOGGLE_HINT: (name: string) => `⇄ select again to write as ${name}`,
   FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 
   // The type dropdown's own entries, which json-edit-react shows as they are
@@ -118,6 +117,8 @@ export const strings = {
   FT_CARD_NULL_CONDITIONAL: (selector: string, cases: string, then: string, otherwise: string) =>
     `if ${selector} is ${cases}, ${then}; otherwise ${otherwise}`,
   FT_CARD_REPLACES: (targets: string) => `Used in place of a null in ${targets}`,
+  FT_CARD_RESPELL: (keys: string, spelling: string) =>
+    `${keys}-click to write it as \`${spelling}\``,
   FT_CARD_INSTANCE_SETS: (settings: string, operator: string) =>
     `This application sets ${settings} on every ${operator} node that doesn't set its own`,
 }
