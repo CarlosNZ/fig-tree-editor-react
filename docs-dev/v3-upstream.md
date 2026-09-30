@@ -41,6 +41,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J9  | json-edit-react    | Reveal a row from the editor handle                                        | Maybe    | Not filed                                                         | —               |
 | J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
 | J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
+| J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
 
 ---
 
@@ -388,3 +389,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Shipped** in json-edit-react 2.0.2 ([#416](https://github.com/CarlosNZ/json-edit-react/pull/416)). A row without the wrapper skips the `collapse` filter in `startCollapsed` and in the filter's effect, ignores collapse broadcasts, and ignores its click zones, and a collapsed row whose definition drops the wrapper reopens. The editor's `collapse` wrapper no longer keeps flattened rows open itself; it only counts a numeric `collapse` by levels as drawn. `test/Fragment.test.tsx` checks arguments under `collapse: 2` and after a collapse-all then a plain reopen.
 
 **Issue.** Filed as [#415](https://github.com/CarlosNZ/json-edit-react/issues/415).
+
+### J12 · No left click zone where `collapseClickZones` leaves it out — **Wanted**
+
+**The change.** A bug fix: `CollectionNode` renders its `.jer-clickzone` div only when `collapseClickZones` includes `'left'`, and not on a row without the collection wrapper, where it does nothing since 2.0.2. Today it's always rendered, and the prop only drops its `onClick` (checked against 2.0.2).
+
+**Why.** The zone is absolutely positioned over the left edge of the row's contents, above them (`zIndex: 10 + level * 2`). A node's toolbar wraps onto a second line in a narrow editor, and the zone covers the first ~30px of whatever starts that line: the ✓ reacts to hover only on its right half, and clicks on the covered part go nowhere. The editor passes `collapseClickZones: ['header']` (plan, 7.5), which turns the zone's clicks off but leaves the div in the way.
+
+**Without it.** The editor could give the zone `pointer-events: none` through a class on its container while the zones exclude `'left'`. Not done, since the fix is json-edit-react's (Carl). Until it ships, a wrapped toolbar line's first control is partly covered.
+
+**Issue.** Filed as [#417](https://github.com/CarlosNZ/json-edit-react/issues/417).

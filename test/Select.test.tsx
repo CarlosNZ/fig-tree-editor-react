@@ -195,6 +195,22 @@ describe('Select', () => {
     expect(screen.getByText('No results')).toBeInTheDocument()
   })
 
+  it('marks the closed trigger as a list with a chevron, kept out of its label', () => {
+    setup({ selected: '+' })
+    const trigger = screen.getByText('Addition').closest('.ft-select-trigger')!
+    expect(trigger.querySelector('.ft-select-chevron svg')).toBeInTheDocument()
+    expect(trigger.querySelector('.ft-select-chevron')).toHaveAttribute('aria-hidden', 'true')
+    expect(screen.getByText('Addition')).toHaveClass('ft-select-trigger-label')
+  })
+
+  it('keeps the closed width when it opens', async () => {
+    const { user } = setup()
+    const trigger = screen.getByText('Pick one').closest<HTMLElement>('.ft-select-trigger')!
+    trigger.getBoundingClientRect = () => ({ width: 123 }) as DOMRect
+    await user.click(trigger)
+    expect(screen.getByRole('textbox')).toHaveStyle({ width: '123px' })
+  })
+
   it('opens from the keyboard, keeping the key from what surrounds it', async () => {
     const outer = vi.fn()
     const setSelected = vi.fn()
@@ -211,7 +227,7 @@ describe('Select', () => {
       </div>
     )
     const user = userEvent.setup()
-    screen.getByText('Pick one').parentElement!.focus()
+    screen.getByText('Pick one').closest<HTMLElement>('.ft-select-trigger')!.focus()
     await user.keyboard('{Enter}')
     expect(screen.getByText('Addition')).toBeInTheDocument()
     expect(outer).not.toHaveBeenCalled()

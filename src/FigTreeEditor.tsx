@@ -225,11 +225,14 @@ export const FigTreeEditor = ({
 }
 
 // json-edit-react props the editor sets, which a host can override. They
-// change only how the tree looks.
+// change how the tree looks and where a click collapses it.
 const editorDefaults = {
   showArrayIndexes: false,
   indent: 2,
   stringTruncateLength: 100,
+  // A collection's left edge doesn't collapse it, so a node's toolbar, which
+  // can wrap onto that edge, gets every click
+  collapseClickZones: ['header'],
 } satisfies Partial<JsonEditorProps>
 
 const DEFAULT_COLLAPSE = 2

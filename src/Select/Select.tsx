@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { type OptionGroup, type SelectOption, type SelectProps } from './types'
+import { Icon } from '../Icons'
 import { strings } from '../strings'
 import { DropdownMenu, type MenuGroup, type MenuEntry } from './Menu'
 
@@ -27,6 +28,10 @@ export function Select<T>({
   const searchInputRef = useRef<HTMLInputElement>(null)
   const optionsRef = useRef<HTMLDivElement>(null)
   const currentSelectionRef = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLDivElement>(null)
+  // The closed trigger's width, which the open field keeps, so the controls
+  // beside it don't move. A list that starts open has none to keep.
+  const [openWidth, setOpenWidth] = useState<number | undefined>(undefined)
 
   const groups = visibleGroups(optionGroups ?? [{ label: '', options }], searchText, !optionGroups)
   const entries = groups.flatMap((group) => group.entries)
@@ -69,6 +74,8 @@ export function Select<T>({
   }, [highlightedIndex])
 
   const handleOpen = () => {
+    const width = triggerRef.current?.getBoundingClientRect().width
+    setOpenWidth(width === 0 ? undefined : width)
     setOpen(true)
     setHighlightedIndex(indexOf(highlighted))
   }
@@ -139,6 +146,14 @@ export function Select<T>({
   const selectedLabel = allOptions(optionGroups, options).find(
     (option) => option.value === selected
   )?.label
+  const label = selectedLabel ?? selected
+
+  // A label too long for the trigger ends in "…", so its whole text shows on
+  // hover
+  const titleIfCut = (e: React.MouseEvent<HTMLDivElement>) => {
+    const text = e.currentTarget.querySelector<HTMLElement>('.ft-select-trigger-label')
+    e.currentTarget.title = text && text.scrollWidth > text.clientWidth ? (label ?? '') : ''
+  }
 
   // Some additional props for the input area when "search" is disabled
   const additionalInputProps = search
@@ -147,7 +162,6 @@ export function Select<T>({
         className: 'ft-select-input ft-select-placeholder',
         value: '',
         onChange: () => {},
-        style: { cursor: 'default' },
       }
 
   return (
@@ -155,14 +169,19 @@ export function Select<T>({
       <div className="ft-select-select-wrapper">
         {!open ? (
           <div
+            ref={triggerRef}
             className="ft-select-trigger ft-select-input"
             onClick={handleOpen}
             onKeyDown={handleTriggerKeyDown}
+            onMouseEnter={titleIfCut}
             tabIndex={0}
           >
-            {selectedLabel ?? selected ?? (
-              <span className="ft-select-placeholder">{placeholder}</span>
-            )}
+            <span className="ft-select-trigger-label">
+              {label ?? <span className="ft-select-placeholder">{placeholder}</span>}
+            </span>
+            <span className="ft-select-chevron" aria-hidden="true">
+              <Icon name="collection" scale={0.7} />
+            </span>
           </div>
         ) : (
           <>
@@ -175,6 +194,7 @@ export function Select<T>({
               onChange={(e) => handleSearch(e.target.value)}
               onKeyDown={handleKeyDown}
               {...additionalInputProps}
+              style={{ width: openWidth, ...(search ? {} : { cursor: 'default' }) }}
             />
             <DropdownMenu
               optionsRef={optionsRef}

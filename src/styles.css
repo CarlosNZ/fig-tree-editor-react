@@ -8,7 +8,6 @@
 
 /* Select component */
 .ft-select-container {
-  width: clamp(6em, 10em, 13em);
   font-size: 0.8em;
 }
 
@@ -16,13 +15,33 @@
   position: relative;
 }
 
+/* The closed trigger is as wide as its label on one line, within bounds that
+   fit every core operator's display name; a longer one ends in "…". The chevron
+   marks it as a list. */
 .ft-select-trigger {
+  width: max-content;
+  min-width: 6em;
+  max-width: 18.5em;
+  gap: 0.5em;
   cursor: pointer;
+}
+
+.ft-select-trigger-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ft-select-chevron {
+  display: flex;
+  flex-shrink: 0;
+  color: #718096;
 }
 
 .ft-select-input,
 input.ft-select-input {
-  width: clamp(6em, 10em, 13em);
   min-height: 2.4em;
   padding: 0.5em;
   border: 1px solid #ccc !important;
@@ -32,6 +51,12 @@ input.ft-select-input {
   display: flex;
   justify-content: flex-start;
   align-items: center;
+}
+
+/* The open field keeps the closed trigger's width, set inline, and a list
+   that starts open takes this one */
+input.ft-select-input {
+  width: 10em;
 }
 
 input.ft-select-input::placeholder {
@@ -362,6 +387,26 @@ input.ft-select-input::placeholder {
   display: flex;
   align-items: center;
   gap: 0.4em;
+}
+
+/* The operator or fragment picker gives up width before anything wraps: it
+   starts from its minimum, so the toolbar only wraps when that doesn't fit,
+   and grows to its label where there's room, ending the label in "…" where
+   there isn't. The other controls keep their full width. */
+.ft-toolbar .ft-operator-picker,
+.ft-toolbar .ft-fragment-picker {
+  flex: 1 1 6em;
+  min-width: 6em;
+  max-width: max-content;
+}
+
+.ft-toolbar .ft-operator-picker .ft-select-trigger,
+.ft-toolbar .ft-fragment-picker .ft-select-trigger {
+  width: 100%;
+}
+
+.ft-toolbar > *:not(.ft-operator-picker):not(.ft-fragment-picker) {
+  flex-shrink: 0;
 }
 
 /* The node-type switch and the colon after it, before the picker */

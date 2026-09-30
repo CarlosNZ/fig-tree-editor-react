@@ -252,7 +252,7 @@ describe('the fragment call', () => {
   describe('the fragment picker', () => {
     const openPicker = async (user: ReturnType<typeof userEvent.setup>, current: string) => {
       await user.click(pencil())
-      await user.click(screen.getByText(current, { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText(current, { selector: '.ft-select-trigger-label' }))
     }
 
     it('lists the fragments in order, by display name, with their descriptions', async () => {
@@ -278,7 +278,7 @@ describe('the fragment call', () => {
         fallback: 'x',
       })
       expect(toolbar(container)).toBeInTheDocument()
-      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger-label' }))
       await user.keyboard('today{Enter}')
       expect(latest(written)).toEqual({ fragment: 'today', fallback: 'x' })
     })
@@ -287,7 +287,7 @@ describe('the fragment call', () => {
       const { written, user } = host({ fragment: 'greet', parameters: { name: 'Ada' } })
       await openPicker(user, 'greet')
       await user.keyboard('today{Enter}')
-      await user.click(screen.getByText('today', { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText('today', { selector: '.ft-select-trigger-label' }))
       await user.keyboard('capital{Enter}')
       await user.click(screen.getByRole('button', { name: 'Cancel' }))
       expect(latest(written)).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
@@ -314,7 +314,7 @@ describe('the fragment call', () => {
         value: { fragment: 'greet', parameters: { name: 'Ada' } },
       })
       await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
-      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger-label' }))
       expect(screen.getByText('Not valid here')).toBeInTheDocument()
       await user.click(screen.getByText('today'))
       expect(written).toEqual([])
@@ -412,7 +412,7 @@ describe('the fragment call', () => {
       pencilIndex = 0
     ) => {
       await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[pencilIndex])
-      await user.click(screen.getByText(from, { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText(from, { selector: '.ft-select-trigger-label' }))
       await user.click(screen.getByText(to, { selector: '.ft-select-option-title' }))
     }
 
@@ -466,7 +466,7 @@ describe('the fragment call', () => {
         { figTree: onlyToday }
       )
       await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
-      await user.click(screen.getByText('Operator', { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText('Operator', { selector: '.ft-select-trigger-label' }))
       const options = [...document.querySelectorAll('.ft-select-option-title')].map(
         (option) => option.textContent
       )
