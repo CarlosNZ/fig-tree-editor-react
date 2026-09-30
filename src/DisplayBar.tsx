@@ -32,7 +32,7 @@ export const DisplayBar = ({ name, display, broken, editorTheme, onEdit }: Displ
           <button
             type="button"
             className="ft-edit-button"
-            onClick={onEdit}
+            onClick={() => onEdit()}
             aria-label={strings.FT_OPEN_TOOLBAR}
           >
             <Icon name="edit" style={{ color: 'rgb(42, 161, 152)' }} />

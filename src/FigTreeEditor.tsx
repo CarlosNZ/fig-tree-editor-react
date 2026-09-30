@@ -1,15 +1,16 @@
-import { useEffect, useInsertionEffect, useMemo } from 'react'
+import { useEffect, useInsertionEffect, useMemo, useRef } from 'react'
 import {
   JsonEditor,
   type CustomTextDefinitions,
   type DefaultValueFunction,
   type JsonEditorProps,
   type NewKeyOptionsFunction,
+  type TypeFilterFunction,
 } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
 import { classify, rowAt, type Classification } from './classify'
-import { customNodeDefinitions } from './customNodeDefinitions'
+import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
   buildDisplayData,
   type CategoryHintsProp,
@@ -18,11 +19,13 @@ import {
 } from './displayData'
 import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
+import { type DefaultOperators } from './getStartingNode'
 import { getStartingElement } from './getStartingValue'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
-import { displayPath } from './paths'
+import { displayPath, valueAt } from './paths'
 import { strings } from './strings'
+import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
 
 // Expressions are typed `unknown`, as fig-tree's own methods take them: any
@@ -53,12 +56,14 @@ export interface FigTreeEditorProps extends Omit<
   operatorHints?: OperatorHintsProp
   categoryHints?: CategoryHintsProp
   editorTheme?: Partial<EditorTheme>
+  defaultOperators?: DefaultOperators
 }
 
 export const FigTreeEditor = ({
   figTree,
   expression,
   setExpression,
+  defaultOperators,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -83,6 +88,8 @@ export const FigTreeEditor = ({
     buildDisplayData({ operators, fragments, operatorHints, categoryHints })
   )
   const mergedEditorTheme = useStableValue(mergeEditorTheme(editorTheme))
+  const stableDefaultOperators = useStableValue(defaultOperators)
+  const created = useRef<CreatedNode | null>(null)
 
   // An expression, filled in and tidied (the fill-in step). The issues are
   // the ones `fillAndTidy`'s typo guard reads.
@@ -117,8 +124,10 @@ export const FigTreeEditor = ({
         displayData,
         issues: issueIndex,
         editorTheme: mergedEditorTheme,
+        defaultOperators: stableDefaultOperators,
+        created,
       }),
-    [figTree, classification, displayData, issueIndex, mergedEditorTheme]
+    [figTree, classification, displayData, issueIndex, mergedEditorTheme, stableDefaultOperators]
   )
 
   // Memoised on what the definitions are: json-edit-react passes both to every
@@ -128,6 +137,15 @@ export const FigTreeEditor = ({
     [figTree, classification, displayData]
   )
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
+  const allowTypeSelection = useMemo(() => typesFor(classification), [classification])
+
+  // A node the type dropdown created is marked for this commit only: where
+  // the commit doesn't carry it, the host's `onUpdate` rejected it
+  const commit = (data: unknown) => {
+    const mark = created.current
+    if (mark && valueAt(data, mark.path) !== mark.node) created.current = null
+    setExpression(fill(data))
+  }
 
   const layeredTheme = useMemo(
     () =>
@@ -154,8 +172,9 @@ export const FigTreeEditor = ({
         customNodeDefinitions={definitions}
         defaultValue={defaultValue}
         newKeyOptions={newKeyOptions}
+        allowTypeSelection={allowTypeSelection}
         data={shown}
-        setData={(data) => setExpression(fill(data))}
+        setData={commit}
       />
       {issues.length > 0 && <IssueList issues={issues} />}
     </>
@@ -199,6 +218,12 @@ const newKeys =
     })
     return keys && [...keys.parameters, ...keys.modifiers].map(({ key }) => key)
   }
+
+// Each value row's type dropdown, from its slot
+const typesFor =
+  (classification: Classification) =>
+  ({ path, value, fullData }: Parameters<TypeFilterFunction>[0]) =>
+    typeOptions(rowAt(classification, path), value, fullData)
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes")

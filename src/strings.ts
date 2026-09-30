@@ -22,6 +22,14 @@ export const strings = {
   FT_PICKER_TOGGLE_HINT: (name: string) => `⇄ select again to write as ${name}`,
   FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 
+  // The type dropdown's own entries, which json-edit-react shows as they are
+  FT_TYPE_OPTION: 'Option', // a literal union's values
+  FT_TYPE_DATA: 'Data',
+  FT_TYPE_VARIABLE: 'Variable',
+  FT_TYPE_ELEMENT: 'Element',
+  FT_TYPE_PARAMETER: 'Parameter',
+  FT_TYPE_OPERATOR: 'Operator',
+
   // Adding parameters
   FT_ADD_PARAMETER: 'Add parameter',
   FT_ADD_GROUP_PARAMETERS: 'Parameters',

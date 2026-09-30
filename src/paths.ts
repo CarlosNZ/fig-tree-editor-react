@@ -13,3 +13,13 @@ export const displayPath = (path: Readonly<Path>) =>
       return index === 0 ? segment : `.${segment}`
     })
     .join('')
+
+// The value at a path, or undefined where there is none
+export const valueAt = (value: unknown, path: Readonly<Path>): unknown =>
+  path.reduce<unknown>(
+    (parent, key) =>
+      typeof parent === 'object' && parent !== null
+        ? (parent as Record<string | number, unknown>)[key]
+        : undefined,
+    value
+  )

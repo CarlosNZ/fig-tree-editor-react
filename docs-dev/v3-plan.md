@@ -307,6 +307,22 @@ Out of scope, though the DisplayBar and toolbar leave room for them: "Add parame
     - **The size budget** is 13.1 kB, the measured 12.5 kB plus about 5%.
   - **Likely refinement: hiding json-edit-react's ＋ on a full node** (Carl), where the toolbar's "Add parameter" offers the same list, so two controls do one job. Left for now. It would be the editor's `allowAdd` returning false on those rows (6.4), leaving ＋ where the toolbar can't reach: shorthand nodes, vars blocks, arrays and plain data.
 - **6.3 · The type dropdown.** `allowTypeSelection` from each row's slot, with the reference entries and Operator and Fragment where they fit (topic 4, "The type dropdown"). A new node's picker opens on it (topic 2, "Node lifecycle").
+  - **Settled before building** (agreed with Carl):
+    - **The Fragment entry moves to Phase 7,** with `defaultFragment`, the fragment call's component and its picker. Offered now, it would create a placeholder with no picker to open.
+    - **Choosing Data commits bare `'$data'`,** the design's fallback, until Phase 8 proves `editOnTypeSwitch` for the reference entries.
+    - **The reference entries are four named definitions,** Data, Variable, Element and Parameter, each with `showInTypeSelector` so a reference row shows its entry as its current type. They stay placeholders until Phase 8. Parameter is never offered while fragment-definition mode is parked; it names `$params` references.
+    - **A new node's picker opens through a mark** (v1's `justSwitchedTo`, as topic 2 has it): a ref in `Shared` that the Operator entry's `defaultValue` sets with the row's path, the node it returns and the value it replaces. The Operator mounting at that path takes it once and opens its toolbar with the picker open. `setData` keeps the mark only for the commit that carries that node (an identity check at the path), so a switch the host's `onUpdate` rejects leaves nothing behind.
+    - **✗ on a just-created node restores the value it replaced,** since its toolbar opens as part of creating it: the mark's replaced value is the toolbar's snapshot.
+    - **Comment lines keep the six standard types,** by the rule for rows without a slot. fig-tree takes any JSON value in `//`, so nothing they offer is an error. Phase 9 may take the selector off comments.
+  - Done.
+    - **The options** are `typeOptions(row, value, data)` in `src/typeOptions.ts`, with the reference entries' starting values in `referenceStart`, and the entries' names in `strings.ts`. A string a literal union's enum holds counts as that enum, so it isn't added again as `string`.
+    - **The definitions:** the operator definition is named Operator, with `getStartingNode` as its `defaultValue`. The four reference definitions keep `reference` as their definition in `componentProps`, so the placeholders and their labels are unchanged.
+    - **The editor** passes `allowTypeSelection`, memoised on the classification, and takes `defaultOperators`, kept stable by content. `DefaultOperators`, `OperatorDefault` and `SlotType` are exported.
+    - **The mark** is a ref of `CreatedNode` in `Shared`. `useNodeEditor`'s `openToolbar` takes the replaced value as its snapshot, and returns whether the toolbar opened on a new node, which `OperatorPicker`'s `startOpen` reads. The DisplayBar calls `onEdit()` with no arguments, so a click event never reaches it.
+    - **Found in the demo, which renders in StrictMode:** the hook reset its editor state whenever an effect saw the session closed, and StrictMode's second run of the effects on mount undid the toolbar a new node had just opened. It resets only on the change from open to closed. The toolbar tests in `test/Operator.test.tsx` now render in StrictMode, and fail without the fix.
+    - **Seen in the demo:** choosing Operator on the `if`'s `else` gives `{ operator: 'plus', values: [1, 2, 3] }` with the picker open on Plus and its search focused, and ✗ puts `'x'` back.
+    - **Tests:** `test/typeOptions.test.ts` has the design's examples table (less Fragment), the current type, and the reference starting values. `test/Operator.test.tsx` covers the options on a row, creating a node with its picker open, ✗ restoring the value, a host's `defaultOperators`, Data and Variable, and a rejected switch leaving no mark.
+    - **The size budget** is 14.4 kB, the measured 13.7 kB plus about 5%, now `getStartingNode` is bundled.
 - **6.4 · Guards.** Deleting, adding and renaming, including array constraints (topics 2 and 4). Dragging is disabled until J4 lands.
 - **6.5 · Parameter hover cards,** on every definition at a parameter row and the catch-all (topic 4, "Parameter metadata").
 
@@ -314,6 +330,7 @@ Out of scope, though the DisplayBar and toolbar leave room for them: "Add parame
 
 - The fragment call, static and dynamic, with `FragmentHints` display (topics 1, 3 and 6), and its broken state.
 - The fragment picker, `defaultFragment`, switching fragment, and the node-type switch between operator, fragment and value (topics 2 and 6).
+- The type dropdown's Fragment entry (moved from 6.3), offered only while a registered fragment can fit the slot, starting as `defaultFragment` (topic 4, "The type dropdown").
 - Fragment-definition mode stays parked (topic 6): nothing here depends on it.
 - **A cosmetic pass over the toolbar,** once it has all its controls (the operator and fragment pickers, "Add parameter" and the node-type switch), with Carl's style tweaks, held until then so the shared `Select` styles are tuned once. It includes the picker's text wrapping short of the space available: the option width comes from v1's `max-width: 20em` on options, the inline left padding in `Menu.tsx` and a dropdown sized to its content, so measure which of them causes it before changing any.
 

@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
 import { brokenIssue, issuesAt } from './attachIssues'
@@ -23,9 +24,18 @@ type OperatorKind = Extract<RowKind, { kind: 'operator' }>
 // while another is typed.
 export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
-  const { figTree, classification, displayData, issues, editorTheme } = componentProps!
-  const { editor, openToolbar, commit, confirm, revert } = useNodeEditor(props)
+  const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
+  const { editor, created: isNew, openToolbar, commit, confirm, revert } = useNodeEditor(props)
   const { path } = nodeData
+
+  // A node the type dropdown has just created opens on its picker, once
+  useEffect(() => {
+    const mark = created.current
+    if (!canEdit || mark === null || !samePath(mark.path, path)) return
+    created.current = null
+    openToolbar({ replaced: mark.replaced })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const row = rowAt(classification, path)
   const kind = row?.kind as OperatorKind
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
@@ -59,6 +69,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
             admits={row?.slot?.admits ?? 'any'}
             node={node}
             current={broken ? null : kind.operator}
+            startOpen={isNew}
             suggestion={
               broken?.code === 'unknown-operator' ? (broken.suggestion ?? undefined) : undefined
             }
@@ -74,10 +85,13 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           display={display}
           broken={broken}
           editorTheme={editorTheme}
-          onEdit={canEdit ? openToolbar : undefined}
+          onEdit={canEdit ? () => openToolbar() : undefined}
         />
       )}
       {withoutFilteredRows(children, classification, path)}
     </div>
   )
 }
+
+const samePath = (a: readonly unknown[], b: readonly unknown[]) =>
+  a.length === b.length && a.every((segment, index) => segment === b[index])

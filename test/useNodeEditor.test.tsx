@@ -29,7 +29,7 @@ const Node = (props: CustomComponentProps) => {
           <button onClick={revert}>Cancel</button>
         </div>
       ) : (
-        <button onClick={openToolbar}>Open toolbar</button>
+        <button onClick={() => openToolbar()}>Open toolbar</button>
       )}
       {props.children}
     </div>

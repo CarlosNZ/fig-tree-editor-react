@@ -33,14 +33,27 @@ export const useNodeEditor = ({
   handleKeyboard,
 }: SessionProps) => {
   const [mode, setMode] = useState<EditorMode>('json')
+  // Whether the toolbar opened on a node the type dropdown just created, so
+  // its picker opens with it
+  const [created, setCreated] = useState(false)
   const snapshot = useRef<JsonData>(value)
 
+  // Reset when the session closes: on the change from open to closed only,
+  // since an effect run again while it's still closed (StrictMode runs each
+  // twice on mount) would undo the toolbar a new node has just opened
+  const wasEditing = useRef(isEditing)
   useEffect(() => {
-    if (!isEditing) setMode('json')
+    if (wasEditing.current && !isEditing) {
+      setMode('json')
+      setCreated(false)
+    }
+    wasEditing.current = isEditing
   }, [isEditing])
 
-  const openToolbar = () => {
-    snapshot.current = value
+  // A new node's toolbar reverts to the value the node replaced
+  const openToolbar = (creation?: { replaced: JsonData }) => {
+    snapshot.current = creation ? creation.replaced : value
+    setCreated(creation !== undefined)
     setMode('toolbar')
     setIsEditing(true)
   }
@@ -68,5 +81,5 @@ export const useNodeEditor = ({
     handleKeyboard(event, { confirm, cancel: revert })
   })
 
-  return { editor: isEditing ? mode : null, openToolbar, commit, confirm, revert }
+  return { editor: isEditing ? mode : null, created, openToolbar, commit, confirm, revert }
 }

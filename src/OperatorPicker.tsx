@@ -6,8 +6,9 @@ import { strings } from './strings'
 import { switchOperator } from './switchOperator'
 
 // The toolbar's operator picker (design, topic 4, "The operator picker"). It
-// opens by itself only on a broken node, with the operator fig-tree suggests
-// highlighted, so the pencil then Enter repairs it. Choosing an operator
+// opens by itself on a broken node, with the operator fig-tree suggests
+// highlighted, so the pencil then Enter repairs it, and on a node the type
+// dropdown has just created, so typing filters at once. Choosing an operator
 // switches the node, and choosing the current one again toggles its spelling.
 
 interface OperatorPickerProps {
@@ -17,6 +18,7 @@ interface OperatorPickerProps {
   node: Record<string, unknown>
   current: string | null // the canonical operator; null on a broken node
   suggestion: string | undefined // an unknown operator's suggestion, perhaps an alias
+  startOpen: boolean // on a new node
   onSwitch: (next: Record<string, unknown>, target: string) => void
 }
 
@@ -27,6 +29,7 @@ export const OperatorPicker = ({
   node,
   current,
   suggestion,
+  startOpen,
   onSwitch,
 }: OperatorPickerProps) => {
   const operators = figTree.getOperators()
@@ -47,7 +50,7 @@ export const OperatorPicker = ({
       optionGroups={groups}
       selected={current}
       highlighted={suggested}
-      startOpen={current === null}
+      startOpen={startOpen || current === null}
       search
       border="group"
       placeholder={strings.FT_PICKER_PLACEHOLDER}

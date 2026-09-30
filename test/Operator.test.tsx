@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { useState, type ComponentProps } from 'react'
+import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
 import { figTree } from './fixtures'
@@ -20,8 +20,9 @@ const displayBar = (container: HTMLElement, index = 0) =>
   container.querySelectorAll<HTMLElement>('.ft-display-bar')[index]
 
 // A host holding the expression, so each commit comes back as the editor's
-// next expression
-const host = (initial: unknown) => {
+// next expression. In StrictMode, as a host in development renders it, which
+// runs each effect twice on mount.
+const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
   const written: unknown[] = []
   const Host = () => {
     const [expression, setExpression] = useState(initial)
@@ -34,10 +35,11 @@ const host = (initial: unknown) => {
           setExpression(next)
         }}
         collapse={false}
+        {...props}
       />
     )
   }
-  const { container } = render(<Host />)
+  const { container } = render(<Host />, { wrapper: StrictMode })
   return { container, written, user: userEvent.setup() }
 }
 const latest = (written: unknown[]) => written[written.length - 1]
@@ -327,6 +329,95 @@ describe('the operator node', () => {
       editor({ ...complete, vars: {} })
       fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
       expect(screen.queryByText('Add parameter')).toBeNull()
+    })
+  })
+
+  describe('creating a node from the type dropdown', () => {
+    // Opens the last value row's editor and chooses a type
+    const chooseType = async (user: ReturnType<typeof userEvent.setup>, type: string) => {
+      await user.click(screen.getAllByRole('button', { name: 'Edit' }).at(-1)!)
+      await user.selectOptions(screen.getByRole('combobox'), type)
+    }
+    const typeNames = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(screen.getAllByRole('button', { name: 'Edit' }).at(-1)!)
+      return [...screen.getByRole('combobox').querySelectorAll('option')].map(
+        ({ textContent }) => textContent
+      )
+    }
+
+    it("offers the row's slot's types", async () => {
+      const { user } = host({ operator: 'round', value: 3 })
+      expect(await typeNames(user)).toEqual(['number', 'null', 'Data', 'Operator'])
+    })
+
+    it("starts the slot's default operator, with its picker open", async () => {
+      const { container, written, user } = host({ operator: 'round', value: 3 })
+      await chooseType(user, 'Operator')
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: { operator: 'plus', values: [1, 2, 3] },
+      })
+      expect(container.querySelector('.ft-toolbar')).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/^Search operators/)).toHaveFocus()
+      await user.keyboard('multiply{Enter}')
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: { operator: 'multiply', values: [1, 2, 3] },
+      })
+    })
+
+    it('restores the value it replaced on ✗', async () => {
+      const { written, user } = host({ operator: 'round', value: 3 })
+      await chooseType(user, 'Operator')
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ operator: 'round', value: 3 })
+    })
+
+    it("starts the host's default operator", async () => {
+      const { written, user } = host(
+        { operator: 'round', value: 3 },
+        { defaultOperators: { number: '+' } }
+      )
+      await chooseType(user, 'Operator')
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: { operator: '+', values: [1, 2, 3] },
+      })
+    })
+
+    it('starts Data and Variable references', async () => {
+      const { written, user } = host({ operator: 'round', value: 3, vars: { price: 2 } })
+      await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+      await user.selectOptions(screen.getByRole('combobox'), 'Data')
+      expect(latest(written)).toMatchObject({ value: '$data' })
+      await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+      await user.selectOptions(screen.getByRole('combobox'), 'Variable')
+      expect(latest(written)).toMatchObject({ value: '$vars.price' })
+    })
+
+    it('leaves nothing to open a picker later when the host rejects the switch', async () => {
+      let reject = true
+      const { container, written, user } = host(
+        { operator: 'round', value: 3 },
+        { onUpdate: () => (reject ? false : undefined) }
+      )
+      await chooseType(user, 'Operator')
+      expect(written).toEqual([])
+      reject = false
+      await user.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: JSON.stringify({ operator: 'round', value: { $plus: [1] } }) },
+      })
+      await user.click(screen.getByRole('button', { name: 'OK' }))
+      await user.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: {
+          value: JSON.stringify({ operator: 'round', value: { operator: 'plus', values: [1] } }),
+        },
+      })
+      await user.click(screen.getByRole('button', { name: 'OK' }))
+      expect(latest(written)).toMatchObject({ value: { operator: 'plus' } })
+      expect(container.querySelector('.ft-toolbar')).toBeNull()
     })
   })
 })

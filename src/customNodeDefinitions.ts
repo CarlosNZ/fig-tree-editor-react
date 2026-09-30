@@ -4,13 +4,17 @@ import {
   type NodeData,
 } from 'json-edit-react'
 import { type FC } from 'react'
-import { type FigTree } from 'fig-tree-evaluator'
+import { type FigTree, type ReferenceNamespace } from 'fig-tree-evaluator'
 import { type IssueIndex } from './attachIssues'
 import { rowAt, type Classification, type Row } from './classify'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
+import { getStartingNode, type DefaultOperators } from './getStartingNode'
 import { Operator } from './Operator'
+import { type Path } from './paths'
 import { Placeholder } from './Placeholder'
+import { strings } from './strings'
+import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
 
 // The editor's custom node definitions (design, topic 1, "Node shapes and
 // their definitions"; docs-dev/v3-node-anatomy.md), in first-match order:
@@ -29,6 +33,16 @@ export interface Shared {
   displayData: DisplayData
   issues: IssueIndex // by the row each shows on
   editorTheme: EditorTheme // merged over the defaults
+  defaultOperators: DefaultOperators | undefined
+  // The node the type dropdown has just created, which its component opens
+  // its picker on (design, topic 2, "Node lifecycle")
+  created: { current: CreatedNode | null }
+}
+
+export interface CreatedNode {
+  path: Path
+  node: object // as the dropdown committed it, before the fill-in step
+  replaced: unknown // the value it replaced, which ✗ restores
 }
 
 export type DefinitionName =
@@ -97,6 +111,46 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
 
   const isComment = matches(isKind('comment'))
 
+  // The type dropdown's Operator entry: the slot's default operator, marked
+  // so the node's picker opens on it
+  const startOperator = (nodeData: NodeData) => {
+    const row = rowAt(shared.classification, nodeData.path)
+    const node = getStartingNode(row?.slot?.admits ?? 'any', {
+      operators: shared.figTree.getOperators(),
+      displayData: shared.displayData,
+      defaultOperators: shared.defaultOperators,
+    })
+    shared.created.current = { path: nodeData.path, node, replaced: nodeData.value }
+    return node
+  }
+
+  // One named definition per reference entry, so a reference row shows its
+  // entry as its type (topic 4, "The type dropdown"). Parameter, for
+  // `$params`, is never offered while fragment-definition mode is parked.
+  const referenceEntry = (
+    namespaces: ReferenceNamespace[],
+    start: 'data' | 'vars' | 'element' | undefined
+  ) =>
+    unlabelledVariants(
+      definition(
+        'reference',
+        matches(({ kind }) => kind?.kind === 'reference' && namespaces.includes(kind.namespace)),
+        {
+          name: REFERENCE_ENTRIES[namespaces[0]],
+          showInTypeSelector: true,
+          passOriginalNode: true,
+          defaultValue: (nodeData: NodeData) =>
+            start === undefined
+              ? nodeData.value
+              : referenceStart(
+                  start,
+                  rowAt(shared.classification, nodeData.path),
+                  nodeData.fullData
+                ),
+        }
+      )
+    )
+
   return [
     // A full node owns both its editors: every edit session renders the
     // component, which shows json-edit-react's raw-JSON editor as
@@ -106,6 +160,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       definition('operator', matches(isKind('operator', 'full')), {
         showOnEdit: true,
         passOriginalNode: true,
+        name: strings.FT_TYPE_OPERATOR,
+        defaultValue: startOperator,
       })
     ),
     ...unlabelledVariants(definition('fragment', matches(isKind('fragment', 'full')))),
@@ -118,9 +174,10 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       )
     ),
     ...unlabelledVariants(definition('literal', matches(isKind('literal')))),
-    ...unlabelledVariants(
-      definition('reference', matches(isKind('reference')), { passOriginalNode: true })
-    ),
+    ...referenceEntry(['data'], 'data'),
+    ...referenceEntry(['vars'], 'vars'),
+    ...referenceEntry(['element', 'index'], 'element'),
+    ...referenceEntry(['params'], undefined),
     // Only the root's gets the bare Evaluate button, for now (topic 3)
     definition(
       'container',
