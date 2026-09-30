@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -159,6 +159,19 @@ describe('the fragment call', () => {
       editor(expression, { collapse: 3 })
       expect(collapsed('Operator: upper')).toBe(false)
       expect(collapsed('Operator: abs')).toBe(false)
+    })
+
+    it('keeps its arguments open after a collapse-all and a plain reopen', async () => {
+      editor({ call: { fragment: 'greet', parameters: { name: 'Ada' }, fallback: 'x' } })
+      const chevron = () =>
+        keyLabel('call').closest('.jer-collection-header-row')!.querySelector('.jer-collapse-icon')!
+      const settle = () => act(() => new Promise((resolve) => setTimeout(resolve, 400)))
+      fireEvent.click(chevron(), { altKey: true })
+      await settle()
+      fireEvent.click(chevron())
+      await settle()
+      const inner = keyLabel('name').closest<HTMLElement>('.jer-collection-inner')!
+      expect(inner.style.maxHeight).toBe('')
     })
 
     it("follows a host's collapse filter, apart from the arguments' row", () => {

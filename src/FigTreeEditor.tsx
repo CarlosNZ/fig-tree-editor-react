@@ -234,23 +234,21 @@ const editorDefaults = {
 
 const DEFAULT_COLLAPSE = 2
 
-// The host's `collapse`, with the flattened payloads left open: they have no
-// chevron to open them by, and they show as their node's own rows, so a
-// numeric `collapse` counts levels as drawn, without them (design, topic 1,
-// "Flattened payloads and unlabelled rows"). A flattened row that starts
-// collapsed would render nothing, then unfold as its node opens
-// (json-edit-react#415, J11).
+// A numeric `collapse` counts levels as drawn (design, topic 1, "Flattened
+// payloads and unlabelled rows"): a flattened payload's rows show as its
+// node's own, so its row isn't a level, and a fragment call's arguments
+// collapse where an operator's parameters do. json-edit-react never collapses
+// the flattened row itself, which has no collection wrapper. A boolean or a
+// host's filter applies as it is.
 const combineCollapse = (
   host: boolean | number | FilterFunction,
   classification: { current: Classification }
-): FilterFunction => {
+): boolean | FilterFunction => {
+  if (typeof host !== 'number') return host
   const flattened = (path: Path) => rowAt(classification.current, path)?.payload === 'flattened'
-  return (nodeData) => {
-    if (flattened(nodeData.path)) return false
-    if (typeof host === 'boolean') return host
-    if (typeof host === 'function') return host(nodeData)
-    const hidden = nodeData.path.filter((_, index) => flattened(nodeData.path.slice(0, index)))
-    return nodeData.level - hidden.length >= host
+  return ({ path, level }) => {
+    const hidden = path.filter((_, index) => flattened(path.slice(0, index)))
+    return level - hidden.length >= host
   }
 }
 

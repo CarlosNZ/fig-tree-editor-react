@@ -40,7 +40,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J8  | json-edit-react    | Open an object's add-key input from the editor handle                      | Dropped  | Not filed                                                         | —               |
 | J9  | json-edit-react    | Reveal a row from the editor handle                                        | Maybe    | Not filed                                                         | —               |
 | J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
-| J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | —               |
+| J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
 
 ---
 
@@ -383,6 +383,8 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Why.** The flattened payload (plan, 7.1) is such a row: a fragment call's static `parameters` and a shorthand's named payload. Under the demo's `collapse: 2`, a fragment call's arguments at level 2 didn't show, and where they did, they unfolded with their own animation as the call opened.
 
-**Without it.** The editor wraps the host's `collapse` so flattened rows never match (plan, 7.2), which covers the first render and the animation. It can't cover a collapse broadcast: modifier-clicking an ancestor's chevron collapses the flattened row with the rest, animating its `maxHeight` to 0, and a plain click on the ancestor then leaves it at 0, so its rows overlap the ones after it until a modifier-click expands everything again. Added to the issue as a comment.
+**Without it.** The editor wrapped the host's `collapse` so flattened rows never matched (plan, 7.2), which covered the first render and the animation. It couldn't cover a collapse broadcast: modifier-clicking an ancestor's chevron collapsed the flattened row with the rest, animating its `maxHeight` to 0, and a plain click on the ancestor then left it at 0, so its rows overlapped the ones after it until a modifier-click expanded everything again. Added to the issue as a comment.
+
+**Shipped** in json-edit-react 2.0.2 ([#416](https://github.com/CarlosNZ/json-edit-react/pull/416)). A row without the wrapper skips the `collapse` filter in `startCollapsed` and in the filter's effect, ignores collapse broadcasts, and ignores its click zones, and a collapsed row whose definition drops the wrapper reopens. The editor's `collapse` wrapper no longer keeps flattened rows open itself; it only counts a numeric `collapse` by levels as drawn. `test/Fragment.test.tsx` checks arguments under `collapse: 2` and after a collapse-all then a plain reopen.
 
 **Issue.** Filed as [#415](https://github.com/CarlosNZ/json-edit-react/issues/415).
