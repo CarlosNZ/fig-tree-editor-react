@@ -1,17 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { buildDisplayData } from '../src/displayData'
 import { fillAndTidy } from '../src/fillAndTidy'
-import { type Path } from '../src/paths'
 import { demoExpressions, figTree, registry } from './fixtures'
 
 const displayData = buildDisplayData(registry)
-const run = (expression: unknown, clean?: Path) =>
-  fillAndTidy(
-    expression,
-    { ...registry, displayData, issues: figTree.validate(expression).issues },
-    { clean }
-  )
-const tidied = (expression: unknown, clean?: Path) => run(expression, clean).expression
+const run = (expression: unknown) =>
+  fillAndTidy(expression, { ...registry, displayData, issues: figTree.validate(expression).issues })
+const tidied = (expression: unknown) => run(expression).expression
 const keys = (value: unknown) => Object.keys(value as object)
 
 const THEN = 'The condition is true' // `if.then`'s seed
@@ -154,29 +149,9 @@ describe('fillAndTidy', () => {
     })
   })
 
-  describe('cleaning', () => {
-    it('removes what the node at the path does not declare, keeping modifiers', () => {
-      const switched = { operator: 'upper', value: 'x', decimals: 2, thn: 1, fallback: null }
-      expect(tidied(switched, [])).toEqual({ operator: 'upper', value: 'x', fallback: null })
-      expect(tidied(switched)).toBe(switched)
-    })
-
-    it('cleans only that node', () => {
-      const expression = {
-        a: { operator: 'upper', value: 'x', extra: 1 },
-        b: { operator: 'upper', value: 'y', extra: 2 },
-      }
-      expect(tidied(expression, ['a'])).toEqual({
-        a: { operator: 'upper', value: 'x' },
-        b: { operator: 'upper', value: 'y', extra: 2 },
-      })
-    })
-
-    it("removes a fragment call's undeclared arguments and useCache", () => {
-      expect(
-        tidied({ fragment: 'greet', parameters: { name: 'Ada', extra: 1 }, useCache: true }, [])
-      ).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
-    })
+  it("removes nothing, which is cleanNode's", () => {
+    const switched = { operator: 'upper', value: 'x', decimals: 2, thn: 1, fallback: null }
+    expect(tidied(switched)).toBe(switched)
   })
 
   describe('identity', () => {

@@ -1,132 +1,95 @@
 import React from 'react'
 import { strings } from '../strings'
-import { type OptionGroup, type SelectOption } from './types'
+import { type SelectOption } from './types'
 
-interface CommonMenuProps<T> {
-  handleSelect: (option: SelectOption<T>) => void
-  border?: 'group' | 'all'
+// An option shown in the list, with its index in display order
+export interface MenuEntry<T> {
+  option: SelectOption<T>
+  index: number
 }
 
-interface DropdownMenuProps<T> extends CommonMenuProps<T> {
+// A heading, where the options are grouped, over the options it shows
+export interface MenuGroup<T> {
+  label?: string
+  description?: string
+  entries: MenuEntry<T>[]
+}
+
+interface DropdownMenuProps<T> {
   currentSelectionRef: React.RefObject<HTMLDivElement>
   optionsRef: React.RefObject<HTMLDivElement>
-  optionGroups?: OptionGroup<T>[]
-  options: SelectOption<T>[]
+  groups: MenuGroup<T>[]
   selected: string | null
+  handleSelect: (option: SelectOption<T>) => void
   highlightedIndex: number
+  border?: 'group' | 'all'
   search: boolean
 }
 
 export function DropdownMenu<T>({
   optionsRef,
   currentSelectionRef,
-  optionGroups,
-  options,
+  groups,
   selected,
   handleSelect,
   highlightedIndex,
   border,
   search,
 }: DropdownMenuProps<T>) {
-  const allVisibleOptions = optionGroups
-    ? optionGroups.flatMap((group) => group.options)
-    : optionGroups
-
   return (
     <div ref={optionsRef} className="ft-select-dropdown">
-      {allVisibleOptions?.length === 0 && (
+      {groups.length === 0 && (
         <div className={`ft-select-option ft-select-no-options`} tabIndex={0}>
           {strings.FT_SELECT_NO_RESULTS}
         </div>
       )}
-      {optionGroups
-        ? optionGroups.map((group, groupIndex) => (
-            <DropdownOptionGroup
-              key={group.label}
-              group={group}
-              handleSelect={handleSelect}
-              border={border}
-              isSelected={group.value === selected}
-              isHighlighted={highlightedIndex === groupIndex}
-              currentSelectionRef={group.value === selected ? currentSelectionRef : undefined}
+      {groups.map((group, groupIndex) => (
+        <div key={group.label ?? groupIndex}>
+          {group.label !== undefined && (
+            <div
+              className={`ft-select-group-label${
+                border === 'group' || border === 'all' ? ' ft-option-border' : ''
+              }`}
             >
-              {group.options.map((option, optionIndex) => (
-                <DropdownOption
-                  key={option.label}
-                  option={option}
-                  handleSelect={handleSelect}
-                  border={border}
-                  isSelected={option.value === selected}
-                  isHighlighted={highlightedIndex === optionIndex}
-                  currentSelectionRef={option.value === selected ? currentSelectionRef : undefined}
-                  index={optionIndex}
-                  search={search}
-                />
-              ))}
-            </DropdownOptionGroup>
-          ))
-        : options.map((option, index) => (
-            <DropdownOption
-              key={option.label}
-              option={option}
-              handleSelect={handleSelect}
-              border={border}
-              isSelected={option.value === selected || option.label === selected}
-              isHighlighted={highlightedIndex === index}
-              currentSelectionRef={currentSelectionRef}
-              index={index}
-              search={search}
-            />
-          ))}
+              <div className="ft-select-option-title">{group.label}</div>
+              {group.description && (
+                <div className="ft-select-option-description">{group.description}</div>
+              )}
+            </div>
+          )}
+          {group.entries.map(({ option, index }) => {
+            const isSelected = option.value === selected
+            return (
+              <DropdownOption
+                key={index}
+                option={option}
+                handleSelect={handleSelect}
+                border={border}
+                isSelected={isSelected}
+                isHighlighted={index === highlightedIndex}
+                currentSelectionRef={isSelected ? currentSelectionRef : undefined}
+                index={index}
+                search={search}
+              />
+            )
+          })}
+        </div>
+      ))}
     </div>
   )
 }
 
-interface CommonOptionProps<T> extends CommonMenuProps<T> {
+interface OptionProps<T> {
+  option: SelectOption<T>
+  handleSelect: (option: SelectOption<T>) => void
+  border?: 'group' | 'all'
   isSelected: boolean
   isHighlighted: boolean
   currentSelectionRef: React.RefObject<HTMLDivElement> | undefined
-}
-
-interface GroupProps<T> extends CommonOptionProps<T> {
-  children: React.ReactNode
-  group: OptionGroup<T>
-}
-function DropdownOptionGroup<T>({
-  children,
-  group,
-  handleSelect,
-  isSelected,
-  isHighlighted,
-  border,
-  currentSelectionRef,
-}: GroupProps<T>) {
-  return (
-    <div>
-      <div
-        ref={currentSelectionRef}
-        className={`ft-select-group-label ${
-          isHighlighted || isSelected ? 'ft-select-highlighted' : ''
-        }${isSelected ? ' ft-select-selected' : ''}${
-          border === 'group' || border === 'all' ? ' ft-option-border' : ''
-        }`}
-        onClick={() => handleSelect(group)}
-      >
-        <div className="ft-select-option-title">{group.label}</div>
-        {group.description && (
-          <div className="ft-select-option-description">{group.description}</div>
-        )}
-      </div>
-      {children}
-    </div>
-  )
-}
-
-interface OptionProps<T> extends CommonOptionProps<T> {
-  option: SelectOption<T>
   index: number
   search: boolean
 }
+
 function DropdownOption<T>({
   option,
   handleSelect,
@@ -142,13 +105,19 @@ function DropdownOption<T>({
       ref={currentSelectionRef}
       className={`ft-select-option${isHighlighted ? ' ft-select-highlighted' : ''}${
         isSelected ? ' ft-select-selected' : ''
-      }${border === 'all' ? ' ft-option-border' : ''}`}
+      }${option.disabled ? ' ft-select-disabled' : ''}${border === 'all' ? ' ft-option-border' : ''}`}
       onClick={() => handleSelect(option)}
+      // A click on a disabled option leaves focus in the search field
+      onMouseDown={option.disabled ? (e) => e.preventDefault() : undefined}
       data-index={index}
-      tabIndex={0}
+      aria-disabled={option.disabled ? true : undefined}
+      tabIndex={option.disabled ? undefined : 0}
       style={search ? { paddingLeft: '1.5em' } : { padding: '0.5em 0.75em' }}
     >
-      <div className="ft-select-option-title">{option.label}</div>
+      <div className="ft-select-option-title">
+        {option.label}
+        {option.hint && <span className="ft-select-option-hint">{option.hint}</span>}
+      </div>
       {option.description && (
         <div className="ft-select-option-description">{option.description}</div>
       )}

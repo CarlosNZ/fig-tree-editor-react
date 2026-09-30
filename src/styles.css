@@ -85,13 +85,30 @@ input.ft-select-input::placeholder {
 }
 
 .ft-select-option:hover,
-.ft-select-group-label:hover,
 .ft-select-highlighted {
   background-color: #dce4f5;
   color: unset;
 }
 
+/* Shown and found by search, but not chosen: "Not valid here" */
+.ft-select-option.ft-select-disabled {
+  color: #9a9a9a;
+  background-color: transparent;
+  cursor: not-allowed;
+}
+
 .ft-select-option-title {
+}
+
+.ft-select-option-hint {
+  margin-left: 0.6em;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #5a6aa8;
+}
+
+.ft-select-selected .ft-select-option-hint {
+  color: #ffd24d;
 }
 
 .ft-select-option-description {

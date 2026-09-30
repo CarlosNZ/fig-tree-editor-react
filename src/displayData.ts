@@ -10,6 +10,7 @@ import {
   categoryHints as coreCategoryHints,
   operatorHints as coreOperatorHints,
 } from 'fig-tree-evaluator/editor-hints'
+import { strings } from './strings'
 
 // How operators, categories and fragments are shown: names, links, colours,
 // and the seeds the starting-value rule reads. Layered, lowest first:
@@ -22,7 +23,7 @@ export type CategoryHintsProp = { [category in OperatorCategory]?: Partial<Categ
 
 export interface OperatorDisplay {
   displayName: string
-  description?: string // the definition's own; `literal` has none
+  description?: string // the definition's own, and the editor's for `literal`
   docUrl?: string
   backgroundColor: string
   textColor: string
@@ -58,7 +59,7 @@ interface Registry {
 const LITERAL = {
   name: 'literal',
   category: 'data' as const,
-  description: undefined,
+  description: strings.FT_LITERAL_DESCRIPTION,
   metadata: undefined,
 }
 

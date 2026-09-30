@@ -45,10 +45,11 @@ export const useNodeEditor = ({
     setIsEditing(true)
   }
 
-  // A toolbar action's change
-  const commit = (next: JsonData) => {
+  // A toolbar action's change. One that hands the row to another component,
+  // which can't carry the toolbar on, closes the session instead.
+  const commit = (next: JsonData, { close = false } = {}) => {
     setValue(next)
-    setIsEditing(true)
+    if (!close) setIsEditing(true)
   }
 
   // The raw-JSON buffer is untouched while the toolbar is open, so this

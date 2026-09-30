@@ -4,7 +4,7 @@ import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
-import { strings } from './strings'
+import { OperatorPicker } from './OperatorPicker'
 import { Toolbar } from './Toolbar'
 import { useNodeEditor } from './useNodeEditor'
 
@@ -20,12 +20,14 @@ type OperatorKind = Extract<RowKind, { kind: 'operator' }>
 // operator is in the JSON, so a header above it would show the saved one
 // while another is typed.
 export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
-  const { componentProps, nodeData, children, originalNode, canEdit, editConfirmRef } = props
-  const { classification, displayData, issues, editorTheme } = componentProps!
-  const { editor, openToolbar, confirm, revert } = useNodeEditor(props)
+  const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
+  const { figTree, classification, displayData, issues, editorTheme } = componentProps!
+  const { editor, openToolbar, commit, confirm, revert } = useNodeEditor(props)
   const { path } = nodeData
-  const kind = rowAt(classification, path)?.kind as OperatorKind
+  const row = rowAt(classification, path)
+  const kind = row?.kind as OperatorKind
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
+  const broken = brokenIssue(issuesAt(issues, path))
 
   if (editor === 'json') return <div className="ft-node">{originalNode}</div>
 
@@ -33,14 +35,25 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     <div className="ft-node">
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
-          {/* TO-DO: the operator picker, in place of the name (5.3) */}
-          <span className="ft-name">{kind.name ?? strings.FT_INVALID_NODE}</span>
+          <OperatorPicker
+            figTree={figTree}
+            displayData={displayData}
+            admits={row?.slot?.admits ?? 'any'}
+            node={value as Record<string, unknown>}
+            current={broken ? null : kind.operator}
+            suggestion={
+              broken?.code === 'unknown-operator' ? (broken.suggestion ?? undefined) : undefined
+            }
+            // A `literal` belongs to its own definition, so the toolbar
+            // can't carry on there
+            onSwitch={(next, target) => commit(next, { close: target === 'literal' })}
+          />
         </Toolbar>
       ) : (
         <DisplayBar
           name={kind.name}
           display={display}
-          broken={brokenIssue(issuesAt(issues, path))}
+          broken={broken}
           editorTheme={editorTheme}
           onEdit={canEdit ? openToolbar : undefined}
         />

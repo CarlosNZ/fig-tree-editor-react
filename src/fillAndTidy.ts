@@ -25,10 +25,9 @@ import { type Path } from './paths'
 //   `fragment`, the parameters (`positionalParams` first, then declared
 //   order), any unknown keys as written, `fallback` and `useCache`, and
 //   `vars` last. Plain objects, vars blocks and quoted content keep theirs.
-// - Clean, with `clean`: the node at that path loses the keys that don't
-//   belong to it. Only a switch of operator, fragment or node type, and a
-//   newly created node, pass it, since the editor only removes what it made
-//   obsolete.
+//
+// It removes nothing: a key that doesn't belong stays, for its diagnostic and
+// quick fixes. Cleaning is `cleanNode`'s, before a structural action commits.
 //
 // What it leaves unchanged comes back as the same object, the whole
 // expression included, so "nothing to do" is an identity check and
@@ -54,17 +53,12 @@ type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 // registers no declaration for it (design, topic 1, "Kinds")
 const LITERAL_VALUE: FragmentParameter = { type: 'any', required: true }
 
-export const fillAndTidy = (
-  expression: unknown,
-  context: FillContext,
-  { clean }: { clean?: Path } = {}
-): FillResult => {
+export const fillAndTidy = (expression: unknown, context: FillContext): FillResult => {
   const operators = new Map<string, OperatorInfo>()
   for (const operator of context.operators) operators.set(operator.name, operator)
   const fragments = new Map(context.fragments.map((fragment) => [fragment.name, fragment]))
   const classification = classify(expression, context)
   const filled: Path[] = []
-  const cleanAt = clean === undefined ? undefined : pathKey(clean)
 
   // The keys an unknown key's issue suggests, by the path of the object that
   // holds them
@@ -117,13 +111,7 @@ export const fillAndTidy = (
     operator: OperatorInfo | undefined
   ) => {
     if (operator === undefined) return node
-    let result = node
-    if (pathKey(path) === cleanAt)
-      result = pick(
-        result,
-        (key) => ['//', 'operator', ...MODIFIERS].includes(key) || key in operator.parameters
-      )
-    result = fillParameters(result, path, operator.parameters, seedsOf(operator.name))
+    const result = fillParameters(node, path, operator.parameters, seedsOf(operator.name))
     return order(result, ['//', 'operator'], parameterOrder(operator))
   }
 
@@ -159,20 +147,18 @@ export const fillAndTidy = (
     fragment: FragmentInfo | undefined
   ) => {
     let result = node
-    const cleaning = pathKey(path) === cleanAt
-    if (cleaning)
-      result = pick(result, (key) =>
-        ['//', 'fragment', 'parameters', 'fallback', 'vars'].includes(key)
-      )
     const parameters = result.parameters as Record<string, unknown> | undefined
     // A call without `parameters` has no arguments, and gains the map when
     // it needs one. Dynamic arguments are checked only at runtime.
     if (fragment !== undefined && (kind.arguments === 'static' || kind.arguments === 'none')) {
       const argumentsPath = [...path, 'parameters']
-      let args = parameters ?? {}
-      if (cleaning) args = pick(args, (key) => key === '//' || key in fragment.parameters)
-      args = order(
-        fillParameters(args, argumentsPath, fragment.parameters, fragmentSeeds(fragment)),
+      const args = order(
+        fillParameters(
+          parameters ?? {},
+          argumentsPath,
+          fragment.parameters,
+          fragmentSeeds(fragment)
+        ),
         ['//'],
         Object.keys(fragment.parameters)
       )
@@ -305,11 +291,6 @@ const fragmentSeeds = (fragment: FragmentInfo) => {
 
 const isLiteralContent = (key: string, form: 'full' | 'shorthand') =>
   form === 'full' ? key === 'value' : key === '$literal'
-
-const pick = (node: Record<string, unknown>, keep: (key: string) => boolean) =>
-  Object.keys(node).every(keep)
-    ? node
-    : Object.fromEntries(Object.entries(node).filter(([key]) => keep(key)))
 
 const mapArray = (array: unknown[], map: (element: unknown, index: number) => unknown) => {
   const mapped = array.map(map)

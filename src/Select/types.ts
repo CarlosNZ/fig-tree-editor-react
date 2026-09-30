@@ -1,24 +1,28 @@
 export interface SelectOption<T> {
   label: string
+  hint?: string // after the label in the list, but not when closed, nor searched
   description?: string
+  keywords?: string // matched by search, but not shown
+  disabled?: boolean // shown and found by search, but can't be chosen
   value: T
 }
 
+// A heading over its options, never chosen itself
 export interface OptionGroup<T> {
   label: string
   description?: string
-  value: T
   options: SelectOption<T>[]
 }
 
 export interface SelectProps<T> {
   options?: SelectOption<T>[]
   optionGroups?: OptionGroup<T>[]
-  selected: string | null
+  selected: string | null // the selected option's value
   setSelected: (selection: SelectOption<T>) => void
   search?: boolean
   placeholder?: string
   className: string
   border?: 'group' | 'all'
   startOpen?: boolean
+  highlighted?: string | null // the value to highlight when the list opens
 }

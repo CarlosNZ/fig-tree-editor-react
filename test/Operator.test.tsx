@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { type ComponentProps } from 'react'
+import userEvent from '@testing-library/user-event'
+import { useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
 import { figTree } from './fixtures'
@@ -131,10 +132,11 @@ describe('the operator node', () => {
     const pencil = () => screen.getByRole('button', { name: 'Open toolbar' })
     const toolbar = (container: HTMLElement) => container.querySelector('.ft-toolbar')
 
-    it('opens the toolbar from the pencil, with the name as written', () => {
+    it('opens the toolbar from the pencil, with the picker closed on the current operator', () => {
       const { container } = editor(node)
       fireEvent.click(pencil())
-      expect(within(toolbar(container) as HTMLElement).getByText('plus')).toBeInTheDocument()
+      expect(within(toolbar(container) as HTMLElement).getByText('Plus (+)')).toBeInTheDocument()
+      expect(container.querySelector('.ft-select-dropdown')).toBeNull()
       expect(displayBar(container)).toBeUndefined()
       // The rows stay beneath it
       expect(screen.getByText('values')).toBeInTheDocument()
@@ -170,6 +172,106 @@ describe('the operator node', () => {
       expect(toolbar(container)).toBeInTheDocument()
       fireEvent.keyDown(window, { key: 'q' })
       await waitFor(() => expect(toolbar(container)).toBeNull())
+    })
+  })
+
+  describe('the operator picker', () => {
+    // A host holding the expression, so each commit comes back as the editor's
+    // next expression
+    const host = (initial: unknown) => {
+      const written: unknown[] = []
+      const Host = () => {
+        const [expression, setExpression] = useState(initial)
+        return (
+          <FigTreeEditor
+            figTree={figTree}
+            expression={expression}
+            setExpression={(next) => {
+              written.push(next)
+              setExpression(next)
+            }}
+            collapse={false}
+          />
+        )
+      }
+      const { container } = render(<Host />)
+      return { container, written, user: userEvent.setup() }
+    }
+    const openPicker = async (user: ReturnType<typeof userEvent.setup>, current: string) => {
+      await user.click(screen.getByRole('button', { name: 'Open toolbar' }))
+      await user.click(screen.getByText(current))
+    }
+    const latest = (written: unknown[]) => written[written.length - 1]
+
+    it('switches the operator, keeping what it declares, and keeps the toolbar open', async () => {
+      const { container, written, user } = host({ operator: 'plus', values: [1, 2], fallback: 0 })
+      await openPicker(user, 'Plus (+)')
+      await user.keyboard('if{Enter}')
+      expect(latest(written)).toEqual({
+        operator: 'if',
+        condition: expect.anything() as unknown,
+        then: 'The condition is true',
+        fallback: 0,
+      })
+      expect(container.querySelector('.ft-toolbar')).toBeInTheDocument()
+      expect(screen.getByText('Conditional (?)')).toBeInTheDocument()
+    })
+
+    it('reverts every switch on ✗', async () => {
+      const { written, user } = host({ operator: 'plus', values: [1, 2] })
+      await openPicker(user, 'Plus (+)')
+      await user.keyboard('multiply{Enter}')
+      await user.click(screen.getByText('Multiply (*)'))
+      await user.keyboard('subtract{Enter}')
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ operator: 'plus', values: [1, 2] })
+    })
+
+    it('toggles the spelling when the current operator is chosen again', async () => {
+      const { written, user } = host({ operator: 'plus', values: [1, 2] })
+      await openPicker(user, 'Plus (+)')
+      expect(screen.getByText('⇄ select again to write as +')).toBeInTheDocument()
+      await user.click(screen.getByText('⇄ select again to write as +'))
+      expect(latest(written)).toEqual({ operator: '+', values: [1, 2] })
+    })
+
+    it("opens on a broken node with fig-tree's suggestion, so Enter repairs it", async () => {
+      const { written, user } = host({ operator: 'plsu', values: [1, 2] })
+      await user.click(screen.getByRole('button', { name: 'Open toolbar' }))
+      expect(document.querySelector('.ft-select-highlighted')).toHaveTextContent('Plus (+)')
+      await user.keyboard('{Enter}')
+      expect(latest(written)).toEqual({ operator: 'plus', values: [1, 2] })
+    })
+
+    it("won't choose an operator that can't fit the node's position", async () => {
+      const { written, user } = host({
+        operator: 'round',
+        value: { operator: 'plus', values: [1] },
+      })
+      await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
+      await user.click(screen.getByText('Plus (+)'))
+      await user.keyboard('lower')
+      expect(screen.getByText('Not valid here')).toBeInTheDocument()
+      await user.click(screen.getByText('Lower case'))
+      expect(written).toEqual([])
+    })
+
+    it("offers a host's operators like any other", async () => {
+      const { written, user } = host({ operator: 'plus', values: [1, 2] })
+      await openPicker(user, 'Plus (+)')
+      await user.keyboard('reverse{Enter}')
+      expect(latest(written)).toMatchObject({ operator: 'reverse' })
+    })
+
+    it('closes the toolbar on a switch to literal, which has its own definition', async () => {
+      const { container, written, user } = host({ operator: 'plus', values: [1, 2] })
+      await openPicker(user, 'Plus (+)')
+      await user.keyboard('literal{Enter}')
+      expect(latest(written)).toEqual({
+        operator: 'literal',
+        value: 'No content inside a literal node is evaluated',
+      })
+      expect(container.querySelector('.ft-toolbar')).toBeNull()
     })
   })
 })
