@@ -363,3 +363,10 @@ input.ft-select-input::placeholder {
   align-items: center;
   gap: 0.4em;
 }
+
+/* The node-type switch and the colon after it, before the picker */
+.ft-node-type {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+}

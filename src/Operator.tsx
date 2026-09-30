@@ -5,6 +5,7 @@ import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
+import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { OperatorPicker } from './OperatorPicker'
 import { operatorDefaultsLine } from './parameterCard'
 import { addKey, addableKeys } from './parameterOptions'
@@ -25,7 +26,15 @@ type OperatorKind = Extract<RowKind, { kind: 'operator' }>
 export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
   const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
-  const { editor, created: isNew, openToolbar, commit, confirm, revert } = useNodeEditor(props)
+  const {
+    editor,
+    created: isNew,
+    openToolbar,
+    commit,
+    confirm,
+    revert,
+    snapshot,
+  } = useNodeEditor(props)
   const { path } = nodeData
 
   useOpenCreated(created, path, canEdit, openToolbar)
@@ -66,6 +75,14 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     <div className="ft-node">
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
+          <NodeTypeSwitch
+            current="operator"
+            node={node}
+            path={path}
+            shared={componentProps!}
+            snapshot={snapshot}
+            commit={commit}
+          />
           <OperatorPicker
             figTree={figTree}
             displayData={displayData}

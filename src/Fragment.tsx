@@ -7,6 +7,7 @@ import { DisplayBar, type HeaderDisplay } from './DisplayBar'
 import { type FragmentDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { FragmentPicker } from './FragmentPicker'
+import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { withoutFilteredRows } from './nodeRows'
 import { addKey, addableKeys } from './parameterOptions'
 import { strings } from './strings'
@@ -27,7 +28,15 @@ type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
   const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
-  const { editor, created: isNew, openToolbar, commit, confirm, revert } = useNodeEditor(props)
+  const {
+    editor,
+    created: isNew,
+    openToolbar,
+    commit,
+    confirm,
+    revert,
+    snapshot,
+  } = useNodeEditor(props)
   const { path } = nodeData
   useOpenCreated(created, path, canEdit, openToolbar)
 
@@ -60,6 +69,14 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
     <div className="ft-node">
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
+          <NodeTypeSwitch
+            current="fragment"
+            node={node}
+            path={path}
+            shared={componentProps!}
+            snapshot={snapshot}
+            commit={commit}
+          />
           <FragmentPicker
             figTree={figTree}
             displayData={displayData}

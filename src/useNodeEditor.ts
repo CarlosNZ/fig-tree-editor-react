@@ -73,6 +73,10 @@ export const useNodeEditor = ({
 
   const revert = () => setValue(snapshot.current)
 
+  // The value the toolbar opened on, which a node-type switch hands to the
+  // node it creates
+  const opening = () => snapshot.current
+
   // json-edit-react's matcher, with the host's `keyboardControls`. A key that
   // a focused button or the picker has already handled is left to it.
   const toolbarOpen = isEditing && mode === 'toolbar'
@@ -83,7 +87,15 @@ export const useNodeEditor = ({
     handleKeyboard(event, { confirm, cancel: revert })
   })
 
-  return { editor: isEditing ? mode : null, created, openToolbar, commit, confirm, revert }
+  return {
+    editor: isEditing ? mode : null,
+    created,
+    openToolbar,
+    commit,
+    confirm,
+    revert,
+    snapshot: opening,
+  }
 }
 
 // A node the type dropdown has just created opens its toolbar, with its

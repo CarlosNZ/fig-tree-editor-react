@@ -17,6 +17,11 @@ export const strings = {
   FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes
   FT_TOOLBAR_CANCEL: 'Cancel', // ✗, undoing them
 
+  // The toolbar's node-type switch
+  FT_NODE_TYPE_OPERATOR: 'Operator',
+  FT_NODE_TYPE_FRAGMENT: 'Fragment',
+  FT_NODE_TYPE_VALUE: 'Value',
+
   // The operator and fragment pickers
   FT_PICKER_PLACEHOLDER: 'Search operators, or type a symbol',
   FT_PICKER_NOT_VALID: 'Not valid here',

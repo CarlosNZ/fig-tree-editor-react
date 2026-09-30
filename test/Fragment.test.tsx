@@ -390,4 +390,74 @@ describe('the fragment call', () => {
       expect(latest(written)).toMatchObject({ value: { fragment: 'getCapital' } })
     })
   })
+
+  describe('the node-type switch', () => {
+    const switchTo = async (
+      user: ReturnType<typeof userEvent.setup>,
+      from: string,
+      to: string,
+      pencilIndex = 0
+    ) => {
+      await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[pencilIndex])
+      await user.click(screen.getByText(from, { selector: '.ft-select-trigger' }))
+      await user.click(screen.getByText(to, { selector: '.ft-select-option-title' }))
+    }
+
+    it('switches an operator node to a fragment call, which opens on its picker', async () => {
+      const { container, written, user } = host({ operator: 'upper', value: 'x', fallback: 'y' })
+      await switchTo(user, 'Operator', 'Fragment')
+      expect(latest(written)).toEqual({
+        fragment: 'getCapital',
+        parameters: { country: 'Replace me' },
+        fallback: 'y',
+      })
+      expect(toolbar(container)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search fragments')).toHaveFocus()
+    })
+
+    it('restores the node as the session opened on ✗ in the new toolbar', async () => {
+      const { written, user } = host({ operator: 'upper', value: 'x', fallback: 'y' })
+      await switchTo(user, 'Operator', 'Fragment')
+      await user.keyboard('{Escape}')
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ operator: 'upper', value: 'x', fallback: 'y' })
+    })
+
+    it('switches a fragment call to an operator node, which opens on its picker', async () => {
+      const { container, written, user } = host({
+        fragment: 'greet',
+        parameters: { name: 'Ada' },
+        vars: { a: 1 },
+      })
+      await switchTo(user, 'Fragment', 'Operator')
+      expect(latest(written)).toEqual({ operator: 'plus', values: [1, 2, 3], vars: { a: 1 } })
+      expect(toolbar(container)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText(/^Search operators/)).toHaveFocus()
+    })
+
+    it('switches to a value at its starting value, and closes the toolbar', async () => {
+      const { container, written, user } = host({
+        operator: 'round',
+        value: 1,
+        decimals: { fragment: 'greet', parameters: { name: 'Ada' } },
+      })
+      await switchTo(user, 'Fragment', 'Value', 1)
+      expect(latest(written)).toEqual({ operator: 'round', value: 1, decimals: 2 })
+      expect(toolbar(container)).toBeNull()
+    })
+
+    it('offers Fragment only where a registered fragment can fit', async () => {
+      const onlyToday = new FigTree({ fragments: { today: { expression: 'Monday' } } })
+      const { user } = host(
+        { operator: 'round', value: { operator: 'abs', value: 1 } },
+        { figTree: onlyToday }
+      )
+      await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
+      await user.click(screen.getByText('Operator', { selector: '.ft-select-trigger' }))
+      const options = [...document.querySelectorAll('.ft-select-option-title')].map(
+        (option) => option.textContent
+      )
+      expect(options).toEqual(['Operator', 'Value'])
+    })
+  })
 })

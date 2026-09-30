@@ -11,7 +11,7 @@ import { positionalLayout } from 'fig-tree-evaluator/format'
 import { rowAt, type Classification } from './classify'
 import { type DisplayData } from './displayData'
 import { type Path } from './paths'
-import { elementAdmits, takesElements } from './slots'
+import { elementAdmits, takesElements, type Slot } from './slots'
 
 // The value everything the editor creates for a declared parameter starts as
 // (design, topic 4, "Adding parameters and starting values"): its seed from
@@ -31,6 +31,31 @@ export const getStartingValue = (
     : typeValue(declaration.type)
   // A copy, so the tree never shares an object with the display data
   return awayFromDefault(structuredClone(value), declaration)
+}
+
+// The value a node switched to a plain value starts as (design, topic 2,
+// "Node lifecycle"): a declared parameter's starting value where the node is
+// one, otherwise a value for what its position admits, which is the string
+// seed where it admits anything
+export const getSlotValue = (
+  slot: Slot | undefined,
+  { classification, displayData }: Pick<ElementContext, 'classification' | 'displayData'>
+): unknown => {
+  if (slot?.role === 'parameter' && slot.parameter !== undefined && slot.declaration) {
+    const owner = rowAt(classification, slot.ownerPath ?? [])?.kind
+    const seeds =
+      owner?.kind === 'operator'
+        ? displayData.operators[owner.operator ?? '']?.seeds
+        : owner?.kind === 'fragment'
+          ? displayData.fragments[owner.name ?? '']?.seeds
+          : undefined
+    return getStartingValue(
+      slot.parameter,
+      slot.declaration as ParameterInfo | FragmentParameter,
+      seeds ?? {}
+    )
+  }
+  return structuredClone(typeValue(slot?.admits ?? 'any'))
 }
 
 // The value an element added to the end of an array starts as (the same
