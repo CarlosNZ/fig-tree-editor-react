@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useKeyboardListener, type CustomComponentProps, type JsonData } from 'json-edit-react'
+import { type CreatedNode } from './customNodeDefinitions'
+import { type Path } from './paths'
 
 // A full node's two editors (design, topic 2, "Two editors per node" and
 // "Commit semantics"): the toolbar, opened by the DisplayBar's pencil, and
@@ -83,3 +85,23 @@ export const useNodeEditor = ({
 
   return { editor: isEditing ? mode : null, created, openToolbar, commit, confirm, revert }
 }
+
+// A node the type dropdown has just created opens its toolbar, with its
+// picker open, once: the node mounting at the mark's path takes the mark
+export const useOpenCreated = (
+  created: { current: CreatedNode | null },
+  path: Path,
+  canEdit: boolean,
+  openToolbar: (creation: { replaced: JsonData }) => void
+) => {
+  useEffect(() => {
+    const mark = created.current
+    if (!canEdit || mark === null || !samePath(mark.path, path)) return
+    created.current = null
+    openToolbar({ replaced: mark.replaced })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+}
+
+const samePath = (a: readonly unknown[], b: readonly unknown[]) =>
+  a.length === b.length && a.every((segment, index) => segment === b[index])

@@ -1,4 +1,4 @@
-import { type OperatorInfo } from 'fig-tree-evaluator'
+import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { positionalLayout } from 'fig-tree-evaluator/format'
 import { type NodeData } from 'json-edit-react'
 import { rowAt, type Classification } from './classify'
@@ -18,6 +18,7 @@ import { takesElements } from './slots'
 export interface GuardContext {
   classification: Classification
   operators: readonly OperatorInfo[]
+  fragments: readonly FragmentInfo[]
 }
 
 // ── Deleting ────────────────────────────────────────────────────────────────
@@ -62,7 +63,8 @@ const elementCount = (arrayPath: Path, array: unknown, context: GuardContext) =>
 
 // ── Adding ──────────────────────────────────────────────────────────────────
 
-// Blocked: a full operator node, whose toolbar adds its parameters; any other
+// Blocked: a full operator node or fragment call, whose toolbar adds its
+// parameters; any other
 // node with nothing left to add; an array parameter at its fixed length; and
 // an argument list with no position left, or whose rest parameter is at its
 // fixed length.
@@ -85,7 +87,7 @@ export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   }
   if (typeof value !== 'object' || value === null) return true
   const kind = row?.kind
-  if (kind?.kind === 'operator' && kind.form === 'full') return false
+  if ((kind?.kind === 'operator' || kind?.kind === 'fragment') && kind.form === 'full') return false
   const keys = addableKeys(value as Record<string, unknown>, kind, context)
   return keys === null || keys.parameters.length + keys.modifiers.length > 0
 }

@@ -17,11 +17,13 @@ export const strings = {
   FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes
   FT_TOOLBAR_CANCEL: 'Cancel', // ✗, undoing them
 
-  // The operator picker
+  // The operator and fragment pickers
   FT_PICKER_PLACEHOLDER: 'Search operators, or type a symbol',
   FT_PICKER_NOT_VALID: 'Not valid here',
   FT_PICKER_NOT_VALID_REASON: (returns: string, takes: string) =>
     `Returns ${returns}; this position takes ${takes}`,
+  FT_FRAGMENT_PICKER_PLACEHOLDER: 'Search fragments',
+  FT_NO_FRAGMENTS: 'No fragments registered',
   FT_PICKER_TOGGLE_HINT: (name: string) => `⇄ select again to write as ${name}`,
   FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 
@@ -38,7 +40,11 @@ export const strings = {
   FT_ADD_GROUP_PARAMETERS: 'Parameters',
   FT_ADD_GROUP_MODIFIERS: 'Modifiers',
   FT_ADD_REQUIRED: 'required',
-  FT_ARGUMENTS: "The fragment's arguments",
+  FT_DYNAMIC_ARGUMENTS: 'Dynamic arguments',
+  FT_DYNAMIC_ARGUMENTS_DESCRIPTION:
+    'Compute the arguments with a reference or a node, in place of these',
+  FT_STATIC_ARGUMENTS: 'Static arguments',
+  FT_STATIC_ARGUMENTS_DESCRIPTION: 'Enter the arguments one by one, in place of this',
   FT_MODIFIER_COMMENT: 'A note, never evaluated',
   FT_MODIFIER_FALLBACK: 'The value to use if this node fails',
   FT_MODIFIER_USE_CACHE: "Cache this node's result",

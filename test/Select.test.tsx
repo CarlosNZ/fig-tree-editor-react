@@ -166,6 +166,35 @@ describe('Select', () => {
     })
   })
 
+  it('shows a group without a label under no heading', async () => {
+    const { user } = setup({
+      options: undefined,
+      optionGroups: [
+        { options: [options[0]] },
+        { label: 'Not valid here', options: [{ ...options[1], disabled: true }] },
+      ],
+    })
+    await user.click(screen.getByText('Pick one'))
+    const headings = [...document.querySelectorAll('.ft-select-group-label')]
+    expect(headings.map((heading) => heading.textContent)).toEqual(['Not valid here'])
+    expect(screen.getByText('Addition')).toBeInTheDocument()
+  })
+
+  it('shows its own empty text when it has no options, and "No results" when none match', async () => {
+    const { user } = setup({ options: [], emptyText: 'Nothing registered' })
+    await user.click(screen.getByText('Pick one'))
+    expect(screen.getByText('Nothing registered')).toBeInTheDocument()
+    await user.keyboard('x')
+    expect(screen.getByText('Nothing registered')).toBeInTheDocument()
+  })
+
+  it('shows "No results" where it has options but none match', async () => {
+    const { user } = setup({ emptyText: 'Nothing registered' })
+    await user.click(screen.getByText('Pick one'))
+    await user.keyboard('zzz')
+    expect(screen.getByText('No results')).toBeInTheDocument()
+  })
+
   it('opens from the keyboard, keeping the key from what surrounds it', async () => {
     const outer = vi.fn()
     const setSelected = vi.fn()

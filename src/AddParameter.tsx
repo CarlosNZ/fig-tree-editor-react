@@ -4,12 +4,13 @@ import { strings } from './strings'
 
 // The toolbar's "Add parameter" (design, topic 4, "Adding parameters and
 // starting values"): the node's parameters, then its modifiers, each labelled
-// with its key as it will appear in the tree. It always shows its
-// placeholder, and is left out when nothing is left to add.
+// with its key as it will appear in the tree, or with what it does where it
+// replaces a value. It always shows its placeholder, and is left out when
+// nothing is left to add.
 
 interface AddParameterProps {
   keys: AddableKeys
-  onAdd: (key: string) => void
+  onAdd: (entry: AddableKey) => void
 }
 
 export const AddParameter = ({ keys, onAdd }: AddParameterProps) => {
@@ -31,9 +32,11 @@ export const AddParameter = ({ keys, onAdd }: AddParameterProps) => {
   )
 }
 
-const option = ({ key, required, description }: AddableKey) => ({
-  label: key,
-  hint: required ? strings.FT_ADD_REQUIRED : undefined,
-  description,
-  value: key,
+// An argument and a modifier can share a key, so each option's value is its
+// entry
+const option = (entry: AddableKey) => ({
+  label: entry.label ?? entry.key,
+  hint: entry.required ? strings.FT_ADD_REQUIRED : undefined,
+  description: entry.description,
+  value: entry,
 })

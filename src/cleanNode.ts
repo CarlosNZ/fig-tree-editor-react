@@ -6,7 +6,9 @@
 // everything there is already complete. The fill-in step completes and
 // orders what it returns.
 //
-// `//` and the modifiers stay. A fragment call has no `useCache`.
+// `//` and the modifiers stay. A fragment call has no `useCache`, and a static
+// `parameters` map that cleaning leaves empty goes, so a call to a fragment
+// with no parameters reads `{ fragment: 'today' }`.
 
 // Only the parameters' names are read
 type Parameters = Record<string, unknown>
@@ -28,7 +30,10 @@ export const cleanNode = (node: Record<string, unknown>, declaration: Declaratio
   const args = cleaned.parameters
   if (!isObject(args)) return cleaned
   const cleanedArgs = pick(args, (key) => key === '//' || key in parameters)
-  return cleanedArgs === args ? cleaned : { ...cleaned, parameters: cleanedArgs }
+  if (cleanedArgs === args) return cleaned
+  if (Object.keys(cleanedArgs).length > 0) return { ...cleaned, parameters: cleanedArgs }
+  const { parameters: _emptied, ...rest } = cleaned
+  return rest
 }
 
 // The same object where nothing is removed

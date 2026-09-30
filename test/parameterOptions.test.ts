@@ -1,13 +1,13 @@
-import { FigTree, coreOperators, httpOperators } from 'fig-tree-evaluator'
+import { FigTree, coreOperators, httpOperators, type FragmentInfo } from 'fig-tree-evaluator'
 import { describe, expect, it } from 'vitest'
 import { classify, rowAt } from '../src/classify'
 import { buildDisplayData } from '../src/displayData'
-import { addableKeys, getNewKeyValue, type AddContext } from '../src/parameterOptions'
+import { addKey, addableKeys, getNewKeyValue, type AddContext } from '../src/parameterOptions'
 import { type Path } from '../src/paths'
 import { registry } from './fixtures'
 
 const context: AddContext = {
-  operators: registry.operators,
+  ...registry,
   displayData: buildDisplayData(registry),
   useCache: undefined,
 }
@@ -26,6 +26,21 @@ const keysOf = (expression: Record<string, unknown>) => {
 }
 
 const MODIFIERS = ['//', 'fallback', 'useCache', 'vars']
+
+// Fragments as `getFragments()` reports them, for the order of their
+// arguments and a name shared with a modifier
+const fragmentInfo = (name: string, parameters: FragmentInfo['parameters']): FragmentInfo => ({
+  name,
+  parameters,
+  returns: 'any',
+  warnings: [],
+  dependencies: { data: [], fragments: [] } as unknown as FragmentInfo['dependencies'],
+})
+const shout = fragmentInfo('shout', {
+  loud: { type: 'boolean', required: false },
+  text: { type: 'string', required: true },
+})
+const odd = fragmentInfo('odd', { fallback: { type: 'string', required: true } })
 
 describe('addableKeys', () => {
   it("offers a full operator node's absent parameters, then its absent modifiers", () => {
@@ -60,14 +75,83 @@ describe('addableKeys', () => {
     expect(keysOf({ $round: { value: 1 } })).toEqual({ parameters: [], modifiers: MODIFIERS })
   })
 
-  it('offers a full fragment call `parameters`, and no `useCache`', () => {
-    expect(keysOf({ fragment: 'greet' })).toEqual({
-      parameters: ['parameters'],
-      modifiers: ['//', 'fallback', 'vars'],
+  describe('a full fragment call', () => {
+    const entries = (expression: Record<string, unknown>) =>
+      addableKeys(expression, kindAt(expression), context)!.parameters.map(
+        ({ key, label, required, argument }) => ({ key, label, required, argument })
+      )
+
+    it('offers its absent arguments, required first, then dynamic arguments', () => {
+      expect(entries({ fragment: 'getFlag' })).toEqual([
+        { key: 'country', label: undefined, required: false, argument: true },
+        { key: 'parameters', label: 'Dynamic arguments', required: false, argument: undefined },
+      ])
+      expect(entries({ fragment: 'greet', parameters: { name: 'Ann' } })).toEqual([
+        { key: 'parameters', label: 'Dynamic arguments', required: false, argument: undefined },
+      ])
+      const fromOrder = { ...context, fragments: [shout] }
+      const node = { fragment: 'shout' }
+      expect(
+        addableKeys(
+          node,
+          kindAt(node, [], { ...registry, fragments: [shout] }),
+          fromOrder
+        )!.parameters.map(({ key, required }) => [key, required])
+      ).toEqual([
+        ['text', true],
+        ['loud', false],
+        ['parameters', false],
+      ])
     })
-    expect(keysOf({ fragment: 'greet', parameters: { name: 'Ann' } })).toEqual({
-      parameters: [],
-      modifiers: ['//', 'fallback', 'vars'],
+
+    it('offers static arguments in place of dynamic ones, and no useCache', () => {
+      expect(keysOf({ fragment: 'greet', parameters: '$data.form' })).toEqual({
+        parameters: ['parameters'],
+        modifiers: ['//', 'fallback', 'vars'],
+      })
+      expect(entries({ fragment: 'greet', parameters: '$data.form' })[0].label).toBe(
+        'Static arguments'
+      )
+    })
+
+    it('adds an argument inside parameters, creating it, and switches the kind of arguments', () => {
+      const add = (node: Record<string, unknown>, index = 0) => {
+        const kind = kindAt(node)
+        const entry = addableKeys(node, kind, context)!.parameters[index]
+        return addKey(node, entry, kind, context)
+      }
+      expect(add({ fragment: 'getFlag' })).toEqual({
+        fragment: 'getFlag',
+        parameters: { country: 'Replace me' },
+      })
+      expect(add({ fragment: 'getFlag', parameters: { '//': 'x' } })).toEqual({
+        fragment: 'getFlag',
+        parameters: { '//': 'x', country: 'Replace me' },
+      })
+      expect(add({ fragment: 'greet', parameters: { name: 'Ann' } })).toEqual({
+        fragment: 'greet',
+        parameters: '$data',
+      })
+      expect(add({ fragment: 'greet', parameters: '$data.form' })).toEqual({
+        fragment: 'greet',
+        parameters: {},
+      })
+    })
+
+    it('keeps an argument apart from a modifier of the same name', () => {
+      const node = { fragment: 'odd' }
+      const from = { ...registry, fragments: [odd] }
+      const kind = kindAt(node, [], from)
+      const keys = addableKeys(node, kind, { ...context, fragments: [odd] })!
+      const withContext = { ...context, fragments: [odd] }
+      expect(addKey(node, keys.parameters[0], kind, withContext)).toEqual({
+        fragment: 'odd',
+        parameters: { fallback: 'Replace me' },
+      })
+      expect(addKey(node, keys.modifiers[1], kind, withContext)).toEqual({
+        fragment: 'odd',
+        fallback: null,
+      })
     })
   })
 
@@ -107,7 +191,6 @@ describe('getNewKeyValue', () => {
     expect(start(node, 'fallback')).toBeNull()
     expect(start(node, 'useCache')).toBe(true)
     expect(start(node, 'vars')).toEqual({})
-    expect(start({ fragment: 'greet' }, 'parameters')).toEqual({})
   })
 
   it('starts `useCache` as the opposite of its effective setting', () => {

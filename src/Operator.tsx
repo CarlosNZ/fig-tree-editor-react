@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
 import { brokenIssue, issuesAt } from './attachIssues'
@@ -8,9 +7,9 @@ import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
 import { OperatorPicker } from './OperatorPicker'
 import { operatorDefaultsLine } from './parameterCard'
-import { addableKeys, getNewKeyValue } from './parameterOptions'
+import { addKey, addableKeys } from './parameterOptions'
 import { Toolbar } from './Toolbar'
-import { useNodeEditor } from './useNodeEditor'
+import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 
 type OperatorKind = Extract<RowKind, { kind: 'operator' }>
 
@@ -29,14 +28,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { editor, created: isNew, openToolbar, commit, confirm, revert } = useNodeEditor(props)
   const { path } = nodeData
 
-  // A node the type dropdown has just created opens on its picker, once
-  useEffect(() => {
-    const mark = created.current
-    if (!canEdit || mark === null || !samePath(mark.path, path)) return
-    created.current = null
-    openToolbar({ replaced: mark.replaced })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  useOpenCreated(created, path, canEdit, openToolbar)
   const row = rowAt(classification, path)
   const kind = row?.kind as OperatorKind
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
@@ -46,15 +38,16 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   // Parameters are added once the node has an operator the editor knows, so
   // a broken node's toolbar offers the picker alone
   const addParameter = () => {
-    const operators = figTree.getOperators()
-    const keys = addableKeys(node, kind, { operators })
+    const context = {
+      operators: figTree.getOperators(),
+      fragments: figTree.getFragments(),
+      displayData,
+      useCache: figTree.getOptions().useCache,
+    }
+    const keys = addableKeys(node, kind, context)
     if (broken || keys === null) return null
-    const context = { operators, displayData, useCache: figTree.getOptions().useCache }
     return (
-      <AddParameter
-        keys={keys}
-        onAdd={(key) => commit({ ...node, [key]: getNewKeyValue(key, kind, context) })}
-      />
+      <AddParameter keys={keys} onAdd={(entry) => commit(addKey(node, entry, kind, context))} />
     )
   }
 
@@ -103,6 +96,3 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     </div>
   )
 }
-
-const samePath = (a: readonly unknown[], b: readonly unknown[]) =>
-  a.length === b.length && a.every((segment, index) => segment === b[index])

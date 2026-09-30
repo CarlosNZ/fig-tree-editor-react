@@ -175,7 +175,12 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
         defaultValue: startOperator,
       })
     ),
-    ...unlabelledVariants(definition('fragment', matches(isKind('fragment', 'full')))),
+    ...unlabelledVariants(
+      definition('fragment', matches(isKind('fragment', 'full')), {
+        showOnEdit: true,
+        passOriginalNode: true,
+      })
+    ),
     ...unlabelledVariants(
       definition(
         'shorthand',

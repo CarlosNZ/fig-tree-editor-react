@@ -1,5 +1,6 @@
-import { render, screen, within } from '@testing-library/react'
-import { type ComponentProps } from 'react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
@@ -38,6 +39,31 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
       {...props}
     />
   )
+
+// A host holding the expression, so each commit comes back as the editor's
+// next expression, in StrictMode
+const host = (initial: unknown) => {
+  const written: unknown[] = []
+  const Host = () => {
+    const [expression, setExpression] = useState(initial)
+    return (
+      <FigTreeEditor
+        figTree={figTree}
+        expression={expression}
+        setExpression={(next) => {
+          written.push(next)
+          setExpression(next)
+        }}
+        collapse={false}
+      />
+    )
+  }
+  const { container } = render(<Host />, { wrapper: StrictMode })
+  return { container, written, user: userEvent.setup() }
+}
+const latest = (written: unknown[]) => written[written.length - 1]
+const toolbar = (container: HTMLElement) => container.querySelector('.ft-toolbar')
+const pencil = () => screen.getByRole('button', { name: 'Open toolbar' })
 
 const displayBar = (container: HTMLElement) =>
   container.querySelector<HTMLElement>('.ft-display-bar')!
@@ -109,6 +135,44 @@ describe('the fragment call', () => {
     expect(container.querySelectorAll('.ft-node')).toHaveLength(2)
   })
 
+  describe('under a collapse level', () => {
+    const expression = {
+      call: { fragment: 'getCapital', parameters: { country: { operator: 'upper', value: 'x' } } },
+      sum: { operator: 'round', value: { operator: 'abs', value: -1 } },
+    }
+
+    it('shows its arguments, whose row never starts collapsed', () => {
+      editor({ call: { fragment: 'greet', parameters: { name: 'Ada' } } }, { collapse: 2 })
+      expect(screen.getByText('"Ada"')).toBeInTheDocument()
+    })
+
+    // json-edit-react keeps a collapsed row's summary in place, shown by class
+    const collapsed = (summary: string) =>
+      screen.getByText(summary).classList.contains('jer-visible')
+
+    it("collapses an argument at the level an operator's parameter collapses at", () => {
+      const { unmount } = editor(expression, { collapse: 2 })
+      expect(collapsed('Operator: upper')).toBe(true)
+      expect(collapsed('Operator: abs')).toBe(true)
+      unmount()
+      editor(expression, { collapse: 3 })
+      expect(collapsed('Operator: upper')).toBe(false)
+      expect(collapsed('Operator: abs')).toBe(false)
+    })
+
+    it("follows a host's collapse filter, apart from the arguments' row", () => {
+      const { unmount } = editor(expression, { collapse: ({ key }) => key === 'country' })
+      expect(collapsed('Operator: upper')).toBe(true)
+      expect(collapsed('Operator: abs')).toBe(false)
+      unmount()
+      editor(
+        { fragment: 'greet', parameters: { name: 'Ada' } },
+        { collapse: ({ path }) => path.length > 0 }
+      )
+      expect(screen.getByText('"Ada"')).toBeInTheDocument()
+    })
+  })
+
   it("shows a dynamic call's parameters row with its key", () => {
     editor({ fragment: 'greet', parameters: '$data.form' })
     expect(keyLabel('parameters')).toBeInTheDocument()
@@ -145,5 +209,141 @@ describe('the fragment call', () => {
   it('summarises itself when collapsed', () => {
     editor({ call: { fragment: 'greet', parameters: { name: 'Ada' } } }, { collapse: 1 })
     expect(screen.getByText('Fragment: greet')).toBeInTheDocument()
+  })
+
+  describe('editing', () => {
+    it('opens the toolbar from the pencil, with the picker closed on the current fragment', () => {
+      const { container } = editor({ fragment: 'getCapital', parameters: { country: 'NZ' } })
+      fireEvent.click(pencil())
+      expect(within(toolbar(container) as HTMLElement).getByText('Capital city')).toBeVisible()
+      expect(container.querySelector('.ft-select-dropdown')).toBeNull()
+      expect(keyLabel('country')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+      expect(toolbar(container)).toBeNull()
+    })
+
+    it("shows json-edit-react's raw-JSON editor alone from its ✎", () => {
+      const { container } = editor({ call: { fragment: 'greet', parameters: { name: 'Ada' } } })
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+      expect(container.querySelector('.ft-node textarea')).toBeInTheDocument()
+      expect(container.querySelector('.ft-display-bar')).toBeNull()
+    })
+
+    it('has no ＋ of its own, since the toolbar adds its arguments', () => {
+      editor({ fragment: 'getCapital', parameters: { country: 'NZ' } })
+      expect(screen.queryAllByRole('button', { name: 'Add' })).toEqual([])
+    })
+  })
+
+  describe('the fragment picker', () => {
+    const openPicker = async (user: ReturnType<typeof userEvent.setup>, current: string) => {
+      await user.click(pencil())
+      await user.click(screen.getByText(current, { selector: '.ft-select-trigger' }))
+    }
+
+    it('lists the fragments in order, by display name, with their descriptions', async () => {
+      const { user } = host({ fragment: 'greet', parameters: { name: 'Ada' } })
+      await openPicker(user, 'greet')
+      const entries = [...document.querySelectorAll('.ft-select-option')].map(
+        (entry) => entry.textContent
+      )
+      expect(entries).toEqual(["Capital cityGets a country's capital city", 'greet', 'today'])
+    })
+
+    it('switches fragment, keeping the modifiers and shared arguments, and the toolbar', async () => {
+      const { container, written, user } = host({
+        fragment: 'getCapital',
+        parameters: { country: 'NZ', fields: 'all' },
+        fallback: 'x',
+      })
+      await openPicker(user, 'Capital city')
+      await user.keyboard('greet{Enter}')
+      expect(latest(written)).toEqual({
+        fragment: 'greet',
+        parameters: { name: 'Replace me' },
+        fallback: 'x',
+      })
+      expect(toolbar(container)).toBeInTheDocument()
+      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger' }))
+      await user.keyboard('today{Enter}')
+      expect(latest(written)).toEqual({ fragment: 'today', fallback: 'x' })
+    })
+
+    it('reverts every switch on ✗', async () => {
+      const { written, user } = host({ fragment: 'greet', parameters: { name: 'Ada' } })
+      await openPicker(user, 'greet')
+      await user.keyboard('today{Enter}')
+      await user.click(screen.getByText('today', { selector: '.ft-select-trigger' }))
+      await user.keyboard('capital{Enter}')
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
+    })
+
+    it('changes nothing when the current fragment is chosen again', async () => {
+      const { written, user } = host({ fragment: 'greet', parameters: { name: 'Ada' } })
+      await openPicker(user, 'greet')
+      await user.click(screen.getByText('greet', { selector: '.ft-select-option-title' }))
+      expect(written).toEqual([])
+    })
+
+    it("opens on a broken call with fig-tree's suggestion, so Enter repairs it", async () => {
+      const { written, user } = host({ fragment: 'gret', parameters: { name: 'Ada' } })
+      await user.click(pencil())
+      expect(document.querySelector('.ft-select-highlighted')).toHaveTextContent('greet')
+      await user.keyboard('{Enter}')
+      expect(latest(written)).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
+    })
+
+    it("won't choose a fragment that can't fit the call's position", async () => {
+      const { written, user } = host({
+        operator: 'round',
+        value: { fragment: 'greet', parameters: { name: 'Ada' } },
+      })
+      await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
+      await user.click(screen.getByText('greet', { selector: '.ft-select-trigger' }))
+      expect(screen.getByText('Not valid here')).toBeInTheDocument()
+      await user.click(screen.getByText('today'))
+      expect(written).toEqual([])
+    })
+  })
+
+  describe('adding parameters', () => {
+    const openAdd = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(pencil())
+      await user.click(screen.getByText('Add parameter'))
+    }
+
+    it('adds an argument inside parameters, and keeps the toolbar open', async () => {
+      const { container, written, user } = host({
+        fragment: 'getCapital',
+        parameters: { country: 'NZ' },
+      })
+      await openAdd(user)
+      await user.click(screen.getByText('fields'))
+      expect(latest(written)).toEqual({
+        fragment: 'getCapital',
+        parameters: { country: 'NZ', fields: 'Replace me' },
+      })
+      expect(toolbar(container)).toBeInTheDocument()
+    })
+
+    it('switches to dynamic arguments and back', async () => {
+      const { container, written, user } = host({ fragment: 'greet', parameters: { name: 'Ada' } })
+      await openAdd(user)
+      await user.click(screen.getByText('Dynamic arguments'))
+      expect(latest(written)).toEqual({ fragment: 'greet', parameters: '$data' })
+      expect(keyLabel('parameters')).toBeInTheDocument()
+      expect(toolbar(container)).toBeInTheDocument()
+      await user.click(screen.getByText('Add parameter'))
+      expect(screen.queryByText('name')).toBeNull()
+      await user.click(screen.getByText('Static arguments'))
+      expect(latest(written)).toEqual({ fragment: 'greet', parameters: { name: 'Replace me' } })
+    })
+
+    it('is left out on a broken call', () => {
+      editor({ fragment: 'gret' })
+      fireEvent.click(pencil())
+      expect(screen.queryByText('Add parameter')).toBeNull()
+    })
   })
 })

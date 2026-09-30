@@ -1,4 +1,4 @@
-import { type OperatorInfo } from 'fig-tree-evaluator'
+import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
 import { type RowKind } from './classify'
 import { type DisplayData } from './displayData'
@@ -13,9 +13,13 @@ import { strings } from './strings'
 // - A full operator node: its declared parameters not yet present, missing
 //   required ones first, then the rest in fill-in's key order; then the
 //   modifiers not yet present.
-// - A full fragment call: `parameters` where it has none, then the modifiers
-//   other than `useCache`, which fragment calls don't allow. Its arguments are
-//   added inside `parameters`.
+// - A full fragment call: its declared arguments not yet present, missing
+//   required ones first, then the rest in declared order, each added inside
+//   `parameters`, creating it where absent; then "Dynamic arguments", which
+//   replaces them with a reference to compute them from. A call with dynamic
+//   arguments has "Static arguments" in their place, which replaces the
+//   reference or node with a map of arguments. Then the modifiers other than
+//   `useCache`, which fragment calls don't allow.
 // - A shorthand node: the modifiers, since any other key makes it malformed.
 // - A `literal`: `//` only, since the other modifiers are dead there.
 // - A broken node (an unknown operator or fragment, or a malformed node): the
@@ -27,6 +31,8 @@ export interface AddableKey {
   key: string // as it will appear in the tree
   required: boolean
   description?: string
+  label?: string // in place of the key, for an entry that replaces a value
+  argument?: true // a fragment call's, added inside its `parameters`
 }
 
 export interface AddableKeys {
@@ -36,6 +42,7 @@ export interface AddableKeys {
 
 export interface AddContext {
   operators: readonly OperatorInfo[]
+  fragments: readonly FragmentInfo[]
   displayData: DisplayData
   useCache: boolean | undefined // the instance's `useCache` option
 }
@@ -51,7 +58,7 @@ const MODIFIERS: AddableKey[] = [
 export const addableKeys = (
   node: Record<string, unknown>,
   kind: RowKind | undefined,
-  { operators }: Pick<AddContext, 'operators'>
+  { operators, fragments }: Pick<AddContext, 'operators' | 'fragments'>
 ): AddableKeys | null => {
   const absent = (entries: AddableKey[]) => entries.filter(({ key }) => !(key in node))
   switch (kind?.kind) {
@@ -59,14 +66,9 @@ export const addableKeys = (
       return { parameters: [], modifiers: absent(MODIFIERS.slice(0, 1)) }
     case 'fragment': {
       const modifiers = absent(MODIFIERS.filter(({ key }) => key !== 'useCache'))
-      const broken = kind.malformed !== undefined || !kind.registered
-      return {
-        parameters:
-          kind.form === 'full' && !broken
-            ? absent([{ key: 'parameters', required: false, description: strings.FT_ARGUMENTS }])
-            : [],
-        modifiers,
-      }
+      const fragment = fragments.find(({ name }) => name === kind.name)
+      const declared = kind.form === 'full' && kind.malformed === undefined && fragment
+      return { parameters: declared ? argumentsOf(node, kind, fragment) : [], modifiers }
     }
     case 'operator': {
       const operator = operators.find(({ name }) => name === kind.operator)
@@ -82,6 +84,43 @@ export const addableKeys = (
   }
 }
 
+// The arguments not yet in a static map, then the switch to the other kind
+// of arguments. A fragment that declares none has no use for dynamic ones.
+const argumentsOf = (
+  node: Record<string, unknown>,
+  kind: FragmentKind,
+  fragment: FragmentInfo
+): AddableKey[] => {
+  if (kind.arguments === 'dynamic' || kind.arguments === 'invalid') return [STATIC_ARGUMENTS]
+  const present = isObject(node.parameters) ? node.parameters : {}
+  const entries = Object.entries(fragment.parameters)
+    .filter(([key]) => !(key in present))
+    .map(([key, { required, description }]): AddableKey => ({
+      key,
+      required,
+      description,
+      argument: true,
+    }))
+  return [
+    ...entries.filter(({ required }) => required),
+    ...entries.filter(({ required }) => !required),
+    ...(Object.keys(fragment.parameters).length > 0 ? [DYNAMIC_ARGUMENTS] : []),
+  ]
+}
+
+const DYNAMIC_ARGUMENTS: AddableKey = {
+  key: 'parameters',
+  label: strings.FT_DYNAMIC_ARGUMENTS,
+  required: false,
+  description: strings.FT_DYNAMIC_ARGUMENTS_DESCRIPTION,
+}
+const STATIC_ARGUMENTS: AddableKey = {
+  key: 'parameters',
+  label: strings.FT_STATIC_ARGUMENTS,
+  required: false,
+  description: strings.FT_STATIC_ARGUMENTS_DESCRIPTION,
+}
+
 // Required first, each in fill-in's key order
 const parametersOf = (operator: OperatorInfo): AddableKey[] => {
   const entries = parameterOrder(operator).map((key) => {
@@ -91,15 +130,40 @@ const parametersOf = (operator: OperatorInfo): AddableKey[] => {
   return [...entries.filter(({ required }) => required), ...entries.filter((e) => !e.required)]
 }
 
-// The value a key added to a row starts as: a declared parameter's by the
+// A node with an entry of `addableKeys` added. An argument goes inside the
+// call's `parameters`, creating it where absent. Switching to dynamic
+// arguments starts them as the whole of `$data`, as the type dropdown's Data
+// entry does, and switching to static starts them empty, for the fill-in step
+// to seed the required ones.
+export const addKey = (
+  node: Record<string, unknown>,
+  entry: AddableKey,
+  kind: RowKind | undefined,
+  context: AddContext
+): Record<string, unknown> => {
+  if (kind?.kind === 'fragment' && entry.argument) {
+    const fragment = context.fragments.find(({ name }) => name === kind.name)
+    const declaration = fragment?.parameters[entry.key]
+    const seeds = context.displayData.fragments[fragment?.name ?? '']?.seeds ?? {}
+    const value = declaration
+      ? getStartingValue(entry.key, declaration, seeds)
+      : structuredClone(typeSeeds.any)
+    const present = isObject(node.parameters) ? node.parameters : {}
+    return { ...node, parameters: { ...present, [entry.key]: value } }
+  }
+  if (entry === DYNAMIC_ARGUMENTS) return { ...node, parameters: '$data' }
+  if (entry === STATIC_ARGUMENTS) return { ...node, parameters: {} }
+  return { ...node, [entry.key]: getNewKeyValue(entry.key, kind, context) }
+}
+
+// The value a key added to a node starts as: a declared parameter's by the
 // starting-value rule, a modifier's by its own (`useCache` the opposite of
-// its effective setting, so adding it changes something), a fragment call's
-// `parameters` empty, and a free-typed key, which admits anything, the `any`
-// seed
+// its effective setting, so adding it changes something), and a free-typed
+// key, which admits anything, the `any` seed
 export const getNewKeyValue = (
   key: string,
   kind: RowKind | undefined,
-  { operators, displayData, useCache }: AddContext
+  { operators, displayData, useCache }: Omit<AddContext, 'fragments'>
 ): unknown => {
   const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
   if (!isNode) return structuredClone(typeSeeds.any)
@@ -117,8 +181,11 @@ export const getNewKeyValue = (
       return !(operator?.instanceUseCache ?? useCache ?? operator?.useCache ?? false)
     case 'vars':
       return {}
-    case 'parameters':
-      if (kind.kind === 'fragment') return {}
   }
   return structuredClone(typeSeeds.any)
 }
+
+type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)

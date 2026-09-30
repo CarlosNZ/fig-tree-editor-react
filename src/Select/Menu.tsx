@@ -1,5 +1,4 @@
 import React from 'react'
-import { strings } from '../strings'
 import { type SelectOption } from './types'
 
 // An option shown in the list, with its index in display order
@@ -24,6 +23,7 @@ interface DropdownMenuProps<T> {
   highlightedIndex: number
   border?: 'group' | 'all'
   search: boolean
+  emptyText: string // shown when no option matches, or there are none
 }
 
 export function DropdownMenu<T>({
@@ -35,12 +35,13 @@ export function DropdownMenu<T>({
   highlightedIndex,
   border,
   search,
+  emptyText,
 }: DropdownMenuProps<T>) {
   return (
     <div ref={optionsRef} className="ft-select-dropdown">
       {groups.length === 0 && (
         <div className={`ft-select-option ft-select-no-options`} tabIndex={0}>
-          {strings.FT_SELECT_NO_RESULTS}
+          {emptyText}
         </div>
       )}
       {groups.map((group, groupIndex) => (

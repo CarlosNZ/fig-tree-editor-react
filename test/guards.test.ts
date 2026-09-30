@@ -14,7 +14,7 @@ const at = (expression: unknown, path: Path) => {
     parentData: path.length === 0 ? null : valueAt(expression, path.slice(0, -1)),
     fullData: expression,
   } as NodeData
-  const context = { classification: classify(expression, registry), operators: registry.operators }
+  const context = { classification: classify(expression, registry), ...registry }
   return { deletes: canDelete(nodeData, context), adds: canAdd(nodeData, context) }
 }
 const deletes = (expression: unknown, path: Path) => at(expression, path).deletes
@@ -71,6 +71,7 @@ describe('canAdd', () => {
       { '//': 'x', $plus: [1], fallback: 0, useCache: true, vars: {} },
       [],
     ],
+    ['a full fragment call', { fragment: 'greet' }, []],
     [
       'an array parameter at its fixed length',
       { operator: 'lessThan', values: [1, 2] },
@@ -86,7 +87,6 @@ describe('canAdd', () => {
 
   it.each<[string, unknown, Path]>([
     ['a shorthand node with a modifier to add', { $plus: [1] }, []],
-    ['a full fragment call', { fragment: 'greet' }, []],
     [
       'an array parameter under its fixed length',
       { operator: 'lessThan', values: [1] },

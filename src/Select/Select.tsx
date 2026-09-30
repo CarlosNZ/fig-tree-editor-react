@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { type OptionGroup, type SelectOption, type SelectProps } from './types'
+import { strings } from '../strings'
 import { DropdownMenu, type MenuGroup, type MenuEntry } from './Menu'
 
 // A searchable dropdown. Every option shown has one index, in display order,
@@ -18,6 +19,7 @@ export function Select<T>({
   border,
   startOpen = false,
   highlighted,
+  emptyText,
 }: SelectProps<T>) {
   const [open, setOpen] = useState(startOpen)
   const [searchText, setSearchText] = useState('')
@@ -183,6 +185,11 @@ export function Select<T>({
               highlightedIndex={highlightedIndex}
               border={border}
               search={search}
+              emptyText={
+                emptyText !== undefined && allOptions(optionGroups, options).length === 0
+                  ? emptyText
+                  : strings.FT_SELECT_NO_RESULTS
+              }
             />
           </>
         )}

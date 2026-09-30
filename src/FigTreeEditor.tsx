@@ -25,7 +25,7 @@ import { canAdd, canDelete, type GuardContext } from './guards'
 import { getStartingElement } from './getStartingValue'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
-import { displayPath, valueAt } from './paths'
+import { displayPath, valueAt, type Path } from './paths'
 import { strings } from './strings'
 import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
@@ -77,6 +77,7 @@ export const FigTreeEditor = ({
   customText,
   allowDelete,
   allowAdd,
+  collapse = DEFAULT_COLLAPSE,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -122,6 +123,9 @@ export const FigTreeEditor = ({
   }, [changed, stableFilled])
 
   const classification = useStableValue(classify(shown, { operators, fragments }))
+  // Read by the collapse filter, which keeps its identity across edits
+  const latestClassification = useRef(classification)
+  latestClassification.current = classification
   const issueIndex = useStableValue(attachIssues(issues, classification))
   const definitions = useMemo(
     () =>
@@ -146,7 +150,11 @@ export const FigTreeEditor = ({
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
   const allowTypeSelection = useMemo(() => typesFor(classification), [classification])
   const guards = useMemo(() => {
-    const context: GuardContext = { classification, operators: figTree.getOperators() }
+    const context: GuardContext = {
+      classification,
+      operators: figTree.getOperators(),
+      fragments: figTree.getFragments(),
+    }
     return {
       allowDelete: combineFilter(allowDelete, (nodeData) => canDelete(nodeData, context)),
       allowAdd: combineFilter(allowAdd, (nodeData) => canAdd(nodeData, context)),
@@ -160,6 +168,10 @@ export const FigTreeEditor = ({
     if (mark && valueAt(data, mark.path) !== mark.node) created.current = null
     setExpression(fill(data))
   }
+
+  // json-edit-react resets every row to its collapse filter when the filter
+  // changes, so it changes only with the host's `collapse`
+  const collapseFilter = useMemo(() => combineCollapse(collapse, latestClassification), [collapse])
 
   const layeredTheme = useMemo(
     () =>
@@ -183,6 +195,7 @@ export const FigTreeEditor = ({
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
         customText={combinedText}
+        collapse={collapseFilter}
         customNodeDefinitions={definitions}
         defaultValue={defaultValue}
         newKeyOptions={newKeyOptions}
@@ -202,9 +215,30 @@ export const FigTreeEditor = ({
 const editorDefaults = {
   showArrayIndexes: false,
   indent: 2,
-  collapse: 2,
   stringTruncateLength: 100,
 } satisfies Partial<JsonEditorProps>
+
+const DEFAULT_COLLAPSE = 2
+
+// The host's `collapse`, with the flattened payloads left open: they have no
+// chevron to open them by, and they show as their node's own rows, so a
+// numeric `collapse` counts levels as drawn, without them (design, topic 1,
+// "Flattened payloads and unlabelled rows"). A flattened row that starts
+// collapsed would render nothing, then unfold as its node opens
+// (json-edit-react#415, J11).
+const combineCollapse = (
+  host: boolean | number | FilterFunction,
+  classification: { current: Classification }
+): FilterFunction => {
+  const flattened = (path: Path) => rowAt(classification.current, path)?.payload === 'flattened'
+  return (nodeData) => {
+    if (flattened(nodeData.path)) return false
+    if (typeof host === 'boolean') return host
+    if (typeof host === 'function') return host(nodeData)
+    const hidden = nodeData.path.filter((_, index) => flattened(nodeData.path.slice(0, index)))
+    return nodeData.level - hidden.length >= host
+  }
+}
 
 // What json-edit-react's ＋ adds. An array's new element starts by the
 // element rule; a key added to a node starts as the toolbar's "Add parameter"
@@ -223,16 +257,23 @@ const newValue =
   }
 
 // The keys json-edit-react's ＋ offers: on a node, the same list as "Add
-// parameter", by name; elsewhere, a free-typed key (`null`). json-edit-react
-// leaves out those already present.
+// parameter", by name, less the entries that don't add a key to the node
+// itself; elsewhere, a free-typed key (`null`). json-edit-react leaves out
+// those already present.
 const newKeys =
   (figTree: FigTree, classification: Classification) =>
   ({ path, value }: Parameters<NewKeyOptionsFunction>[0]) => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
     const keys = addableKeys(value as Record<string, unknown>, rowAt(classification, path)?.kind, {
       operators: figTree.getOperators(),
+      fragments: figTree.getFragments(),
     })
-    return keys && [...keys.parameters, ...keys.modifiers].map(({ key }) => key)
+    return (
+      keys &&
+      [...keys.parameters, ...keys.modifiers]
+        .filter(({ argument, label }) => !argument && label === undefined)
+        .map(({ key }) => key)
+    )
   }
 
 // The host's filter, and the editor's: the editor only adds restrictions

@@ -49,6 +49,14 @@ describe('cleanNode', () => {
     ).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
   })
 
+  it('removes a parameters map that cleaning empties, and keeps one already empty', () => {
+    expect(
+      cleanNode({ fragment: 'greet', parameters: { extra: 1 }, fallback: 'x' }, fragment('greet'))
+    ).toEqual({ fragment: 'greet', fallback: 'x' })
+    const empty = { fragment: 'greet', parameters: {} }
+    expect(cleanNode(empty, fragment('greet'))).toBe(empty)
+  })
+
   it("leaves a fragment call's dynamic arguments as they are", () => {
     const call = { fragment: 'greet', parameters: '$data.form' }
     expect(cleanNode(call, fragment('greet'))).toBe(call)

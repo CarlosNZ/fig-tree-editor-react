@@ -7,9 +7,10 @@ export interface SelectOption<T> {
   value: T
 }
 
-// A heading over its options, never chosen itself
+// A heading over its options, never chosen itself. A group with no label
+// has no heading, so its options follow whatever is above them.
 export interface OptionGroup<T> {
-  label: string
+  label?: string
   description?: string
   options: SelectOption<T>[]
 }
@@ -25,4 +26,5 @@ export interface SelectProps<T> {
   border?: 'group' | 'all'
   startOpen?: boolean
   highlighted?: string | null // the value to highlight when the list opens
+  emptyText?: string // shown when there are no options at all
 }
