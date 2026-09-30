@@ -144,3 +144,123 @@ input.ft-select-input::placeholder {
 .ft-issue-path {
   flex-shrink: 0;
 }
+
+/* A node: its header, then its rows */
+.ft-node {
+  display: flex;
+  flex-direction: column;
+}
+
+.ft-display-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 2.5em;
+  margin-bottom: 0.25em;
+}
+
+.ft-evaluate-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4em;
+  min-width: 4em;
+  height: 2em;
+  padding: 0 1em;
+  border: none;
+  border-radius: 0.5em;
+  font: inherit;
+  cursor: pointer;
+  box-shadow:
+    rgba(50, 50, 93, 0.25) 0 2px 5px -1px,
+    rgba(0, 0, 0, 0.3) 0 1px 3px -1px;
+  transition: 0.3s;
+}
+
+.ft-evaluate-button:hover {
+  box-shadow:
+    rgba(0, 0, 0, 0.1) 0 0 5px 0,
+    rgba(0, 0, 0, 0.1) 0 0 1px 0;
+  transform: scale(0.99);
+}
+
+.ft-name {
+  min-width: 1em;
+  text-align: center;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.ft-icon.ft-evaluate-icon {
+  width: 1em;
+  transform: translateY(0.1em);
+}
+
+.ft-display-name {
+  position: absolute;
+  top: -0.3em;
+  right: 0;
+  font-family: sans-serif;
+  font-size: 0.7em;
+  font-variant: small-caps;
+  font-weight: 600;
+  color: gray;
+}
+
+.ft-display-name a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.ft-display-name a:hover {
+  color: rgb(76, 76, 76);
+  text-decoration: underline;
+}
+
+.ft-broken {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6em;
+  font-family: sans-serif;
+}
+
+.ft-broken .ft-name {
+  font-size: 1.2em;
+}
+
+.ft-broken-message {
+  font-size: 0.8em;
+}
+
+/* Hover card */
+.ft-hover-card-anchor {
+  position: relative;
+  display: inline-flex;
+}
+
+.ft-hover-card {
+  display: none;
+  position: absolute;
+  top: calc(100% + 0.4em);
+  left: 0;
+  z-index: 30;
+  width: max-content;
+  max-width: 22em;
+  padding: 0.5em 0.75em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: sans-serif;
+  font-size: 0.8em;
+  line-height: 1.4;
+  color: #333;
+  white-space: normal;
+  pointer-events: none;
+}
+
+.ft-hover-card-anchor:hover .ft-hover-card,
+.ft-hover-card-anchor:focus-within .ft-hover-card {
+  display: block;
+}

@@ -38,11 +38,10 @@ const placeholders = (container: HTMLElement) =>
 const shown = (expression: unknown) => placeholders(render(editor(expression)).container)
 
 describe('the custom node definitions', () => {
-  it('mark a full operator node and drop its operator row', () => {
-    expect(shown({ operator: 'plus', values: [1, '$data.x'] })).toEqual([
-      ['operator', 'Operator · plus (Plus (+))'],
-      ['reference', 'Reference · data'],
-    ])
+  it('give a full operator node its component, and drop its operator row', () => {
+    const { container } = render(editor({ operator: 'plus', values: [1, '$data.x'] }))
+    expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
+    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
     expect(screen.queryByText('operator')).not.toBeInTheDocument()
   })
 

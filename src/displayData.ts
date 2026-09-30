@@ -22,6 +22,7 @@ export type CategoryHintsProp = { [category in OperatorCategory]?: Partial<Categ
 
 export interface OperatorDisplay {
   displayName: string
+  description?: string // the definition's own; `literal` has none
   docUrl?: string
   backgroundColor: string
   textColor: string
@@ -54,7 +55,12 @@ interface Registry {
 
 // fig-tree evaluates `literal` without listing it among `getOperators()`, so
 // the editor adds it, with Data & objects, since it produces data verbatim.
-const LITERAL = { name: 'literal', category: 'data' as const, metadata: undefined }
+const LITERAL = {
+  name: 'literal',
+  category: 'data' as const,
+  description: undefined,
+  metadata: undefined,
+}
 
 export const buildDisplayData = ({
   operators,
@@ -76,7 +82,7 @@ export const buildDisplayData = ({
 
   return {
     operators: Object.fromEntries(
-      shown.map(({ name, category, metadata }) => {
+      shown.map(({ name, category, description, metadata }) => {
         const { seeds, ...hints } = mergeHints([
           coreOperatorHints[name],
           readHints(metadata),
@@ -86,6 +92,7 @@ export const buildDisplayData = ({
           name,
           {
             displayName: hints.displayName ?? name,
+            description,
             docUrl: hints.docUrl,
             backgroundColor: hints.backgroundColor ?? lightShade(categoryColour(category)),
             textColor: hints.textColor ?? darkShade(categoryColour(category)),

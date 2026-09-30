@@ -1,10 +1,11 @@
 import { useEffect, useInsertionEffect, useMemo } from 'react'
-import { JsonEditor, type JsonEditorProps } from 'json-edit-react'
+import { JsonEditor, type CustomTextDefinitions, type JsonEditorProps } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
-import { classify } from './classify'
+import { attachIssues } from './attachIssues'
+import { classify, rowAt, type Classification } from './classify'
 import { customNodeDefinitions } from './customNodeDefinitions'
-import { buildDisplayData, type OperatorHintsProp } from './displayData'
-import { layerTheme } from './editorTheme'
+import { buildDisplayData, type CategoryHintsProp, type OperatorHintsProp } from './displayData'
+import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
 import { injectStyles } from './injectStyles'
 import { displayPath } from './paths'
@@ -37,6 +38,8 @@ export interface FigTreeEditorProps extends Omit<
   expression: unknown
   setExpression: (expression: unknown, options?: SetExpressionOptions) => void
   operatorHints?: OperatorHintsProp
+  categoryHints?: CategoryHintsProp
+  editorTheme?: Partial<EditorTheme>
 }
 
 export const FigTreeEditor = ({
@@ -44,8 +47,11 @@ export const FigTreeEditor = ({
   expression,
   setExpression,
   operatorHints,
+  categoryHints,
+  editorTheme,
   className,
   theme,
+  customText,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -60,7 +66,10 @@ export const FigTreeEditor = ({
   // has to re-render every row (design, topic 1, finding 6).
   const operators = figTree.getOperators()
   const fragments = figTree.getFragments()
-  const displayData = useStableValue(buildDisplayData({ operators, fragments, operatorHints }))
+  const displayData = useStableValue(
+    buildDisplayData({ operators, fragments, operatorHints, categoryHints })
+  )
+  const mergedEditorTheme = useStableValue(mergeEditorTheme(editorTheme))
 
   // An expression, filled in and tidied (the fill-in step). The issues are
   // the ones `fillAndTidy`'s typo guard reads.
@@ -86,12 +95,32 @@ export const FigTreeEditor = ({
   }, [changed, stableFilled])
 
   const classification = useStableValue(classify(shown, { operators, fragments }))
+  const issueIndex = useStableValue(attachIssues(issues, classification))
   const definitions = useMemo(
-    () => customNodeDefinitions({ figTree, classification, displayData }),
-    [figTree, classification, displayData]
+    () =>
+      customNodeDefinitions({
+        figTree,
+        classification,
+        displayData,
+        issues: issueIndex,
+        editorTheme: mergedEditorTheme,
+      }),
+    [figTree, classification, displayData, issueIndex, mergedEditorTheme]
   )
 
-  const layeredTheme = useMemo(() => layerTheme(theme), [theme])
+  const layeredTheme = useMemo(
+    () =>
+      layerTheme(theme, {
+        classification,
+        issues: issueIndex,
+        editorTheme: mergedEditorTheme,
+      }),
+    [theme, classification, issueIndex, mergedEditorTheme]
+  )
+  const combinedText = useMemo(
+    () => combineText(editorText(classification), customText),
+    [classification, customText]
+  )
 
   return (
     <>
@@ -100,6 +129,7 @@ export const FigTreeEditor = ({
         {...props}
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
+        customText={combinedText}
         customNodeDefinitions={definitions}
         data={shown}
         setData={(data) => setExpression(fill(data))}
@@ -117,6 +147,34 @@ const editorDefaults = {
   collapse: 2,
   stringTruncateLength: 100,
 } satisfies Partial<JsonEditorProps>
+
+// A collapsed node's summary, in place of json-edit-react's item count
+// (design, topic 3, "Collapsed nodes")
+const editorText = (classification: Classification): CustomTextDefinitions => {
+  const summary = ({ path }: { path: (string | number)[] }) => {
+    const kind = rowAt(classification, path)?.kind
+    if (kind?.kind !== 'operator' || kind.form !== 'full') return null
+    return strings.FT_SUMMARY_OPERATOR(kind.name ?? strings.FT_INVALID_NODE)
+  }
+  return { ITEM_SINGLE: summary, ITEMS_MULTIPLE: summary }
+}
+
+// The host's entry applies wherever the editor's gives nothing
+const combineText = (
+  editor: CustomTextDefinitions,
+  host: CustomTextDefinitions = {}
+): CustomTextDefinitions => {
+  const keys = new Set([...Object.keys(editor), ...Object.keys(host)]) as Set<
+    keyof CustomTextDefinitions
+  >
+  return Object.fromEntries(
+    [...keys].map((key) => [
+      key,
+      (nodeData: Parameters<NonNullable<CustomTextDefinitions[typeof key]>>[0]) =>
+        editor[key]?.(nodeData) ?? host[key]?.(nodeData) ?? null,
+    ])
+  )
+}
 
 const severityLabel = {
   error: strings.FT_SEVERITY_ERROR,

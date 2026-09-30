@@ -40,6 +40,7 @@ describe('display data', () => {
     it('shows a core operator by its editor hints', () => {
       expect(displayData().operators.plus).toEqual({
         displayName: 'Plus (+)',
+        description: expect.stringMatching(/^Add numbers/) as string,
         docUrl: 'https://github.com/CarlosNZ/fig-tree-evaluator',
         backgroundColor: '#d7edd4',
         textColor: '#193e1e',
@@ -54,6 +55,7 @@ describe('display data', () => {
     it("reads a host operator's metadata as its hints", () => {
       const operator = hostOperator('shout', 'string', {
         displayName: 'Shout',
+        description: 'A host operator',
         docUrl: 'https://example.com/shout',
         backgroundColor: '#ffeecc',
         textColor: '#332200',
@@ -61,6 +63,7 @@ describe('display data', () => {
       })
       expect(displayData({ operators: [coreOperators, operator] }).operators.shout).toEqual({
         displayName: 'Shout',
+        description: 'A host operator',
         docUrl: 'https://example.com/shout',
         backgroundColor: '#ffeecc',
         textColor: '#332200',
@@ -80,6 +83,7 @@ describe('display data', () => {
       const { string } = coreCategoryHints
       expect(displayData({ operators: [operator] }).operators.shout).toEqual({
         displayName: 'shout',
+        description: 'A host operator',
         docUrl: undefined,
         backgroundColor: lightShade(string.backgroundColor),
         textColor: darkShade(string.backgroundColor),

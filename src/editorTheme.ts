@@ -1,4 +1,6 @@
-import { type Theme, type ThemeInput } from 'json-edit-react'
+import { type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
+import { brokenIssue, issuesAt, type IssueIndex } from './attachIssues'
+import { rowAt, type Classification } from './classify'
 
 // The editor's own colours, which json-edit-react's theme has no element for.
 // The editor's components apply them as inline styles, as json-edit-react
@@ -16,6 +18,7 @@ export interface EditorTheme {
   warning: string // warning flag
   filledIn: string // the filled-in-on-load marker
   failed: string // the failed-row marker
+  nodeBorder: string // the border around a node's rows
   shorthandBorder: string // a shorthand node's dashed border
   fragmentBackground: string // a fragment with no colours of its own
   fragmentText: string
@@ -33,6 +36,7 @@ export const defaultEditorTheme: EditorTheme = {
   warning: '#d68910',
   filledIn: '#e0a400',
   failed: '#c0392b',
+  nodeBorder: '#dbdbdb',
   shorthandBorder: '#9ca3af',
   fragmentBackground: '#477799',
   fragmentText: '#ebdf5a',
@@ -43,14 +47,63 @@ export const mergeEditorTheme = (theme: Partial<EditorTheme> = {}): EditorTheme 
   ...theme,
 })
 
+// What the editor's layer reads to style a row by its kind and its issues
+export interface ThemeContext {
+  classification: Classification
+  issues: IssueIndex
+  editorTheme: EditorTheme
+}
+
 // The editor's layer of json-edit-react's theme, beneath the host's.
 // json-edit-react stacks `theme` over its own default, later layers winning
-// wherever they overlap, so the host's styles apply over the editor's. TO-DO:
-// the styles that depend on a row's kind, as style functions, each with the
-// component that needs it (plan, Phases 5 to 9).
-const editorThemeLayer: Theme = { styles: {} }
+// wherever they overlap, so the host's styles apply over the editor's. The
+// styles that depend on a row's kind are style functions, which
+// json-edit-react applies after every static style, so a host's static styles
+// recolour json-edit-react's elements without undoing the editor's structure.
+//
+// TO-DO: the other kinds' styles, each with the component that needs it
+// (plan, Phases 7 to 10).
+const editorThemeLayer = ({ classification, issues, editorTheme }: ThemeContext): Theme => {
+  const isNode = ({ path }: NodeData) => {
+    const kind = rowAt(classification, path)?.kind
+    return kind?.kind === 'operator' && kind.form === 'full'
+  }
 
-export const layerTheme = (hostTheme: ThemeInput | undefined): ThemeInput =>
-  hostTheme === undefined
-    ? editorThemeLayer
-    : [editorThemeLayer, ...(Array.isArray(hostTheme) ? hostTheme : [hostTheme])]
+  return {
+    styles: {
+      // A node's header stands in for its brackets, which show again only
+      // around a collapsed node's summary
+      bracket: (nodeData) => (isNode(nodeData) && !nodeData.collapsed ? { display: 'none' } : null),
+      // A collapsed node is its summary alone, with no border
+      collectionInner: (nodeData) => {
+        if (!isNode(nodeData) || nodeData.collapsed) return null
+        // A broken node has an error border and stripe (topic 3)
+        const broken = brokenIssue(issuesAt(issues, nodeData.path)) !== undefined
+        return {
+          ...NODE_BORDER,
+          borderColor: broken ? editorTheme.error : editorTheme.nodeBorder,
+          ...(broken && { borderLeftWidth: '0.3em' }),
+        }
+      },
+    },
+  }
+}
+
+const NODE_BORDER = {
+  borderWidth: '1px',
+  borderStyle: 'solid',
+  borderRadius: '0.75em',
+  padding: '0.5em',
+  marginBottom: '0.5em',
+  marginLeft: '-1em',
+}
+
+export const layerTheme = (
+  hostTheme: ThemeInput | undefined,
+  context: ThemeContext
+): ThemeInput => {
+  const editorLayer = editorThemeLayer(context)
+  return hostTheme === undefined
+    ? editorLayer
+    : [editorLayer, ...(Array.isArray(hostTheme) ? hostTheme : [hostTheme])]
+}

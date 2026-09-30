@@ -2,6 +2,7 @@ import { type CustomComponentProps } from 'json-edit-react'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig, type DefinitionName } from './customNodeDefinitions'
 import { type DisplayData } from './displayData'
+import { withoutFilteredRows } from './nodeRows'
 
 // TO-DO: replace with each kind's own component (plan, Phases 5 to 9).
 //
@@ -36,13 +37,7 @@ export const Placeholder = ({
   const colour = COLOURS[definition]
   const isLeaf = children === undefined
 
-  // The rows a node's header already shows (the `operator` or `fragment`
-  // row) are dropped, as each node's own component will drop them
-  const shown = Array.isArray(children)
-    ? children.filter(
-        (child) => !rowAt(classification, [...nodeData.path, String(child.key)])?.filtered
-      )
-    : children
+  const shown = withoutFilteredRows(children, classification, nodeData.path)
 
   return (
     <div

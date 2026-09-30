@@ -1,4 +1,12 @@
 import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } from './FigTreeEditor'
+import { defaultEditorTheme, type EditorTheme } from './editorTheme'
 import { Select } from './Select'
 
-export { FigTreeEditor, Select, type FigTreeEditorProps, type SetExpressionOptions }
+export {
+  FigTreeEditor,
+  Select,
+  defaultEditorTheme,
+  type EditorTheme,
+  type FigTreeEditorProps,
+  type SetExpressionOptions,
+}

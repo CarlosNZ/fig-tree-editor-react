@@ -8,4 +8,6 @@ export const strings = {
   FT_SEVERITY_WARNING: 'warning',
   FT_SEVERITY_HINT: 'hint',
   FT_SELECT_NO_RESULTS: 'No results',
+  FT_INVALID_NODE: 'invalid node', // an operator or fragment that isn't a string
+  FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node
 }

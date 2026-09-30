@@ -1,7 +1,15 @@
-import { type CustomNodeDefinition, type NodeData } from 'json-edit-react'
+import {
+  type CustomComponentProps,
+  type CustomNodeDefinition,
+  type NodeData,
+} from 'json-edit-react'
+import { type FC } from 'react'
 import { type FigTree } from 'fig-tree-evaluator'
+import { type IssueIndex } from './attachIssues'
 import { rowAt, type Classification, type Row } from './classify'
 import { type DisplayData } from './displayData'
+import { type EditorTheme } from './editorTheme'
+import { Operator } from './Operator'
 import { Placeholder } from './Placeholder'
 
 // The editor's custom node definitions (design, topic 1, "Node shapes and
@@ -11,7 +19,7 @@ import { Placeholder } from './Placeholder'
 // a row's kind is worked out once per update rather than per row.
 //
 // TO-DO: each phase replaces the placeholder components with its own (plan,
-// Phases 5 to 9).
+// Phases 7 to 9).
 
 // What every component reads, through `componentProps`: json-edit-react's
 // route for configuration a component needs
@@ -19,6 +27,8 @@ export interface Shared {
   figTree: FigTree
   classification: Classification
   displayData: DisplayData
+  issues: IssueIndex // by the row each shows on
+  editorTheme: EditorTheme // merged over the defaults
 }
 
 export type DefinitionName =
@@ -40,6 +50,12 @@ export interface ComponentConfig extends Shared {
 
 type Condition = (row: Row, nodeData: NodeData) => boolean
 
+// Each definition's component, where it has one yet; the rest show the
+// placeholder
+const COMPONENTS: Partial<Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>>>> = {
+  operator: Operator,
+}
+
 export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] => {
   const matches =
     (condition: Condition) =>
@@ -54,7 +70,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     flags: Partial<CustomNodeDefinition> = {}
   ): CustomNodeDefinition => ({
     condition,
-    component: Placeholder as unknown as CustomNodeDefinition['component'],
+    component: (COMPONENTS[name] ?? Placeholder) as unknown as CustomNodeDefinition['component'],
     componentProps: { ...shared, definition: name } satisfies ComponentConfig,
     ...flags,
   })
