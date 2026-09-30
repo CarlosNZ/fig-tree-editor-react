@@ -38,18 +38,24 @@ const placeholders = (container: HTMLElement) =>
 
 const shown = (expression: unknown) => placeholders(render(editor(expression)).container)
 
+// Every reference in the tree, by its text
+const references = (container: HTMLElement) =>
+  [...container.querySelectorAll('.ft-reference')].map((element) => element.textContent)
+
 describe('the custom node definitions', () => {
   it('give a full operator node its component, and drop its operator row', () => {
     const { container } = render(editor({ operator: 'plus', values: [1, '$data.x'] }))
     expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
-    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
+    expect(placeholders(container)).toEqual([])
+    expect(references(container)).toEqual(['$data.x'])
     expect(screen.queryByText('operator')).not.toBeInTheDocument()
   })
 
   it('give a shorthand node its component, and flatten a named payload', () => {
     const { container } = render(editor({ $if: { condition: '$data.ok', then: 'Yes' } }))
     expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
-    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
+    expect(placeholders(container)).toEqual([])
+    expect(references(container)).toEqual(['$data.ok'])
     expect(() => keyLabel('$if')).toThrow()
     expect(keyLabel('condition')).toBeInTheDocument()
   })
@@ -62,10 +68,12 @@ describe('the custom node definitions', () => {
   })
 
   it('render a single value as its own kind, without the `$name` key', () => {
-    expect(shown({ $not: '$data.x' })).toEqual([['reference', 'Reference · data · unlabelled']])
+    const reference = render(editor({ $not: '$data.x' }))
+    expect(references(reference.container)).toEqual(['$data.x'])
     expect(() => keyLabel('$not')).toThrow()
+    reference.unmount()
     const { container } = render(editor({ $not: { $greaterThan: ['$data.age', 18] } }))
-    expect(placeholders(container)).toEqual([['reference', 'Reference · data']])
+    expect(references(container)).toEqual(['$data.age'])
     expect(container.querySelectorAll('.ft-display-bar')).toHaveLength(2)
   })
 
@@ -79,9 +87,8 @@ describe('the custom node definitions', () => {
   })
 
   it("keep a dynamic call's `parameters` row, with its key", () => {
-    expect(shown({ fragment: 'greet', parameters: '$data.form' })).toEqual([
-      ['reference', 'Reference · data'],
-    ])
+    const { container } = render(editor({ fragment: 'greet', parameters: '$data.form' }))
+    expect(references(container)).toEqual(['$data.form'])
     expect(keyLabel('parameters')).toBeInTheDocument()
   })
 
@@ -98,7 +105,6 @@ describe('the custom node definitions', () => {
     expect(shown({ '//': 'A note', title: '$data.t' })).toEqual([
       ['container', 'Container'],
       ['commentLine', 'Comment line'],
-      ['reference', 'Reference · data'],
     ])
     expect(shown({ '//': ['One', '$data.x'], $plus: [1] })).toEqual([
       ['comment', 'Comment'],
@@ -107,18 +113,18 @@ describe('the custom node definitions', () => {
     ])
   })
 
-  it('name the bindings an `as` gives', () => {
-    expect(
-      shown({ $map: { input: '$data.list', as: 'item', each: '$item.price' } }).slice(-1)
-    ).toEqual([['reference', 'Reference · element as item']])
+  it('read the names an `as` gives as references', () => {
+    const { container } = render(
+      editor({ $map: { input: '$data.list', as: 'item', each: '$item.price' } })
+    )
+    expect(references(container)).toEqual(['$data.list', '$item.price'])
   })
 
-  it.each(demoExpressions)('mark every reference in $name', ({ expression }) => {
-    const references = [...classify(expression, registry).values()].filter(
+  it.each(demoExpressions)('show every reference in $name as one', ({ expression }) => {
+    const classified = [...classify(expression, registry).values()].filter(
       ({ kind }) => kind?.kind === 'reference'
     )
-    const marked = shown(expression).filter(([kind]) => kind === 'reference')
-    expect(marked).toHaveLength(references.length)
+    expect(references(render(editor(expression)).container)).toHaveLength(classified.length)
   })
 
   describe('identity', () => {

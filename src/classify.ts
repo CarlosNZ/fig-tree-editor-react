@@ -506,7 +506,7 @@ const withVars = (value: Record<string, unknown>, path: Path, context: Context):
     : context
 
 // The `as` names in scope, outermost first
-const bindings = (scope: readonly ScopeEntry[]) =>
+export const bindings = (scope: readonly ScopeEntry[]) =>
   scope.flatMap((entry) => (entry.kind === 'iterator' && entry.as !== undefined ? [entry.as] : []))
 
 // An iterator's `as`, where it is a literal name. An illegal one is

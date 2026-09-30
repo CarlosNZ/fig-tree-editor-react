@@ -303,6 +303,28 @@ input.ft-select-input::placeholder {
   font-size: 0.8em;
 }
 
+/* A reference: its text, then the ▶ that evaluates it */
+.ft-reference {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.ft-reference-evaluate {
+  appearance: none;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8em;
+  line-height: 0;
+  cursor: pointer;
+}
+
+/* Holds json-edit-react's input while a reference is edited, adding no box */
+.ft-reference-input {
+  display: contents;
+}
+
 /* Hover card */
 .ft-hover-card-anchor {
   position: relative;

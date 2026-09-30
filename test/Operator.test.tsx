@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -446,14 +446,20 @@ describe('the operator node', () => {
       })
     })
 
-    it('starts Data and Variable references', async () => {
+    it('starts Data and Variable references, with the input open for the path', async () => {
       const { written, user } = host({ operator: 'round', value: 3, vars: { price: 2 } })
       await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
       await user.selectOptions(screen.getByRole('combobox'), 'Data')
-      expect(latest(written)).toMatchObject({ value: '$data' })
-      await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
-      await user.selectOptions(screen.getByRole('combobox'), 'Variable')
-      expect(latest(written)).toMatchObject({ value: '$vars.price' })
+      expect(written).toEqual([])
+      expect(screen.getByRole('textbox')).toHaveValue('$data.')
+      await user.keyboard('total{Enter}')
+      expect(latest(written)).toMatchObject({ value: '$data.total' })
+      cleanup()
+      const second = host({ operator: 'round', value: 3, vars: { price: 2 } })
+      await second.user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+      await second.user.selectOptions(screen.getByRole('combobox'), 'Variable')
+      await second.user.keyboard('{Enter}')
+      expect(latest(second.written)).toMatchObject({ value: '$vars.price' })
     })
 
     it('leaves nothing to open a picker later when the host rejects the switch', async () => {

@@ -117,8 +117,8 @@ describe('typeOptions', () => {
 })
 
 describe('referenceStart', () => {
-  it('starts Data as the whole data object', () => {
-    expect(startAt('data', { operator: 'round', value: 1 }, ['value'])).toBe('$data')
+  it('starts Data as `$data.`, for the path to be typed after it', () => {
+    expect(startAt('data', { operator: 'round', value: 1 }, ['value'])).toBe('$data.')
   })
 
   it('starts Variable as the first var of the nearest block that has one', () => {

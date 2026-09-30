@@ -92,9 +92,9 @@ const currentType = (row: Row | undefined, value: unknown, options: TypeOptions)
 
 // ── The reference entries' starting values ─────────────────────────────────
 
-// Data is the whole data object; a var is the first of the nearest block that
-// has one; an element is the innermost iterator's, by its `as` name where it
-// has one. Each is valid where it's offered.
+// Data is `$data.`, for the path to be typed after it; a var is the first of
+// the nearest block that has one; an element is the innermost iterator's, by
+// its `as` name where it has one. Each is valid where it's offered.
 export const referenceStart = (
   namespace: 'data' | 'vars' | 'element',
   row: Row | undefined,
@@ -109,7 +109,7 @@ export const referenceStart = (
     const iterator = nearestIterator(scope)
     return iterator?.as === undefined ? '$element' : `$${iterator.as}`
   }
-  return '$data'
+  return '$data.'
 }
 
 const nearestVar = (scope: readonly ScopeEntry[], data: unknown) => {

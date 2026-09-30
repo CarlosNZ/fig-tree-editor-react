@@ -15,6 +15,7 @@ export const strings = {
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎
+  FT_EVALUATE: 'Evaluate', // a reference's ▶
   FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes
   FT_TOOLBAR_CANCEL: 'Cancel', // ✗, undoing them
 

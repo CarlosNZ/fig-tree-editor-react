@@ -4,7 +4,7 @@ import { type ComponentConfig, type DefinitionName } from './customNodeDefinitio
 import { type DisplayData } from './displayData'
 import { withoutFilteredRows } from './nodeRows'
 
-// TO-DO: replace with each kind's own component (plan, Phases 5 to 9).
+// TO-DO: replace with each kind's own component (plan, Phases 9 and 10).
 //
 // A stand-in for every definition's component, so the classification can be
 // checked on real expressions: json-edit-react's own rendering inside a thin

@@ -19,6 +19,10 @@ export const ParameterKey = ({
 }: CustomKeyProps<Shared>) => {
   const { classification, figTree } = componentProps!
   const row = rowAt(classification, nodeData.path)
+  // A shorthand's `$name` row, whose name the node's header already shows.
+  // Its definition leaves the key out too, but a type switch takes its
+  // definition by name, which may be the labelled one.
+  if (row?.payload === 'unlabelled') return null
   const owner = row?.slot?.ownerPath ? rowAt(classification, row.slot.ownerPath)?.kind : undefined
   const operator =
     owner?.kind === 'operator'

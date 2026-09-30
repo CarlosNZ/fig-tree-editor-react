@@ -17,6 +17,7 @@ import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
 import { Placeholder } from './Placeholder'
+import { Reference } from './Reference'
 import { Shorthand } from './Shorthand'
 import { strings } from './strings'
 import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
@@ -28,7 +29,7 @@ import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
 // a row's kind is worked out once per update rather than per row.
 //
 // TO-DO: each phase replaces the placeholder components with its own (plan,
-// Phases 8 to 10).
+// Phases 9 and 10).
 
 // What every component reads, through `componentProps`: json-edit-react's
 // route for configuration a component needs
@@ -66,6 +67,7 @@ export type DefinitionName =
 export interface ComponentConfig extends Shared {
   definition: DefinitionName
   unlabelled?: boolean // an unlabelled copy, on a `$name` row
+  entry?: string // a reference definition's entry in the type dropdown
 }
 
 type Condition = (row: Row, nodeData: NodeData) => boolean
@@ -80,6 +82,7 @@ const COMPONENTS: Partial<
   operator: Operator,
   fragment: Fragment,
   shorthand: Shorthand,
+  reference: Reference,
   flattened: null,
   unlabelled: null,
 }
@@ -106,20 +109,26 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ...flags,
   })
 
-  // A kind that can sit in a `$name` row as a single value comes in two: a
-  // copy without its key label for that row, then the definition itself
-  // (design, "Why unlabelled definitions are copies")
-  const unlabelledVariants = (base: CustomNodeDefinition): CustomNodeDefinition[] => [
-    {
-      ...base,
-      condition: (nodeData) =>
-        rowAt(shared.classification, nodeData.path)?.payload === 'unlabelled' &&
-        base.condition(nodeData),
-      componentProps: { ...base.componentProps, unlabelled: true },
-      showKey: false,
-    },
-    base,
-  ]
+  // A kind that can sit in a `$name` row as a single value comes in two: the
+  // definition itself, then a copy without its key label for that row
+  // (design, "Why unlabelled definitions are copies"). They match disjoint
+  // rows, and the definition comes first, since json-edit-react finds a type
+  // switch's definition by name alone, taking the first: the key's own
+  // component leaves out an unlabelled row's key, so the switch shows the
+  // right key either way.
+  const unlabelledVariants = (base: CustomNodeDefinition): CustomNodeDefinition[] => {
+    const unlabelled = ({ path }: NodeData) =>
+      rowAt(shared.classification, path)?.payload === 'unlabelled'
+    return [
+      { ...base, condition: (nodeData) => !unlabelled(nodeData) && base.condition(nodeData) },
+      {
+        ...base,
+        condition: (nodeData) => unlabelled(nodeData) && base.condition(nodeData),
+        componentProps: { ...base.componentProps, unlabelled: true },
+        showKey: false,
+      },
+    ]
+  }
 
   const isKind =
     (kind: NonNullable<Row['kind']>['kind'], form?: 'full' | 'shorthand') =>
@@ -157,7 +166,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   }
 
   // One named definition per reference entry, so a reference row shows its
-  // entry as its type (topic 4, "The type dropdown"). Parameter, for
+  // entry as its type (topic 4, "The type dropdown"). Choosing an entry keeps
+  // the input open for the path (`editOnTypeSwitch`). Parameter, for
   // `$params`, is never offered while fragment-definition mode is parked.
   const referenceEntry = (
     namespaces: ReferenceNamespace[],
@@ -169,8 +179,15 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
         matches(({ kind }) => kind?.kind === 'reference' && namespaces.includes(kind.namespace)),
         {
           name: REFERENCE_ENTRIES[namespaces[0]],
+          componentProps: {
+            ...shared,
+            definition: 'reference',
+            entry: REFERENCE_ENTRIES[namespaces[0]],
+          } satisfies ComponentConfig,
           showInTypeSelector: true,
+          showOnEdit: true,
           passOriginalNode: true,
+          editOnTypeSwitch: start !== undefined,
           defaultValue: (nodeData: NodeData) =>
             start === undefined
               ? nodeData.value
