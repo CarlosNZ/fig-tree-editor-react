@@ -42,7 +42,7 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
 
 // A host holding the expression, so each commit comes back as the editor's
 // next expression, in StrictMode
-const host = (initial: unknown) => {
+const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
   const written: unknown[] = []
   const Host = () => {
     const [expression, setExpression] = useState(initial)
@@ -55,6 +55,7 @@ const host = (initial: unknown) => {
           setExpression(next)
         }}
         collapse={false}
+        {...props}
       />
     )
   }
@@ -344,6 +345,49 @@ describe('the fragment call', () => {
       editor({ fragment: 'gret' })
       fireEvent.click(pencil())
       expect(screen.queryByText('Add parameter')).toBeNull()
+    })
+  })
+
+  describe('created from the type dropdown', () => {
+    // Opens the last value row's editor and chooses a type
+    const chooseType = async (user: ReturnType<typeof userEvent.setup>, type: string) => {
+      await user.click(screen.getAllByRole('button', { name: 'Edit' }).at(-1)!)
+      await user.selectOptions(screen.getByRole('combobox'), type)
+    }
+
+    it('starts the first fragment that can fit, seeded, with its picker open', async () => {
+      const { container, written, user } = host({ operator: 'round', value: 3 })
+      await chooseType(user, 'Fragment')
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: { fragment: 'getCapital', parameters: { country: 'Replace me' } },
+      })
+      expect(toolbar(container)).toBeInTheDocument()
+      expect(screen.getByPlaceholderText('Search fragments')).toHaveFocus()
+      await user.keyboard('greet{Enter}')
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: { fragment: 'greet', parameters: { name: 'Replace me' } },
+      })
+    })
+
+    it('restores the value it replaced on ✗', async () => {
+      const { written, user } = host({ operator: 'round', value: 3 })
+      await chooseType(user, 'Fragment')
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ operator: 'round', value: 3 })
+    })
+
+    it("starts the host's default fragment where it can fit", async () => {
+      const greet = host({ operator: 'round', value: 3 }, { defaultFragment: 'greet' })
+      await chooseType(greet.user, 'Fragment')
+      expect(latest(greet.written)).toMatchObject({ value: { fragment: 'greet' } })
+    })
+
+    it("passes over the host's default where it can't fit", async () => {
+      const { written, user } = host({ operator: 'round', value: 3 }, { defaultFragment: 'today' })
+      await chooseType(user, 'Fragment')
+      expect(latest(written)).toMatchObject({ value: { fragment: 'getCapital' } })
     })
   })
 })

@@ -34,6 +34,7 @@ export const strings = {
   FT_TYPE_ELEMENT: 'Element',
   FT_TYPE_PARAMETER: 'Parameter',
   FT_TYPE_OPERATOR: 'Operator',
+  FT_TYPE_FRAGMENT: 'Fragment',
 
   // Adding parameters
   FT_ADD_PARAMETER: 'Add parameter',

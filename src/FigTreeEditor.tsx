@@ -62,6 +62,7 @@ export interface FigTreeEditorProps extends Omit<
   categoryHints?: CategoryHintsProp
   editorTheme?: Partial<EditorTheme>
   defaultOperators?: DefaultOperators
+  defaultFragment?: string
 }
 
 export const FigTreeEditor = ({
@@ -69,6 +70,7 @@ export const FigTreeEditor = ({
   expression,
   setExpression,
   defaultOperators,
+  defaultFragment,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -136,9 +138,18 @@ export const FigTreeEditor = ({
         issues: issueIndex,
         editorTheme: mergedEditorTheme,
         defaultOperators: stableDefaultOperators,
+        defaultFragment,
         created,
       }),
-    [figTree, classification, displayData, issueIndex, mergedEditorTheme, stableDefaultOperators]
+    [
+      figTree,
+      classification,
+      displayData,
+      issueIndex,
+      mergedEditorTheme,
+      stableDefaultOperators,
+      defaultFragment,
+    ]
   )
 
   // Memoised on what the definitions are: json-edit-react passes both to every
@@ -148,7 +159,10 @@ export const FigTreeEditor = ({
     [figTree, classification, displayData]
   )
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
-  const allowTypeSelection = useMemo(() => typesFor(classification), [classification])
+  const allowTypeSelection = useMemo(
+    () => typesFor(figTree, classification),
+    [figTree, classification]
+  )
   const guards = useMemo(() => {
     const context: GuardContext = {
       classification,
@@ -286,11 +300,12 @@ const combineFilter = (
   return editor
 }
 
-// Each value row's type dropdown, from its slot
+// Each value row's type dropdown, from its slot and the fragments registered
+// when it opens
 const typesFor =
-  (classification: Classification) =>
+  (figTree: FigTree, classification: Classification) =>
   ({ path, value, fullData }: Parameters<TypeFilterFunction>[0]) =>
-    typeOptions(rowAt(classification, path), value, fullData)
+    typeOptions(rowAt(classification, path), value, fullData, figTree.getFragments())
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes")

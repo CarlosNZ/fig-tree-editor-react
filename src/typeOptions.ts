@@ -1,4 +1,10 @@
-import { type BasicType, type ExpectedType, type ReferenceNamespace } from 'fig-tree-evaluator'
+import {
+  type BasicType,
+  type ExpectedType,
+  type FragmentInfo,
+  type ReferenceNamespace,
+} from 'fig-tree-evaluator'
+import { typesIntersect } from 'fig-tree-evaluator/format'
 import { type EnumDefinition, type TypeOptions } from 'json-edit-react'
 import { type Row, type ScopeEntry } from './classify'
 import { valueAt } from './paths'
@@ -14,7 +20,9 @@ import { strings } from './strings'
 // 2. The reference entries: Data at every slot that isn't literal-only,
 //    Variable where a var is in scope, and Element inside an iterator's
 //    per-element parameter.
-// 3. Operator, where Data is offered.
+// 3. Operator, where Data is offered, then Fragment, where a registered
+//    fragment can fit the slot, so choosing it never creates a call that is
+//    an error from the start.
 // 4. The row's current type, where it isn't already listed, so the dropdown
 //    never shows a value it doesn't offer.
 
@@ -29,7 +37,12 @@ export const REFERENCE_ENTRIES: Record<ReferenceNamespace, string> = {
 
 const STANDARD = ['string', 'number', 'boolean', 'null', 'object', 'array']
 
-export const typeOptions = (row: Row | undefined, value: unknown, data: unknown): TypeOptions => {
+export const typeOptions = (
+  row: Row | undefined,
+  value: unknown,
+  data: unknown,
+  fragments: readonly FragmentInfo[]
+): TypeOptions => {
   const { slot, scope = [] } = row ?? {}
   const options: TypeOptions = slot ? admitted(slot.admits) : [...STANDARD]
   if (slot && !slot.literalOnly) {
@@ -37,6 +50,9 @@ export const typeOptions = (row: Row | undefined, value: unknown, data: unknown)
     if (nearestVar(scope, data) !== undefined) options.push(REFERENCE_ENTRIES.vars)
     if (nearestIterator(scope) !== undefined) options.push(REFERENCE_ENTRIES.element)
     options.push(strings.FT_TYPE_OPERATOR)
+    const admits = slot.admits
+    if (fragments.some(({ returns }) => typesIntersect(returns, admits)))
+      options.push(strings.FT_TYPE_FRAGMENT)
   }
   const current = currentType(row, value, options)
   if (current !== undefined && !options.includes(current)) options.push(current)

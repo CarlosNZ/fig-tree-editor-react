@@ -349,7 +349,7 @@ describe('the operator node', () => {
 
     it("offers the row's slot's types", async () => {
       const { user } = host({ operator: 'round', value: 3 })
-      expect(await typeNames(user)).toEqual(['number', 'null', 'Data', 'Operator'])
+      expect(await typeNames(user)).toEqual(['number', 'null', 'Data', 'Operator', 'Fragment'])
     })
 
     it("starts the slot's default operator, with its picker open", async () => {

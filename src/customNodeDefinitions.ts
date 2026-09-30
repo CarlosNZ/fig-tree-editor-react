@@ -9,6 +9,7 @@ import { type IssueIndex } from './attachIssues'
 import { rowAt, type Classification, type Row } from './classify'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
+import { getStartingFragment } from './getStartingFragment'
 import { getStartingNode, type DefaultOperators } from './getStartingNode'
 import { Fragment } from './Fragment'
 import { Operator } from './Operator'
@@ -37,6 +38,7 @@ export interface Shared {
   issues: IssueIndex // by the row each shows on
   editorTheme: EditorTheme // merged over the defaults
   defaultOperators: DefaultOperators | undefined
+  defaultFragment: string | undefined
   // The node the type dropdown has just created, which its component opens
   // its picker on (design, topic 2, "Node lifecycle")
   created: { current: CreatedNode | null }
@@ -135,6 +137,21 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     return node
   }
 
+  // The type dropdown's Fragment entry: the slot's starting fragment, marked
+  // the same way. It's offered only where a fragment can fit, so there is
+  // always one.
+  const startFragment = (nodeData: NodeData) => {
+    const row = rowAt(shared.classification, nodeData.path)
+    const node = getStartingFragment(row?.slot?.admits ?? 'any', {
+      fragments: shared.figTree.getFragments(),
+      displayData: shared.displayData,
+      defaultFragment: shared.defaultFragment,
+    })
+    if (node === null) return nodeData.value
+    shared.created.current = { path: nodeData.path, node, replaced: nodeData.value }
+    return node
+  }
+
   // One named definition per reference entry, so a reference row shows its
   // entry as its type (topic 4, "The type dropdown"). Parameter, for
   // `$params`, is never offered while fragment-definition mode is parked.
@@ -179,6 +196,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       definition('fragment', matches(isKind('fragment', 'full')), {
         showOnEdit: true,
         passOriginalNode: true,
+        name: strings.FT_TYPE_FRAGMENT,
+        defaultValue: startFragment,
       })
     ),
     ...unlabelledVariants(

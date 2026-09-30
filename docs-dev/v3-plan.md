@@ -398,6 +398,13 @@ Fragment-definition mode stays parked (topic 6): nothing here depends on it. fig
   - A Fragment definition named for the entry, with that function as its `defaultValue`, offered only while a registered fragment can fit. The new call's picker opens through 6.3's mark, and ✗ restores the value it replaced.
   - The `defaultFragment` prop joins the props.
   - It comes before the node-type switch, which starts fragments the same way.
+  - Done, with nothing to settle beforehand: the design covers every part.
+    - **The starting fragment** is `getStartingFragment(admits, context)` in `src/getStartingFragment.ts`, reading the picker's own options (`fragmentOptions`), so it always matches the picker's order, as `getStartingNode` does with operators. It returns `{ fragment: name }`, or null where nothing fits, and the fill-in step seeds the required arguments.
+    - **The entry:** `typeOptions` takes the fragments and offers Fragment after Operator, where one's `returns` can fit the slot; the editor reads them when a dropdown opens. The fragment definition is named Fragment, with a `defaultValue` that sets 6.3's mark, and the Fragment's `useOpenCreated` (7.2) opens its toolbar with the picker open and its search focused.
+    - **`defaultFragment`** joins the props, as a plain name, passed to the definitions through `Shared`.
+    - **Seen in the demo:** on `round.value`, the dropdown offers number · null · Data · Operator · Fragment, and choosing Fragment gives `{ fragment: 'getCapital', parameters: { country: 'Replace me' } }` with the picker open on "Capital city".
+    - **Tests:** `test/getStartingFragment.test.ts`; `test/typeOptions.test.ts` has Fragment in the design's examples, and where no fragment fits or none is registered; `test/Fragment.test.tsx` covers creating a call with its picker open, ✗ restoring the value, and the host's `defaultFragment` where it fits and where it doesn't.
+    - **The size budget** stays at 17.7 kB; the bundle is 17.02 kB brotli.
 - **7.4 · The node-type switch,** first in both toolbars (topic 2, "Node lifecycle"; topic 3, "Header and toolbar").
   - Switching, a pure module with its own tests: Operator to Fragment keeps `//`, `vars` and `fallback` and drops `useCache`; Fragment to Operator starts as `getStartingNode` for the slot, keeping the same modifiers; either to Value writes the position's starting value. Fragment is offered only where a registered fragment can fit.
   - **After a switch to the other node type** (agreed with Carl): the node belongs to the other definition, so the toolbar can't carry on. The switch sets 6.3's mark, and the new node opens its toolbar with the picker open. ✗ there restores the node as it was when the session opened. A switch to Value commits and closes.
