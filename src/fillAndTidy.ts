@@ -270,7 +270,7 @@ const order = (node: Record<string, unknown>, head: string[], parameters: string
 }
 
 // `positionalParams` first, then the rest in declared order
-const parameterOrder = (operator: OperatorInfo) => {
+export const parameterOrder = (operator: OperatorInfo) => {
   const positional = (operator.positionalParams ?? []).map((name) => name.replace(/^\.\.\./, ''))
   return [
     ...positional,

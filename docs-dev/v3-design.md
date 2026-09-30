@@ -717,7 +717,7 @@ Mocked up as section K of the mockups.
 
 **The operator's own card**, shown on hovering the node's operator button (whose click still evaluates), carries topic 3's description tooltip and the `docUrl` link, and gains a line for the host's defaults for that operator, since they change behaviour without appearing in the tree: `instanceFallback`, `instanceUseCache`, and `instanceDefault` on any parameter the node does not set ("This application sets `fallback: null` and `timeout: 5000` on every `http` node that doesn't set its own").
 
-**The add-parameter picker** shows each entry's description with "Default: …" appended to the same text, so `Select` needs no change ("Adding parameters and starting values").
+**The add-parameter picker** shows each entry's description, with no default: beside an entry, a default reads as the value choosing it gives, which is the seed (plan, 6.2). Showing defaults somewhere other than the hover card: do later.
 
 **The `…Default` parameters get nothing of their own.** The Evaluated line says when they fire, the Replacement line ties an engine-applied default (`nullValueDefault`, `nullInputDefault`) to its target in both directions, and key order already puts them last. That covers fig-tree's two mechanisms, defaults the operator reads itself and defaults the engine applies, without the author needing to know which is which.
 

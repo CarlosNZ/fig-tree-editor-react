@@ -22,6 +22,18 @@ export const strings = {
   FT_PICKER_TOGGLE_HINT: (name: string) => `⇄ select again to write as ${name}`,
   FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 
+  // Adding parameters
+  FT_ADD_PARAMETER: 'Add parameter',
+  FT_ADD_GROUP_PARAMETERS: 'Parameters',
+  FT_ADD_GROUP_MODIFIERS: 'Modifiers',
+  FT_ADD_REQUIRED: 'required',
+  FT_ARGUMENTS: "The fragment's arguments",
+  FT_MODIFIER_COMMENT: 'A note, never evaluated',
+  FT_MODIFIER_FALLBACK: 'The value to use if this node fails',
+  FT_MODIFIER_USE_CACHE: "Cache this node's result",
+  FT_MODIFIER_VARS: 'Named values for this node and everything inside it',
+  FT_NEW_COMMENT: 'Comment...', // a new `//`
+
   // What a type admits, in words
   FT_TYPE_ANY: 'anything',
   FT_TYPE_STRING: 'a string',

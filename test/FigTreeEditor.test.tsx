@@ -156,6 +156,52 @@ describe('FigTreeEditor', () => {
     // The last Add button is the innermost collection's
     const addToLast = () => fireEvent.click(screen.getAllByRole('button', { name: 'Add' }).at(-1)!)
 
+    // json-edit-react's key selector, opened by the root's ＋
+    const keyOptions = () => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Add' })[0])
+      const select = screen.getByRole('combobox')
+      const options = [...select.querySelectorAll('option')].map(({ value }) => value)
+      return { select, options: options.filter((value) => value !== '') }
+    }
+
+    it("offers a node's parameters and modifiers by name, and starts the one chosen", () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'round', value: 3.14, fallback: null }}
+          setExpression={setExpression}
+        />
+      )
+      const { select, options } = keyOptions()
+      expect(options).toEqual(['decimals', '//', 'useCache', 'vars'])
+      fireEvent.change(select, { target: { value: 'decimals' } })
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({
+        operator: 'round',
+        value: 3.14,
+        decimals: 2,
+        fallback: null,
+      })
+    })
+
+    it('offers a shorthand node its modifiers only', () => {
+      render(
+        <FigTreeEditor figTree={figTree} expression={{ $plus: [1, 2] }} setExpression={vi.fn()} />
+      )
+      expect(keyOptions().options).toEqual(['//', 'fallback', 'useCache', 'vars'])
+    })
+
+    it('starts a free-typed key as anything', () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor figTree={figTree} expression={{ a: 1 }} setExpression={setExpression} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'b' } })
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ a: 1, b: 'Replace me' })
+    })
+
     it("starts an array's new element by the element rule", () => {
       const setExpression = vi.fn()
       render(

@@ -4,6 +4,7 @@ import {
   type CustomTextDefinitions,
   type DefaultValueFunction,
   type JsonEditorProps,
+  type NewKeyOptionsFunction,
 } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
@@ -18,6 +19,7 @@ import {
 import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
 import { getStartingElement } from './getStartingValue'
+import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
 import { displayPath } from './paths'
 import { strings } from './strings'
@@ -119,12 +121,13 @@ export const FigTreeEditor = ({
     [figTree, classification, displayData, issueIndex, mergedEditorTheme]
   )
 
-  // Memoised on what the definitions are: json-edit-react passes it to every
+  // Memoised on what the definitions are: json-edit-react passes both to every
   // collection row, so a new function re-renders every row
   const defaultValue = useMemo(
     () => newValue(figTree, classification, displayData),
     [figTree, classification, displayData]
   )
+  const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
 
   const layeredTheme = useMemo(
     () =>
@@ -150,6 +153,7 @@ export const FigTreeEditor = ({
         customText={combinedText}
         customNodeDefinitions={definitions}
         defaultValue={defaultValue}
+        newKeyOptions={newKeyOptions}
         data={shown}
         setData={(data) => setExpression(fill(data))}
       />
@@ -167,18 +171,34 @@ const editorDefaults = {
   stringTruncateLength: 100,
 } satisfies Partial<JsonEditorProps>
 
-// What json-edit-react's ＋ adds: an array's new element starts by the
-// element rule. An object's new key gets json-edit-react's `null`.
+// What json-edit-react's ＋ adds. An array's new element starts by the
+// element rule; a key added to a node starts as the toolbar's "Add parameter"
+// would start it, and any other key as anything.
 const newValue =
   (figTree: FigTree, classification: Classification, displayData: DisplayData) =>
-  ({ path, value }: Parameters<DefaultValueFunction>[0]) =>
-    Array.isArray(value)
-      ? getStartingElement(path, value, {
-          classification,
-          operators: figTree.getOperators(),
-          displayData,
-        })
-      : undefined
+  ({ path, value }: Parameters<DefaultValueFunction>[0], newKey = '') => {
+    const operators = figTree.getOperators()
+    if (Array.isArray(value))
+      return getStartingElement(path, value, { classification, operators, displayData })
+    return getNewKeyValue(newKey, rowAt(classification, path)?.kind, {
+      operators,
+      displayData,
+      useCache: figTree.getOptions().useCache,
+    })
+  }
+
+// The keys json-edit-react's ＋ offers: on a node, the same list as "Add
+// parameter", by name; elsewhere, a free-typed key (`null`). json-edit-react
+// leaves out those already present.
+const newKeys =
+  (figTree: FigTree, classification: Classification) =>
+  ({ path, value }: Parameters<NewKeyOptionsFunction>[0]) => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
+    const keys = addableKeys(value as Record<string, unknown>, rowAt(classification, path)?.kind, {
+      operators: figTree.getOperators(),
+    })
+    return keys && [...keys.parameters, ...keys.modifiers].map(({ key }) => key)
+  }
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes")

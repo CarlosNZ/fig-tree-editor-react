@@ -19,6 +19,29 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
 const displayBar = (container: HTMLElement, index = 0) =>
   container.querySelectorAll<HTMLElement>('.ft-display-bar')[index]
 
+// A host holding the expression, so each commit comes back as the editor's
+// next expression
+const host = (initial: unknown) => {
+  const written: unknown[] = []
+  const Host = () => {
+    const [expression, setExpression] = useState(initial)
+    return (
+      <FigTreeEditor
+        figTree={figTree}
+        expression={expression}
+        setExpression={(next) => {
+          written.push(next)
+          setExpression(next)
+        }}
+        collapse={false}
+      />
+    )
+  }
+  const { container } = render(<Host />)
+  return { container, written, user: userEvent.setup() }
+}
+const latest = (written: unknown[]) => written[written.length - 1]
+
 describe('the operator node', () => {
   it('shows the name as written on its button, and the display name', () => {
     const { container } = editor({ operator: 'plus', values: [1, 2] })
@@ -176,32 +199,10 @@ describe('the operator node', () => {
   })
 
   describe('the operator picker', () => {
-    // A host holding the expression, so each commit comes back as the editor's
-    // next expression
-    const host = (initial: unknown) => {
-      const written: unknown[] = []
-      const Host = () => {
-        const [expression, setExpression] = useState(initial)
-        return (
-          <FigTreeEditor
-            figTree={figTree}
-            expression={expression}
-            setExpression={(next) => {
-              written.push(next)
-              setExpression(next)
-            }}
-            collapse={false}
-          />
-        )
-      }
-      const { container } = render(<Host />)
-      return { container, written, user: userEvent.setup() }
-    }
     const openPicker = async (user: ReturnType<typeof userEvent.setup>, current: string) => {
       await user.click(screen.getByRole('button', { name: 'Open toolbar' }))
       await user.click(screen.getByText(current))
     }
-    const latest = (written: unknown[]) => written[written.length - 1]
 
     it('switches the operator, keeping what it declares, and keeps the toolbar open', async () => {
       const { container, written, user } = host({ operator: 'plus', values: [1, 2], fallback: 0 })
@@ -272,6 +273,60 @@ describe('the operator node', () => {
         value: 'No content inside a literal node is evaluated',
       })
       expect(container.querySelector('.ft-toolbar')).toBeNull()
+    })
+  })
+
+  describe('adding parameters', () => {
+    const openAdd = async (user: ReturnType<typeof userEvent.setup>) => {
+      await user.click(screen.getByRole('button', { name: 'Open toolbar' }))
+      await user.click(screen.getByText('Add parameter'))
+    }
+
+    it('adds a parameter at its starting value, and keeps the toolbar open', async () => {
+      const { container, written, user } = host({ operator: 'round', value: 3.14159 })
+      await openAdd(user)
+      await user.click(screen.getByText('decimals'))
+      expect(latest(written)).toEqual({ operator: 'round', value: 3.14159, decimals: 2 })
+      expect(container.querySelector('.ft-toolbar')).toBeInTheDocument()
+      await user.click(screen.getByText('Add parameter'))
+      await user.click(screen.getByText('fallback'))
+      expect(latest(written)).toEqual({
+        operator: 'round',
+        value: 3.14159,
+        decimals: 2,
+        fallback: null,
+      })
+    })
+
+    it('reverts every add on ✗', async () => {
+      const { written, user } = host({ operator: 'round', value: 3.14159 })
+      await openAdd(user)
+      await user.click(screen.getByText('decimals'))
+      await user.click(screen.getByText('Add parameter'))
+      await user.click(screen.getByText('vars'))
+      await user.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(latest(written)).toEqual({ operator: 'round', value: 3.14159 })
+    })
+
+    it('lists a missing required parameter first, marked required', async () => {
+      const { user } = host({ operator: 'if', condition: true, thn: 'x' })
+      await openAdd(user)
+      const entries = [...document.querySelectorAll('.ft-select-option')].map(
+        (entry) => entry.textContent
+      )
+      expect(entries[0]).toMatch(/^then.*required/)
+      expect(entries[1]).toMatch(/^else/)
+    })
+
+    it('is left out on a broken node, and when nothing is left to add', () => {
+      const { unmount } = editor({ operator: 'plsu', values: [1] })
+      fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
+      expect(screen.queryByText('Add parameter')).toBeNull()
+      unmount()
+      const complete = { '//': 'x', operator: 'abs', value: 1, fallback: 0, useCache: true }
+      editor({ ...complete, vars: {} })
+      fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
+      expect(screen.queryByText('Add parameter')).toBeNull()
     })
   })
 })

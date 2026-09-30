@@ -1,10 +1,12 @@
 import { type CustomComponentProps } from 'json-edit-react'
+import { AddParameter } from './AddParameter'
 import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
 import { OperatorPicker } from './OperatorPicker'
+import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { Toolbar } from './Toolbar'
 import { useNodeEditor } from './useNodeEditor'
 
@@ -28,6 +30,22 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const kind = row?.kind as OperatorKind
   const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
   const broken = brokenIssue(issuesAt(issues, path))
+  const node = value as Record<string, unknown>
+
+  // Parameters are added once the node has an operator the editor knows, so
+  // a broken node's toolbar offers the picker alone
+  const addParameter = () => {
+    const operators = figTree.getOperators()
+    const keys = addableKeys(node, kind, { operators })
+    if (broken || keys === null) return null
+    const context = { operators, displayData, useCache: figTree.getOptions().useCache }
+    return (
+      <AddParameter
+        keys={keys}
+        onAdd={(key) => commit({ ...node, [key]: getNewKeyValue(key, kind, context) })}
+      />
+    )
+  }
 
   if (editor === 'json') return <div className="ft-node">{originalNode}</div>
 
@@ -39,7 +57,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
             figTree={figTree}
             displayData={displayData}
             admits={row?.slot?.admits ?? 'any'}
-            node={value as Record<string, unknown>}
+            node={node}
             current={broken ? null : kind.operator}
             suggestion={
               broken?.code === 'unknown-operator' ? (broken.suggestion ?? undefined) : undefined
@@ -48,6 +66,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
             // can't carry on there
             onSwitch={(next, target) => commit(next, { close: target === 'literal' })}
           />
+          {addParameter()}
         </Toolbar>
       ) : (
         <DisplayBar
