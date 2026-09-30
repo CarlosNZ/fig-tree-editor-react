@@ -267,9 +267,11 @@ function App() {
             <FigTreeEditor
               figTree={figTree}
               expression={expression}
-              setExpression={setExpression}
-              onUpdate={({ newData }) => {
-                setLocalStorage('expression', newData)
+              // Saved here rather than in `onUpdate`, which doesn't see the
+              // editor's own writes
+              setExpression={(newExpression, options) => {
+                setExpression(newExpression, options)
+                setLocalStorage('expression', newExpression)
               }}
               rootName="expression"
               onCopy={({ stringValue, type }) =>

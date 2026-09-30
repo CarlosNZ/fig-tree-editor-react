@@ -274,7 +274,7 @@ Evaluating a sub-tree compiles and evaluates a synthesised expression: the sub-t
 The editor's step that changes the tree, run over the whole expression after every update and when the host passes an expression in. It is not called "validate" (plan, 4.5).
 
 - **Complete: insert missing required parameters with their starting values** (the seed rule from `./editor-hints`), on load and after every update. For a fragment call with static arguments, the same applies to its required arguments, with the fragment's `FragmentHints` seeds. It is form-aware: a named payload gains a key, and a positional payload gains trailing elements, since supplied positional arguments are always an unbroken prefix. It cannot apply to dynamic arguments.
-- **Clean: remove parameters that do not belong only on a structural action,** never on load and never on a content edit.
+- **Clean: remove parameters that do not belong only when the editor switches a node's operator, fragment or node type, or creates a node,** and only on that node. Never on load, on a content edit, or on the other structural actions: adding a parameter or converting makes nothing obsolete, so cleaning there would remove keys the author wrote, such as a typo the "Rename" quick fix should repair.
 - **Put keys in order:** `//` first, then the node's parameters (`positionalParams` first, then declared order, topic 4), then `fallback` and `useCache`, then `vars` last (topics 1 and 3).
 - **Unknown keys stay,** with the error state and quick fixes: remove the key, or rename it where fig-tree suggests a name (`Issue.suggestion`, F3 in [v3-upstream.md](v3-upstream.md)).
 

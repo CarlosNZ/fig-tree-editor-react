@@ -1,4 +1,4 @@
-import { FigTreeEditor, type FigTreeEditorProps } from './FigTreeEditor'
+import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } from './FigTreeEditor'
 import { Select } from './Select'
 
-export { FigTreeEditor, Select, type FigTreeEditorProps }
+export { FigTreeEditor, Select, type FigTreeEditorProps, type SetExpressionOptions }

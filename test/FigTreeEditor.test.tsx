@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { fireEvent, render, screen } from '@testing-library/react'
 import { FigTree } from 'fig-tree-evaluator'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
@@ -102,6 +102,56 @@ describe('FigTreeEditor', () => {
     expect(refused).toBeTypeOf('function')
   })
 
+  describe('the fill-in step', () => {
+    const incomplete = { operator: 'if', condition: true }
+    const complete = { operator: 'if', condition: true, then: 'The condition is true' }
+
+    it('writes nothing for an expression that needs nothing', () => {
+      const setExpression = vi.fn()
+      const { rerender } = render(
+        <FigTreeEditor figTree={figTree} expression={complete} setExpression={setExpression} />
+      )
+      rerender(
+        <FigTreeEditor figTree={figTree} expression={complete} setExpression={setExpression} />
+      )
+      expect(setExpression).not.toHaveBeenCalled()
+    })
+
+    it('fills in an expression that arrives incomplete, and marks the write', () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor figTree={figTree} expression={incomplete} setExpression={setExpression} />
+      )
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith(complete, { autoUpdate: true })
+      expect(screen.getByText('"The condition is true"')).toBeInTheDocument()
+    })
+
+    it('writes once, however often it re-renders before the host applies it', () => {
+      const setExpression = vi.fn()
+      const { rerender } = render(
+        <FigTreeEditor figTree={figTree} expression={incomplete} setExpression={setExpression} />
+      )
+      rerender(<FigTreeEditor figTree={figTree} expression={incomplete} setExpression={vi.fn()} />)
+      expect(setExpression).toHaveBeenCalledOnce()
+      const applied = vi.fn()
+      rerender(<FigTreeEditor figTree={figTree} expression={complete} setExpression={applied} />)
+      expect(applied).not.toHaveBeenCalled()
+    })
+
+    it('completes an edit before it reaches the host, unmarked', () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor figTree={figTree} expression={{ a: 1 }} setExpression={setExpression} />
+      )
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      fireEvent.change(screen.getByRole('textbox'), {
+        target: { value: JSON.stringify({ a: incomplete }) },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ a: complete })
+    })
+  })
+
   describe('validation', () => {
     const issues = () => screen.queryAllByRole('listitem')
 
@@ -133,18 +183,18 @@ describe('FigTreeEditor', () => {
       render(
         <FigTreeEditor
           figTree={figTree}
-          expression={{ operator: 'plus' }}
+          expression={{ operator: 'plsu' }}
           setExpression={vi.fn()}
         />
       )
-      expect(issues()[0]).toHaveTextContent("(root)'plus' requires 'values'")
+      expect(issues()[0]).toHaveTextContent("(root)'plsu' names no registered operator")
     })
 
     it('revalidates when the expression changes', () => {
       const { rerender } = render(
         <FigTreeEditor
           figTree={figTree}
-          expression={{ operator: 'plus' }}
+          expression={{ operator: 'plsu' }}
           setExpression={vi.fn()}
         />
       )

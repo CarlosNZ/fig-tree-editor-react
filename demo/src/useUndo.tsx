@@ -7,11 +7,15 @@ import { JsonData } from 'json-edit-react'
 export const useUndo = (initialData: JsonData) => {
   // The hook is controlled — we own the live data, it keeps the snapshot stacks.
   const [data, setData] = useState<JsonData>(initialData)
-  const { set, undo, redo, canUndo, canRedo } = useUndoHook(data, setData)
+  const { set, replace, undo, redo, canUndo, canRedo } = useUndoHook(data, setData)
 
-  const handleChange = (newData: JsonData) => {
+  // A write the author didn't make (the editor filling in an expression it
+  // was given, marked `autoUpdate`) replaces the current state rather than
+  // recording a step, so undo never lands on the incomplete version
+  const handleChange = (newData: JsonData, options?: { autoUpdate?: boolean }) => {
     if (JSON.stringify(newData) === JSON.stringify(data)) return
-    set(newData)
+    if (options?.autoUpdate) replace(newData)
+    else set(newData)
   }
 
   const UndoRedo = (
