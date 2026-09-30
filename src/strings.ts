@@ -53,4 +53,56 @@ export const strings = {
   FT_TYPE_NULL: 'null',
   FT_TYPE_ONE_OF: (values: string) => `one of ${values}`,
   FT_LIST_OR: 'or', // the last two items of a list of choices
+  FT_LIST_AND: 'and', // the last two items of a list
+
+  // A parameter's hover card. Names arrive in backticks, shown as code.
+  FT_CARD_REQUIRED: 'required',
+  FT_CARD_OPTIONAL: 'optional',
+  FT_CARD_TAKES: (type: string) => `takes ${type}`,
+  FT_CARD_ELEMENTS: (constraints: string) => `Elements: ${constraints}`,
+  FT_CARD_EXACTLY: (length: number) => `exactly ${length}`,
+  FT_CARD_ALL: (types: string) => `all ${types}`,
+  FT_CARD_SHAPE: (fields: string) => `each an object with ${fields}`,
+  FT_TYPES: {
+    any: 'anything',
+    string: 'strings',
+    number: 'numbers',
+    integer: 'integers',
+    boolean: 'booleans',
+    array: 'arrays',
+    object: 'objects',
+    null: 'nulls',
+  },
+  FT_CARD_DEFAULT: (value: string) => `Default: ${value}`,
+  FT_CARD_DEFAULT_HERE: (value: string, own: string | undefined) =>
+    own === undefined
+      ? `Default here: ${value} (set by this application)`
+      : `Default here: ${value} (set by this application; FigTree's is ${own})`,
+  FT_CARD_EVALUATION_DATA: 'the evaluation data', // `get.from`'s default
+  FT_CARD_EVALUATED: (when: string) => `Evaluated: ${when}`,
+  FT_CARD_PER_ELEMENT: (over: string, element: string, index: string) =>
+    `once for each element of ${over}, with ${element} and ${index} available`,
+  FT_CARD_EVALUATION: {
+    lazy: 'only when needed',
+    race: 'all at once; stops as soon as the answer is known',
+    lazyElements: 'each only when needed, in order',
+    lazyEntries: 'only the matching entry',
+    structural: "a name, not an expression, so it can't be computed",
+  },
+  FT_CARD_IF_NULL: (what: string) => `If null: ${what}`,
+  FT_CARD_NULL_FALSE: 'counts as false',
+  FT_CARD_NULL_ELEMENT_FALSE: 'a null element counts as false',
+  FT_CARD_NULL_UNSET: "means 'not set', so the default applies",
+  FT_CARD_NULL_UNSET_ONLY: "means 'not set'", // an optional parameter with no default
+  FT_CARD_NULL_PROPAGATES: 'the result is null',
+  FT_CARD_NULL_VALUE: 'null is used as a value',
+  FT_CARD_NULL_ERROR: 'an error',
+  FT_CARD_NULL_ELEMENT_PROPAGATES: 'a null element makes the result null',
+  FT_CARD_NULL_ELEMENTS_ACCEPTED: 'null elements are accepted',
+  FT_CARD_UNLESS: (what: string, replacement: string) => `${what} unless ${replacement} is set`,
+  FT_CARD_NULL_CONDITIONAL: (selector: string, cases: string, then: string, otherwise: string) =>
+    `if ${selector} is ${cases}, ${then}; otherwise ${otherwise}`,
+  FT_CARD_REPLACES: (targets: string) => `Used in place of a null in ${targets}`,
+  FT_CARD_INSTANCE_SETS: (settings: string, operator: string) =>
+    `This application sets ${settings} on every ${operator} node that doesn't set its own`,
 }

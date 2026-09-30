@@ -2,8 +2,10 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import { FigTree, coreOperators, httpOperators } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
 import { figTree } from './fixtures'
+import { keyLabel } from './queries'
 
 const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
   render(
@@ -71,8 +73,8 @@ describe('the operator node', () => {
   it('drops its operator row, and keeps the others', () => {
     editor({ operator: 'plus', values: [1, 2], fallback: 0 })
     expect(screen.queryByText('operator')).not.toBeInTheDocument()
-    expect(screen.getByText('values')).toBeInTheDocument()
-    expect(screen.getByText('fallback')).toBeInTheDocument()
+    expect(keyLabel('values')).toBeInTheDocument()
+    expect(keyLabel('fallback')).toBeInTheDocument()
   })
 
   it('renders nested nodes, and one in a shorthand payload', () => {
@@ -164,7 +166,7 @@ describe('the operator node', () => {
       expect(container.querySelector('.ft-select-dropdown')).toBeNull()
       expect(displayBar(container)).toBeUndefined()
       // The rows stay beneath it
-      expect(screen.getByText('values')).toBeInTheDocument()
+      expect(keyLabel('values')).toBeInTheDocument()
       fireEvent.click(screen.getByRole('button', { name: 'Done' }))
       expect(toolbar(container)).toBeNull()
       expect(displayBar(container)).toBeInTheDocument()
@@ -418,6 +420,73 @@ describe('the operator node', () => {
       await user.click(screen.getByRole('button', { name: 'OK' }))
       expect(latest(written)).toMatchObject({ value: { operator: 'plus' } })
       expect(container.querySelector('.ft-toolbar')).toBeNull()
+    })
+  })
+
+  describe('hover cards', () => {
+    // The card on a row's key, found by the key
+    const cardOn = (key: string) => keyLabel(key).querySelector('[role="tooltip"]') ?? undefined
+
+    it("shows a parameter's card on its key", () => {
+      editor({ operator: 'round', value: 1, decimals: 2 })
+      const card = cardOn('decimals')!
+      expect(card.querySelector('.ft-hover-card-title')).toHaveTextContent(
+        'decimals · optional · takes an integer'
+      )
+      expect(card).toHaveTextContent('Default: 0')
+    })
+
+    it('leaves the row itself as json-edit-react draws it', () => {
+      const { container } = editor({ operator: 'round', value: 1, decimals: 2 })
+      const row = keyLabel('decimals').closest('.jer-value-main-row')!
+      expect(within(row as HTMLElement).getByText('2')).toBeInTheDocument()
+      expect(within(row as HTMLElement).getByRole('button', { name: 'Delete' })).toBeInTheDocument()
+      expect(container.querySelectorAll('[data-kind]')).toHaveLength(0)
+    })
+
+    it('keeps the key label as the row’s flex item, beside a long value', () => {
+      editor({
+        operator: 'upper',
+        value: 'A long string that wraps onto several lines. '.repeat(4),
+      })
+      const label = keyLabel('value')
+      // json-edit-react's sizing stays on the row's own child, so the value
+      // can't squeeze the key
+      expect(label.parentElement).toHaveClass('jer-value-main-row')
+      expect(label.style.flexShrink).toBe('0')
+      expect(label.querySelector('.ft-hover-card-anchor')).not.toBeNull()
+    })
+
+    it('shows a card on a node at a parameter, and on the vars block', () => {
+      editor({ operator: 'round', value: { operator: 'plus', values: [1] }, vars: { a: 1 } })
+      expect(cardOn('value')).toHaveTextContent('value · required · takes a number or null')
+      expect(cardOn('vars')).toHaveTextContent('Named values for this node')
+    })
+
+    it('shows no card where there is nothing to say', () => {
+      editor({ operator: 'round', value: '$vars.a', vars: { a: 1 } })
+      expect(cardOn('a')).toBeUndefined()
+    })
+
+    it("adds the host's defaults to the operator's card", () => {
+      const host = new FigTree({
+        operators: [coreOperators, httpOperators()],
+        operatorDefaults: { http: { timeout: 5000 } },
+      })
+      const { container } = editor(
+        { operator: 'http', url: 'https://example.com' },
+        { figTree: host }
+      )
+      expect(
+        within(displayBar(container)).getByRole('tooltip', { hidden: true })
+      ).toHaveTextContent('This application sets timeout: 5000 on every http node')
+    })
+
+    it('waits before showing any card, by a delay in the stylesheet', () => {
+      editor({ operator: 'round', value: 1 })
+      const styles = document.head.querySelector('style[data-fig-tree-editor-styles]')!.textContent
+      expect(styles).toMatch(/--ft-hover-card-delay:\s*\.?0?\.5s/)
+      expect(styles).toMatch(/transition:[^;}]*var\(--ft-hover-card-delay\)/)
     })
   })
 })

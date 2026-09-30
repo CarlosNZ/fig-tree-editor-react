@@ -1,3 +1,11 @@
+/* Settings a host can override on its own `.ft-editor` rule */
+.ft-editor {
+  /* How long the pointer or focus rests on something before its hover card
+     shows, so cards don't flash up on the way to a click or as the pointer
+     crosses the tree */
+  --ft-hover-card-delay: 0.5s;
+}
+
 /* Select component */
 .ft-select-container {
   width: clamp(6em, 10em, 13em);
@@ -257,7 +265,8 @@ input.ft-select-input::placeholder {
 }
 
 .ft-hover-card {
-  display: none;
+  visibility: hidden;
+  opacity: 0;
   position: absolute;
   top: calc(100% + 0.4em);
   left: 0;
@@ -277,9 +286,28 @@ input.ft-select-input::placeholder {
   pointer-events: none;
 }
 
+/* One line each, under a parameter's title line */
+.ft-hover-card-line {
+  display: block;
+}
+
+.ft-hover-card-title {
+  margin-bottom: 0.2em;
+  font-weight: bold;
+}
+
+.ft-hover-card code {
+  font-size: 0.95em;
+}
+
+/* Shown after the delay, and hidden at once */
 .ft-hover-card-anchor:hover .ft-hover-card,
 .ft-hover-card-anchor:focus-within .ft-hover-card {
-  display: block;
+  visibility: visible;
+  opacity: 1;
+  transition:
+    visibility 0s var(--ft-hover-card-delay),
+    opacity 0.1s var(--ft-hover-card-delay);
 }
 
 /* The DisplayBar's pencil, shown while the header is hovered */

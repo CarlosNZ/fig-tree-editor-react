@@ -11,6 +11,8 @@ import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { getStartingNode, type DefaultOperators } from './getStartingNode'
 import { Operator } from './Operator'
+import { hasCard } from './parameterCard'
+import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
 import { Placeholder } from './Placeholder'
 import { strings } from './strings'
@@ -85,6 +87,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   ): CustomNodeDefinition => ({
     condition,
     component: (COMPONENTS[name] ?? Placeholder) as unknown as CustomNodeDefinition['component'],
+    keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
     componentProps: { ...shared, definition: name } satisfies ComponentConfig,
     ...flags,
   })
@@ -209,5 +212,12 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       matches((row) => row.payload === 'unlabelled'),
       { showKey: false, passOriginalNode: true }
     ),
+    // Any other row with a hover card, such as a plain value at a parameter,
+    // keeps json-edit-react's rendering, and gains only the card on its key
+    {
+      condition: matches(hasCard),
+      keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
+      componentProps: { ...shared },
+    },
   ]
 }

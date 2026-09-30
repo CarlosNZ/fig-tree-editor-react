@@ -1,12 +1,12 @@
 import { type Issue } from 'fig-tree-evaluator'
 import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
-import { HoverCard } from './HoverCard'
+import { CardLines, HoverCard } from './HoverCard'
 import { Icon, Icons } from './Icons'
 import { strings } from './strings'
 
 // A node's header (design, topic 3, "Header and toolbar"): the Evaluate
-// button showing the name as written, with the description on hover, the
+// button showing the name as written, with the operator's card on hover, the
 // pencil that opens the toolbar, shown on hover, and the display name at the
 // top right, linked to its documentation. A broken node shows its name as an
 // error with the issue's message, and no Evaluate button, since the compiler
@@ -17,17 +17,31 @@ import { strings } from './strings'
 interface DisplayBarProps {
   name: string | null // as written; null when it isn't a string
   display: OperatorDisplay | undefined // undefined when nothing is registered
+  card: string[] // the hover card's lines
   broken: Issue | undefined
   editorTheme: EditorTheme
   onEdit?: () => void // opens the toolbar; absent where the node can't be edited
 }
 
-export const DisplayBar = ({ name, display, broken, editorTheme, onEdit }: DisplayBarProps) => {
+export const DisplayBar = ({
+  name,
+  display,
+  card,
+  broken,
+  editorTheme,
+  onEdit,
+}: DisplayBarProps) => {
   const label = name ?? strings.FT_INVALID_NODE
   return (
     <div className="ft-display-bar">
       <span className="ft-display-bar-start">
-        <NameOrButton label={label} display={display} broken={broken} editorTheme={editorTheme} />
+        <NameOrButton
+          label={label}
+          display={display}
+          card={card}
+          broken={broken}
+          editorTheme={editorTheme}
+        />
         {onEdit && (
           <button
             type="button"
@@ -57,6 +71,7 @@ export const DisplayBar = ({ name, display, broken, editorTheme, onEdit }: Displ
 const NameOrButton = ({
   label,
   display,
+  card,
   broken,
   editorTheme,
 }: Omit<DisplayBarProps, 'name' | 'onEdit'> & { label: string }) =>
@@ -66,7 +81,7 @@ const NameOrButton = ({
       {broken && <span className="ft-broken-message">{broken.message}</span>}
     </span>
   ) : (
-    <HoverCard card={display.description}>
+    <HoverCard card={card.length > 0 ? <CardLines lines={card} /> : undefined}>
       <button
         type="button"
         className="ft-evaluate-button"

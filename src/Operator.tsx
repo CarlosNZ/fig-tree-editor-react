@@ -7,6 +7,7 @@ import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
 import { OperatorPicker } from './OperatorPicker'
+import { operatorDefaultsLine } from './parameterCard'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { Toolbar } from './Toolbar'
 import { useNodeEditor } from './useNodeEditor'
@@ -57,6 +58,15 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     )
   }
 
+  // The operator's description, then what the host sets on every such node
+  // that doesn't set its own
+  const operatorCard = () => {
+    const operator = figTree.getOperators().find(({ name }) => name === kind.operator)
+    return [display?.description, operator && operatorDefaultsLine(operator, node)].filter(
+      (line): line is string => line !== undefined
+    )
+  }
+
   if (editor === 'json') return <div className="ft-node">{originalNode}</div>
 
   return (
@@ -83,6 +93,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
         <DisplayBar
           name={kind.name}
           display={display}
+          card={operatorCard()}
           broken={broken}
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}

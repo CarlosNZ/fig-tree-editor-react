@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { FigTree } from 'fig-tree-evaluator'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
+import { keyLabel } from './queries'
 
 const figTree = new FigTree()
 
@@ -284,9 +285,9 @@ describe('FigTreeEditor', () => {
           setExpression={vi.fn()}
         />
       )
-      fireEvent.doubleClick(screen.getByText('value'))
+      fireEvent.doubleClick(keyLabel('value'))
       expect(screen.queryByDisplayValue('value')).toBeNull()
-      fireEvent.doubleClick(screen.getByText('decimals'))
+      fireEvent.doubleClick(keyLabel('decimals'))
       expect(screen.getByDisplayValue('decimals')).toBeInTheDocument()
     })
   })
