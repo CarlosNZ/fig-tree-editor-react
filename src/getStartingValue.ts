@@ -2,9 +2,16 @@ import {
   type BasicType,
   type ExpectedType,
   type FragmentParameter,
+  type OperatorInfo,
   type ParameterInfo,
+  type TypeDeclaration,
 } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
+import { positionalLayout } from 'fig-tree-evaluator/format'
+import { rowAt, type Classification } from './classify'
+import { type DisplayData } from './displayData'
+import { type Path } from './paths'
+import { elementAdmits, takesElements } from './slots'
 
 // The value everything the editor creates for a declared parameter starts as
 // (design, topic 4, "Adding parameters and starting values"): its seed from
@@ -24,6 +31,137 @@ export const getStartingValue = (
     : typeValue(declaration.type)
   // A copy, so the tree never shares an object with the display data
   return awayFromDefault(structuredClone(value), declaration)
+}
+
+// The value an element added to the end of an array starts as (the same
+// section, "An element added to an array"). What it binds comes from the
+// array's row: an element of an array parameter, or on an argument list the
+// position it takes, where a leading position starts as its parameter would.
+// An element of an array parameter starts as the first of these that applies:
+//
+// 1. In a homogeneous array, the type seed of the type its literal siblings
+//    share, so an add never breaks the constraint. Null siblings don't count.
+// 2. The parameter seed's element at the new index, otherwise its last.
+// 3. A value for what the element admits, an `elementShape` giving an object
+//    of its required fields.
+//
+// Anything else (plain data, and content that isn't evaluated) admits
+// anything, so starts as the `any` seed.
+
+export interface ElementContext {
+  classification: Classification
+  operators: readonly OperatorInfo[]
+  displayData: DisplayData
+}
+
+export const getStartingElement = (
+  arrayPath: Path,
+  array: readonly unknown[],
+  { classification, operators, displayData }: ElementContext
+): unknown => {
+  const seedsAt = (ownerPath: Path) => {
+    const kind = rowAt(classification, ownerPath)?.kind
+    if (kind?.kind === 'operator') return displayData.operators[kind.operator ?? '']?.seeds ?? {}
+    if (kind?.kind === 'fragment') return displayData.fragments[kind.name ?? '']?.seeds ?? {}
+    return {}
+  }
+  // The literal siblings from `from` on: rows that are neither a node nor a
+  // reference, nor a container of one
+  const literalSiblings = (from: number) =>
+    array.filter(
+      (element, index) =>
+        index >= from &&
+        element !== null &&
+        rowAt(classification, [...arrayPath, index])?.kind === undefined
+    )
+
+  const slot = rowAt(classification, arrayPath)?.slot
+  if (slot?.role === 'parameter' && takesElements(slot.declaration)) {
+    const declaration = slot.declaration as ParameterInfo | FragmentParameter
+    return structuredClone(
+      elementValue(
+        slot.parameter!,
+        declaration,
+        seedsAt(slot.ownerPath!),
+        array.length,
+        literalSiblings(0)
+      )
+    )
+  }
+
+  // An argument list, bound through the operator's positional layout
+  const ownerPath = arrayPath.slice(0, -1)
+  const owner = rowAt(classification, ownerPath)?.kind
+  const operator =
+    owner?.kind === 'operator' &&
+    owner.form === 'shorthand' &&
+    owner.malformed === undefined &&
+    arrayPath.at(-1) === `$${owner.name}`
+      ? operators.find(({ name }) => name === owner.operator)
+      : undefined
+  const layout = operator && positionalLayout(operator, array.length + 1)
+  if (operator && layout) {
+    const seeds = seedsAt(ownerPath)
+    if (array.length < layout.bound) {
+      const name = operator.positionalParams![array.length]
+      return getStartingValue(name, operator.parameters[name], seeds)
+    }
+    const rest = operator.restParam
+    if (layout.restAt !== null && rest !== null)
+      return structuredClone(
+        elementValue(
+          rest,
+          operator.parameters[rest],
+          seeds,
+          array.length - layout.restAt,
+          literalSiblings(layout.restAt)
+        )
+      )
+  }
+
+  return structuredClone(typeSeeds.any)
+}
+
+const elementValue = (
+  parameter: string,
+  declaration: ParameterInfo | FragmentParameter,
+  seeds: Record<string, unknown>,
+  index: number,
+  literals: unknown[]
+): unknown => {
+  const { homogeneous, elementShape } = declaration.constraints ?? {}
+  const shared =
+    homogeneous && literals.length > 0
+      ? homogeneous.find((type) => literals.every(hasType[type]))
+      : undefined
+  if (shared !== undefined) return typeSeeds[shared]
+
+  const seed = Object.prototype.hasOwnProperty.call(seeds, parameter) ? seeds[parameter] : undefined
+  if (Array.isArray(seed) && seed.length > 0) return seed[Math.min(index, seed.length - 1)]
+
+  if (elementShape) return shapeValue(elementShape)
+  return typeValue(elementAdmits(declaration))
+}
+
+// Each field is required unless it says otherwise, as fig-tree reads it
+const shapeValue = (shape: Record<string, TypeDeclaration>) =>
+  Object.fromEntries(
+    Object.entries(shape)
+      .filter(([, field]) => field.required !== false)
+      .map(([name, field]) => [name, typeValue(field.type ?? 'any')])
+  )
+
+// Whether a value is of a basic type, as fig-tree's `homogeneous` check reads
+// it
+const hasType: Record<BasicType, (value: unknown) => boolean> = {
+  any: () => true,
+  string: (value) => typeof value === 'string',
+  number: (value) => typeof value === 'number',
+  integer: (value) => Number.isInteger(value),
+  boolean: (value) => typeof value === 'boolean',
+  array: (value) => Array.isArray(value),
+  object: (value) => typeof value === 'object' && value !== null && !Array.isArray(value),
+  null: (value) => value === null,
 }
 
 const typeValue = (type: ExpectedType): unknown => {

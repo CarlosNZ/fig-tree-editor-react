@@ -112,7 +112,7 @@ export const takesElements = (declaration: Declaration | undefined) => {
 // constraints say: the `homogeneous` types, an object for an
 // `elementShape`, and anything otherwise. It admits null where the
 // container declares an `elementNullPolicy` or `truthiness`.
-const elementAdmits = (declaration: ParameterInfo | FragmentParameter): ExpectedType => {
+export const elementAdmits = (declaration: ParameterInfo | FragmentParameter): ExpectedType => {
   const { homogeneous, elementShape } = declaration.constraints ?? {}
   const types: BasicType[] = homogeneous ? [...homogeneous] : elementShape ? ['object'] : []
   if (types.length === 0) return 'any'

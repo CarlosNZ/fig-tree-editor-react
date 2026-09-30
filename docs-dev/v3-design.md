@@ -1351,10 +1351,10 @@ defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>
 defaultFragment?: string
 
 type SlotType = 'any' | 'number' | 'string' | 'boolean' | 'array' | 'object'
-type OperatorDefault = string | object // an operator name, or a whole starting node
+type OperatorDefault = string | { operator: string; [key: string]: unknown } // a name, or a whole full node
 ```
 
-**`defaultOperators`** sets the operator a new node starts as, by its slot's type (topic 4, "The type dropdown"). A map is merged over the built-in one; **a single value applies to every type**, as v1's one default did. It is plain data, so a host can keep it in a stored preference, as Conforma keeps its defaults. A name is used as written, and a whole node as given; either way the node is then completed by the fill-in step, and whether it fits is judged by its operator. A default that is not registered or cannot fit its slot falls back as topic 4 sets out (the `any` entry, then the first operator in category order that fits), so a host's defaults never create a node that is an error from the start. The built-in defaults, and the prop's shape, may be revised once the editor can be tried (Carl).
+**`defaultOperators`** sets the operator a new node starts as, by its slot's type (topic 4, "The type dropdown"). A map is merged over the built-in one; **a single value applies to every type**, as v1's one default did. An object with an `operator` key is a whole node, and any other object a map, so the two cannot be confused: `operator` is never a slot type. A whole node is a full operator node, since choosing Operator gives a full node, whose picker opens in its toolbar; a shorthand node has no toolbar (plan, 6.1). It is plain data, so a host can keep it in a stored preference, as Conforma keeps its defaults. A name is used as written, and a whole node as given; either way the node is then completed by the fill-in step, and whether it fits is judged by its operator. A default that is not registered or cannot fit its slot falls back as topic 4 sets out (the `any` entry, then the first operator in category order that fits), so a host's defaults never create a node that is an error from the start. The built-in defaults, and the prop's shape, may be revised once the editor can be tried (Carl).
 
 With the built-in map and fig-tree 3.0.0-preview.2's seeds, choosing Operator in the type dropdown gives:
 

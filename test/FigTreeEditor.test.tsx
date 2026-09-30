@@ -152,6 +152,42 @@ describe('FigTreeEditor', () => {
     })
   })
 
+  describe('adding', () => {
+    // The last Add button is the innermost collection's
+    const addToLast = () => fireEvent.click(screen.getAllByRole('button', { name: 'Add' }).at(-1)!)
+
+    it("starts an array's new element by the element rule", () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ $min: ['apple', 'pear'] }}
+          setExpression={setExpression}
+        />
+      )
+      addToLast()
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({
+        $min: ['apple', 'pear', 'Replace me'],
+      })
+    })
+
+    it('starts an element of an array parameter from its seed', () => {
+      const setExpression = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ operator: 'join', values: ['$data.a'] }}
+          setExpression={setExpression}
+        />
+      )
+      addToLast()
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({
+        operator: 'join',
+        values: ['$data.a', 'Bravo'],
+      })
+    })
+  })
+
   describe('validation', () => {
     const issues = () => screen.queryAllByRole('listitem')
 

@@ -1,12 +1,23 @@
 import { useEffect, useInsertionEffect, useMemo } from 'react'
-import { JsonEditor, type CustomTextDefinitions, type JsonEditorProps } from 'json-edit-react'
+import {
+  JsonEditor,
+  type CustomTextDefinitions,
+  type DefaultValueFunction,
+  type JsonEditorProps,
+} from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
 import { classify, rowAt, type Classification } from './classify'
 import { customNodeDefinitions } from './customNodeDefinitions'
-import { buildDisplayData, type CategoryHintsProp, type OperatorHintsProp } from './displayData'
+import {
+  buildDisplayData,
+  type CategoryHintsProp,
+  type DisplayData,
+  type OperatorHintsProp,
+} from './displayData'
 import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
+import { getStartingElement } from './getStartingValue'
 import { injectStyles } from './injectStyles'
 import { displayPath } from './paths'
 import { strings } from './strings'
@@ -108,6 +119,13 @@ export const FigTreeEditor = ({
     [figTree, classification, displayData, issueIndex, mergedEditorTheme]
   )
 
+  // Memoised on what the definitions are: json-edit-react passes it to every
+  // collection row, so a new function re-renders every row
+  const defaultValue = useMemo(
+    () => newValue(figTree, classification, displayData),
+    [figTree, classification, displayData]
+  )
+
   const layeredTheme = useMemo(
     () =>
       layerTheme(theme, {
@@ -131,6 +149,7 @@ export const FigTreeEditor = ({
         theme={layeredTheme}
         customText={combinedText}
         customNodeDefinitions={definitions}
+        defaultValue={defaultValue}
         data={shown}
         setData={(data) => setExpression(fill(data))}
       />
@@ -147,6 +166,19 @@ const editorDefaults = {
   collapse: 2,
   stringTruncateLength: 100,
 } satisfies Partial<JsonEditorProps>
+
+// What json-edit-react's ＋ adds: an array's new element starts by the
+// element rule. An object's new key gets json-edit-react's `null`.
+const newValue =
+  (figTree: FigTree, classification: Classification, displayData: DisplayData) =>
+  ({ path, value }: Parameters<DefaultValueFunction>[0]) =>
+    Array.isArray(value)
+      ? getStartingElement(path, value, {
+          classification,
+          operators: figTree.getOperators(),
+          displayData,
+        })
+      : undefined
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes")
