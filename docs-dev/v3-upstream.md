@@ -372,4 +372,6 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 
 **Without it.** The component treats the returned value as a promise of the outcome regardless of the type, or watches its `value` for the change that didn't land. Whether it's needed depends on whether hosts reject toolbar edits in practice.
 
+**A host that holds commits.** When the host's `onUpdate` calls `hold()`, the session goes to `held`, and `open()` does nothing while a commit is held. So the toolbar's reopen, straight after `setValue`, is dropped, and the toolbar closes after each action. With the outcome from `setValue`, the component could reopen once the commit settles. Accepted until then, since holding is for hosts that confirm each edit with a server (plan, 5.2).
+
 **Issue.** Not filed.
