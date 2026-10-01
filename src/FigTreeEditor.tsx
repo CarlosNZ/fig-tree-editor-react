@@ -22,6 +22,7 @@ import {
   type CollapseRecord,
 } from './collapseRecord'
 import { type ReferenceNames } from './conversions'
+import { commentPart } from './comments'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
   buildDisplayData,
@@ -275,8 +276,11 @@ const editorDefaults = {
 
 const DEFAULT_COLLAPSE = 2
 
-// A row the author has toggled mounts as they left it; any other takes the
-// host's `collapse`. A numeric `collapse` counts levels as drawn (design,
+// A comment never starts collapsed, since a multi-line comment is a level
+// deeper than its node's parameters, and would otherwise open as a count
+// (design, topic 5, "Comments"). A row the author has toggled mounts as they
+// left it; any other takes the host's `collapse`. A numeric `collapse` counts
+// levels as drawn (design,
 // topic 1, "Flattened payloads and unlabelled rows"): a flattened payload's
 // rows show as its node's own, so its row isn't a level, and a fragment
 // call's arguments collapse where an operator's parameters do.
@@ -289,8 +293,9 @@ const combineCollapse = (
 ): FilterFunction => {
   const hostCollapses = hostFilter(host, classification)
   return (nodeData) =>
-    recordedState(record.current, canonicalPath(classification.current, nodeData.path)) ??
-    hostCollapses(nodeData)
+    commentPart(classification.current, nodeData) !== 'lines' &&
+    (recordedState(record.current, canonicalPath(classification.current, nodeData.path)) ??
+      hostCollapses(nodeData))
 }
 
 const hostFilter = (
@@ -306,18 +311,22 @@ const hostFilter = (
   }
 }
 
-// What json-edit-react's ＋ adds. An array's new element starts by the
-// element rule; a key added to a node starts as the toolbar's "Add parameter"
-// would start it; `vars` on an evaluated plain object is a block, as on a
-// node (design, topic 5, "The vars block"); and any other key starts as
+// What json-edit-react's ＋ adds. A comment's new line is a placeholder note,
+// and any other array's new element starts by the element rule. A key added
+// to a node starts as the toolbar's "Add parameter" would start it; elsewhere
+// outside quoted content, `//` is a comment, as on a node, and `vars` on a
+// plain object a block (design, topic 5); and any other key starts as
 // anything.
 const newValue =
   (figTree: FigTree, classification: Classification, displayData: DisplayData) =>
-  ({ path, value }: Parameters<DefaultValueFunction>[0], newKey = '') => {
+  (nodeData: Parameters<DefaultValueFunction>[0], newKey = '') => {
+    const { path, value } = nodeData
     const operators = figTree.getOperators()
+    if (commentPart(classification, nodeData) === 'lines') return strings.FT_NEW_COMMENT
     if (Array.isArray(value))
       return getStartingElement(path, value, { classification, operators, displayData })
     const row = rowAt(classification, path)
+    if (newKey === '//' && row !== undefined) return strings.FT_NEW_COMMENT
     if (newKey === 'vars' && isPlainObjectRow(row)) return {}
     return getNewKeyValue(newKey, row?.kind, {
       operators,

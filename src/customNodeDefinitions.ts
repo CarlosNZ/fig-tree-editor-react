@@ -8,6 +8,8 @@ import { type FigTree, type ReferenceNamespace } from 'fig-tree-evaluator'
 import { type IssueIndex } from './attachIssues'
 import { type ReferenceNames } from './conversions'
 import { rowAt, type Classification, type Row } from './classify'
+import { CommentLine } from './CommentLine'
+import { commentPart } from './comments'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { getStartingFragment } from './getStartingFragment'
@@ -76,8 +78,9 @@ type Condition = (row: Row, nodeData: NodeData) => boolean
 
 // Each definition's component, where it has one yet; the rest show the
 // placeholder. A flattened payload has none: json-edit-react draws its rows,
-// and its flags hide the row itself. Nor has an unlabelled row: json-edit-react
-// draws it, without its key.
+// and its flags hide the row itself. Nor has an unlabelled row or a comment of
+// several lines: json-edit-react draws them, without their key, and the theme
+// draws the comment's block.
 const COMPONENTS: Partial<
   Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null>
 > = {
@@ -85,6 +88,8 @@ const COMPONENTS: Partial<
   fragment: Fragment,
   shorthand: Shorthand,
   reference: Reference,
+  comment: null,
+  commentLine: CommentLine,
   flattened: null,
   unlabelled: null,
 }
@@ -137,7 +142,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ({ kind: rowKind }: Row) =>
       rowKind?.kind === kind && (form === undefined || ('form' in rowKind && rowKind.form === form))
 
-  const isComment = matches(isKind('comment'))
+  const isPart = (part: ReturnType<typeof commentPart>) => (nodeData: NodeData) =>
+    commentPart(shared.classification, nodeData) === part
 
   // The type dropdown's Operator entry: the slot's default operator, marked
   // so the node's picker opens on it
@@ -242,20 +248,16 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       'container',
       matches((row, { path }) => isKind('container')(row) && path.length === 0)
     ),
-    // A comment of several lines is one block, with no key label. Its lines
-    // are quoted, so they have no row of their own: each is found by its
-    // parent's
-    definition('comment', (nodeData) => isComment(nodeData) && Array.isArray(nodeData.value), {
-      showKey: false,
-    }),
+    // A comment of several lines is one block, with no key label, and each
+    // line, or a comment of one, is a note. Editing is json-edit-react's own
+    // input (design, topic 5, "Comments").
+    definition('comment', isPart('lines'), { showKey: false }),
     definition(
       'commentLine',
       (nodeData) =>
         typeof nodeData.value === 'string' &&
-        (isComment(nodeData) ||
-          (Array.isArray(nodeData.parentData) &&
-            isComment({ ...nodeData, path: nodeData.path.slice(0, -1) }))),
-      { showKey: false, passOriginalNode: true }
+        (isPart('note')(nodeData) || isPart('line')(nodeData)),
+      { showKey: false }
     ),
     // A shorthand's named payload or a fragment call's static arguments, whose
     // rows show as the node's own; the theme takes out the indent its row

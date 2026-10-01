@@ -532,3 +532,9 @@ input.ft-select-input::placeholder {
   align-items: center;
   gap: 0.4em;
 }
+
+/* A comment's text, as prose rather than data */
+.ft-comment .jer-value-string {
+  font-family: sans-serif;
+  font-style: italic;
+}

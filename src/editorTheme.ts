@@ -1,6 +1,7 @@
 import { type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
 import { brokenIssue, type IssueIndex } from './attachIssues'
 import { rowAt, type Classification } from './classify'
+import { commentPart } from './comments'
 
 // The editor's own colours, which json-edit-react's theme has no element for.
 // The editor's components apply them as inline styles, as json-edit-react
@@ -65,6 +66,9 @@ export interface ThemeContext {
 // TO-DO: the other kinds' styles, each with the component that needs it
 // (plan, Phases 9 and 10).
 const editorThemeLayer = ({ classification, issues, editorTheme, indent }: ThemeContext): Theme => {
+  const comment = (nodeData: NodeData) => commentPart(classification, nodeData)
+  const openLines = (nodeData: NodeData) => comment(nodeData) === 'lines' && !nodeData.collapsed
+
   // The form of an operator node or fragment call; undefined on any other
   // row
   const nodeForm = ({ path }: NodeData) => {
@@ -88,20 +92,41 @@ const editorThemeLayer = ({ classification, issues, editorTheme, indent }: Theme
       // no indent (design, topic 1, finding 7). A vars block has a rule down
       // its left edge and a tint, set a little apart from the rows above
       // (topic 5, "The vars block").
-      collection: ({ path }) => {
-        const row = rowAt(classification, path)
+      collection: (nodeData) => {
+        const row = rowAt(classification, nodeData.path)
         if (row?.payload === 'flattened') return { marginLeft: 0 }
         if (row?.kind?.kind === 'vars') return varsBlock(editorTheme.varsBlock, indent)
+        if (comment(nodeData) === 'lines') return noteBlock(editorTheme.comment)
         return null
       },
+      // A comment is a note (topic 5, "Comments"): a string comment's row is
+      // the block, and so is a multi-line comment's array, whose inner block
+      // takes back the indent its lines would add. The array's header row
+      // holds only its edit tools, so it floats at the block's top right,
+      // above the first line's row, which sits beside it rather than beneath.
+      //
+      // A comment never starts collapsed, but a collapse-all on an ancestor
+      // reaches it, so a collapsed one shows its chevron and brackets, to be
+      // opened again.
+      //
+      // TO-DO: drop the collapsed case once json-edit-react can keep a row
+      // from collapsing (plan, 9.2).
+      valueRow: (nodeData) =>
+        comment(nodeData) === 'note' ? noteBlock(editorTheme.comment) : null,
+      headerRow: (nodeData) =>
+        openLines(nodeData) ? { float: 'right', minHeight: 0, zIndex: 1 } : null,
+      iconCollection: (nodeData) => (openLines(nodeData) ? { display: 'none' } : null),
       // A node's header stands in for its brackets, which show again only
       // around a collapsed node's summary
       bracket: (nodeData) =>
-        nodeForm(nodeData) !== undefined && !nodeData.collapsed ? { display: 'none' } : null,
+        (nodeForm(nodeData) !== undefined && !nodeData.collapsed) || openLines(nodeData)
+          ? { display: 'none' }
+          : null,
       // A collapsed node is its summary alone, with no border. A shorthand
       // node's border is dashed, and a broken node has an error border and
       // stripe, whatever its form (topic 3).
       collectionInner: (nodeData) => {
+        if (comment(nodeData) === 'lines') return { marginLeft: `-${indent / 2}em` }
         const form = nodeForm(nodeData)
         if (form === undefined || nodeData.collapsed) return null
         const broken =
@@ -132,6 +157,17 @@ const varsBlock = (colour: string, indent: number) => ({
   marginTop: '0.4em',
   marginLeft: `calc(${indent / 2}em - ${RULE_GAP} - ${RULE_WIDTH})`,
   paddingLeft: RULE_GAP,
+})
+
+// A comment's note: a rule and a tint from the comment colour, fainter than
+// its text
+const noteBlock = (colour: string) => ({
+  borderLeft: `${RULE_WIDTH} solid color-mix(in srgb, ${colour} 45%, transparent)`,
+  background: `color-mix(in srgb, ${colour} 6%, transparent)`,
+  borderRadius: '0 0.25em 0.25em 0',
+  marginTop: '0.1em',
+  marginBottom: '0.3em',
+  padding: '0.15em 0.4em 0.15em 0',
 })
 
 const RULE_WIDTH = '2px'

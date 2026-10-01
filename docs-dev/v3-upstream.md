@@ -46,6 +46,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
 | J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | —               |
 | J14 | json-edit-react    | A compact array view                                                       | Open     | Not filed                                                         | —               |
+| J15 | json-edit-react    | A definition that keeps its row from collapsing                            | Maybe    | [#419](https://github.com/CarlosNZ/json-edit-react/issues/419)    | —               |
 
 ---
 
@@ -443,3 +444,13 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Without it.** Argument lists stay one row per element. Whether to pursue it is to be revisited once the conversions have been tried (Carl).
 
 **Issue.** Not filed.
+
+### J15 · A definition that keeps its row from collapsing — **Maybe**
+
+**The change.** A flag on a custom node definition (`collapsible: false`, say) for a collection row that keeps its wrapper: the row skips the `collapse` filter, ignores collapse broadcasts, and ignores its click zones, as a row without the wrapper does since 2.0.2 (J11). Checked against 2.0.2.
+
+**Why.** A multi-line comment is an array whose header row the theme reduces to its edit tools, floated at the note's top right, with its chevron and brackets hidden (plan, 9.2; "Comments" under topic 5 in [v3-design.md](v3-design.md)). The editor's collapse filter keeps it open as it mounts, but a collapse-all on an ancestor reaches it, and a plain click reopening the ancestor leaves it collapsed. A click in the gaps between its edit tools toggles it too, since the header row is a click zone.
+
+**Without it.** The theme gives a collapsed comment its chevron and brackets back, without the float, so it reads `▸ [ 2 items ]` and opens again with a click.
+
+**Issue.** Filed as [#419](https://github.com/CarlosNZ/json-edit-react/issues/419).

@@ -12,7 +12,7 @@
  * raising one is a deliberate edit, visible in review. The bundle is the
  * editor's own code only: its dependencies and peers are external.
  */
-export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 20_800 }]
+export const ENTRIES = [{ subpath: '.', name: 'index', source: 'src/index.ts', budget: 21_900 }]
 
 /**
  * The stylesheet the component injects, also published as a file of its own

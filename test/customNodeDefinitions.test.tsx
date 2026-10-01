@@ -103,16 +103,22 @@ describe('the custom node definitions', () => {
     ])
   })
 
-  it('mark the root container, comments and their lines', () => {
-    expect(shown({ '//': 'A note', title: '$data.t' })).toEqual([
-      ['container', 'Container'],
-      ['commentLine', 'Comment line'],
-    ])
-    expect(shown({ '//': ['One', '$data.x'], $plus: [1] })).toEqual([
-      ['comment', 'Comment'],
-      ['commentLine', 'Comment line'],
-      ['commentLine', 'Comment line'],
-    ])
+  it('mark the root container', () => {
+    expect(shown({ title: '$data.t' })).toEqual([['container', 'Container']])
+  })
+
+  it("give a comment's text its component, and a comment of lines none", () => {
+    const notes = (container: HTMLElement) =>
+      [...container.querySelectorAll('.ft-comment')].map((element) => element.textContent)
+    const { container, unmount } = render(editor({ '//': 'A note', title: '$data.t' }))
+    expect(notes(container)).toEqual(['A note'])
+    expect(placeholders(container)).toEqual([['container', 'Container']])
+    unmount()
+    const lines = render(editor({ '//': ['One', '$data.x'], $plus: [1] })).container
+    expect(notes(lines)).toEqual(['One', '$data.x'])
+    expect(placeholders(lines)).toEqual([])
+    // A line is quoted, so a reference-shaped one is a note like any other
+    expect(references(lines)).toEqual([])
   })
 
   it('read the names an `as` gives as references', () => {

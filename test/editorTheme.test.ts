@@ -37,13 +37,26 @@ const empty = contextFor(null)
 // applied to a row
 const style = (
   expression: unknown,
-  element: 'bracket' | 'collectionInner' | 'collection' | 'property',
+  element:
+    | 'bracket'
+    | 'collectionInner'
+    | 'collection'
+    | 'property'
+    | 'valueRow'
+    | 'headerRow'
+    | 'iconCollection',
   path: (string | number)[],
   collapsed = false
 ) => {
   const { styles } = layerTheme(undefined, contextFor(expression)) as Theme
   const styleFunction = styles[element] as (nodeData: NodeData) => unknown
-  return styleFunction({ path, value: valueAt(expression, path), collapsed } as NodeData)
+  const parentData = path.length > 0 ? valueAt(expression, path.slice(0, -1)) : null
+  return styleFunction({
+    path,
+    value: valueAt(expression, path),
+    parentData,
+    collapsed,
+  } as NodeData)
 }
 
 describe('editor theme', () => {
@@ -176,6 +189,54 @@ describe('editor theme', () => {
       const quoted = { operator: 'literal', value: { fallback: 1, vars: { a: 1 } } }
       expect(style(quoted, 'property', ['value', 'fallback'])).toBeNull()
       expect(style(quoted, 'property', ['value', 'vars'])).toBeNull()
+    })
+  })
+
+  describe('comments', () => {
+    const note = {
+      borderLeft: `2px solid color-mix(in srgb, ${defaultEditorTheme.comment} 45%, transparent)`,
+      background: `color-mix(in srgb, ${defaultEditorTheme.comment} 6%, transparent)`,
+    }
+
+    it("draw a string comment's row as a note, wherever a comment can be", () => {
+      for (const holder of [
+        { '//': 'A note', $plus: [1] },
+        { '//': 'A note', operator: 'plus', values: [1] },
+        { '//': 'A note', title: '$data.t' },
+        { $plus: ['$vars.n'], vars: { '//': 'A note', n: 1 } },
+      ]) {
+        const at = '//' in holder ? ['//'] : ['vars', '//']
+        expect(style(holder, 'valueRow', at)).toMatchObject(note)
+      }
+      expect(style({ '//': 'A note', title: 'x' }, 'valueRow', ['title'])).toBeNull()
+    })
+
+    it('draw a comment of lines as one block, its header row at the top right', () => {
+      const node = { '//': ['One', 'Two'], $plus: [1] }
+      expect(style(node, 'collection', ['//'])).toMatchObject(note)
+      expect(style(node, 'collectionInner', ['//'])).toEqual({ marginLeft: '-1em' })
+      expect(style(node, 'headerRow', ['//'])).toEqual({ float: 'right', minHeight: 0, zIndex: 1 })
+      expect(style(node, 'iconCollection', ['//'])).toEqual({ display: 'none' })
+      expect(style(node, 'bracket', ['//'])).toEqual({ display: 'none' })
+      // Its lines sit on the block, with no block of their own
+      expect(style(node, 'valueRow', ['//', 0])).toBeNull()
+      expect(style(node, 'headerRow', ['$plus'])).toBeNull()
+    })
+
+    it('give a collapsed comment of lines its chevron and brackets back', () => {
+      const node = { '//': ['One', 'Two'], $plus: [1] }
+      expect(style(node, 'headerRow', ['//'], true)).toBeNull()
+      expect(style(node, 'iconCollection', ['//'], true)).toBeNull()
+      expect(style(node, 'bracket', ['//'], true)).toBeNull()
+    })
+
+    it('leave another value, and quoted content, unstyled', () => {
+      const other = { '//': { ticket: 123 }, $plus: [1] }
+      expect(style(other, 'collection', ['//'])).toBeNull()
+      expect(style(other, 'valueRow', ['//', 'ticket'])).toBeNull()
+      const quoted = { operator: 'literal', value: { '//': 'Data', lines: { '//': ['a'] } } }
+      expect(style(quoted, 'valueRow', ['value', '//'])).toBeNull()
+      expect(style(quoted, 'collection', ['value', 'lines', '//'])).toBeNull()
     })
   })
 
