@@ -1,5 +1,5 @@
 import { FigTree } from 'fig-tree-evaluator'
-import { type NodeData, type Theme } from 'json-edit-react'
+import { toPathString, type NodeData, type Theme } from 'json-edit-react'
 import { describe, expect, it } from 'vitest'
 import { attachIssues, rollUpIssues } from '../src/attachIssues'
 import { classify } from '../src/classify'
@@ -7,6 +7,7 @@ import {
   defaultEditorTheme,
   layerTheme,
   mergeEditorTheme,
+  type FilledInMarker,
   type ThemeContext,
 } from '../src/editorTheme'
 import { valueAt } from '../src/paths'
@@ -21,7 +22,7 @@ const figTree = new FigTree({
 })
 const registry = { operators: figTree.getOperators(), fragments: figTree.getFragments() }
 
-const contextFor = (expression: unknown): ThemeContext => {
+const contextFor = (expression: unknown, filledIn: FilledInMarker | null = null): ThemeContext => {
   const classification = classify(expression, registry)
   const { issues } = figTree.validate(expression)
   return {
@@ -30,6 +31,7 @@ const contextFor = (expression: unknown): ThemeContext => {
     rollUp: rollUpIssues(issues, classification),
     editorTheme: defaultEditorTheme,
     indent: 2,
+    filledIn,
   }
 }
 
@@ -49,9 +51,10 @@ const style = (
     | 'iconCollection'
     | 'itemCount',
   path: (string | number)[],
-  collapsed = false
+  collapsed = false,
+  filledIn: FilledInMarker | null = null
 ) => {
-  const { styles } = layerTheme(undefined, contextFor(expression)) as Theme
+  const { styles } = layerTheme(undefined, contextFor(expression, filledIn)) as Theme
   const styleFunction = styles[element] as (nodeData: NodeData) => unknown
   const parentData = path.length > 0 ? valueAt(expression, path.slice(0, -1)) : null
   return styleFunction({
@@ -342,6 +345,60 @@ describe('editor theme', () => {
 
     it("leaves an open row's summary alone", () => {
       expect(style({ a: { operator: 'round', value: [1] } }, 'itemCount', ['a'])).toBeNull()
+    })
+  })
+
+  describe('the filled-in marker', () => {
+    const marked = (fading: boolean, ...rows: (string | number)[][]): FilledInMarker => ({
+      rows: rows.map(toPathString),
+      fading,
+    })
+    const highlight = `color-mix(in srgb, ${defaultEditorTheme.filledIn} 40%, transparent)`
+    const fade = 'background-color 1000ms ease-out'
+    const expression = { operator: 'if', condition: true, then: 'Yes', thn: 1 }
+
+    it("highlights a value row, in its tint's shape, and leaves the others", () => {
+      const markers = marked(false, ['then'])
+      expect(style(expression, 'valueRow', ['then'], false, markers)).toEqual({
+        background: highlight,
+        marginLeft: '-0.4em',
+        paddingLeft: '0.4em',
+        borderRadius: '0.25em',
+      })
+      expect(style(expression, 'valueRow', ['condition'], false, markers)).toBeNull()
+    })
+
+    it("fades back to the row's own style", () => {
+      expect(style(expression, 'valueRow', ['then'], false, marked(true, ['then']))).toEqual({
+        marginLeft: '-0.4em',
+        paddingLeft: '0.4em',
+        borderRadius: '0.25em',
+        transition: fade,
+      })
+      // Over a tint, which it covers, then fades to
+      const tinted = style(expression, 'valueRow', ['thn'], false, marked(false, ['thn']))
+      expect(tinted).toEqual(expect.objectContaining({ background: highlight }))
+      expect(style(expression, 'valueRow', ['thn'], false, marked(true, ['thn']))).toEqual(
+        expect.objectContaining({
+          background: `color-mix(in srgb, ${defaultEditorTheme.error} 9%, transparent)`,
+          transition: fade,
+        })
+      )
+    })
+
+    it("highlights a plain collection's whole block, without a tint's padding below", () => {
+      const plus = { operator: 'plus', values: [1, 2, 3] }
+      expect(style(plus, 'collection', ['values'], false, marked(false, ['values']))).toEqual({
+        background: highlight,
+        marginLeft: 'calc(1em - 1.35em)',
+        paddingLeft: '1.35em',
+        borderRadius: '0.25em',
+      })
+    })
+
+    it("doesn't highlight a node", () => {
+      const nested = { x: { operator: 'plus', values: [1] } }
+      expect(style(nested, 'collection', ['x'], false, marked(false, ['x']))).toBeNull()
     })
   })
 })

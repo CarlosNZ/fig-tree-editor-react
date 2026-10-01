@@ -50,6 +50,10 @@ export const recordFilledIn = (
   return next
 }
 
+// A row's key in the record
+export const filledInKey = (path: Path, classification: Classification) =>
+  toPathString(canonicalPath(classification, path))
+
 // "Added 'then', which 'if' requires", from the row's slot and the node it
 // belongs to, by the name as written. A `literal`'s `value` has no row, since
 // its content isn't walked.

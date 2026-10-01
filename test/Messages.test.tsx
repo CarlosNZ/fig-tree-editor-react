@@ -416,6 +416,44 @@ describe('filled-in values', () => {
     expect(added()).toHaveLength(1)
   })
 
+  describe('the marker', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+    // The `then` row's line, which the marker highlights
+    const thenRow = () => screen.getByText(SEED).closest<HTMLElement>('.jer-value-main-row')!.style
+
+    it('highlights each row as its value is added, then fades, then goes', () => {
+      vi.useFakeTimers()
+      host({ operator: 'if', condition: true })
+      expect(thenRow().background).toContain('color-mix')
+      act(() => {
+        vi.advanceTimersByTime(3000)
+      })
+      expect(thenRow().background).toBe('')
+      expect(thenRow().transition).toContain('background-color')
+      act(() => {
+        vi.advanceTimersByTime(1000)
+      })
+      expect(thenRow().transition).toBe('')
+      expect(added()).toHaveLength(1)
+    })
+
+    it('leaves the other rows alone', () => {
+      vi.useFakeTimers()
+      host({ operator: 'if', condition: true })
+      const condition = screen.getByText('true').closest<HTMLElement>('.jer-value-main-row')!
+      expect(condition.style.background).toBe('')
+    })
+
+    it('goes at once with its line', () => {
+      vi.useFakeTimers()
+      host({ operator: 'if', condition: true })
+      fireEvent.click(screen.getByRole('button', { name: 'Dismiss' }))
+      expect(thenRow().background).toBe('')
+    })
+  })
+
   it('hide while their row holds something else, and come back with the value', () => {
     const { replace } = host({ operator: 'if', condition: true })
     replace({ operator: 'if', condition: true, then: 'Yes' })

@@ -408,7 +408,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **Modifier keys look different from parameters** (`fallback`, `useCache`; italic and muted in the mockups, the exact style to be settled later).
 - **A broken node** has an error border and stripe (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge. Which row an issue marks, which codes make a node broken, and how warnings and hints differ are settled in topic 7 ("Where issues attach").
 - **A collapsed node with an issue** colours its summary line as an error.
-- **Filled in on load — Agreed** in topic 7: the amber marker (A6) fades after a few seconds, needing no edit to clear. Its line in the messages area stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed.
+- **Filled in on load — Agreed** in topic 7: the marker fades after a few seconds, needing no edit to clear. Its line in the messages area stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed.
 - **No badge for dynamic fragment arguments:** `parameters` there is a property with a value, and nothing needs to call attention to it.
 - **No "quoted data" badge on `literal`:** its neutral colour and plain-data content are enough.
 
@@ -949,7 +949,7 @@ Checked against the installed package:
 **Severity on rows — revised** (Carl, plan 10.1, once the flags could be seen in the built editor, where a badge on every row was too much): **the tint marks the row, and the messages float in a card while the row is hovered.**
 
 - **Error:** the row is tinted, with a stripe down its left edge (topic 3). A plain array or object is tinted as a whole block, its header line included (Carl, plan 10.1).
-- **Warning:** the row is tinted fainter, in amber, without the stripe. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), and the fainter tint keeps a tree with a few warnings from looking as alarming as a broken one. Its amber must be told apart from the "filled in on load" marker's (topic 3).
+- **Warning:** the row is tinted fainter, in amber, without the stripe. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), and the fainter tint keeps a tree with a few warnings from looking as alarming as a broken one. Its amber must be told apart from the "filled in on load" marker's (topic 3), which is a stronger, purer yellow that fades (plan 10.3).
 - **Hint:** the messages area only. fig-tree has one hint today (`token-renumber`, beside the warnings it explains).
 
 A node keeps a flag on its header's line, which has room for one, and isn't tinted. Rejected, first: a flag on every row with an issue, errors tinted as well and warnings flagged alone, which made a tree with several issues busy (Carl). Rejected earlier: one treatment for all three in different colours; and warnings in the messages area only, which moves a row's problem away from the row.
@@ -986,7 +986,7 @@ Do later: the same fixes in the row's hover card ("Where issues attach"), which 
 
 **A filled-in line clears** when its row is edited or when it is dismissed (topic 2). Its row is edited when an edit of the row itself, or of a row inside it, is committed, its value changed or not; an edit of the node holding it counts only where it changes or removes the value (Carl, plan 10.3). While the row holds something else the line is hidden, and it comes back with the value, as on an undo.
 
-**The filled-in marker fades — Agreed.** The amber marker on a row filled in on load fades after about three seconds, needing no edit, and its line stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed (topic 3's proposal). Rejected: keeping the marker until the line is dismissed, which leaves every row filled in on a large load amber indefinitely. The fade applies only to that marker: issues from `validate()`, warnings included, stay on their rows and in the list for as long as `validate()` reports them, whether they were present on load or caused by an edit.
+**The filled-in marker fades — Agreed.** The marker on a row filled in on load, a highlight in the tint's shape with no badge (revised in plan 10.3, after 10.1's tints; A6's badge is superseded), fades after about three seconds, needing no edit, and its line stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed (topic 3's proposal). Rejected: keeping the marker until the line is dismissed, which leaves every row filled in on a large load amber indefinitely. The fade applies only to that marker: issues from `validate()`, warnings included, stay on their rows and in the list for as long as `validate()` reports them, whether they were present on load or caused by an edit.
 
 **What the host receives for its own rendering** is `onStatusChange`'s `messages` (topic 8): what `validate()` alone does not give, the filled-in lines, each line's resolved row, tree order, and fixes that apply to the expression.
 

@@ -1,4 +1,5 @@
-import { type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
+import { type CSSProperties } from 'react'
+import { toPathString, type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
 import {
   brokenIssue,
   flaggedIssues,
@@ -63,6 +64,15 @@ export interface ThemeContext {
   rollUp: IssueRollUp // the issues on and beneath each row
   editorTheme: EditorTheme
   indent: number // json-edit-react's, which sets each row's left margin
+  filledIn: FilledInMarker | null // the rows a write has just filled in
+}
+
+// The rows the editor's latest write filled in, highlighted as it is made,
+// then fading (design, topic 7, "The filled-in marker fades"). Keyed as the
+// classification is.
+export interface FilledInMarker {
+  rows: readonly string[]
+  fading: boolean
 }
 
 // The editor's layer of json-edit-react's theme, beneath the host's.
@@ -80,6 +90,7 @@ const editorThemeLayer = ({
   rollUp,
   editorTheme,
   indent,
+  filledIn,
 }: ThemeContext): Theme => {
   const comment = (nodeData: NodeData) => commentPart(classification, nodeData)
   const openLines = (nodeData: NodeData) => comment(nodeData) === 'lines' && !nodeData.collapsed
@@ -107,6 +118,14 @@ const editorThemeLayer = ({
       : { colour: editorTheme.warning, strength: WARNING_TINT, stripe: false }
   }
 
+  // A row the editor has just filled in is highlighted over its own style,
+  // then fades back to it. A node isn't, as it isn't tinted.
+  const marked = filledIn && new Set(filledIn.rows)
+  const highlight = (nodeData: NodeData, own: CSSProperties | null, shape: CSSProperties) =>
+    marked?.has(toPathString(nodeData.path)) && nodeForm(nodeData) === undefined
+      ? highlighted(own, shape, editorTheme.filledIn, filledIn!.fading)
+      : own
+
   return {
     styles: {
       // The vars key takes the `$vars` colour, and a modifier's key is muted
@@ -129,7 +148,9 @@ const editorThemeLayer = ({
         if (row?.kind?.kind === 'vars') return varsBlock(editorTheme.varsBlock, indent)
         if (comment(nodeData) === 'lines') return noteBlock(editorTheme.comment)
         const blockTint = tint(nodeData)
-        return blockTint && issueBlock(blockTint, nodeData.path.length === 0 ? 0 : indent)
+        const rowIndent = nodeData.path.length === 0 ? 0 : indent
+        const own = blockTint && issueBlock(blockTint, rowIndent)
+        return filledIn ? highlight(nodeData, own, blockShape(rowIndent)) : own
       },
       // A comment is a note (topic 5, "Comments"): a string comment's row is
       // the block, and so is a multi-line comment's array, whose inner block
@@ -146,7 +167,8 @@ const editorThemeLayer = ({
       valueRow: (nodeData) => {
         if (comment(nodeData) === 'note') return noteBlock(editorTheme.comment)
         const rowTint = tint(nodeData)
-        return rowTint && issueRow(rowTint)
+        const own = rowTint && issueRow(rowTint)
+        return filledIn ? highlight(nodeData, own, ROW_SHAPE) : own
       },
       headerRow: (nodeData) =>
         openLines(nodeData) ? { float: 'right', minHeight: 0, zIndex: 1 } : null,
@@ -224,32 +246,56 @@ interface Tint {
   stripe: boolean
 }
 
-const tintStyle = ({ colour, strength, stripe }: Tint) => ({
-  background: `color-mix(in srgb, ${colour} ${strength}, transparent)`,
-  ...(stripe && { boxShadow: `inset ${STRIPE_WIDTH} 0 0 ${colour}` }),
-  borderRadius: '0.25em',
-})
-
-const issueRow = (tint: Tint) => ({
-  ...tintStyle(tint),
-  marginLeft: `-${TINT_GAP}`,
-  paddingLeft: TINT_GAP,
-})
-
-// `indent` is json-edit-react's, whose margin for the row is half of it. The
-// closing bracket's line is shorter than a row, so the block is padded below
-// it.
-const issueBlock = (tint: Tint, indent: number) => ({
-  ...tintStyle(tint),
-  marginLeft: `calc(${indent / 2}em - ${RULE_GAP})`,
-  paddingLeft: RULE_GAP,
-  paddingBottom: '0.5em',
-})
-
 const ERROR_TINT = '9%'
 const WARNING_TINT = '10%'
 const STRIPE_WIDTH = '3px'
 const TINT_GAP = '0.4em'
+
+const tintStyle = ({ colour, strength, stripe }: Tint) => ({
+  background: `color-mix(in srgb, ${colour} ${strength}, transparent)`,
+  ...(stripe && { boxShadow: `inset ${STRIPE_WIDTH} 0 0 ${colour}` }),
+})
+
+const ROW_SHAPE = { marginLeft: `-${TINT_GAP}`, paddingLeft: TINT_GAP, borderRadius: '0.25em' }
+
+const issueRow = (tint: Tint) => ({ ...tintStyle(tint), ...ROW_SHAPE })
+
+// `indent` is json-edit-react's, whose margin for the row is half of it
+const blockShape = (indent: number) => ({
+  marginLeft: `calc(${indent / 2}em - ${RULE_GAP})`,
+  paddingLeft: RULE_GAP,
+  borderRadius: '0.25em',
+})
+
+// The closing bracket's line is shorter than a row, so the block is padded
+// below it
+const issueBlock = (tint: Tint, indent: number) => ({
+  ...tintStyle(tint),
+  ...blockShape(indent),
+  paddingBottom: '0.5em',
+})
+
+// The filled-in highlight, in the tint's shape, so the row's text stays where
+// it is as the highlight comes and goes: much stronger than a tint, then,
+// fading, the row's own style, to which its background moves
+const highlighted = (
+  own: CSSProperties | null,
+  shape: CSSProperties,
+  colour: string,
+  fading: boolean
+): CSSProperties => ({
+  ...shape,
+  ...own,
+  ...(fading
+    ? { transition: `background-color ${FILLED_IN_FADE_MS}ms ease-out` }
+    : { background: `color-mix(in srgb, ${colour} ${FILLED_IN_STRENGTH}, transparent)` }),
+})
+
+const FILLED_IN_STRENGTH = '40%'
+
+// How long the highlight shows, then how long it takes to fade
+export const FILLED_IN_SHOWN_MS = 3000
+export const FILLED_IN_FADE_MS = 1000
 
 // A warning's text: its colour, darkened to read on a light background
 export const warningText = (warning: string) => `color-mix(in srgb, ${warning}, black 35%)`

@@ -20,6 +20,7 @@ import {
   type OnCollapseFunction,
   type OnEditEventFunction,
   type TypeFilterFunction,
+  toPathString,
 } from 'json-edit-react'
 import { type FigTree } from 'fig-tree-evaluator'
 import { attachIssues, issuesBeneath, rollUpIssues, type IssueRollUp } from './attachIssues'
@@ -41,11 +42,18 @@ import {
   type DisplayData,
   type OperatorHintsProp,
 } from './displayData'
-import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
+import {
+  FILLED_IN_FADE_MS,
+  FILLED_IN_SHOWN_MS,
+  layerTheme,
+  mergeEditorTheme,
+  type EditorTheme,
+} from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
 import {
   confirmFilledIn,
   dismissFilledIn,
+  filledInKey,
   NO_FILLED_IN,
   recordFilledIn,
   standingFilledIn,
@@ -174,18 +182,32 @@ export const FigTreeEditor = ({
   const classification = useStableValue(classify(shown, { operators, fragments }))
 
   // The values those writes have added, which the messages area lists
-  // (filledIn.ts)
+  // (filledIn.ts), and the rows the latest one filled, marked for a few
+  // seconds
   const [filledIn, setFilledIn] = useState(NO_FILLED_IN)
+  const [marker, setMarker] = useState<{ keys: ReadonlySet<string>; fading: boolean } | null>(null)
 
   // `setExpression` is left out on purpose: a host's inline setter is new on
   // every render, and the write must happen once per change, not per render
   useEffect(() => {
     if (!changed) return
     setExpression(stableFilled, { autoUpdate: true })
-    if (arrival.filled.length > 0)
-      setFilledIn((record) => recordFilledIn(record, arrival.filled, stableFilled, classification))
+    if (arrival.filled.length === 0) return
+    setFilledIn((record) => recordFilledIn(record, arrival.filled, stableFilled, classification))
+    const keys = new Set(arrival.filled.map((path) => filledInKey(path, classification)))
+    setMarker({ keys, fading: false })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [changed, stableFilled])
+
+  // The marker shows, then fades, then goes
+  useEffect(() => {
+    if (marker === null) return
+    const timer = setTimeout(
+      () => setMarker(marker.fading ? null : { ...marker, fading: true }),
+      marker.fading ? FILLED_IN_FADE_MS : FILLED_IN_SHOWN_MS
+    )
+    return () => clearTimeout(timer)
+  }, [marker])
 
   // Read by the collapse filter, which keeps its identity across edits
   const latestClassification = useRef(classification)
@@ -322,6 +344,17 @@ export const FigTreeEditor = ({
     pruneCollapseRecord(collapseRecord.current, shown, classification)
   }, [shown, classification])
 
+  // The filled-in lines that stand, and the rows among them the marker is on
+  const filledInLines = filledIn.size === 0 ? [] : standingFilledIn(filledIn, shown, classification)
+  const markedRows = useStableValue(
+    marker && {
+      rows: filledInLines
+        .filter(({ key }) => marker.keys.has(key))
+        .map(({ row }) => toPathString(row)),
+      fading: marker.fading,
+    }
+  )
+
   const indent = props.indent ?? editorDefaults.indent
   const layeredTheme = useMemo(
     () =>
@@ -331,8 +364,9 @@ export const FigTreeEditor = ({
         rollUp,
         editorTheme: mergedEditorTheme,
         indent,
+        filledIn: markedRows,
       }),
-    [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent]
+    [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent, markedRows]
   )
   // json-edit-react's handle, which the editor uses too, to open the rows
   // above one it reveals
@@ -391,12 +425,7 @@ export const FigTreeEditor = ({
       />
       {messagesMaxHeight !== 0 && (
         <Messages
-          lines={orderMessages(
-            issues,
-            filledIn.size === 0 ? [] : standingFilledIn(filledIn, shown, classification),
-            shown,
-            classification
-          ).map((line) => ({
+          lines={orderMessages(issues, filledInLines, shown, classification).map((line) => ({
             ...line,
             fixes:
               line.kind === 'issue'
