@@ -14,6 +14,10 @@ export const strings = {
   FT_ROOT_PATH: '(root)',
   FT_MESSAGES: 'Messages', // the messages area's header
   FT_REVEAL_ROW: 'Show in the tree', // a message's path, which reveals its row
+  // The messages area's quick fixes
+  FT_FIX_REMOVE: 'Remove',
+  FT_FIX_RENAME: (name: string) => `Rename to ${name}`,
+  FT_FIX_CHANGE: (name: string) => `Change to ${name}`,
   FT_COUNT_ERRORS: errors,
   FT_COUNT_WARNINGS: warnings,
   FT_COUNT_HINTS: hints,

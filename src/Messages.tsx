@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { type Issue } from 'fig-tree-evaluator'
 import { type EditorTheme } from './editorTheme'
 import { Icon } from './Icons'
-import { countMessages, type MessageLine } from './messageLines'
+import { countMessages, type MessageFix, type MessageLine } from './messageLines'
 import { displayPath, type Path } from './paths'
 import { strings } from './strings'
 
@@ -10,14 +10,14 @@ import { strings } from './strings'
 // and as wide as it: shown only when it has lines, under a header of counts
 // that folds it away, scrolling beyond `maxHeight`. Each line has its
 // severity, the path of the row it marks, which reveals the row, and the full
-// message.
+// message, with its quick fixes at the top right.
 export const Messages = ({
   lines,
   maxHeight,
   editorTheme,
   onReveal,
 }: {
-  lines: readonly MessageLine[]
+  lines: readonly (MessageLine & { fixes: readonly MessageFix[] })[]
   maxHeight: number | string
   editorTheme: EditorTheme
   onReveal: (row: Path) => void
@@ -62,20 +62,31 @@ export const Messages = ({
       </button>
       {open && (
         <ul className="ft-messages-list" style={{ maxHeight }}>
-          {lines.map(({ issue, row }, index) => (
+          {lines.map(({ issue, row, fixes }, index) => (
             <li className="ft-message" key={index}>
-              <span className="ft-severity" style={severityStyle(issue.severity, editorTheme)}>
-                {SEVERITY[issue.severity]}
+              <span className="ft-message-content">
+                <span className="ft-severity" style={severityStyle(issue.severity, editorTheme)}>
+                  {SEVERITY[issue.severity]}
+                </span>
+                <button
+                  type="button"
+                  className="ft-message-path"
+                  title={strings.FT_REVEAL_ROW}
+                  onClick={() => onReveal(row)}
+                >
+                  {displayPath(row) || strings.FT_ROOT_PATH}
+                </button>
+                <span className="ft-message-text">{issue.message}</span>
               </span>
-              <button
-                type="button"
-                className="ft-message-path"
-                title={strings.FT_REVEAL_ROW}
-                onClick={() => onReveal(row)}
-              >
-                {displayPath(row) || strings.FT_ROOT_PATH}
-              </button>
-              <span className="ft-message-text">{issue.message}</span>
+              {fixes.length > 0 && (
+                <span className="ft-message-fixes">
+                  {fixes.map(({ label, apply }) => (
+                    <button type="button" className="ft-fix" key={label} onClick={apply}>
+                      {label}
+                    </button>
+                  ))}
+                </span>
+              )}
             </li>
           ))}
         </ul>

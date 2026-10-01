@@ -6,7 +6,7 @@ import { DisplayBar } from './DisplayBar'
 import { fragmentHeader } from './Fragment'
 import { takeRow } from './nodeRows'
 import { operatorDefaultsLine } from './parameterCard'
-import { type Path } from './paths'
+import { renameKey, type Path } from './paths'
 import { rowMark } from './revealRow'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
@@ -115,7 +115,3 @@ const settings = (
   const keys = [...Object.keys(node).filter((other) => other !== key), ...bound]
   return Object.fromEntries(keys.filter((name) => name !== undefined).map((name) => [name, true]))
 }
-
-// The node with its `$name` key respelled, in place
-const renameKey = (node: Record<string, unknown>, from: string, to: string) =>
-  Object.fromEntries(Object.entries(node).map(([key, value]) => [key === from ? to : key, value]))

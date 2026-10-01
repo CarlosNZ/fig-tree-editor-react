@@ -210,13 +210,30 @@ input.ft-select-input::placeholder {
   overflow-y: auto;
 }
 
+/* A message: its severity, path and text, with its quick fixes in a column of
+   their own at the top right. The text wraps beside the severity and path,
+   and where there is too little room for it there, a line of its own beneath
+   them. */
 .ft-message {
   display: grid;
-  grid-template-columns: auto auto 1fr;
-  gap: 0.3em 0.7em;
-  align-items: baseline;
+  grid-template-columns: 1fr auto;
+  column-gap: 0.7em;
+  align-items: start;
   padding: 0.45em 0.8em;
   border-top: 1px solid #efefef;
+}
+
+.ft-message-content {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25em 0.7em;
+  min-width: 0;
+}
+
+.ft-message-text {
+  flex: 1 1 16em;
+  min-width: 0;
 }
 
 .ft-severity {
@@ -228,12 +245,36 @@ input.ft-select-input::placeholder {
   white-space: nowrap;
 }
 
-.ft-message > .ft-severity {
+.ft-message-content > .ft-severity {
   text-transform: uppercase;
+}
+
+/* A message's quick fixes */
+.ft-message-fixes {
+  display: flex;
+  gap: 0.3em;
+}
+
+.ft-fix {
+  padding: 0.05em 0.5em;
+  border: 1px solid #c8d7f2;
+  border-radius: 4px;
+  background-color: #eef3fc;
+  font: inherit;
+  font-size: 0.85em;
+  font-weight: 600;
+  color: #1d4f91;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ft-fix:hover {
+  background-color: #dde7fa;
 }
 
 /* A message's path, a link to the row it marks */
 .ft-message-path {
+  overflow-wrap: anywhere;
   padding: 0;
   border: none;
   background: none;

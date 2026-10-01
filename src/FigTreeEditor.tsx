@@ -17,6 +17,7 @@ import {
   type NewKeyOptionsFunction,
   type NodeData,
   type OnCollapseFunction,
+  type OnEditEventFunction,
   type TypeFilterFunction,
 } from 'json-edit-react'
 import { type FigTree } from 'fig-tree-evaluator'
@@ -48,6 +49,7 @@ import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
 import { Messages } from './Messages'
 import { orderMessages } from './messageLines'
+import { getQuickFixes } from './quickFixes'
 import { valueAt, type Path } from './paths'
 import { revealRow } from './revealRow'
 import { strings } from './strings'
@@ -119,6 +121,7 @@ export const FigTreeEditor = ({
   maxWidth = DEFAULT_MAX_WIDTH,
   id,
   editorRef,
+  onEditEvent,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -221,12 +224,59 @@ export const FigTreeEditor = ({
     }
   }, [figTree, classification, allowDelete, allowAdd])
 
+  // A quick fix clicked while an edit was open, waiting for that edit's
+  // commit, and applied to what it produces, in the same write (plan, 10.2c)
+  const pendingFix = useRef<((expression: unknown) => unknown) | null>(null)
+
   // A node the type dropdown created is marked for this commit only: where
   // the commit doesn't carry it, the host's `onUpdate` rejected it
   const commit = (data: unknown) => {
+    const fix = pendingFix.current
+    pendingFix.current = null
+    const next = fix ? fix(data) : data
     const mark = created.current
-    if (mark && valueAt(data, mark.path) !== mark.node) created.current = null
-    setExpression(fill(data))
+    if (mark && valueAt(next, mark.path) !== mark.node) created.current = null
+    setExpression(fill(next))
+  }
+
+  // Whether json-edit-react has an edit open, followed through its events,
+  // and whether the one a quick fix confirmed was submitted. An edit's commit
+  // writes before its `commit*` event, so a waiting fix has gone into that
+  // write by then, unless the edit changed nothing, when it applies on the
+  // event. A cancelled or rejected edit takes the waiting fix with it.
+  const editOpen = useRef(false)
+  const submitted = useRef(false)
+  const latest = useRef(shown)
+  latest.current = shown
+  const followEdits: OnEditEventFunction = (editEvent) => {
+    const { event } = editEvent
+    if (event.startsWith('start')) editOpen.current = true
+    if (event.startsWith('submit')) submitted.current = true
+    if (event.startsWith('commit')) {
+      editOpen.current = false
+      const fix = pendingFix.current
+      pendingFix.current = null
+      if (fix) commit(fix(latest.current))
+    }
+    if (event.startsWith('cancel') || event === 'updateError') {
+      editOpen.current = false
+      pendingFix.current = null
+    }
+    onEditEvent?.(editEvent)
+  }
+
+  // A quick fix, applied to the expression as it stands. An open edit is
+  // committed first, keeping its changes, as json-edit-react commits an edit
+  // another displaces, and the fix applies to what it produces, never to the
+  // expression from before it, which would undo an edit elsewhere. An edit
+  // whose commit is refused, such as raw JSON that doesn't parse, stays open
+  // with its error, and the fix isn't applied.
+  const applyFix = (fix: (expression: unknown) => unknown) => {
+    if (!editOpen.current) return commit(fix(latest.current))
+    pendingFix.current = fix
+    submitted.current = false
+    handle.current?.confirm()
+    if (!submitted.current) pendingFix.current = null
   }
 
   // The author's collapse toggles, recorded by canonical path, so rows keep
@@ -302,6 +352,7 @@ export const FigTreeEditor = ({
         minWidth={0}
         maxWidth="100%"
         editorRef={setHandle}
+        onEditEvent={followEdits}
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
         customText={combinedText}
@@ -318,7 +369,12 @@ export const FigTreeEditor = ({
       />
       {messagesMaxHeight !== 0 && (
         <Messages
-          lines={orderMessages(issues, shown, classification)}
+          lines={orderMessages(issues, shown, classification).map((line) => ({
+            ...line,
+            fixes: getQuickFixes(line.issue, shown, { classification, operators, fragments }).map(
+              ({ label, fix }) => ({ label, apply: () => applyFix(fix) })
+            ),
+          }))}
           maxHeight={messagesMaxHeight}
           editorTheme={mergedEditorTheme}
           onReveal={reveal}

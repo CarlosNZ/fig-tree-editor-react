@@ -23,3 +23,26 @@ export const valueAt = (value: unknown, path: Readonly<Path>): unknown =>
         : undefined,
     value
   )
+
+// The value with what is at `path` replaced by `update`'s result, copying the
+// objects and arrays along the way. A path that isn't there leaves the value
+// as it is.
+export const updateAt = (
+  value: unknown,
+  path: Readonly<Path>,
+  update: (current: unknown) => unknown
+): unknown => {
+  if (path.length === 0) return update(value)
+  const [key, ...rest] = path
+  if (typeof value !== 'object' || value === null || !(key in value)) return value
+  const child = (value as Record<string | number, unknown>)[key]
+  if (Array.isArray(value))
+    return (value as unknown[]).map((element, index) =>
+      index === key ? updateAt(child, rest, update) : element
+    )
+  return { ...value, [key]: updateAt(child, rest, update) }
+}
+
+// An object with one key renamed, in its place among the others
+export const renameKey = (object: Record<string, unknown>, from: string, to: string) =>
+  Object.fromEntries(Object.entries(object).map(([key, value]) => [key === from ? to : key, value]))

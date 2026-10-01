@@ -13,6 +13,12 @@ export interface MessageLine {
   row: Path
 }
 
+// A line's quick fix, ready to apply
+export interface MessageFix {
+  label: string
+  apply: () => void
+}
+
 // One list in tree order, by the row each line marks, so reading down the
 // list is reading down the tree; on one row, the most severe first, then
 // `validate()`'s order. The editor sorts, since `validate()` reports a

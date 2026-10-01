@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
-import { createRef, type ComponentProps } from 'react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
+import { StrictMode, createRef, useState, type ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { type JsonEditorHandle } from 'json-edit-react'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
@@ -42,7 +43,7 @@ describe('the messages area', () => {
 
   it('lists hints, which no row shows', () => {
     editor({ $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] })
-    expect(lines().map((line) => line.firstChild!.textContent)).toEqual([
+    expect(lines().map((line) => line.querySelector('.ft-severity')!.textContent)).toEqual([
       'warning',
       'warning',
       'hint',
@@ -108,7 +109,9 @@ describe('the messages area', () => {
       { greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] } },
       { editorTheme: { warning: 'rgb(1, 2, 3)', hint: 'rgb(4, 5, 6)' } }
     )
-    const [warning, , hint] = lines().map((line) => line.firstChild as HTMLElement)
+    const [warning, , hint] = lines().map((line) =>
+      line.querySelector<HTMLElement>('.ft-severity')!
+    )
     expect(warning).toHaveStyle({ backgroundColor: 'rgb(1, 2, 3)' })
     expect(hint).toHaveStyle({ backgroundColor: 'rgb(4, 5, 6)' })
   })
@@ -187,6 +190,138 @@ describe('revealing a row', () => {
     editor({ $plus: [1, 2] }, { editorRef: callback })
     const [handle] = callback.mock.calls.find(([value]) => value !== null) as [JsonEditorHandle]
     expect(handle.startEdit).toBeTypeOf('function')
+  })
+})
+
+describe('quick fixes', () => {
+  // A host holding the expression, so each write comes back as the editor's
+  // next expression, in StrictMode
+  const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+    const written: unknown[] = []
+    const onUpdate = vi.fn()
+    const Host = () => {
+      const [expression, setExpression] = useState(initial)
+      return (
+        <FigTreeEditor
+          figTree={figTree}
+          expression={expression}
+          setExpression={(next) => {
+            written.push(next)
+            setExpression(next)
+          }}
+          collapse={false}
+          onUpdate={onUpdate}
+          {...props}
+        />
+      )
+    }
+    const { container } = render(<Host />, { wrapper: StrictMode })
+    return { container, written, onUpdate, user: userEvent.setup() }
+  }
+  const latest = (written: unknown[]) => written[written.length - 1]
+  const fix = (label: string) => fireEvent.click(screen.getByRole('button', { name: label }))
+
+  it("are offered in a column of their own, beside the line's text", () => {
+    editor({ operator: 'if', condition: true, thn: 'Adult' })
+    const line = lines().find((line) => line.textContent.includes("'thn'"))!
+    expect([...line.children].map(({ className }) => className)).toEqual([
+      'ft-message-content',
+      'ft-message-fixes',
+    ])
+    expect(
+      within(line)
+        .getAllByRole('button')
+        .slice(1)
+        .map((button) => button.textContent)
+    ).toEqual(['Rename to then', 'Remove'])
+  })
+
+  it('write the fixed expression, completed, and not through onUpdate', () => {
+    const { written, onUpdate } = host({ operator: 'if', condition: true, thn: 'Adult' })
+    fix('Rename to then')
+    expect(latest(written)).toEqual({ operator: 'if', condition: true, then: 'Adult' })
+    expect(onUpdate).not.toHaveBeenCalled()
+    expect(screen.queryByRole('button', { name: 'Rename to then' })).toBeNull()
+  })
+
+  it('let the fill-in step seed a parameter a removed typo held back', () => {
+    const { written } = host({ operator: 'if', condition: true, thn: 'Adult' })
+    fix('Remove')
+    const result = latest(written) as Record<string, unknown>
+    expect(Object.keys(result)).toEqual(['operator', 'condition', 'then'])
+    expect(result.then).not.toBe('Adult')
+  })
+
+  it('change an unknown operator as the picker would', () => {
+    const { written } = host({ operator: 'plsu', values: [1], extra: 2, fallback: 0 })
+    fix('Change to plus')
+    expect(latest(written)).toEqual({ operator: 'plus', values: [1], fallback: 0 })
+  })
+
+  it('make an object a shorthand node by renaming its `$` key', () => {
+    const { written } = host({ condition: { $graeterThan: [1, 2] } })
+    fix('Rename to $greaterThan')
+    expect(latest(written)).toEqual({ condition: { $greaterThan: [1, 2] } })
+    expect(lines()).toHaveLength(0)
+  })
+
+  describe('with an edit open', () => {
+    // In the fill-in step's order, so nothing is written as it loads
+    const expression = { operator: 'if', condition: true, else: 'Child', thn: 'Adult' }
+
+    it('commit it first, keeping its changes, and apply to what it produced', async () => {
+      const { written, user } = host(expression)
+      await user.dblClick(screen.getByText('"Child"'))
+      const input = screen.getByRole('textbox')
+      await user.clear(input)
+      await user.type(input, 'Kid')
+      fix('Rename to then')
+      expect(written).toEqual([{ operator: 'if', condition: true, then: 'Adult', else: 'Kid' }])
+      expect(screen.queryByRole('textbox')).toBeNull()
+    })
+
+    it('apply as they are when the edit changed nothing', async () => {
+      const { written, user } = host(expression)
+      await user.dblClick(screen.getByText('"Child"'))
+      fix('Rename to then')
+      expect(latest(written)).toEqual({
+        operator: 'if',
+        condition: true,
+        then: 'Adult',
+        else: 'Child',
+      })
+      expect(screen.queryByRole('textbox')).toBeNull()
+    })
+
+    it("leave an edit whose raw JSON doesn't parse open, and don't apply", async () => {
+      const { container, written, user } = host(expression)
+      // json-edit-react's ✎ on the root node
+      await user.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      const textarea = container.querySelector('textarea')!
+      fireEvent.change(textarea, { target: { value: '{ not json' } })
+      fix('Rename to then')
+      expect(written).toHaveLength(0)
+      expect(container.querySelector('textarea')).toBeInTheDocument()
+      // The waiting fix went with the refused commit, so the edit commits on
+      // its own later
+      fireEvent.change(textarea, {
+        target: { value: JSON.stringify({ ...expression, else: 'Kid' }) },
+      })
+      fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+      expect(latest(written)).toEqual({ ...expression, else: 'Kid' })
+    })
+
+    it("still call the host's onEditEvent", async () => {
+      const onEditEvent = vi.fn()
+      const { user } = host(expression, { onEditEvent })
+      await user.dblClick(screen.getByText('"Child"'))
+      fix('Rename to then')
+      expect(onEditEvent.mock.calls.map(([{ event }]) => event as string)).toEqual([
+        'startEdit',
+        'submitEdit',
+        'commitEdit',
+      ])
+    })
   })
 })
 
