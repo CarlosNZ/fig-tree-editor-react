@@ -7,7 +7,7 @@ import { getNodeFor } from './conversions'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
-import { Icons } from './Icons'
+import { EvaluateIcon } from './Icons'
 import { IssueCard } from './IssueFlag'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
@@ -35,12 +35,14 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // The ▶ evaluates the reference, as a node's button does (topic 7,
 // "Evaluating"): a spinner while it runs, a second click cancelling it, and
 // where it can't be evaluated, dimmed, with the reason in a card on hover.
+// After an evaluation it shows how the reference ran, as a ✓ or ✕, the
+// reference having no border to colour ("How it ran, in the tree").
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
   const { classification, issues, editorTheme, entry, referenceNames } = componentProps!
   const row = rowAt(classification, nodeData.path)
   const input = useRef<HTMLDivElement>(null)
-  const { running, blocked, disabled, onEvaluate } = useEvaluation(
+  const { running, mark, blocked, disabled, onEvaluate } = useEvaluation(
     nodeData.path,
     nodeData.fullData,
     componentProps!
@@ -103,7 +105,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
           }}
           style={{ color: colour }}
         >
-          {running ? Icons.running : Icons.evaluate}
+          <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
         </button>
       </HoverCard>
       {getNode && <ToGetNodeButton onClick={() => props.handleEdit(getNode)} colour={colour} />}

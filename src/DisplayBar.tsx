@@ -2,7 +2,7 @@ import { type Issue } from 'fig-tree-evaluator'
 import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
-import { Icon, Icons } from './Icons'
+import { EvaluateIcon, Icon } from './Icons'
 import { IssueFlag } from './IssueFlag'
 import { strings } from './strings'
 import { type EvaluateControl } from './useEvaluation'
@@ -22,7 +22,8 @@ import { type EvaluateControl } from './useEvaluation'
 // "Where issues attach").
 //
 // A click on the button evaluates the node, and a spinner takes the ▶'s place
-// while it runs, until a second click cancels it (topic 7, "Evaluating").
+// while it runs, until a second click cancels it (topic 7, "Evaluating"), then
+// a ✓ or ✕ for how it ran ("How it ran, in the tree").
 // Where the node can't be evaluated, the button is dimmed, a plain click does
 // nothing, and its card says why; it isn't `disabled`, so a modifier-click
 // still respells. After a click, its card stays hidden until the pointer
@@ -137,7 +138,7 @@ const NameOrButton = ({
   cardNote,
   broken,
   editorTheme,
-  evaluation: { running, blocked, disabled },
+  evaluation: { running, mark, blocked, disabled },
   onClick,
 }: Pick<
   DisplayBarProps,
@@ -175,7 +176,7 @@ const NameOrButton = ({
         <span className="ft-name" style={{ fontSize: nameSize(label) }}>
           {label}
         </span>
-        {running ? Icons.running : Icons.evaluate}
+        <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
       </button>
     </HoverCard>
   )

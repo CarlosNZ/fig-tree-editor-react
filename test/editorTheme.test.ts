@@ -11,6 +11,7 @@ import {
   type ThemeContext,
 } from '../src/editorTheme'
 import { valueAt } from '../src/paths'
+import { type RowRun, type RunMarks } from '../src/runMarks'
 
 const figTree = new FigTree({
   fragments: {
@@ -22,7 +23,11 @@ const figTree = new FigTree({
 })
 const registry = { operators: figTree.getOperators(), fragments: figTree.getFragments() }
 
-const contextFor = (expression: unknown, filledIn: FilledInMarker | null = null): ThemeContext => {
+const contextFor = (
+  expression: unknown,
+  filledIn: FilledInMarker | null = null,
+  run: RunMarks | null = null
+): ThemeContext => {
   const classification = classify(expression, registry)
   const { issues } = figTree.validate(expression)
   return {
@@ -32,6 +37,7 @@ const contextFor = (expression: unknown, filledIn: FilledInMarker | null = null)
     editorTheme: defaultEditorTheme,
     indent: 2,
     filledIn,
+    run,
   }
 }
 
@@ -52,9 +58,10 @@ const style = (
     | 'itemCount',
   path: (string | number)[],
   collapsed = false,
-  filledIn: FilledInMarker | null = null
+  filledIn: FilledInMarker | null = null,
+  run: RunMarks | null = null
 ) => {
-  const { styles } = layerTheme(undefined, contextFor(expression, filledIn)) as Theme
+  const { styles } = layerTheme(undefined, contextFor(expression, filledIn, run)) as Theme
   const styleFunction = styles[element] as (nodeData: NodeData) => unknown
   const parentData = path.length > 0 ? valueAt(expression, path.slice(0, -1)) : null
   return styleFunction({
@@ -399,6 +406,61 @@ describe('editor theme', () => {
     it("doesn't highlight a node", () => {
       const nested = { x: { operator: 'plus', values: [1] } }
       expect(style(nested, 'collection', ['x'], false, marked(false, ['x']))).toBeNull()
+    })
+  })
+
+  describe('how a run went', () => {
+    // Marks with each row's status, as an evaluation leaves them
+    const ran = (...rows: [(string | number)[], RowRun['status']][]): RunMarks =>
+      new Map(
+        rows.map(([path, status]) => [toPathString(path), { path, status, runs: [], nulls: [] }])
+      )
+    const heavier = { borderWidth: '2px', padding: 'calc(0.5em - (2px - 1px))' }
+
+    it('gives a node a heavier border in the colour of how it ran, and leaves the others', () => {
+      const expression = {
+        a: { operator: 'plus', values: [1] },
+        b: { operator: 'plus', values: [2] },
+      }
+      const marks = ran([['a'], 'failed'])
+      expect(style(expression, 'collectionInner', ['a'], false, null, marks)).toMatchObject({
+        borderStyle: 'solid',
+        borderColor: defaultEditorTheme.runFailed,
+        ...heavier,
+      })
+      expect(style(expression, 'collectionInner', ['b'], false, null, marks)).toMatchObject({
+        borderColor: defaultEditorTheme.nodeBorder,
+        borderWidth: '1px',
+        padding: '0.5em',
+      })
+    })
+
+    it("keeps a shorthand node's border dashed", () => {
+      const expression = { a: { $plus: [1, 2] } }
+      expect(
+        style(expression, 'collectionInner', ['a'], false, null, ran([['a'], 'skipped']))
+      ).toMatchObject({
+        borderStyle: 'dashed',
+        borderColor: defaultEditorTheme.runSkipped,
+        ...heavier,
+      })
+    })
+
+    it("colours a collapsed node's summary by how it ran, over its issues", () => {
+      // An unread var's warning, which colours the summary without a run
+      const expression = { a: { operator: 'plus', values: [1], vars: { v: 1 } }, b: [1] }
+      const marks = ran([['a'], 'fallback'], [['b'], 'value'])
+      expect(style(expression, 'itemCount', ['a'], true, null, marks)).toEqual({
+        color: defaultEditorTheme.runFallback,
+        fontWeight: 600,
+      })
+      expect(style(expression, 'itemCount', ['a'], true)).toMatchObject({ fontWeight: 600 })
+      expect(style(expression, 'itemCount', ['a'], true)).not.toMatchObject({
+        color: defaultEditorTheme.runFallback,
+      })
+      expect(style(expression, 'itemCount', ['a'], false, null, marks)).toBeNull()
+      // Plain data isn't marked
+      expect(style(expression, 'itemCount', ['b'], true, null, marks)).toBeNull()
     })
   })
 })

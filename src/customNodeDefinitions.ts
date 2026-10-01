@@ -23,6 +23,7 @@ import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
 import { Reference } from './Reference'
+import { type RunMarks } from './runMarks'
 import { Shorthand } from './Shorthand'
 import { strings } from './strings'
 import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
@@ -50,6 +51,7 @@ export interface Shared {
   // Runs each Evaluate, one at a time, keeping its identity for the editor's
   // lifetime (evaluation.ts)
   evaluator: Evaluator
+  run: RunMarks | null // how the rows ran in the latest evaluation
 }
 
 export interface CreatedNode {

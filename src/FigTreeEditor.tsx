@@ -75,6 +75,7 @@ import { countMessages, orderMessages } from './messageLines'
 import { getQuickFixes } from './quickFixes'
 import { valueAt, type Path } from './paths'
 import { revealRow } from './revealRow'
+import { markRun, type RunMarks } from './runMarks'
 import { buildSubTree } from './subTree'
 import {
   sameStatus,
@@ -260,6 +261,17 @@ export const FigTreeEditor = ({
   const evaluator = useMemo(() => createEvaluator(() => evaluationHandlers.current!), [])
   useEffect(() => () => evaluator.cancel(), [evaluator])
 
+  // How the rows ran in the latest evaluation, marked on them (design, topic
+  // 7, "How it ran, in the tree"), with the expression it evaluated. They
+  // show only while that is the expression shown, since their paths may not
+  // be the rows' in another, so they go as it changes, even while the
+  // evaluation runs, and as an edit starts, or another evaluation does.
+  const [run, setRun] = useState<{ marks: RunMarks; expression: unknown } | null>(null)
+  const runMarks = run !== null && run.expression === shown ? run.marks : null
+  useEffect(() => {
+    if (run !== null && run.expression !== shown) setRun(null)
+  }, [run, shown])
+
   const definitions = useMemo(
     () =>
       customNodeDefinitions({
@@ -273,6 +285,7 @@ export const FigTreeEditor = ({
         referenceNames,
         created,
         evaluator,
+        run: runMarks,
       }),
     [
       figTree,
@@ -284,6 +297,7 @@ export const FigTreeEditor = ({
       defaultFragment,
       referenceNames,
       evaluator,
+      runMarks,
     ]
   )
 
@@ -336,24 +350,37 @@ export const FigTreeEditor = ({
   latest.current = shown
 
   // A row's evaluation, from the expression and props as they are when it
-  // starts
+  // starts, which its marks are drawn against as it ends
+  const evaluating = useRef<{ expression: unknown; classification: Classification } | null>(null)
   evaluationHandlers.current = {
     prepare: (path) => {
       const context = { classification: latestClassification.current, operators }
       const subTree = buildSubTree(latest.current, path, context)
       if (subTree === null) return null
+      evaluating.current = { expression: latest.current, classification: context.classification }
       const options = { mode: evaluationMode, data: evaluationData }
       return {
         start: (signal) => evaluateSubTree(figTree, path, subTree, { ...options, signal }),
         cancelled: () => cancelledEvaluation(path, subTree, evaluationMode),
       }
     },
-    onStart: (path) => onEvaluateStart?.({ path }),
-    onEvaluate: (evaluation) => onEvaluate?.(evaluation),
+    onStart: (path) => {
+      setRun(null)
+      onEvaluateStart?.({ path })
+    },
+    onEvaluate: (evaluation) => {
+      const started = evaluating.current
+      const marks = started && markRun(evaluation, started.classification)
+      if (marks) setRun({ marks, expression: started.expression })
+      onEvaluate?.(evaluation)
+    },
   }
   const followEdits: OnEditEventFunction = (editEvent) => {
     const { event } = editEvent
-    if (event.startsWith('start')) editOpen.current = true
+    if (event.startsWith('start')) {
+      editOpen.current = true
+      if (run !== null) setRun(null)
+    }
     if (event.startsWith('submit')) submitted.current = true
     if (event === 'commitEdit' && filledIn.size > 0) {
       const path = canonicalPath(latestClassification.current, editEvent.path)
@@ -437,8 +464,9 @@ export const FigTreeEditor = ({
         editorTheme: mergedEditorTheme,
         indent,
         filledIn: markedRows,
+        run: runMarks,
       }),
-    [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent, markedRows]
+    [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent, markedRows, runMarks]
   )
   // json-edit-react's handle, which the editor uses too, to open the rows
   // above one it reveals. The host's is one object for the editor's

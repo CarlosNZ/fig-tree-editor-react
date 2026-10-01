@@ -1,7 +1,9 @@
 import { useSyncExternalStore } from 'react'
+import { toPathString } from 'json-edit-react'
 import { rowAt } from './classify'
 import { type Shared } from './customNodeDefinitions'
 import { type Path } from './paths'
+import { type RowRun } from './runMarks'
 import { strings } from './strings'
 import { blockingErrors, buildSubTree } from './subTree'
 
@@ -9,8 +11,10 @@ import { blockingErrors, buildSubTree } from './subTree'
 // its row is the one running, why it can't be evaluated where it can't, and
 // the click, which starts the row's evaluation, or cancels it while it runs.
 // Only the affordances starting and stopping render as an evaluation does.
+// After an evaluation, how its row ran ("How it ran, in the tree").
 export interface EvaluateControl {
   running: boolean
+  mark: RowRun | undefined
   blocked: string | undefined // the reason, shown on hover
   disabled: boolean // blocked, and not running, which a click can still cancel
   onEvaluate: () => void
@@ -23,6 +27,7 @@ export const useEvaluation = (path: Path, expression: unknown, shared: Shared): 
   const blocked = whyBlocked(path, expression, shared)
   return {
     running,
+    mark: shared.run?.get(toPathString(path)),
     blocked,
     disabled: blocked !== undefined && !running,
     onEvaluate: () => evaluator.evaluate(path),

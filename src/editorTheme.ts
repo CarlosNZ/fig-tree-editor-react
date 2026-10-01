@@ -1,5 +1,6 @@
 import { type CSSProperties } from 'react'
 import { toPathString, type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
+import { type TraceStatus } from 'fig-tree-evaluator'
 import {
   brokenIssue,
   flaggedIssues,
@@ -9,6 +10,7 @@ import {
 } from './attachIssues'
 import { rowAt, type Classification } from './classify'
 import { commentPart } from './comments'
+import { type RunMarks } from './runMarks'
 
 // The editor's own colours, which json-edit-react's theme has no element for.
 // The editor's components apply them as inline styles, as json-edit-react
@@ -26,7 +28,12 @@ export interface EditorTheme {
   warning: string // the same for a warning, and a collapsed summary holding only warnings
   hint: string // a hint's label in the messages area
   filledIn: string // the marker on a value the editor filled in, and its label
-  failed: string // the failed-row marker
+  // How a node ran, after an evaluation: its border and its button's icon
+  runValue: string
+  runFailed: string
+  runFallback: string // failed, and its fallback caught the failure
+  runCancelled: string
+  runSkipped: string // never ran
   nodeBorder: string // the border around a node's rows
   shorthandBorder: string // a shorthand node's dashed border
   fragmentBackground: string // a fragment with no colours of its own
@@ -45,7 +52,11 @@ export const defaultEditorTheme: EditorTheme = {
   warning: '#d68910',
   hint: '#6b7a90',
   filledIn: '#f2c200',
-  failed: '#c0392b',
+  runValue: '#2f9e44',
+  runFailed: '#c0392b',
+  runFallback: '#e67700',
+  runCancelled: '#262626',
+  runSkipped: '#a3a3a3',
   nodeBorder: '#dbdbdb',
   shorthandBorder: '#9ca3af',
   fragmentBackground: '#477799',
@@ -65,6 +76,7 @@ export interface ThemeContext {
   editorTheme: EditorTheme
   indent: number // json-edit-react's, which sets each row's left margin
   filledIn: FilledInMarker | null // the rows a write has just filled in
+  run: RunMarks | null // how the rows ran in the latest evaluation
 }
 
 // The rows the editor's latest write filled in, highlighted as it is made,
@@ -91,6 +103,7 @@ const editorThemeLayer = ({
   editorTheme,
   indent,
   filledIn,
+  run,
 }: ThemeContext): Theme => {
   const comment = (nodeData: NodeData) => commentPart(classification, nodeData)
   const openLines = (nodeData: NodeData) => comment(nodeData) === 'lines' && !nodeData.collapsed
@@ -173,9 +186,13 @@ const editorThemeLayer = ({
       headerRow: (nodeData) =>
         openLines(nodeData) ? { float: 'right', minHeight: 0, zIndex: 1 } : null,
       // A collapsed row's summary takes the colour of the most severe issue
-      // on or beneath it, so a collapsed row hides none (topic 7)
+      // on or beneath it, so a collapsed row hides none (topic 7), and a
+      // collapsed node's, after an evaluation, the colour of how it ran
       itemCount: (nodeData) => {
         if (!nodeData.collapsed) return null
+        const ran = run?.get(toPathString(nodeData.path))?.status
+        if (ran !== undefined && nodeForm(nodeData) !== undefined)
+          return { color: runColour(ran, editorTheme), fontWeight: 600 }
         const { errors, warnings } = issuesBeneath(rollUp, nodeData.path)
         if (errors > 0) return { color: editorTheme.error, fontWeight: 600 }
         if (warnings > 0) return { color: warningText(editorTheme.warning), fontWeight: 600 }
@@ -190,7 +207,11 @@ const editorThemeLayer = ({
           : null,
       // A collapsed node is its summary alone, with no border. A shorthand
       // node's border is dashed, and a broken node has an error border and
-      // stripe, whatever its form (topic 3).
+      // stripe, whatever its form (topic 3). After an evaluation, a node that
+      // took part has a heavier border in the colour of how it ran (topic 7,
+      // "How it ran, in the tree"), padded in by as much, so its rows stay
+      // where they are. No broken node takes part, since its errors block the
+      // evaluation.
       collectionInner: (nodeData) => {
         if (comment(nodeData) === 'lines') return { marginLeft: `-${indent / 2}em` }
         const form = nodeForm(nodeData)
@@ -198,6 +219,7 @@ const editorThemeLayer = ({
         const broken =
           brokenIssue(issues, classification, nodeData.path, nodeData.value) !== undefined
         const shorthand = form === 'shorthand'
+        const ran = run?.get(toPathString(nodeData.path))?.status
         return {
           ...NODE_BORDER,
           borderStyle: shorthand ? 'dashed' : 'solid',
@@ -207,6 +229,11 @@ const editorThemeLayer = ({
               ? editorTheme.shorthandBorder
               : editorTheme.nodeBorder,
           ...(broken && { borderLeftWidth: '0.3em' }),
+          ...(ran !== undefined && {
+            borderColor: runColour(ran, editorTheme),
+            borderWidth: RUN_BORDER_WIDTH,
+            padding: `calc(${NODE_BORDER.padding} - (${RUN_BORDER_WIDTH} - ${NODE_BORDER.borderWidth}))`,
+          }),
         }
       },
     },
@@ -314,6 +341,18 @@ const NODE_BORDER = {
   marginBottom: '0.5em',
   marginLeft: '-1em',
 }
+
+const RUN_BORDER_WIDTH = '2px'
+
+// The colour of how a row ran
+export const runColour = (status: TraceStatus, editorTheme: EditorTheme) =>
+  ({
+    value: editorTheme.runValue,
+    failed: editorTheme.runFailed,
+    fallback: editorTheme.runFallback,
+    cancelled: editorTheme.runCancelled,
+    skipped: editorTheme.runSkipped,
+  })[status]
 
 export const layerTheme = (
   hostTheme: ThemeInput | undefined,

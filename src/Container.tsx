@@ -1,7 +1,7 @@
 import { type CustomComponentProps } from 'json-edit-react'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { CardLines, HoverCard } from './HoverCard'
-import { Icons } from './Icons'
+import { EvaluateIcon } from './Icons'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
 import { useEvaluation } from './useEvaluation'
@@ -15,7 +15,7 @@ export const Container = ({
   children,
 }: CustomComponentProps<ComponentConfig>) => {
   const { editorTheme } = componentProps!
-  const { running, blocked, disabled, onEvaluate } = useEvaluation(
+  const { running, mark, blocked, disabled, onEvaluate } = useEvaluation(
     nodeData.path,
     nodeData.fullData,
     componentProps!
@@ -41,7 +41,7 @@ export const Container = ({
             }}
           >
             <span className="ft-name">{strings.FT_EVALUATE}</span>
-            {running ? Icons.running : Icons.evaluate}
+            <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
           </button>
         </HoverCard>
       </div>

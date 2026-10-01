@@ -92,10 +92,10 @@ function App() {
     setLocalStorage('options', newOptions)
   }
 
-  // Each evaluation the editor reports, as a toast
+  // Each evaluation the editor reports, as a toast, the primary result viewer
   //
-  // TO-DO: decide whether the toasts stay once the editor shows results
-  // itself (plan, 10.7)
+  // TO-DO: say where a result has one value per element, from a row inside
+  // an iterator (plan, 10.7)
   const showEvaluation = ({ path, status, result, failures }: Evaluation) => {
     const where = describePath(path)
     if (status === 'done')

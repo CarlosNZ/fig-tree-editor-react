@@ -1,5 +1,7 @@
 import { defaultTheme, type ThemeIcons } from 'json-edit-react'
 import { type SVGProps } from 'react'
+import { runColour, type EditorTheme } from './editorTheme'
+import { type RowRun } from './runMarks'
 
 export const Icons = {
   evaluate: (
@@ -21,6 +23,67 @@ export const Icons = {
   ),
   // In the evaluate icon's place while an evaluation runs, the same size
   running: <div className="ft-icon ft-evaluate-icon ft-spinner" aria-hidden="true" />,
+}
+
+// In the evaluate icon's place after an evaluation, the same size, in the
+// colour of how the row ran
+const RUN_ICONS = {
+  ran: <path d="M4 12.5l5 5L20 6.5" />,
+  failed: <path d="M6 6l12 12M18 6L6 18" />,
+}
+
+const runIcon = (name: keyof typeof RUN_ICONS, colour: string, status: string) => (
+  <div className="ft-icon ft-evaluate-icon" data-run={status} style={{ color: colour }}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="3.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {RUN_ICONS[name]}
+    </svg>
+  </div>
+)
+
+// Beside the ✓ where the value came from the cache
+const cachedIcon = (colour: string) => (
+  <div className="ft-icon ft-evaluate-icon" data-run="cached" style={{ color: colour }}>
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M13.5 2 4 13.5h6.5L9.5 22 20 9.5h-6.5z" />
+    </svg>
+  </div>
+)
+
+// An Evaluate's icon (design, topic 7, "How it ran, in the tree"): the ▶, a
+// spinner while its row runs, and after an evaluation, how the row ran. A
+// row that ran has a ✓, with a bolt where every value it gave came from the
+// cache, and one that failed, or whose fallback caught a failure, a ✕. A
+// row cancelled or never run keeps its ▶.
+export const EvaluateIcon = ({
+  running,
+  mark,
+  editorTheme,
+}: {
+  running: boolean
+  mark: RowRun | undefined
+  editorTheme: EditorTheme
+}) => {
+  if (running) return Icons.running
+  if (mark === undefined) return Icons.evaluate
+  const colour = runColour(mark.status, editorTheme)
+  if (mark.status === 'failed' || mark.status === 'fallback')
+    return runIcon('failed', colour, mark.status)
+  if (mark.status !== 'value') return Icons.evaluate
+  const values = mark.runs.filter(({ status }) => status === 'value')
+  return (
+    <>
+      {runIcon('ran', colour, mark.status)}
+      {values.every(({ cached }) => cached) && cachedIcon(colour)}
+    </>
+  )
 }
 
 /**

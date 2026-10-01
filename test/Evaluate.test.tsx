@@ -1,8 +1,13 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { StrictMode, useState, type ComponentProps } from 'react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { StrictMode, createRef, useState, type ComponentProps } from 'react'
 import { describe, expect, it } from 'vitest'
 import { FigTree, coreOperators, defineOperator } from 'fig-tree-evaluator'
-import { FigTreeEditor, type Evaluation } from '../src'
+import {
+  FigTreeEditor,
+  defaultEditorTheme,
+  type Evaluation,
+  type FigTreeEditorHandle,
+} from '../src'
 
 // A host operator that waits until it is aborted, or 200ms
 const wait = defineOperator({
@@ -20,16 +25,28 @@ const wait = defineOperator({
     }),
 })
 
+// A host operator whose value is cached across evaluations
+const once = defineOperator({
+  name: 'once',
+  category: 'other',
+  description: 'Cached',
+  parameters: {},
+  evaluate: (_, { cache }) => cache.memo('once', () => Promise.resolve(42)),
+})
+
 const figTree = new FigTree({ operators: [coreOperators, [wait]] })
 
 // A host holding the expression, in StrictMode, recording each start and
-// each evaluation, as `start x` and `done x` by the row's first key
+// each evaluation, as `start x` and `done x` by the row's first key. It can
+// change the expression itself.
 const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
   const reports: string[] = []
   const evaluations: Evaluation[] = []
   const name = (path: (string | number)[]) => (path.length === 0 ? '(root)' : String(path[0]))
+  let setOutside: (expression: unknown) => void = () => {}
   const Host = () => {
     const [expression, setExpression] = useState(initial)
+    setOutside = setExpression
     return (
       <FigTreeEditor
         figTree={figTree}
@@ -47,7 +64,8 @@ const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEdit
   }
   const rendered = render(<Host />, { wrapper: StrictMode })
   const latest = () => evaluations[evaluations.length - 1]
-  return { ...rendered, reports, evaluations, latest }
+  const change = (expression: unknown) => act(() => setOutside(expression))
+  return { ...rendered, reports, evaluations, latest, change }
 }
 
 // A node's Evaluate button, by its name
@@ -194,4 +212,178 @@ describe('evaluating', () => {
     fireEvent.pointerLeave(anchor)
     expect(anchor).not.toHaveAttribute('data-clicked')
   })
+
+  describe('how it ran', () => {
+    // How a node's button, or a reference's ▶, shows its row ran, if it does
+    const ran = (button: HTMLElement) =>
+      button.querySelector('[data-run]')?.getAttribute('data-run')
+    const marks = () => document.querySelectorAll('[data-run]').length
+    // A node's border, which json-edit-react's theme draws round its rows
+    const border = (button: HTMLElement) =>
+      (button.closest('.jer-collection-inner') as HTMLElement).style
+    const done = async (reports: string[], count: number) =>
+      waitFor(() =>
+        expect(reports.filter((report) => !report.startsWith('start'))).toHaveLength(count)
+      )
+
+    it('marks each node and reference that took part, and leaves the rest', async () => {
+      const { reports } = host(
+        { x: { $plus: [{ $multiply: [2, 3] }, '$data.a'] }, y: { $plus: [1, 1] } },
+        { evaluationData: { a: 1 } }
+      )
+      const [x, y] = screen
+        .getAllByRole('button')
+        .filter(({ textContent }) => textContent === '$plus')
+      fireEvent.click(x)
+      await done(reports, 1)
+      expect(ran(x)).toBe('value')
+      expect(ran(nodeButton('$multiply'))).toBe('value')
+      expect(ran(referenceButton())).toBe('value')
+      expect(ran(y)).toBeUndefined()
+      expect(border(x)).toMatchObject({ borderWidth: '2px' })
+      expect(border(x).borderColor).toBe(toRgb(defaultEditorTheme.runValue))
+      expect(border(y)).toMatchObject({ borderWidth: '1px' })
+    })
+
+    it('marks a failure, every node it failed, and a node whose fallback caught one', async () => {
+      const { container, reports } = host({
+        caught: { $divide: [1, 0], fallback: 0 },
+        failed: { $plus: [{ $divide: [2, 0] }, 1] },
+      })
+      fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+      await done(reports, 1)
+      const [caught, inner] = screen
+        .getAllByRole('button')
+        .filter(({ textContent }) => textContent === '$divide')
+      expect(ran(caught)).toBe('fallback')
+      expect(border(caught).borderColor).toBe(toRgb(defaultEditorTheme.runFallback))
+      expect(ran(inner)).toBe('failed')
+      expect(ran(nodeButton('$plus'))).toBe('failed')
+      expect(border(inner).borderColor).toBe(toRgb(defaultEditorTheme.runFailed))
+      // Done, holding the failure's null
+      expect(ran(within(container.querySelector('.ft-root-bar')!).getByRole('button'))).toBe(
+        'value'
+      )
+    })
+
+    it('leaves a row that never ran its ▶, in a grey border', async () => {
+      const { reports } = host({
+        operator: 'if',
+        condition: true,
+        then: { $plus: [1, 1] },
+        else: { $subtract: [2, 1] },
+      })
+      fireEvent.click(nodeButton('if'))
+      await done(reports, 1)
+      expect(ran(nodeButton('$plus'))).toBe('value')
+      expect(ran(nodeButton('$subtract'))).toBeUndefined()
+      expect(border(nodeButton('$subtract')).borderColor).toBe(toRgb(defaultEditorTheme.runSkipped))
+    })
+
+    it("colours a collapsed node's summary by how it ran", async () => {
+      const editorRef = createRef<FigTreeEditorHandle>()
+      const { container, reports } = host(
+        { x: { $plus: [1, { $multiply: [2, 0.5] }] } },
+        { editorRef }
+      )
+      fireEvent.click(nodeButton('$plus'))
+      await done(reports, 1)
+      act(() => {
+        editorRef.current!.collapse({
+          path: ['x', '$plus', 1],
+          collapsed: true,
+          includeChildren: false,
+        })
+      })
+      const summary = [
+        ...container.querySelectorAll<HTMLElement>('.jer-collection-item-count'),
+      ].find(({ textContent }) => textContent?.includes('Shorthand: $multiply'))!
+      expect(summary.style.color).toBe(toRgb(defaultEditorTheme.runValue))
+    })
+
+    it('adds a bolt where the value came from the cache', async () => {
+      const cached = new FigTree({ operators: [coreOperators, [once]], useCache: true })
+      const { reports } = host({ x: { operator: 'once' } }, { figTree: cached })
+      fireEvent.click(nodeButton('once'))
+      await done(reports, 1)
+      expect(nodeButton('once').querySelector('[data-run="cached"]')).toBeNull()
+      fireEvent.click(nodeButton('once'))
+      await done(reports, 2)
+      expect(ran(nodeButton('once'))).toBe('value')
+      expect(nodeButton('once').querySelector('[data-run="cached"]')).toBeInTheDocument()
+    })
+
+    describe('the marks go', () => {
+      const slow = { x: { $plus: [1, 2] }, y: { $plus: [{ operator: 'wait' }, '!'] } }
+
+      it('as another evaluation starts', async () => {
+        const { reports } = host(slow)
+        fireEvent.click(nodeButton('$plus'))
+        await done(reports, 1)
+        expect(marks()).toBeGreaterThan(0)
+        const [, y] = screen
+          .getAllByRole('button')
+          .filter(({ textContent }) => textContent === '$plus')
+        fireEvent.click(y)
+        expect(marks()).toBe(0)
+        await done(reports, 2)
+      })
+
+      it("as an edit starts, the toolbar's opening included", async () => {
+        const editorRef = createRef<FigTreeEditorHandle>()
+        const { reports } = host({ x: { operator: 'plus', values: [1, 2] } }, { editorRef })
+        fireEvent.click(nodeButton('plus'))
+        await done(reports, 1)
+        fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
+        expect(marks()).toBe(0)
+        fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+        fireEvent.click(nodeButton('plus'))
+        await done(reports, 2)
+        expect(marks()).toBeGreaterThan(0)
+        act(() => {
+          editorRef.current!.startEdit({ path: ['x', 'values', 0] })
+        })
+        expect(marks()).toBe(0)
+      })
+
+      it('as the expression changes from outside the editor', async () => {
+        const { reports, change } = host({ x: { $plus: [1, 2] } })
+        fireEvent.click(nodeButton('$plus'))
+        await done(reports, 1)
+        expect(marks()).toBeGreaterThan(0)
+        change({ x: { $plus: [1, 2] } })
+        expect(marks()).toBe(0)
+      })
+
+      it('leaving nothing behind a cancelled evaluation', async () => {
+        const { reports } = host(slow)
+        const [, y] = screen
+          .getAllByRole('button')
+          .filter(({ textContent }) => textContent === '$plus')
+        fireEvent.click(y)
+        fireEvent.click(y)
+        expect(reports).toEqual(['start y', 'cancelled y'])
+        await new Promise((resolve) => setTimeout(resolve, 250))
+        expect(marks()).toBe(0)
+      })
+
+      it("and aren't drawn where the expression changed while it ran", async () => {
+        const { reports, change } = host(slow)
+        const [, y] = screen
+          .getAllByRole('button')
+          .filter(({ textContent }) => textContent === '$plus')
+        fireEvent.click(y)
+        change({ ...slow })
+        await done(reports, 1)
+        expect(reports).toEqual(['start y', 'done y'])
+        expect(marks()).toBe(0)
+      })
+    })
+  })
 })
+
+// A colour as the DOM gives an inline style's back
+const toRgb = (hex: string) => {
+  const [r, g, b] = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))
+  return `rgb(${r}, ${g}, ${b})`
+}
