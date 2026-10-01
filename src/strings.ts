@@ -13,6 +13,7 @@ const hints = countOf('hint', 'hints')
 export const strings = {
   FT_ROOT_PATH: '(root)',
   FT_MESSAGES: 'Messages', // the messages area's header
+  FT_REVEAL_ROW: 'Show in the tree', // a message's path, which reveals its row
   FT_COUNT_ERRORS: errors,
   FT_COUNT_WARNINGS: warnings,
   FT_COUNT_HINTS: hints,

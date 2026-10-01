@@ -232,9 +232,20 @@ input.ft-select-input::placeholder {
   text-transform: uppercase;
 }
 
+/* A message's path, a link to the row it marks */
 .ft-message-path {
+  padding: 0;
+  border: none;
+  background: none;
+  font-family: monospace;
   font-size: 0.95em;
-  color: #444;
+  color: #1d4f91;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ft-message-path:hover {
+  text-decoration: underline;
 }
 
 /* A node: its header, then its rows */

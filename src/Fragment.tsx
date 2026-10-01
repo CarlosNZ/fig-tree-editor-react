@@ -10,6 +10,7 @@ import { FragmentPicker } from './FragmentPicker'
 import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { withoutFilteredRows } from './nodeRows'
 import { addKey, addableKeys } from './parameterOptions'
+import { rowMark } from './revealRow'
 import { strings } from './strings'
 import { Toolbar } from './Toolbar'
 import { useConversion } from './useConversion'
@@ -66,10 +67,15 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
     )
   }
 
-  if (editor === 'json') return <div className="ft-node">{originalNode}</div>
+  if (editor === 'json')
+    return (
+      <div className="ft-node" {...rowMark(path)}>
+        {originalNode}
+      </div>
+    )
 
   return (
-    <div className="ft-node">
+    <div className="ft-node" {...rowMark(path)}>
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
           <NodeTypeSwitch

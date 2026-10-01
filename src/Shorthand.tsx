@@ -7,6 +7,7 @@ import { fragmentHeader } from './Fragment'
 import { takeRow } from './nodeRows'
 import { operatorDefaultsLine } from './parameterCard'
 import { type Path } from './paths'
+import { rowMark } from './revealRow'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
 import { useConversion } from './useConversion'
@@ -71,7 +72,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const { row, rest } = onLine ? takeRow(children, key) : { row: undefined, rest: children }
 
   return (
-    <div className="ft-node">
+    <div className="ft-node" {...rowMark(path)}>
       <DisplayBar
         name={key}
         display={display}

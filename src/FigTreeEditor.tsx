@@ -1,9 +1,18 @@
-import { useEffect, useInsertionEffect, useMemo, useRef } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useInsertionEffect,
+  useMemo,
+  useRef,
+  type MutableRefObject,
+  type Ref,
+} from 'react'
 import {
   JsonEditor,
   type CustomTextDefinitions,
   type DefaultValueFunction,
   type FilterFunction,
+  type JsonEditorHandle,
   type JsonEditorProps,
   type NewKeyOptionsFunction,
   type NodeData,
@@ -40,6 +49,7 @@ import { injectStyles } from './injectStyles'
 import { Messages } from './Messages'
 import { orderMessages } from './messageLines'
 import { valueAt, type Path } from './paths'
+import { revealRow } from './revealRow'
 import { strings } from './strings'
 import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
@@ -108,6 +118,7 @@ export const FigTreeEditor = ({
   minWidth = DEFAULT_MIN_WIDTH,
   maxWidth = DEFAULT_MAX_WIDTH,
   id,
+  editorRef,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -253,6 +264,21 @@ export const FigTreeEditor = ({
       }),
     [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent]
   )
+  // json-edit-react's handle, which the editor uses too, to open the rows
+  // above one it reveals
+  const handle = useRef<JsonEditorHandle | null>(null)
+  const setHandle = useCallback(
+    (value: JsonEditorHandle | null) => {
+      handle.current = value
+      setRef(editorRef, value)
+    },
+    [editorRef]
+  )
+  const outer = useRef<HTMLDivElement>(null)
+  const reveal = (path: Path) => {
+    if (outer.current && handle.current) revealRow(outer.current, path, handle.current.collapse)
+  }
+
   const combinedText = useMemo(
     () => combineText(editorText(classification, rollUp, customText), customText),
     [classification, rollUp, customText]
@@ -265,6 +291,7 @@ export const FigTreeEditor = ({
   // host can reach either part of one instance from it.
   return (
     <div
+      ref={outer}
       id={id}
       className="ft-outer-container"
       style={{ minWidth, maxWidth, fontSize: props.baseFontSize ?? DEFAULT_FONT_SIZE }}
@@ -274,6 +301,7 @@ export const FigTreeEditor = ({
         {...props}
         minWidth={0}
         maxWidth="100%"
+        editorRef={setHandle}
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
         customText={combinedText}
@@ -293,6 +321,7 @@ export const FigTreeEditor = ({
           lines={orderMessages(issues, shown, classification)}
           maxHeight={messagesMaxHeight}
           editorTheme={mergedEditorTheme}
+          onReveal={reveal}
         />
       )}
     </div>
@@ -460,6 +489,13 @@ const editorText = (
     return text(kind.name ?? strings.FT_INVALID_NODE)
   }
   return { ITEM_SINGLE: withIssues('ITEM_SINGLE'), ITEMS_MULTIPLE: withIssues('ITEMS_MULTIPLE') }
+}
+
+// A host's ref, an object or a function, set as React sets one
+const setRef = <T,>(ref: Ref<T> | undefined, value: T | null) => {
+  if (typeof ref === 'function') ref(value)
+  // An object ref's `current` is typed read-only, but React sets it so too
+  else if (ref) (ref as MutableRefObject<T | null>).current = value
 }
 
 // The host's entry applies wherever the editor's gives nothing

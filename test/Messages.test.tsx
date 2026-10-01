@@ -1,8 +1,11 @@
-import { fireEvent, render, screen } from '@testing-library/react'
-import { type ComponentProps } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { createRef, type ComponentProps } from 'react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { type JsonEditorHandle } from 'json-edit-react'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
+import { revealRow } from '../src/revealRow'
+import { keyLabel } from './queries'
 
 const figTree = new FigTree({ operators: [coreOperators] })
 
@@ -49,7 +52,7 @@ describe('the messages area', () => {
 
   it('lists in tree order', () => {
     editor({ age: { operator: 'if', condition: true, thn: 1 }, rounded: { $round: [[1]] } })
-    expect(lines().map((line) => line.querySelector('code')!.textContent)).toEqual([
+    expect(lines().map((line) => line.querySelector('.ft-message-path')!.textContent)).toEqual([
       'age',
       'age.thn',
       'rounded.$round[0]',
@@ -108,6 +111,82 @@ describe('the messages area', () => {
     const [warning, , hint] = lines().map((line) => line.firstChild as HTMLElement)
     expect(warning).toHaveStyle({ backgroundColor: 'rgb(1, 2, 3)' })
     expect(hint).toHaveStyle({ backgroundColor: 'rgb(4, 5, 6)' })
+  })
+})
+
+describe('revealing a row', () => {
+  afterEach(() => vi.restoreAllMocks())
+
+  // jsdom does no layout, so every element is placed where the test says:
+  // below the window, or in it
+  const placeRows = (top: number) =>
+    vi
+      .spyOn(Element.prototype, 'getBoundingClientRect')
+      .mockReturnValue({ top, bottom: top + 20 } as DOMRect)
+  const scrolled = () => vi.spyOn(Element.prototype, 'scrollIntoView')
+  const reveal = (path: string) => fireEvent.click(screen.getByRole('button', { name: path }))
+  // The element each scroll was made on
+  const scrolledTo = (spy: ReturnType<typeof scrolled>) => spy.mock.contexts as HTMLElement[]
+
+  it('opens the rows above it, then scrolls its line to the middle', async () => {
+    editor({ age: { operator: 'if', condition: true, thn: 'Adult' } }, { collapse: 1 })
+    placeRows(2000)
+    const scroll = scrolled()
+    const chevron = () =>
+      keyLabel('age').closest('.jer-collection-header-row')!.querySelector('button')
+    expect(chevron()).toHaveAttribute('aria-expanded', 'false')
+    reveal('age.thn')
+    await waitFor(() => expect(scroll).toHaveBeenCalled())
+    expect(chevron()).toHaveAttribute('aria-expanded', 'true')
+    expect(scroll).toHaveBeenCalledWith({ block: 'center', behavior: 'smooth' })
+    const [line] = scrolledTo(scroll)
+    expect(line).toHaveClass('jer-value-main-row')
+    expect(line).toHaveTextContent('thn')
+  })
+
+  it('opens a collection itself, and scrolls to its header line', async () => {
+    editor({ rounded: { operator: 'round', value: [1, 2] } }, { collapse: 1 })
+    placeRows(2000)
+    const scroll = scrolled()
+    const chevron = (key: string) =>
+      keyLabel(key).closest('.jer-collection-header-row')!.querySelector('button')
+    reveal('rounded.value')
+    await waitFor(() => expect(scroll).toHaveBeenCalled())
+    expect(chevron('rounded')).toHaveAttribute('aria-expanded', 'true')
+    expect(chevron('value')).toHaveAttribute('aria-expanded', 'true')
+    const [line] = scrolledTo(scroll)
+    expect(line).toHaveClass('jer-collection-header-row')
+    expect(line).toHaveTextContent('value')
+  })
+
+  it("scrolls to the nearest marked row above one the editor doesn't draw", async () => {
+    // Every row with an error or a warning is marked, and fig-tree's one hint
+    // shares its row with warnings, so an unmarked row is revealed directly
+    const { container } = editor({ $plus: [1, 2] })
+    placeRows(2000)
+    const scroll = scrolled()
+    revealRow(container.querySelector('.ft-outer-container')!, ['$plus', 0], vi.fn())
+    await waitFor(() => expect(scroll).toHaveBeenCalled())
+    expect(scrolledTo(scroll)[0]).toHaveClass('ft-display-bar')
+  })
+
+  it('leaves the page alone when the row is in view', async () => {
+    editor({ operator: 'round', value: [1, 2] })
+    placeRows(100)
+    const scroll = scrolled()
+    reveal('value')
+    await new Promise((resolve) => setTimeout(resolve, 200))
+    expect(scroll).not.toHaveBeenCalled()
+  })
+
+  it("still gives the host json-edit-react's handle", () => {
+    const ref = createRef<JsonEditorHandle>()
+    editor({ $plus: [1, 2] }, { editorRef: ref })
+    expect(ref.current?.collapse).toBeTypeOf('function')
+    const callback = vi.fn()
+    editor({ $plus: [1, 2] }, { editorRef: callback })
+    const [handle] = callback.mock.calls.find(([value]) => value !== null) as [JsonEditorHandle]
+    expect(handle.startEdit).toBeTypeOf('function')
   })
 })
 

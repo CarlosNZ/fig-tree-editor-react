@@ -8,6 +8,7 @@ import { type ComponentConfig } from './customNodeDefinitions'
 import { type EditorTheme } from './editorTheme'
 import { Icons } from './Icons'
 import { IssueCard } from './IssueFlag'
+import { rowMark } from './revealRow'
 import { strings } from './strings'
 import { ToGetNodeButton } from './upstream'
 
@@ -53,14 +54,14 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   if (isEditing)
     return (
-      <div ref={input} className="ft-reference-input">
+      <div ref={input} className="ft-reference-input" {...rowMark(nodeData.path)}>
         {originalNode}
       </div>
     )
 
   const colour = namespaceColour(row?.kind as ReferenceKind, editorTheme)
   return (
-    <span className="ft-reference">
+    <span className="ft-reference" {...rowMark(nodeData.path)}>
       <StringDisplay
         nodeData={nodeData}
         styles={{ ...getStyles('string', nodeData), color: colour }}

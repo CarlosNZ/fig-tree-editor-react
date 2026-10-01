@@ -8,6 +8,7 @@ import { withoutFilteredRows } from './nodeRows'
 import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { OperatorPicker } from './OperatorPicker'
 import { operatorDefaultsLine } from './parameterCard'
+import { rowMark } from './revealRow'
 import { addKey, addableKeys } from './parameterOptions'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
@@ -86,10 +87,15 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
       (line): line is string => line !== undefined
     )
 
-  if (editor === 'json') return <div className="ft-node">{originalNode}</div>
+  if (editor === 'json')
+    return (
+      <div className="ft-node" {...rowMark(path)}>
+        {originalNode}
+      </div>
+    )
 
   return (
-    <div className="ft-node">
+    <div className="ft-node" {...rowMark(path)}>
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
           <NodeTypeSwitch

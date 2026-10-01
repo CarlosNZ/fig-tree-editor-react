@@ -4,6 +4,7 @@ import { flaggedIssues } from './attachIssues'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { warningText, type EditorTheme } from './editorTheme'
 import { HoverCard } from './HoverCard'
+import { rowMark } from './revealRow'
 import { strings } from './strings'
 
 // How issues show on rows (design, topic 7, "Where issues attach"). A row is
@@ -97,14 +98,18 @@ export const Flagged = ({
   const card = <IssueCard issues={flaggedIssues(issues, nodeData.path)} editorTheme={editorTheme} />
   if (children === undefined)
     return (
-      <span className="ft-flagged">
+      <span className="ft-flagged" {...rowMark(nodeData.path)}>
         {originalNode}
         {card}
       </span>
     )
   return (
     <>
-      <div className="ft-flag-line" style={{ marginLeft: `${indent / 2}em` }}>
+      <div
+        className="ft-flag-line"
+        style={{ marginLeft: `${indent / 2}em` }}
+        {...rowMark(nodeData.path)}
+      >
         {card}
       </div>
       {children}

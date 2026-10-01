@@ -3,21 +3,24 @@ import { type Issue } from 'fig-tree-evaluator'
 import { type EditorTheme } from './editorTheme'
 import { Icon } from './Icons'
 import { countMessages, type MessageLine } from './messageLines'
-import { displayPath } from './paths'
+import { displayPath, type Path } from './paths'
 import { strings } from './strings'
 
 // The messages area (design, topic 7, "The messages area"), below the tree
 // and as wide as it: shown only when it has lines, under a header of counts
 // that folds it away, scrolling beyond `maxHeight`. Each line has its
-// severity, the path of the row it marks and the full message.
+// severity, the path of the row it marks, which reveals the row, and the full
+// message.
 export const Messages = ({
   lines,
   maxHeight,
   editorTheme,
+  onReveal,
 }: {
   lines: readonly MessageLine[]
   maxHeight: number | string
   editorTheme: EditorTheme
+  onReveal: (row: Path) => void
 }) => {
   const [open, setOpen] = useState(true)
   if (lines.length === 0) return null
@@ -64,7 +67,14 @@ export const Messages = ({
               <span className="ft-severity" style={severityStyle(issue.severity, editorTheme)}>
                 {SEVERITY[issue.severity]}
               </span>
-              <code className="ft-message-path">{displayPath(row) || strings.FT_ROOT_PATH}</code>
+              <button
+                type="button"
+                className="ft-message-path"
+                title={strings.FT_REVEAL_ROW}
+                onClick={() => onReveal(row)}
+              >
+                {displayPath(row) || strings.FT_ROOT_PATH}
+              </button>
               <span className="ft-message-text">{issue.message}</span>
             </li>
           ))}
