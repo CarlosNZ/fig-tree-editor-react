@@ -159,44 +159,82 @@ input.ft-select-input::placeholder {
 }
 
 /* Validation issues, listed below the editor */
-.ft-issues {
-  list-style: none;
-  margin: 0.5em 0;
-  padding: 0;
-  font-size: 0.85em;
+/* The messages area, directly beneath the tree. It takes the tree's width and
+   never adds to it, so a long message wraps rather than widening the editor.
+   Like the outer container that holds them both, it has no box styling of its
+   own (corners, borders, margins, shadows): that is the host's. */
+.ft-message-container {
+  contain: inline-size;
+  background-color: white;
   font-family: sans-serif;
-}
-
-.ft-issue {
-  display: flex;
-  gap: 0.6em;
-  align-items: baseline;
-  padding: 0.2em 0;
-}
-
-.ft-issue-severity {
-  flex-shrink: 0;
-  padding: 0 0.4em;
-  border-radius: 0.3em;
   font-size: 0.85em;
-  text-transform: uppercase;
+  color: #292929;
+}
+
+.ft-messages-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+  padding: 0.5em 0.8em;
+  border: none;
+  background-color: #f3f3f3;
+  font: inherit;
+  font-weight: bold;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ft-messages-chevron {
+  display: flex;
+  color: #718096;
+  transition: transform 0.2s;
+}
+
+.ft-messages-closed {
+  transform: rotate(-90deg);
+}
+
+.ft-messages-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  margin-left: auto;
+}
+
+.ft-messages-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.ft-message {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0.3em 0.7em;
+  align-items: baseline;
+  padding: 0.45em 0.8em;
+  border-top: 1px solid #efefef;
+}
+
+.ft-severity {
+  padding: 0.05em 0.45em;
+  border-radius: 4px;
+  font-size: 0.8em;
+  font-weight: bold;
   color: white;
+  white-space: nowrap;
 }
 
-.ft-issue-error .ft-issue-severity {
-  background-color: #c0392b;
+.ft-message > .ft-severity {
+  text-transform: uppercase;
 }
 
-.ft-issue-warning .ft-issue-severity {
-  background-color: #d68910;
-}
-
-.ft-issue-hint .ft-issue-severity {
-  background-color: #7f8c8d;
-}
-
-.ft-issue-path {
-  flex-shrink: 0;
+.ft-message-path {
+  font-size: 0.95em;
+  color: #444;
 }
 
 /* A node: its header, then its rows */

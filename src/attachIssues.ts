@@ -35,7 +35,7 @@ export const flaggedIssues = (index: IssueIndex, path: Path) =>
     .filter(({ severity }) => severity !== 'hint')
     .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
 
-const SEVERITY_RANK: Record<Issue['severity'], number> = { error: 0, warning: 1, hint: 2 }
+export const SEVERITY_RANK: Record<Issue['severity'], number> = { error: 0, warning: 1, hint: 2 }
 
 // The errors and warnings on a row and every row beneath it, which a
 // collapsed row carries in its summary (topic 7), keyed as the index is
@@ -71,7 +71,7 @@ const NO_COUNTS: IssueCounts = { errors: 0, warnings: 0 }
 export const issuesBeneath = (rollUp: IssueRollUp, path: Path) =>
   rollUp.get(toPathString(path)) ?? NO_COUNTS
 
-const drawnRow = (path: Path, classification: Classification) => {
+export const drawnRow = (path: Path, classification: Classification) => {
   let row = path
   while (row.length > 0) {
     const entry = rowAt(classification, row)

@@ -23,6 +23,7 @@ export interface EditorTheme {
   comment: string // comment notes
   error: string // row tint, flag and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
+  hint: string // a hint's label in the messages area
   filledIn: string // the filled-in-on-load marker
   failed: string // the failed-row marker
   nodeBorder: string // the border around a node's rows
@@ -41,6 +42,7 @@ export const defaultEditorTheme: EditorTheme = {
   comment: '#6b7280',
   error: '#c0392b',
   warning: '#d68910',
+  hint: '#6b7a90',
   filledIn: '#e0a400',
   failed: '#c0392b',
   nodeBorder: '#dbdbdb',

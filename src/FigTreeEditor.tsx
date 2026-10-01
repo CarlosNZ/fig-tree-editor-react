@@ -10,7 +10,7 @@ import {
   type OnCollapseFunction,
   type TypeFilterFunction,
 } from 'json-edit-react'
-import { type FigTree, type Issue } from 'fig-tree-evaluator'
+import { type FigTree } from 'fig-tree-evaluator'
 import { attachIssues, issuesBeneath, rollUpIssues, type IssueRollUp } from './attachIssues'
 import { canonicalPath, classify, rowAt, type Classification, type Row } from './classify'
 import {
@@ -37,7 +37,9 @@ import { canAdd, canDelete, type GuardContext } from './guards'
 import { getStartingElement } from './getStartingValue'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
-import { displayPath, valueAt, type Path } from './paths'
+import { Messages } from './Messages'
+import { orderMessages } from './messageLines'
+import { valueAt, type Path } from './paths'
 import { strings } from './strings'
 import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
@@ -79,6 +81,9 @@ export interface FigTreeEditorProps extends Omit<
   // What `$data` is in `validate()`'s sample-data check, in place of the
   // instance's own `data`, so a host sharing its instance needn't change it
   evaluationData?: Record<string, unknown>
+  // The messages area's height before it scrolls; `0` hides it, for a host
+  // that shows the editor's messages itself
+  messagesMaxHeight?: number | string
 }
 
 export const FigTreeEditor = ({
@@ -89,6 +94,7 @@ export const FigTreeEditor = ({
   defaultFragment,
   referenceNames = 'canonical',
   evaluationData,
+  messagesMaxHeight = DEFAULT_MESSAGES_MAX_HEIGHT,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -99,6 +105,9 @@ export const FigTreeEditor = ({
   allowAdd,
   collapse = DEFAULT_COLLAPSE,
   onCollapse,
+  minWidth = DEFAULT_MIN_WIDTH,
+  maxWidth = DEFAULT_MAX_WIDTH,
+  id,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -249,11 +258,22 @@ export const FigTreeEditor = ({
     [classification, rollUp, customText]
   )
 
+  // The tree and its messages share an outer container, which takes the
+  // width the host gives the editor, and in which the tree sets the width:
+  // the messages area takes the tree's, and never widens it (design, topic 7).
+  // The host's `id` is the editor's, so it goes on that container, where a
+  // host can reach either part of one instance from it.
   return (
-    <>
+    <div
+      id={id}
+      className="ft-outer-container"
+      style={{ minWidth, maxWidth, fontSize: props.baseFontSize ?? DEFAULT_FONT_SIZE }}
+    >
       <JsonEditor
         {...editorDefaults}
         {...props}
+        minWidth={0}
+        maxWidth="100%"
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
         customText={combinedText}
@@ -268,8 +288,14 @@ export const FigTreeEditor = ({
         data={shown}
         setData={commit}
       />
-      {issues.length > 0 && <IssueList issues={issues} />}
-    </>
+      {messagesMaxHeight !== 0 && (
+        <Messages
+          lines={orderMessages(issues, shown, classification)}
+          maxHeight={messagesMaxHeight}
+          editorTheme={mergedEditorTheme}
+        />
+      )}
+    </div>
   )
 }
 
@@ -285,6 +311,13 @@ const editorDefaults = {
 } satisfies Partial<JsonEditorProps>
 
 const DEFAULT_COLLAPSE = 2
+const DEFAULT_MESSAGES_MAX_HEIGHT = '15em'
+
+// json-edit-react's own defaults for its container, which the outer container
+// takes in its place, so the editor's size is unchanged by it
+const DEFAULT_MIN_WIDTH = 250
+const DEFAULT_MAX_WIDTH = 'min(600px, 90vw)'
+const DEFAULT_FONT_SIZE = '16px'
 
 // A comment never starts collapsed, since a multi-line comment is a level
 // deeper than its node's parameters, and would otherwise open as a count
@@ -445,22 +478,3 @@ const combineText = (
     ])
   )
 }
-
-const severityLabel = {
-  error: strings.FT_SEVERITY_ERROR,
-  warning: strings.FT_SEVERITY_WARNING,
-  hint: strings.FT_SEVERITY_HINT,
-}
-
-// TO-DO: replace with the diagnostics UI from the design phase (plan, Phase 10)
-const IssueList = ({ issues }: { issues: Issue[] }) => (
-  <ul className="ft-issues">
-    {issues.map((issue, index) => (
-      <li key={index} className={`ft-issue ft-issue-${issue.severity}`}>
-        <span className="ft-issue-severity">{severityLabel[issue.severity]}</span>
-        <code className="ft-issue-path">{displayPath(issue.path) || strings.FT_ROOT_PATH}</code>
-        <span className="ft-issue-message">{issue.message}</span>
-      </li>
-    ))}
-  </ul>
-)

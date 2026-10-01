@@ -26,6 +26,35 @@ pre {
   width: clamp(300px, 600px, 90vw);
 }
 
+/* The FigTree editor's outer container holds its tree and messages, so it
+   takes the width and the shadow, and the tree fills it. The two make one
+   box: while there are messages, the tree's lower corners are square, and the
+   messages area's are rounded, with a line between them. It isn't clipped to
+   its corners, since pickers and hover cards float outside it. */
+.ft-outer-container {
+  margin-top: 0.6em;
+  border-radius: 0.5em;
+  box-shadow: 0 3px 8px #0000003d;
+  min-width: unset !important;
+  width: clamp(300px, 600px, 90vw);
+}
+
+.ft-outer-container > .jer-editor-container {
+  margin-top: 0;
+  box-shadow: none;
+  width: auto;
+}
+
+.ft-outer-container:has(> .ft-message-container) > .jer-editor-container {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.ft-message-container {
+  border-top: 1px solid #e0e0e0;
+  border-radius: 0 0 0.5em 0.5em;
+}
+
 .ft-operator-alias {
   font-family:
     Work Sans,

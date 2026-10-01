@@ -1,9 +1,21 @@
+// A count of each severity, in the messages area's header and a collapsed
+// row's summary
+const countOf = (one: string, many: string) => (count: number) =>
+  count === 1 ? `1 ${one}` : `${count} ${many}`
+const errors = countOf('error', 'errors')
+const warnings = countOf('warning', 'warnings')
+const hints = countOf('hint', 'hints')
+
 // Every string the editor shows, in English. Each sits under the key it would
 // have among json-edit-react's `translations`, and one with a variable part is
 // a function of it. Operator, category and fragment names are display data
 // (displayData.ts), not wording.
 export const strings = {
   FT_ROOT_PATH: '(root)',
+  FT_MESSAGES: 'Messages', // the messages area's header
+  FT_COUNT_ERRORS: errors,
+  FT_COUNT_WARNINGS: warnings,
+  FT_COUNT_HINTS: hints,
   FT_SEVERITY_ERROR: 'error',
   FT_SEVERITY_WARNING: 'warning',
   FT_SEVERITY_HINT: 'hint',
@@ -17,11 +29,8 @@ export const strings = {
   FT_ITEMS: (count: number) => (count === 1 ? '1 item' : `${count} items`), // a plain collection
   // A collapsed row's summary, then the issues on and beneath it
   FT_SUMMARY_ISSUES: (summary: string, issues: string) => `${summary} · ${issues}`,
-  FT_ISSUE_COUNTS: (errors: number, warnings: number) =>
-    [
-      errors > 0 && (errors === 1 ? '1 error' : `${errors} errors`),
-      warnings > 0 && (warnings === 1 ? '1 warning' : `${warnings} warnings`),
-    ]
+  FT_ISSUE_COUNTS: (errorCount: number, warningCount: number) =>
+    [errorCount > 0 && errors(errorCount), warningCount > 0 && warnings(warningCount)]
       .filter(Boolean)
       .join(' · '),
   FT_FLAG_MORE: (count: number) => `+${count}`, // a row's other issues, after its flag
