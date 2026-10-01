@@ -23,13 +23,16 @@ export interface GuardContext {
 
 // ── Deleting ────────────────────────────────────────────────────────────────
 
-// Blocked: the root; a required parameter or field; a positional element
-// bound to a leading parameter, but the last where it's optional, since
-// deleting another would shift the rest onto other parameters; a `$name` row,
-// which would leave `{}`; and an element that takes its array further from a
-// fixed length.
+// Blocked: the root; a required parameter or field; a full `literal`'s
+// `value`, which the walk leaves unrecorded, since it's quoted; a positional
+// element bound to a leading parameter, but the last where it's optional,
+// since deleting another would shift the rest onto other parameters; a
+// `$name` row, which would leave `{}`; and an element that takes its array
+// further from a fixed length.
 export const canDelete = ({ path, parentData }: NodeData, context: GuardContext) => {
   if (path.length === 0) return false
+  const owner = rowAt(context.classification, path.slice(0, -1))?.kind
+  if (owner?.kind === 'literal' && owner.form === 'full' && path.at(-1) === 'value') return false
   const row = rowAt(context.classification, path)
   if (row?.payload !== undefined) return false
   const slot = row?.slot
@@ -63,11 +66,10 @@ const elementCount = (arrayPath: Path, array: unknown, context: GuardContext) =>
 
 // ── Adding ──────────────────────────────────────────────────────────────────
 
-// Blocked: a full operator node or fragment call, whose toolbar adds its
-// parameters; any other
-// node with nothing left to add; an array parameter at its fixed length; and
-// an argument list with no position left, or whose rest parameter is at its
-// fixed length.
+// Blocked: a full operator node, `literal` included, or fragment call, whose
+// toolbar adds its parameters; any other node with nothing left to add; an
+// array parameter at its fixed length; and an argument list with no position
+// left, or whose rest parameter is at its fixed length.
 export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   const row = rowAt(context.classification, path)
   if (Array.isArray(value)) {
@@ -87,7 +89,8 @@ export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   }
   if (typeof value !== 'object' || value === null) return true
   const kind = row?.kind
-  if ((kind?.kind === 'operator' || kind?.kind === 'fragment') && kind.form === 'full') return false
+  const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
+  if (isNode && kind.form === 'full') return false
   const keys = addableKeys(value as Record<string, unknown>, kind, context)
   return keys === null || keys.parameters.length + keys.modifiers.length > 0
 }

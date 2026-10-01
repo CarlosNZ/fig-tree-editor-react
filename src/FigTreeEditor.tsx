@@ -390,6 +390,10 @@ const editorText = (classification: Classification): CustomTextDefinitions => {
       return strings.FT_SUMMARY_VARS(
         Object.keys(value as object).filter((key) => key !== '//').length
       )
+    if (kind?.kind === 'literal')
+      return kind.form === 'shorthand'
+        ? strings.FT_SUMMARY_SHORTHAND('$literal')
+        : strings.FT_SUMMARY_LITERAL
     if (kind?.kind !== 'operator' && kind?.kind !== 'fragment') return null
     if (kind.form === 'shorthand') return strings.FT_SUMMARY_SHORTHAND(`$${kind.name}`)
     const text =

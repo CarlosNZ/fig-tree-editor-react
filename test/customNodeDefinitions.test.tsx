@@ -94,13 +94,17 @@ describe('the custom node definitions', () => {
     expect(keyLabel('parameters')).toBeInTheDocument()
   })
 
-  it('quote the content of a literal', () => {
-    expect(shown({ operator: 'literal', value: { $plus: ['$data.x'] } })).toEqual([
-      ['literal', 'Literal · full'],
-    ])
-    expect(shown({ $literal: { $plus: ['$data.x'] } })).toEqual([
-      ['literal', 'Literal · shorthand'],
-    ])
+  it('give a literal the operator and shorthand components, and quote its content', () => {
+    for (const expression of [
+      { operator: 'literal', value: { $plus: ['$data.x'] } },
+      { $literal: { $plus: ['$data.x'] } },
+    ]) {
+      const { container, unmount } = render(editor(expression))
+      expect(container.querySelectorAll('.ft-node .ft-display-bar')).toHaveLength(1)
+      expect(placeholders(container)).toEqual([])
+      expect(references(container)).toEqual([])
+      unmount()
+    }
   })
 
   it('mark the root container', () => {

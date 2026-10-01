@@ -60,7 +60,6 @@ export type DefinitionName =
   | 'operator'
   | 'fragment'
   | 'shorthand'
-  | 'literal'
   | 'reference'
   | 'container'
   | 'comment'
@@ -142,6 +141,9 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ({ kind: rowKind }: Row) =>
       rowKind?.kind === kind && (form === undefined || ('form' in rowKind && rowKind.form === form))
 
+  const isFullOperator = (row: Row) =>
+    isKind('operator', 'full')(row) || isKind('literal', 'full')(row)
+
   const isPart = (part: ReturnType<typeof commentPart>) => (nodeData: NodeData) =>
     commentPart(shared.classification, nodeData) === part
 
@@ -213,9 +215,11 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     // A full node owns both its editors: every edit session renders the
     // component, which shows json-edit-react's raw-JSON editor as
     // `originalNode` or its own toolbar (design, topic 2, "Two editors per
-    // node")
+    // node"). A `literal` is an operator node in every way but its content,
+    // which is quoted, so it shares the definition, and a switch to or from
+    // it keeps the toolbar (plan, 9.3).
     ...unlabelledVariants(
-      definition('operator', matches(isKind('operator', 'full')), {
+      definition('operator', matches(isFullOperator), {
         showOnEdit: true,
         passOriginalNode: true,
         name: strings.FT_TYPE_OPERATOR,
@@ -234,11 +238,13 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       definition(
         'shorthand',
         matches(
-          (row) => isKind('operator', 'shorthand')(row) || isKind('fragment', 'shorthand')(row)
+          (row) =>
+            isKind('operator', 'shorthand')(row) ||
+            isKind('fragment', 'shorthand')(row) ||
+            isKind('literal', 'shorthand')(row)
         )
       )
     ),
-    ...unlabelledVariants(definition('literal', matches(isKind('literal')))),
     ...referenceEntry(['data'], 'data'),
     ...referenceEntry(['vars'], 'vars'),
     ...referenceEntry(['element', 'index'], 'element'),

@@ -9,8 +9,10 @@ import { switchOperator } from './switchOperator'
 // opens by itself on a broken node, with the operator fig-tree suggests
 // highlighted, so the pencil then Enter repairs it, and on a node the type
 // dropdown has just created, so typing filters at once. Choosing an operator
-// switches the node, and choosing the current one again changes nothing: the
-// spelling toggle beside it writes the name or the alias.
+// switches the node, and choosing the current one again changes nothing: a
+// modifier-click on the DisplayBar's button writes the name or the alias.
+// Choosing `literal` quotes the node, but on a new node, which has nothing
+// worth quoting.
 
 interface OperatorPickerProps {
   figTree: FigTree
@@ -55,7 +57,7 @@ export const OperatorPicker = ({
       border="group"
       placeholder={strings.FT_PICKER_PLACEHOLDER}
       setSelected={({ value }) => {
-        const next = switchOperator(node, value, current, operators)
+        const next = switchOperator(node, value, current, operators, { quote: !startOpen })
         if (next !== node) onSwitch(next, value)
       }}
     />

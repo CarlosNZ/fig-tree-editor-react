@@ -53,10 +53,31 @@ describe('switchOperator', () => {
     })
   })
 
-  it('switches to literal, which fig-tree does not register', () => {
-    expect(switched({ operator: 'plus', values: [1], fallback: 0 }, 'literal', 'plus')).toEqual({
+  it('quotes the node on a switch to literal, its comment and modifiers included', () => {
+    const node = { '//': 'why', operator: 'plus', values: [1], fallback: 0 }
+    expect(switched(node, 'literal', 'plus')).toEqual({ operator: 'literal', value: node })
+    // A broken node too, which may be data read as one
+    const data = { operator: 'admin', name: 'Ada' }
+    expect(switched(data, 'literal', null)).toEqual({ operator: 'literal', value: data })
+  })
+
+  it('switches a new node to literal as to any operator, less its value', () => {
+    const node = { operator: 'upper', value: 'x', fallback: 0 }
+    expect(switchOperator(node, 'literal', 'upper', operators, { quote: false })).toEqual({
       operator: 'literal',
       fallback: 0,
     })
+  })
+
+  it('switches from literal as from any operator', () => {
+    expect(switched({ operator: 'literal', value: 3.5 }, 'round', 'literal')).toEqual({
+      operator: 'round',
+      value: 3.5,
+    })
+    expect(switched({ operator: 'literal', value: [1] }, 'plus', 'literal')).toEqual({
+      operator: 'plus',
+    })
+    const literal = { operator: 'literal', value: 1 }
+    expect(switched(literal, 'literal', 'literal')).toBe(literal)
   })
 })

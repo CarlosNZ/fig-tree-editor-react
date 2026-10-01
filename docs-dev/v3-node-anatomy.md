@@ -277,7 +277,7 @@ The `$name` row holds one value rather than a list, so it is **unlabelled**: it 
     }
 ```
 
-- **`['template']`:** a collection row with the **Literal** component. It is laid out like an operator (DisplayBar, and both editors), and the operator picker lists `literal` explicitly.
+- **`['template']`:** a collection row with the **Operator** component, since a literal is an operator node in every way but its content: the DisplayBar, and both editors. The operator picker lists `literal` explicitly, and choosing it on another node quotes that node.
 - **`['template', 'operator']`:** filtered.
 - **`['template', 'value']` and everything beneath it:** quoted, so plain JER throughout. The `$plus` here is data, not a node: no DisplayBar, no Evaluate, no reference styling. Its type dropdown offers every type.
 
@@ -308,7 +308,7 @@ Evaluating it returns the content unchanged.
       }
 ```
 
-- **`['template']`:** a collection row with the **Literal** component in its shorthand form. It has no pencil and no positional/named toggle.
+- **`['template']`:** a collection row with the **Shorthand** component, as any shorthand node has. It has no pencil, and its conversion goes between the two forms only.
 - **`['template', '$literal']`:** the content, quoted. This row is **unlabelled rather than flattened**, even when the content is a collection. A literal's content is one value, not a list of parameters. Flattening it would show `{ a: 1, b: 2 }`'s keys as if they were the node's parameters, and would take away the content's own edit tools, which are how quoted data gets edited. Unlabelled, the content keeps its chevron, brackets and ＋, and reads as the single quoted value it is.
 
 A primitive, `{ $literal: 'x' }`, is an unlabelled plain value row either way.

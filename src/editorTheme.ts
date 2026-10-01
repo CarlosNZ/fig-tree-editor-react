@@ -69,11 +69,13 @@ const editorThemeLayer = ({ classification, issues, editorTheme, indent }: Theme
   const comment = (nodeData: NodeData) => commentPart(classification, nodeData)
   const openLines = (nodeData: NodeData) => comment(nodeData) === 'lines' && !nodeData.collapsed
 
-  // The form of an operator node or fragment call; undefined on any other
-  // row
+  // The form of an operator node, `literal` included, or a fragment call;
+  // undefined on any other row
   const nodeForm = ({ path }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
-    return kind?.kind === 'operator' || kind?.kind === 'fragment' ? kind.form : undefined
+    return kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
+      ? kind.form
+      : undefined
   }
 
   return {

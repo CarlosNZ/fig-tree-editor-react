@@ -327,15 +327,15 @@ describe('the operator node', () => {
       expect(latest(written)).toMatchObject({ operator: 'reverse' })
     })
 
-    it('closes the toolbar on a switch to literal, which has its own definition', async () => {
+    it('keeps the toolbar open on a switch to literal, which quotes the node', async () => {
       const { container, written, user } = host({ operator: 'plus', values: [1, 2] })
       await openPicker(user, 'Plus (+)')
       await user.keyboard('literal{Enter}')
       expect(latest(written)).toEqual({
         operator: 'literal',
-        value: 'No content inside a literal node is evaluated',
+        value: { operator: 'plus', values: [1, 2] },
       })
-      expect(container.querySelector('.ft-toolbar')).toBeNull()
+      expect(container.querySelector('.ft-toolbar')).toBeInTheDocument()
     })
   })
 

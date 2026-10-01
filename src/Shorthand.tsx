@@ -11,13 +11,14 @@ import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
 import { useConversion } from './useConversion'
 
-type ShorthandKind = Extract<RowKind, { kind: 'operator' | 'fragment' }>
+type ShorthandKind = Extract<RowKind, { kind: 'operator' | 'fragment' | 'literal' }>
 
 // A shorthand node (design, topic 1, "Shorthand nodes";
-// docs-dev/v3-node-anatomy.md, sections 3 to 5), anchored on the node's own
-// object: the DisplayBar, then the node's rows. Shorthand is a way of showing
-// a node rather than of editing one, so it has no toolbar: json-edit-react's
-// ✎ opens it as raw JSON, and the node is switched in full form.
+// docs-dev/v3-node-anatomy.md, sections 3 to 5 and 7), `$literal` included,
+// anchored on the node's own object: the DisplayBar, then the node's rows.
+// Shorthand is a way of showing a node rather than of editing one, so it has
+// no toolbar: json-edit-react's ✎ opens it as raw JSON, and the node is
+// switched in full form.
 //
 // A named payload's rows show as the node's own, and an argument list keeps
 // its brackets. A single plain value or reference sits on the button's line,
@@ -30,7 +31,10 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const { path } = nodeData
   const kind = rowAt(classification, path)?.kind as ShorthandKind
   const node = value as Record<string, unknown>
-  const key = `$${kind.name}`
+  // `literal` is grammar rather than an operator, so its kind names nothing,
+  // and its display data is under its own name
+  const name = kind.kind === 'literal' ? 'literal' : kind.name
+  const key = `$${name}`
   const broken = brokenIssue(issues, classification, path, node)
   const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
 
@@ -38,7 +42,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
     kind.kind === 'operator'
       ? figTree.getOperators().find(({ name }) => name === kind.operator)
       : undefined
-  const spelling = otherSpelling(operator, kind.name)
+  const spelling = otherSpelling(operator, name)
   const respell =
     canEdit && !broken && spelling !== undefined
       ? () => setValue(renameKey(node, key, `$${spelling}`))
@@ -52,7 +56,8 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
         card: hints?.description === undefined ? [] : [hints.description],
       }
     }
-    const display = kind.operator === null ? undefined : displayData.operators[kind.operator]
+    const operatorName = kind.kind === 'literal' ? 'literal' : kind.operator
+    const display = operatorName === null ? undefined : displayData.operators[operatorName]
     const card = [
       display?.description,
       operator && operatorDefaultsLine(operator, settings(node, key, path, classification)),

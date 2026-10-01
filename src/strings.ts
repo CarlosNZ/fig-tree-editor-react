@@ -12,6 +12,7 @@ export const strings = {
   FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node
   FT_SUMMARY_FRAGMENT: (name: string) => `Fragment: ${name}`,
   FT_SUMMARY_SHORTHAND: (name: string) => `Shorthand: ${name}`, // with its `$`
+  FT_SUMMARY_LITERAL: 'Literal',
   FT_SUMMARY_VARS: (count: number) => (count === 1 ? '1 var' : `${count} vars`),
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
