@@ -577,9 +577,48 @@ Mostly theme work: the vars block and multi-line comments have no component of t
 
 ## Phase 10 — Diagnostics and evaluation
 
-- **10.1 · Diagnostics.** Issues on rows (tint, flag, the collapsed roll-up), the filled-in marker and its fade, and the messages area in tree order with its quick fixes and `messagesMaxHeight`, replacing Phase 2's plain list (topic 7). `onStatusChange` and the handle's `reveal` (topic 8).
-- **10.2 · Sub-tree evaluation.** The pure module that builds the wrapped expression and maps paths back, with its own tests against fig-tree (topic 7, "Sub-tree evaluation").
-- **10.3 · Evaluating.** **Open (Carl): where a reference's ▶ goes,** inline after its text as 8.2 draws it (topic 3), or among json-edit-react's edit tools as a custom button, beside "To get node". Every Evaluate affordance, one evaluation at a time with cancel, disabled while errors block it, the result display (settling its placement by trying it), failures and the fallbacks that fired, and the failed-row marker (topic 7). The evaluation props and callbacks (topic 8, "Evaluation"). The demo's own Evaluate button (2.3) goes.
+Two halves, diagnostics first: evaluation reuses its reveal (a failure line's path) and reads its issues (Evaluate disabled while errors block it). The callbacks come before the built-in result display, so the display's placement is tried against a working evaluation. Each step ends with one or two expressions for trying it by hand (Carl).
+
+- **10.1 · Issues on rows** (topic 7, "Where issues attach"; topic 3, "States").
+  - An error tints its row and flags it; a warning flags it only; a hint shows in the messages area alone. The flag is the issue's message, cut to the space left on the row with an ellipsis, then "+1" and so on where the row has more, with every one listed on hover.
+  - An issue at a node's own path that doesn't make it broken flags the node's DisplayBar line, with no border. Broken nodes are 5.1's and 8.1's.
+  - The collapsed roll-up: every collapsed row, plain arrays and objects included, colours its summary by the most severe issue beneath it, with a count where there is more than one ("2 errors").
+  - `editorTheme` gains `warning`, told apart from 10.3's filled-in amber.
+  - `evaluationData` joins the props, passed to `validate()`, so the sample-data warnings land on the rows that read the missing paths (F12). It reaches `evaluate()` in 10.6.
+  - **To prove:** how a flag reaches a plain row, which has no component of its own. The likely route is a catch-all definition on rows with issues, with `passOriginalNode`, drawing the row and then its flag; for a collection row, whether the flag can sit on its header line, since a component draws beneath the header. The editor's own components draw their own.
+- **10.2 · The messages area** (topic 7, "The messages area"), replacing Phase 2's plain list.
+  - Shown only when it has lines, under a header of counts that collapses it. `messagesMaxHeight` sets the height beyond which it scrolls, and `0` hides it, header included.
+  - One list in tree order, by the row each line marks, the most severe first on a row: a pure function with its own tests. Each line: the severity pill, the marked row's path in display form, the full message, and its quick fixes.
+  - Clicking the path reveals the row: its collapsed ancestors open through json-edit-react's `collapse`, and the nearest element the editor draws scrolls into view (exact once J9 lands).
+  - The quick fixes: Remove on an unknown key, Rename to `then` (F3), Change to `plus` on an unknown operator or fragment, and Rename to `$greaterThan` on an unrecognised `$` key. Each writes through the fill-in step to `setExpression`, not through `onUpdate` (topic 8, "The expression and loading").
+- **10.3 · Filled in on load** (topic 2, "The fill-in step"; topic 7).
+  - `fillAndTidy`'s `filled` paths, stored when the `autoUpdate` write is made (4.5).
+  - The amber marker on each, in `editorTheme.filledIn`, fading after about three seconds.
+  - A line per filled-in value in the messages area, interleaved by row, and "1 added" in the header's counts. Dismiss on each line, Dismiss all in the header where there is more than one; a line also clears when its row is edited.
+  - **To settle:** what counts as its row being edited.
+- **10.4 · Telling the host** (topic 8, "Telling the host about state" and "The handle and edit sessions").
+  - `onStatusChange`, called when the status changes by content: `valid`, the counts, `editing` and `messages`, each fix's `apply` running the built-in button's code.
+  - `editing` covers every session, the toolbar's included, from `onEditEvent`, which joins the Combined group.
+  - `editorRef` joins the Combined group: json-edit-react's handle, with `reveal({ path })`, 10.2's reveal.
+  - `EditorStatus`, `EditorMessage` and `FigTreeEditorHandle` are exported.
+- **10.5 · Sub-tree evaluation** (topic 7, "Sub-tree evaluation"). The pure module that builds the wrapped expression from the row's scope chain, reads the row's result back out of the wrappers, and maps paths back to the tree (`toTreePath`), with its own tests against fig-tree for each kind of scope. With it, the rule for what blocks an evaluation, an error at or under the row or in a `vars` block wrapped around it, since it reads the same scope.
+- **10.6 · Evaluating** (topic 7, "Evaluating"; topic 8, "Evaluation").
+  - Every Evaluate affordance goes live: the node buttons (operator, fragment, shorthand, `literal`), a reference's ▶, a collapsed node's ▶ after its summary, and the root Container's bar, which replaces the last placeholder.
+  - **Open (Carl): where a reference's ▶ goes,** inline after its text as 8.2 draws it (topic 3), or among json-edit-react's edit tools as a custom button, beside "To get node".
+  - One evaluation at a time: a spinner while it runs, a second click cancelling it through an `AbortSignal`, and another evaluation cancelling it. An affordance is disabled, with the reason on hover, where 10.5's rule blocks it.
+  - `evaluationMode`, `onEvaluateStart` and `onEvaluate` join the props, with `Evaluation` and `EvaluationFailure` exported: every start followed by exactly one `onEvaluate`, `trace` always on, and fig-tree's rejection never reaching the host.
+  - The demo's own Evaluate button (2.3) goes, and the demo shows each evaluation through its toasts from `onEvaluate` until 10.7.
+  - Parked from 7.5: no hover card after a click on the Evaluate button, until the pointer leaves and comes back.
+  - **To prove:** whether the collapsed node's ▶ can sit after json-edit-react's summary; otherwise a custom button.
+- **10.7 · The result display** (topic 7, "Evaluating").
+  - Its placement, settled by trying it: inline beneath the node's header first, the current lean, and the others only if that proves wrong.
+  - The value by type, the type caption ("one per element of `input` · 2 items" for a row inside an iterator's `each`), ✕ and copy. It closes on ✕, Esc, the next Evaluate, and any edit starting.
+  - `showEvaluationResult` joins the props.
+  - Whether the demo keeps its toasts once the editor shows results itself.
+- **10.8 · Failures and fallbacks** (topic 7, "Showing failures").
+  - "Failed" with the message where the row itself failed; otherwise the value, with its failures beneath. Each failure line: the message, the failed row's path, revealing it, a fallback's `cause`, `related` failures as "+1 more", and a failure inside a fragment body as "in fragment `getCountryData` at …". In throw mode, "Failed" with the one error.
+  - The fallbacks that fired, from the trace, each with its row's path.
+  - The failed-row marker, in `editorTheme.failed`, for as long as the display is open, drawn as 10.1 draws flags.
 - The trace views and a dependencies view are do-later (topic 7).
 
 ## Phase 11 — Release prep
