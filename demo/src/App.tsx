@@ -17,8 +17,8 @@ import {
   useMediaQuery,
 } from '@chakra-ui/react'
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
-import { FigTreeEditor, type EditorStatus } from '@fig-tree-editor-react'
-import { isFigTreeError, version as figTreeVersion } from 'fig-tree-evaluator'
+import { FigTreeEditor, type EditorStatus, type Evaluation } from '@fig-tree-editor-react'
+import { version as figTreeVersion } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getLocalStorage, setLocalStorage, truncate } from './helpers'
 import { buildFigTree, type DemoOptions } from './figTree'
@@ -34,6 +34,10 @@ const initData = demoData[0]
 
 console.log(`fig-tree-editor-react v${figTreeEditorReactVersion}`)
 console.log('Site built:', timestamp)
+
+// A row's path, as the toasts name it
+const describePath = (path: (string | number)[]) =>
+  path.length === 0 ? 'Full expression' : path.join('.')
 
 // The editor's status in a line, for watching it by hand
 const describeStatus = ({ valid, counts, editing }: EditorStatus) =>
@@ -56,7 +60,6 @@ function App() {
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
   const [options, setOptions] = useState<DemoOptions>(getInitOptions)
   const figTree = useMemo(() => buildFigTree(options), [options])
-  const [isEvaluating, setIsEvaluating] = useState(false)
   const [status, setStatus] = useState<EditorStatus | null>(null)
 
   const {
@@ -89,34 +92,37 @@ function App() {
     setLocalStorage('options', newOptions)
   }
 
-  // TO-DO: remove once the editor evaluates nodes itself (plan, Phase 10)
-  const evaluate = async () => {
-    setIsEvaluating(true)
-    try {
-      const value = await figTree.evaluate(expression, {
-        data: objectData as Record<string, unknown>,
-      })
+  // Each evaluation the editor reports, as a toast
+  //
+  // TO-DO: decide whether the toasts stay once the editor shows results
+  // itself (plan, 10.7)
+  const showEvaluation = ({ path, status, result, failures }: Evaluation) => {
+    const where = describePath(path)
+    if (status === 'done')
       toast({
         render: ({ onClose }) => (
-          <ResultToast title="Evaluation result" value={value} close={onClose} />
+          <ResultToast
+            title={failures.length > 0 ? `${where}, with failures` : where}
+            value={result}
+            close={onClose}
+          />
         ),
         position: 'top',
         status: 'success',
         duration: 5000,
         isClosable: true,
       })
-    } catch (err) {
+    else
       toast({
-        title: 'Evaluation error',
-        description: isFigTreeError(err) ? err.prettyPrint() : String(err),
+        title: `${where}: ${status}`,
+        description: failures
+          .map((failure) => `${describePath(failure.path)}: ${failure.message}`)
+          .join('; '),
         position: 'top',
-        status: 'error',
-        duration: 15000,
+        status: status === 'failed' ? 'error' : 'info',
+        duration: status === 'failed' ? 15000 : 3000,
         isClosable: true,
       })
-    } finally {
-      setIsEvaluating(false)
-    }
   }
 
   const handleDemoSelect = (selected: number) => {
@@ -304,6 +310,11 @@ function App() {
                 console.log('onStatusChange', newStatus)
                 setStatus(newStatus)
               }}
+              onEvaluateStart={(start) => console.log('onEvaluateStart', start)}
+              onEvaluate={(evaluation) => {
+                console.log('onEvaluate', evaluation)
+                showEvaluation(evaluation)
+              }}
             />
             {status && (
               <Text w="100%" maxW={600} fontSize="sm" mt={1} pr={1} color="gray.600">
@@ -316,9 +327,6 @@ function App() {
                 fig-tree-editor-react
               </Link>
             </Text>
-            <Button colorScheme="green" mt={2} onClick={evaluate} isLoading={isEvaluating}>
-              Evaluate
-            </Button>
             {ExpressionUndoRedo}
           </Flex>
         </Flex>

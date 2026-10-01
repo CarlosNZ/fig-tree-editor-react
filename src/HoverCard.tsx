@@ -1,15 +1,34 @@
-import { useId, type ReactNode } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 
-// A card shown once its anchor has been hovered or focused for a moment (the
-// stylesheet's `--ft-hover-card-delay`), and hidden as soon as it isn't. It
-// floats over the rows beneath it, so it never changes the tree's layout
-// (design, topic 4, "Parameter metadata"), and the stylesheet alone shows and
-// hides it, so hovering re-renders nothing.
-export const HoverCard = ({ card, children }: { card: ReactNode; children: ReactNode }) => {
+// A card shown once its anchor has been hovered, or focused from the
+// keyboard, for a moment (the stylesheet's `--ft-hover-card-delay`), and
+// hidden as soon as it isn't. It floats over the rows beneath it, so it never
+// changes the tree's layout (design, topic 4, "Parameter metadata"), and the
+// stylesheet alone shows and hides it, so hovering re-renders nothing. With
+// `hideOnClick`, a click on the anchor hides it until the pointer leaves, so
+// it doesn't cover what the click shows.
+export const HoverCard = ({
+  card,
+  hideOnClick = false,
+  children,
+}: {
+  card: ReactNode
+  hideOnClick?: boolean
+  children: ReactNode
+}) => {
   const id = useId()
+  const [clicked, setClicked] = useState(false)
   if (card === undefined || card === null || card === '') return children
   return (
-    <span className="ft-hover-card-anchor" aria-describedby={id}>
+    <span
+      className="ft-hover-card-anchor"
+      aria-describedby={id}
+      data-clicked={clicked || undefined}
+      {...(hideOnClick && {
+        onClick: () => setClicked(true),
+        onPointerLeave: () => setClicked(false),
+      })}
+    >
       {children}
       <span className="ft-hover-card" role="tooltip" id={id}>
         {card}
@@ -20,17 +39,25 @@ export const HoverCard = ({ card, children }: { card: ReactNode; children: React
 
 // A card's lines, one to a line, with the names in backticks shown as code.
 // A parameter's card starts with a title line, and a node's can end with a
-// note, a tip about the control set smaller than what the card describes.
+// note, a tip about the control set smaller than what the card describes. An
+// alert, such as why the control is disabled, comes first, in its colour.
 export const CardLines = ({
   lines,
   titled = false,
   note,
+  alert,
 }: {
   lines: string[]
   titled?: boolean
   note?: string
+  alert?: { text: string; colour: string }
 }) => (
   <>
+    {alert && (
+      <span className="ft-hover-card-line ft-hover-card-alert" style={{ color: alert.colour }}>
+        {withCode(alert.text)}
+      </span>
+    )}
     {lines.map((line, index) => (
       <span
         className={

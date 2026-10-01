@@ -15,6 +15,7 @@ import { strings } from './strings'
 import { Toolbar } from './Toolbar'
 import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
+import { useEvaluation } from './useEvaluation'
 
 type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 
@@ -41,6 +42,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
     snapshot,
   } = useNodeEditor(props)
   const { path } = nodeData
+  const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
   useOpenCreated(created, path, canEdit, openToolbar)
 
   const row = rowAt(classification, path)
@@ -110,6 +112,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}
           conversion={conversion}
+          evaluation={evaluation}
         />
       )}
       {withoutFilteredRows(children, classification, path)}

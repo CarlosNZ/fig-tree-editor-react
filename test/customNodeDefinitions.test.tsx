@@ -29,15 +29,6 @@ const editor = (expression: unknown) => (
   />
 )
 
-// Every placeholder in the tree, in document order: its definition and label
-const placeholders = (container: HTMLElement) =>
-  [...container.querySelectorAll('[data-kind]')].map((element) => [
-    element.getAttribute('data-kind'),
-    element.querySelector(':scope > span')?.textContent,
-  ])
-
-const shown = (expression: unknown) => placeholders(render(editor(expression)).container)
-
 // Every reference in the tree, by its text
 const references = (container: HTMLElement) =>
   [...container.querySelectorAll('.ft-reference .jer-value-string')].map(
@@ -48,7 +39,6 @@ describe('the custom node definitions', () => {
   it('give a full operator node its component, and drop its operator row', () => {
     const { container } = render(editor({ operator: 'plus', values: [1, '$data.x'] }))
     expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
-    expect(placeholders(container)).toEqual([])
     expect(references(container)).toEqual(['$data.x'])
     expect(screen.queryByText('operator')).not.toBeInTheDocument()
   })
@@ -56,7 +46,6 @@ describe('the custom node definitions', () => {
   it('give a shorthand node its component, and flatten a named payload', () => {
     const { container } = render(editor({ $if: { condition: '$data.ok', then: 'Yes' } }))
     expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
-    expect(placeholders(container)).toEqual([])
     expect(references(container)).toEqual(['$data.ok'])
     expect(() => keyLabel('$if')).toThrow()
     expect(keyLabel('condition')).toBeInTheDocument()
@@ -64,7 +53,6 @@ describe('the custom node definitions', () => {
 
   it('leave an argument list to json-edit-react, without the `$name` key', () => {
     const { container } = render(editor({ $plus: [1, 2] }))
-    expect(placeholders(container)).toEqual([])
     expect(() => keyLabel('$plus')).toThrow()
     expect(container.querySelectorAll('.jer-collection-header-row')).toHaveLength(2)
   })
@@ -82,7 +70,6 @@ describe('the custom node definitions', () => {
   it('give a full fragment call its component, and flatten its static arguments', () => {
     const { container } = render(editor({ fragment: 'greet', parameters: { name: 'Ada' } }))
     expect(container.querySelector('.ft-node .ft-display-bar')).toBeInTheDocument()
-    expect(placeholders(container)).toEqual([])
     expect(keyLabel('name')).toBeInTheDocument()
     expect(screen.queryByText('fragment')).not.toBeInTheDocument()
     expect(screen.queryByText('parameters')).not.toBeInTheDocument()
@@ -101,14 +88,14 @@ describe('the custom node definitions', () => {
     ]) {
       const { container, unmount } = render(editor(expression))
       expect(container.querySelectorAll('.ft-node .ft-display-bar')).toHaveLength(1)
-      expect(placeholders(container)).toEqual([])
       expect(references(container)).toEqual([])
       unmount()
     }
   })
 
-  it('mark the root container', () => {
-    expect(shown({ title: '$data.t' })).toEqual([['container', 'Container']])
+  it('give the root container its Evaluate bar, and no other container', () => {
+    const { container } = render(editor({ title: '$data.t', inner: { x: '$data.x' } }))
+    expect(container.querySelectorAll('.ft-root-bar')).toHaveLength(1)
   })
 
   it("give a comment's text its component, and a comment of lines none", () => {
@@ -116,11 +103,10 @@ describe('the custom node definitions', () => {
       [...container.querySelectorAll('.ft-comment')].map((element) => element.textContent)
     const { container, unmount } = render(editor({ '//': 'A note', title: '$data.t' }))
     expect(notes(container)).toEqual(['A note'])
-    expect(placeholders(container)).toEqual([['container', 'Container']])
+    expect(container.querySelector('.ft-root-bar')).toBeInTheDocument()
     unmount()
     const lines = render(editor({ '//': ['One', '$data.x'], $plus: [1] })).container
     expect(notes(lines)).toEqual(['One', '$data.x'])
-    expect(placeholders(lines)).toEqual([])
     // A line is quoted, so a reference-shaped one is a note like any other
     expect(references(lines)).toEqual([])
   })

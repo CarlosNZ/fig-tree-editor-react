@@ -1,6 +1,7 @@
 import { type ReferenceNames } from './conversions'
 import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } from './FigTreeEditor'
 import { defaultEditorTheme, type EditorTheme } from './editorTheme'
+import { type Evaluation, type EvaluationFailure } from './evaluation'
 import { type DefaultOperators, type OperatorDefault, type SlotType } from './getStartingNode'
 import { Select } from './Select'
 import { type EditorMessage, type EditorStatus, type FigTreeEditorHandle } from './status'
@@ -13,6 +14,8 @@ export {
   type EditorMessage,
   type EditorStatus,
   type EditorTheme,
+  type Evaluation,
+  type EvaluationFailure,
   type FigTreeEditorHandle,
   type FigTreeEditorProps,
   type OperatorDefault,

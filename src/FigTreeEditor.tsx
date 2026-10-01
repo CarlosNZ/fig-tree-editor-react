@@ -49,6 +49,13 @@ import {
   mergeEditorTheme,
   type EditorTheme,
 } from './editorTheme'
+import {
+  cancelledEvaluation,
+  createEvaluator,
+  evaluateSubTree,
+  type Evaluation,
+  type EvaluatorHandlers,
+} from './evaluation'
 import { fillAndTidy } from './fillAndTidy'
 import {
   confirmFilledIn,
@@ -68,6 +75,7 @@ import { countMessages, orderMessages } from './messageLines'
 import { getQuickFixes } from './quickFixes'
 import { valueAt, type Path } from './paths'
 import { revealRow } from './revealRow'
+import { buildSubTree } from './subTree'
 import {
   sameStatus,
   type EditorMessage,
@@ -122,6 +130,13 @@ export interface FigTreeEditorProps extends Omit<
   // The editor's state, each time it changes: whether there are errors, the
   // counts, whether an edit is open, and the messages area's lines
   onStatusChange?: (status: EditorStatus) => void
+  // What an evaluation does with a failure no `fallback` caught: `report`
+  // completes the rest and lists every failure, `throw` fails the row at the
+  // first, as a host evaluating in throw mode would see it
+  evaluationMode?: 'report' | 'throw'
+  onEvaluateStart?: (start: { path: Path }) => void
+  // Each evaluation as it ends, done, failed or cancelled: one per start
+  onEvaluate?: (evaluation: Evaluation) => void
   editorRef?: Ref<FigTreeEditorHandle> // json-edit-react's handle, with `reveal`
 }
 
@@ -135,6 +150,9 @@ export const FigTreeEditor = ({
   evaluationData,
   messagesMaxHeight = DEFAULT_MESSAGES_MAX_HEIGHT,
   onStatusChange,
+  evaluationMode = 'report',
+  onEvaluateStart,
+  onEvaluate,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -235,6 +253,13 @@ export const FigTreeEditor = ({
   latestClassification.current = classification
   const issueIndex = useStableValue(attachIssues(issues, classification))
   const rollUp = useStableValue(rollUpIssues(issues, classification))
+  // Each Evaluate, one at a time (evaluation.ts). The evaluator keeps its
+  // identity, reading the latest props as each evaluation starts and ends,
+  // and one still running as the editor goes is cancelled, and reported so.
+  const evaluationHandlers = useRef<EvaluatorHandlers | null>(null)
+  const evaluator = useMemo(() => createEvaluator(() => evaluationHandlers.current!), [])
+  useEffect(() => () => evaluator.cancel(), [evaluator])
+
   const definitions = useMemo(
     () =>
       customNodeDefinitions({
@@ -247,6 +272,7 @@ export const FigTreeEditor = ({
         defaultFragment,
         referenceNames,
         created,
+        evaluator,
       }),
     [
       figTree,
@@ -257,6 +283,7 @@ export const FigTreeEditor = ({
       stableDefaultOperators,
       defaultFragment,
       referenceNames,
+      evaluator,
     ]
   )
 
@@ -307,6 +334,23 @@ export const FigTreeEditor = ({
   const submitted = useRef(false)
   const latest = useRef(shown)
   latest.current = shown
+
+  // A row's evaluation, from the expression and props as they are when it
+  // starts
+  evaluationHandlers.current = {
+    prepare: (path) => {
+      const context = { classification: latestClassification.current, operators }
+      const subTree = buildSubTree(latest.current, path, context)
+      if (subTree === null) return null
+      const options = { mode: evaluationMode, data: evaluationData }
+      return {
+        start: (signal) => evaluateSubTree(figTree, path, subTree, { ...options, signal }),
+        cancelled: () => cancelledEvaluation(path, subTree, evaluationMode),
+      }
+    },
+    onStart: (path) => onEvaluateStart?.({ path }),
+    onEvaluate: (evaluation) => onEvaluate?.(evaluation),
+  }
   const followEdits: OnEditEventFunction = (editEvent) => {
     const { event } = editEvent
     if (event.startsWith('start')) editOpen.current = true

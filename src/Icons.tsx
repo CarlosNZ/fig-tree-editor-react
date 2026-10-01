@@ -19,6 +19,8 @@ export const Icons = {
       </svg>
     </div>
   ),
+  // In the evaluate icon's place while an evaluation runs, the same size
+  running: <div className="ft-icon ft-evaluate-icon ft-spinner" aria-hidden="true" />,
 }
 
 /**

@@ -51,7 +51,13 @@ export const strings = {
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎
-  FT_EVALUATE: 'Evaluate', // a reference's ▶
+  FT_EVALUATE: 'Evaluate', // a reference's ▶, and the root's bar
+  FT_CANCEL_EVALUATION: 'Cancel evaluation', // the same, while it runs
+  // Why an Evaluate is disabled
+  FT_EVALUATE_BLOCKED: (count: number) =>
+    count === 1 ? 'Fix the error to evaluate this' : `Fix ${count} errors to evaluate this`,
+  FT_EVALUATE_NO_INPUT: "It's inside an iterator with no input to go over",
+  FT_EVALUATE_NO_MAP: 'Evaluating inside an iterator needs the `map` operator',
 
   // The conversion buttons
   FT_TO_SHORTHAND: 'To shorthand',

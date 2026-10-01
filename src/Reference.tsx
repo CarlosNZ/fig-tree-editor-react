@@ -6,11 +6,13 @@ import { bindings, rowAt, type Row, type RowKind } from './classify'
 import { getNodeFor } from './conversions'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type EditorTheme } from './editorTheme'
+import { CardLines, HoverCard } from './HoverCard'
 import { Icons } from './Icons'
 import { IssueCard } from './IssueFlag'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
 import { ToGetNodeButton } from './upstream'
+import { useEvaluation } from './useEvaluation'
 
 type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 
@@ -30,12 +32,19 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // its text but keeps the input, which json-edit-react doesn't focus again, so
 // the component does, and selects the new path.
 //
-// TO-DO: evaluating (plan, Phase 10).
+// The ▶ evaluates the reference, as a node's button does (topic 7,
+// "Evaluating"): a spinner while it runs, a second click cancelling it, and
+// where it can't be evaluated, dimmed, with the reason in a card on hover.
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
   const { classification, issues, editorTheme, entry, referenceNames } = componentProps!
   const row = rowAt(classification, nodeData.path)
   const input = useRef<HTMLDivElement>(null)
+  const { running, blocked, disabled, onEvaluate } = useEvaluation(
+    nodeData.path,
+    nodeData.fullData,
+    componentProps!
+  )
   const getNode = useMemo(
     () => (canEdit ? getNodeFor(value as string, referenceNames) : null),
     [value, canEdit, referenceNames]
@@ -73,14 +82,30 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
         translate={props.translate}
         showIconTooltips={props.showIconTooltips}
       />
-      <button
-        type="button"
-        className="ft-reference-evaluate"
-        aria-label={strings.FT_EVALUATE}
-        style={{ color: colour }}
+      <HoverCard
+        hideOnClick
+        card={
+          disabled ? (
+            <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
+          ) : undefined
+        }
       >
-        {Icons.evaluate}
-      </button>
+        <button
+          type="button"
+          className={
+            disabled ? 'ft-reference-evaluate ft-evaluate-blocked' : 'ft-reference-evaluate'
+          }
+          aria-label={running ? strings.FT_CANCEL_EVALUATION : strings.FT_EVALUATE}
+          aria-disabled={disabled || undefined}
+          aria-busy={running || undefined}
+          onClick={() => {
+            if (!disabled) onEvaluate()
+          }}
+          style={{ color: colour }}
+        >
+          {running ? Icons.running : Icons.evaluate}
+        </button>
+      </HoverCard>
       {getNode && <ToGetNodeButton onClick={() => props.handleEdit(getNode)} colour={colour} />}
       <IssueCard issues={flaggedIssues(issues, nodeData.path)} editorTheme={editorTheme} />
     </span>

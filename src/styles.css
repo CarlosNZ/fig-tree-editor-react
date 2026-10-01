@@ -361,6 +361,48 @@ input.ft-select-input::placeholder {
   transform: translateY(0.1em);
 }
 
+/* An Evaluate that can't run: dimmed, unpressed, with its reason on hover */
+.ft-evaluate-blocked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.ft-evaluate-button.ft-evaluate-blocked:hover {
+  filter: none;
+}
+
+.ft-evaluate-button.ft-evaluate-blocked:active {
+  transform: none;
+}
+
+/* While an evaluation runs, a ring in the ▶'s place, its size and colour */
+.ft-icon.ft-spinner {
+  height: 1em;
+  border: 0.15em solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  box-sizing: border-box;
+  transform: none;
+  animation: ft-spin 0.75s linear infinite;
+}
+
+@keyframes ft-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+/* The root's bare Evaluate button, above its rows (mockup F1) */
+.ft-root-bar {
+  display: flex;
+  margin: 0.2em 0 0.4em;
+}
+
+.ft-root-bar .ft-evaluate-button {
+  background-color: #454545;
+  color: white;
+}
+
 .ft-display-name {
   position: absolute;
   top: -0.3em;
@@ -602,9 +644,10 @@ input.ft-select-input::placeholder {
   font-size: 0.95em;
 }
 
-/* Shown after the delay, and hidden at once */
+/* Shown after the delay, and hidden at once. Focus shows it only from the
+   keyboard, so a click doesn't leave it open once the pointer has gone. */
 .ft-hover-card-anchor:hover .ft-hover-card,
-.ft-hover-card-anchor:focus-within .ft-hover-card {
+.ft-hover-card-anchor:has(:focus-visible) .ft-hover-card {
   visibility: visible;
   opacity: 1;
   transition:
@@ -740,4 +783,11 @@ input.ft-select-input::placeholder {
 .ft-comment .jer-value-string {
   font-family: sans-serif;
   font-style: italic;
+}
+
+/* Hidden after a click on its anchor, until the pointer leaves */
+.ft-hover-card-anchor[data-clicked] > .ft-hover-card {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
 }

@@ -11,6 +11,7 @@ import { rowMark } from './revealRow'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
 import { useConversion } from './useConversion'
+import { useEvaluation } from './useEvaluation'
 
 type ShorthandKind = Extract<RowKind, { kind: 'operator' | 'fragment' | 'literal' }>
 
@@ -30,6 +31,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, canEdit, setValue, keyboardControls } = props
   const { figTree, classification, displayData, issues, editorTheme } = componentProps!
   const { path } = nodeData
+  const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
   const kind = rowAt(classification, path)?.kind as ShorthandKind
   const node = value as Record<string, unknown>
   // `literal` is grammar rather than an operator, so its kind names nothing,
@@ -89,6 +91,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
         onRespell={respell}
         respellModifiers={keyboardControls.clipboardModifier}
         conversion={conversion}
+        evaluation={evaluation}
       />
       {rest}
     </div>

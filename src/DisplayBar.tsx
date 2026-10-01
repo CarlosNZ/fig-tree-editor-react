@@ -5,6 +5,7 @@ import { CardLines, HoverCard } from './HoverCard'
 import { Icon, Icons } from './Icons'
 import { IssueFlag } from './IssueFlag'
 import { strings } from './strings'
+import { type EvaluateControl } from './useEvaluation'
 
 // A node's header (design, topic 3, "Header and toolbar"): the Evaluate
 // button showing the name as written, with the node's card on hover, the
@@ -20,7 +21,12 @@ import { strings } from './strings'
 // node's path flags the header's line, after the controls (design, topic 7,
 // "Where issues attach").
 //
-// TO-DO: evaluating (plan, Phase 10).
+// A click on the button evaluates the node, and a spinner takes the ▶'s place
+// while it runs, until a second click cancels it (topic 7, "Evaluating").
+// Where the node can't be evaluated, the button is dimmed, a plain click does
+// nothing, and its card says why; it isn't `disabled`, so a modifier-click
+// still respells. After a click, its card stays hidden until the pointer
+// leaves.
 
 // What the header shows of an operator or fragment
 export interface HeaderDisplay extends Pick<
@@ -46,6 +52,7 @@ interface DisplayBarProps {
   // has one and the node can be edited
   onRespell?: () => void
   respellModifiers?: readonly React.ModifierKey[]
+  evaluation: EvaluateControl
 }
 
 export const DisplayBar = ({
@@ -62,6 +69,7 @@ export const DisplayBar = ({
   onEdit,
   onRespell,
   respellModifiers = [],
+  evaluation,
 }: DisplayBarProps) => {
   const label = name ?? strings.FT_INVALID_NODE
   return (
@@ -74,9 +82,11 @@ export const DisplayBar = ({
           cardNote={cardNote}
           broken={broken}
           editorTheme={editorTheme}
+          evaluation={evaluation}
           onClick={(e) => {
             const modifier = pressedModifier(e)
-            if (onRespell && modifier && respellModifiers.includes(modifier)) onRespell()
+            if (modifier && respellModifiers.includes(modifier)) onRespell?.()
+            else if (!evaluation.disabled) evaluation.onEvaluate()
           }}
         />
         {onEdit && (
@@ -127,8 +137,12 @@ const NameOrButton = ({
   cardNote,
   broken,
   editorTheme,
+  evaluation: { running, blocked, disabled },
   onClick,
-}: Pick<DisplayBarProps, 'display' | 'card' | 'cardNote' | 'broken' | 'editorTheme'> & {
+}: Pick<
+  DisplayBarProps,
+  'display' | 'card' | 'cardNote' | 'broken' | 'editorTheme' | 'evaluation'
+> & {
   label: string
   onClick: (e: React.MouseEvent) => void
 }) =>
@@ -139,22 +153,29 @@ const NameOrButton = ({
     </span>
   ) : (
     <HoverCard
+      hideOnClick
       card={
-        card.length > 0 || cardNote !== undefined ? (
-          <CardLines lines={card} note={cardNote} />
+        card.length > 0 || cardNote !== undefined || disabled ? (
+          <CardLines
+            lines={card}
+            note={cardNote}
+            alert={disabled ? { text: blocked!, colour: editorTheme.error } : undefined}
+          />
         ) : undefined
       }
     >
       <button
         type="button"
-        className="ft-evaluate-button"
+        className={disabled ? 'ft-evaluate-button ft-evaluate-blocked' : 'ft-evaluate-button'}
         onClick={onClick}
+        aria-disabled={disabled || undefined}
+        aria-busy={running || undefined}
         style={{ backgroundColor: display.backgroundColor, color: display.textColor }}
       >
         <span className="ft-name" style={{ fontSize: nameSize(label) }}>
           {label}
         </span>
-        {Icons.evaluate}
+        {running ? Icons.running : Icons.evaluate}
       </button>
     </HoverCard>
   )

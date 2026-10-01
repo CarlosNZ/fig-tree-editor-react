@@ -10,8 +10,10 @@ import { type ReferenceNames } from './conversions'
 import { rowAt, type Classification, type Row } from './classify'
 import { CommentLine } from './CommentLine'
 import { commentPart } from './comments'
+import { Container } from './Container'
 import { type DisplayData } from './displayData'
 import { type EditorTheme } from './editorTheme'
+import { type Evaluator } from './evaluation'
 import { getStartingFragment } from './getStartingFragment'
 import { getStartingNode, type DefaultOperators } from './getStartingNode'
 import { Fragment } from './Fragment'
@@ -20,7 +22,6 @@ import { Operator } from './Operator'
 import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
-import { Placeholder } from './Placeholder'
 import { Reference } from './Reference'
 import { Shorthand } from './Shorthand'
 import { strings } from './strings'
@@ -31,9 +32,6 @@ import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
 // json-edit-react gives each row the first definition whose condition
 // matches. Every condition is a lookup in the classification walk's map, so
 // a row's kind is worked out once per update rather than per row.
-//
-// TO-DO: each phase replaces the placeholder components with its own (plan,
-// Phases 9 and 10).
 
 // What every component reads, through `componentProps`: json-edit-react's
 // route for configuration a component needs
@@ -49,6 +47,9 @@ export interface Shared {
   // The node the type dropdown has just created, which its component opens
   // its picker on (design, topic 2, "Node lifecycle")
   created: { current: CreatedNode | null }
+  // Runs each Evaluate, one at a time, keeping its identity for the editor's
+  // lifetime (evaluation.ts)
+  evaluator: Evaluator
 }
 
 export interface CreatedNode {
@@ -76,18 +77,16 @@ export interface ComponentConfig extends Shared {
 
 type Condition = (row: Row, nodeData: NodeData) => boolean
 
-// Each definition's component, where it has one yet; the rest show the
-// placeholder. A flattened payload has none: json-edit-react draws its rows,
-// and its flags hide the row itself. Nor has an unlabelled row or a comment of
-// several lines: json-edit-react draws them, without their key, and the theme
-// draws the comment's block.
-const COMPONENTS: Partial<
-  Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null>
-> = {
+// Each definition's component. A flattened payload has none: json-edit-react
+// draws its rows, and its flags hide the row itself. Nor has an unlabelled row
+// or a comment of several lines: json-edit-react draws them, without their
+// key, and the theme draws the comment's block.
+const COMPONENTS: Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null> = {
   operator: Operator,
   fragment: Fragment,
   shorthand: Shorthand,
   reference: Reference,
+  container: Container,
   comment: null,
   commentLine: CommentLine,
   flattened: null,
@@ -109,7 +108,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   ): CustomNodeDefinition => ({
     condition,
     ...(COMPONENTS[name] !== null && {
-      component: (COMPONENTS[name] ?? Placeholder) as unknown as CustomNodeDefinition['component'],
+      component: COMPONENTS[name] as unknown as CustomNodeDefinition['component'],
     }),
     keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
     componentProps: { ...shared, definition: name } satisfies ComponentConfig,

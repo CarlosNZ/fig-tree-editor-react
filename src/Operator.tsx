@@ -15,6 +15,7 @@ import { strings } from './strings'
 import { Toolbar } from './Toolbar'
 import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
+import { useEvaluation } from './useEvaluation'
 
 type OperatorKind = Extract<RowKind, { kind: 'operator' | 'literal' }>
 
@@ -42,6 +43,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     snapshot,
   } = useNodeEditor(props)
   const { path } = nodeData
+  const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
 
   useOpenCreated(created, path, canEdit, openToolbar)
   const row = rowAt(classification, path)
@@ -136,6 +138,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           onRespell={respell}
           respellModifiers={keyboardControls.clipboardModifier}
           conversion={conversion}
+          evaluation={evaluation}
         />
       )}
       {withoutFilteredRows(children, classification, path)}
