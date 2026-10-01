@@ -43,6 +43,10 @@ export const updateAt = (
   return { ...value, [key]: updateAt(child, rest, update) }
 }
 
+// Whether `path` is `prefix` or a path beneath it
+export const isWithin = (path: Readonly<Path>, prefix: Readonly<Path>) =>
+  prefix.length <= path.length && prefix.every((key, index) => path[index] === key)
+
 // An object with one key renamed, in its place among the others
 export const renameKey = (object: Record<string, unknown>, from: string, to: string) =>
   Object.fromEntries(Object.entries(object).map(([key, value]) => [key === from ? to : key, value]))

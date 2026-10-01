@@ -1,7 +1,7 @@
 import { deepEqual } from 'fig-tree-evaluator'
 import { toPathString } from 'json-edit-react'
 import { canonicalPath, rowAt, type Classification } from './classify'
-import { valueAt, type Path } from './paths'
+import { isWithin, valueAt, type Path } from './paths'
 import { strings } from './strings'
 
 // The values the fill-in step added to an expression the editor was given
@@ -116,6 +116,3 @@ export const dismissFilledIn = (record: FilledInRecord, key: string): FilledInRe
   next.delete(key)
   return next
 }
-
-const isWithin = (path: Path, prefix: Path) =>
-  prefix.length <= path.length && prefix.every((key, index) => path[index] === key)

@@ -1,6 +1,6 @@
 import { toPathString } from 'json-edit-react'
 import { canonicalPath, type Classification } from './classify'
-import { type Path } from './paths'
+import { isWithin, type Path } from './paths'
 
 // The author's collapse toggles, by each row's canonical path (plan, 8.4),
 // so a row that mounts again at another path after a conversion opens or
@@ -74,6 +74,3 @@ export const clearCollapseRecord = (record: CollapseRecord) => {
   record.rows.clear()
   record.subtrees.clear()
 }
-
-const isWithin = (path: Path, prefix: Path) =>
-  prefix.length <= path.length && prefix.every((key, index) => path[index] === key)
