@@ -20,6 +20,7 @@ import { isWithin, valueAt, type Path } from './paths'
 
 export interface SubTree {
   expression: unknown
+  row: Path // where the row is in `expression`
   // The row's value, out of the wrappers: one per element inside an
   // iterator, an array for each. A wrapper's failed value, which report mode
   // gives as null, reads as null.
@@ -87,6 +88,7 @@ export const buildSubTree = (
 
   return {
     expression: built,
+    row: at,
     readResult: (result) => unwrap(result, 0),
     toTreePath: (synthesised) => {
       let best: [Path, Path] = pieces[0]
