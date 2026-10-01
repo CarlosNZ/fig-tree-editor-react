@@ -69,7 +69,10 @@ export interface MessageCounts {
   filledIn: number
 }
 
-export const countMessages = (lines: readonly MessageLine[]): MessageCounts => {
+// Counts the messages area's lines, or the host's messages built from them
+export const countMessages = (
+  lines: readonly ({ kind: 'issue'; issue: Issue } | { kind: 'filledIn' })[]
+): MessageCounts => {
   const severity = (of: Issue['severity']) =>
     lines.filter((line) => line.kind === 'issue' && line.issue.severity === of).length
   return {

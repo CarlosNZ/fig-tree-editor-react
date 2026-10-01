@@ -1,7 +1,7 @@
 import {
-  useCallback,
   useEffect,
   useInsertionEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -64,10 +64,16 @@ import { getStartingElement } from './getStartingValue'
 import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
 import { Messages } from './Messages'
-import { orderMessages } from './messageLines'
+import { countMessages, orderMessages } from './messageLines'
 import { getQuickFixes } from './quickFixes'
 import { valueAt, type Path } from './paths'
 import { revealRow } from './revealRow'
+import {
+  sameStatus,
+  type EditorMessage,
+  type EditorStatus,
+  type FigTreeEditorHandle,
+} from './status'
 import { strings } from './strings'
 import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
@@ -96,6 +102,7 @@ export interface FigTreeEditorProps extends Omit<
   // Until json-edit-react can keep a drop within its own array (J4), dragging
   // is disabled
   | 'allowDrag'
+  | 'editorRef'
 > {
   figTree: FigTree
   expression: unknown
@@ -112,6 +119,10 @@ export interface FigTreeEditorProps extends Omit<
   // The messages area's height before it scrolls; `0` hides it, for a host
   // that shows the editor's messages itself
   messagesMaxHeight?: number | string
+  // The editor's state, each time it changes: whether there are errors, the
+  // counts, whether an edit is open, and the messages area's lines
+  onStatusChange?: (status: EditorStatus) => void
+  editorRef?: Ref<FigTreeEditorHandle> // json-edit-react's handle, with `reveal`
 }
 
 export const FigTreeEditor = ({
@@ -123,6 +134,7 @@ export const FigTreeEditor = ({
   referenceNames = 'canonical',
   evaluationData,
   messagesMaxHeight = DEFAULT_MESSAGES_MAX_HEIGHT,
+  onStatusChange,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -185,6 +197,14 @@ export const FigTreeEditor = ({
   // (filledIn.ts), and the rows the latest one filled, marked for a few
   // seconds
   const [filledIn, setFilledIn] = useState(NO_FILLED_IN)
+  // Until the write's effect records them, its values count from the render
+  // that shows them, so the lines and a host's status have them from the
+  // first
+  const recorded = useRef<unknown>(null)
+  const record =
+    changed && arrival.filled.length > 0 && recorded.current !== stableFilled
+      ? recordFilledIn(filledIn, arrival.filled, stableFilled, classification)
+      : filledIn
   const [marker, setMarker] = useState<{ keys: ReadonlySet<string>; fading: boolean } | null>(null)
 
   // `setExpression` is left out on purpose: a host's inline setter is new on
@@ -193,6 +213,7 @@ export const FigTreeEditor = ({
     if (!changed) return
     setExpression(stableFilled, { autoUpdate: true })
     if (arrival.filled.length === 0) return
+    recorded.current = stableFilled
     setFilledIn((record) => recordFilledIn(record, arrival.filled, stableFilled, classification))
     const keys = new Set(arrival.filled.map((path) => filledInKey(path, classification)))
     setMarker({ keys, fading: false })
@@ -304,6 +325,9 @@ export const FigTreeEditor = ({
       editOpen.current = false
       pendingFix.current = null
     }
+    // Once the event's handler has finished, so the toolbar's commit and
+    // reopen, made in one, never reports the session closed
+    if (statusListener.current) queueMicrotask(report)
     onEditEvent?.(editEvent)
   }
 
@@ -320,6 +344,10 @@ export const FigTreeEditor = ({
     handle.current?.confirm()
     if (!submitted.current) pendingFix.current = null
   }
+  // A host holds the fixes of the last status it was given, which may be
+  // several renders old, so each applies through this render's code
+  const latestApplyFix = useRef(applyFix)
+  latestApplyFix.current = applyFix
 
   // The author's collapse toggles, recorded by canonical path, so rows keep
   // their state through a conversion (plan, 8.4)
@@ -345,7 +373,7 @@ export const FigTreeEditor = ({
   }, [shown, classification])
 
   // The filled-in lines that stand, and the rows among them the marker is on
-  const filledInLines = filledIn.size === 0 ? [] : standingFilledIn(filledIn, shown, classification)
+  const filledInLines = record.size === 0 ? [] : standingFilledIn(record, shown, classification)
   const markedRows = useStableValue(
     marker && {
       rows: filledInLines
@@ -369,21 +397,79 @@ export const FigTreeEditor = ({
     [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent, markedRows]
   )
   // json-edit-react's handle, which the editor uses too, to open the rows
-  // above one it reveals
+  // above one it reveals. The host's is one object for the editor's
+  // lifetime, passing each call to json-edit-react's current handle, which
+  // json-edit-react makes anew as its props change.
   const handle = useRef<JsonEditorHandle | null>(null)
-  const setHandle = useCallback(
-    (value: JsonEditorHandle | null) => {
-      handle.current = value
-      setRef(editorRef, value)
-    },
-    [editorRef]
-  )
   const outer = useRef<HTMLDivElement>(null)
-  const reveal = (path: Path) => {
-    if (outer.current && handle.current) revealRow(outer.current, path, handle.current.collapse)
-  }
+  const hostHandle = useMemo<FigTreeEditorHandle>(
+    () => ({
+      collapse: (state) => handle.current?.collapse(state),
+      startEdit: (options) => handle.current?.startEdit(options) ?? 'PATH_NOT_FOUND',
+      confirm: () => handle.current?.confirm(),
+      cancel: () => handle.current?.cancel(),
+      reveal: ({ path }) => {
+        if (valueAt(latest.current, path) === undefined) return 'PATH_NOT_FOUND'
+        if (outer.current && handle.current) revealRow(outer.current, path, handle.current.collapse)
+        return true
+      },
+    }),
+    []
+  )
+  useLayoutEffect(() => {
+    setRef(editorRef, hostHandle)
+    return () => setRef(editorRef, null)
+  }, [editorRef, hostHandle])
 
   const dismiss = (key: string) => setFilledIn((record) => dismissFilledIn(record, key))
+
+  // The messages area's lines, which a host listening for the status receives
+  // too, worked out only for one or the other
+  const messages: EditorMessage[] =
+    messagesMaxHeight === 0 && !onStatusChange
+      ? []
+      : orderMessages(issues, filledInLines, shown, classification).map((line) =>
+          line.kind === 'issue'
+            ? {
+                kind: 'issue',
+                issue: line.issue,
+                row: line.row,
+                message: line.issue.message,
+                fixes: getQuickFixes(line.issue, shown, {
+                  classification,
+                  operators,
+                  fragments,
+                }).map(({ label, fix }) => ({ label, apply: () => latestApplyFix.current(fix) })),
+              }
+            : {
+                kind: 'filledIn',
+                row: line.row,
+                message: line.message,
+                fixes: [{ label: strings.FT_DISMISS, apply: () => dismiss(line.key) }],
+              }
+        )
+
+  // The status goes to a listening host whenever its content changes: after
+  // a render, and after an edit opens or closes, which needn't re-render
+  const statusListener = useRef(onStatusChange)
+  statusListener.current = onStatusChange
+  const latestMessages = useRef(messages)
+  latestMessages.current = messages
+  const reported = useRef<EditorStatus | null>(null)
+  const report = () => {
+    if (!statusListener.current) return
+    const counts = countMessages(latestMessages.current)
+    const status: EditorStatus = {
+      valid: counts.errors === 0,
+      counts,
+      editing: editOpen.current,
+      messages: latestMessages.current,
+    }
+    if (reported.current && sameStatus(reported.current, status)) return
+    reported.current = status
+    statusListener.current(status)
+  }
+  useEffect(report)
 
   const combinedText = useMemo(
     () => combineText(editorText(classification, rollUp, customText), customText),
@@ -407,7 +493,7 @@ export const FigTreeEditor = ({
         {...props}
         minWidth={0}
         maxWidth="100%"
-        editorRef={setHandle}
+        editorRef={handle}
         onEditEvent={followEdits}
         className={className ? `ft-editor ${className}` : 'ft-editor'}
         theme={layeredTheme}
@@ -425,18 +511,10 @@ export const FigTreeEditor = ({
       />
       {messagesMaxHeight !== 0 && (
         <Messages
-          lines={orderMessages(issues, filledInLines, shown, classification).map((line) => ({
-            ...line,
-            fixes:
-              line.kind === 'issue'
-                ? getQuickFixes(line.issue, shown, { classification, operators, fragments }).map(
-                    ({ label, fix }) => ({ label, apply: () => applyFix(fix) })
-                  )
-                : [{ label: strings.FT_DISMISS, apply: () => dismiss(line.key) }],
-          }))}
+          messages={messages}
           maxHeight={messagesMaxHeight}
           editorTheme={mergedEditorTheme}
-          onReveal={reveal}
+          onReveal={(path) => hostHandle.reveal({ path })}
           onDismissAll={() => setFilledIn(NO_FILLED_IN)}
         />
       )}

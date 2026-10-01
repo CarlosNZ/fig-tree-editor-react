@@ -2,8 +2,9 @@ import { useState } from 'react'
 import { type Issue } from 'fig-tree-evaluator'
 import { filledInText, type EditorTheme } from './editorTheme'
 import { Icon } from './Icons'
-import { countMessages, type MessageFix, type MessageLine } from './messageLines'
+import { countMessages } from './messageLines'
 import { displayPath, type Path } from './paths'
+import { type EditorMessage } from './status'
 import { strings } from './strings'
 
 // The messages area (design, topic 7, "The messages area"), below the tree
@@ -14,21 +15,21 @@ import { strings } from './strings'
 // at the top right. Where more than one value was filled in, the header can
 // dismiss them all.
 export const Messages = ({
-  lines,
+  messages,
   maxHeight,
   editorTheme,
   onReveal,
   onDismissAll,
 }: {
-  lines: readonly (MessageLine & { fixes: readonly MessageFix[] })[]
+  messages: readonly EditorMessage[]
   maxHeight: number | string
   editorTheme: EditorTheme
   onReveal: (row: Path) => void
   onDismissAll: () => void
 }) => {
   const [open, setOpen] = useState(true)
-  if (lines.length === 0) return null
-  const counts = countMessages(lines)
+  if (messages.length === 0) return null
+  const counts = countMessages(messages)
   const pills: [Label, number, (count: number) => string][] = [
     ['error', counts.errors, strings.FT_COUNT_ERRORS],
     ['warning', counts.warnings, strings.FT_COUNT_WARNINGS],
@@ -70,27 +71,25 @@ export const Messages = ({
       </div>
       {open && (
         <ul className="ft-messages-list" style={{ maxHeight }}>
-          {lines.map((line, index) => (
+          {messages.map((message, index) => (
             <li className="ft-message" key={index}>
               <span className="ft-message-content">
-                <span className="ft-severity" style={labelStyle(lineLabel(line), editorTheme)}>
-                  {LABEL[lineLabel(line)]}
+                <span className="ft-severity" style={labelStyle(labelOf(message), editorTheme)}>
+                  {LABEL[labelOf(message)]}
                 </span>
                 <button
                   type="button"
                   className="ft-message-path"
                   title={strings.FT_REVEAL_ROW}
-                  onClick={() => onReveal(line.row)}
+                  onClick={() => onReveal(message.row)}
                 >
-                  {displayPath(line.row) || strings.FT_ROOT_PATH}
+                  {displayPath(message.row) || strings.FT_ROOT_PATH}
                 </button>
-                <span className="ft-message-text">
-                  {line.kind === 'issue' ? line.issue.message : line.message}
-                </span>
+                <span className="ft-message-text">{message.message}</span>
               </span>
-              {line.fixes.length > 0 && (
+              {message.fixes.length > 0 && (
                 <span className="ft-message-fixes">
-                  {line.fixes.map(({ label, apply }) => (
+                  {message.fixes.map(({ label, apply }) => (
                     <button type="button" className="ft-fix" key={label} onClick={apply}>
                       {label}
                     </button>
@@ -108,8 +107,8 @@ export const Messages = ({
 // A line's label: its issue's severity, or a filled-in value's
 type Label = Issue['severity'] | 'filledIn'
 
-const lineLabel = (line: MessageLine): Label =>
-  line.kind === 'issue' ? line.issue.severity : 'filledIn'
+const labelOf = (message: EditorMessage): Label =>
+  message.kind === 'issue' ? message.issue.severity : 'filledIn'
 
 const LABEL: Record<Label, string> = {
   error: strings.FT_SEVERITY_ERROR,

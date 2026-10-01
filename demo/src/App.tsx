@@ -17,7 +17,7 @@ import {
   useMediaQuery,
 } from '@chakra-ui/react'
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
-import { FigTreeEditor } from '@fig-tree-editor-react'
+import { FigTreeEditor, type EditorStatus } from '@fig-tree-editor-react'
 import { isFigTreeError, version as figTreeVersion } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
 import { getInitOptions, getLocalStorage, setLocalStorage, truncate } from './helpers'
@@ -35,6 +35,17 @@ const initData = demoData[0]
 console.log(`fig-tree-editor-react v${figTreeEditorReactVersion}`)
 console.log('Site built:', timestamp)
 
+// The editor's status in a line, for watching it by hand
+const describeStatus = ({ valid, counts, editing }: EditorStatus) =>
+  [
+    valid ? 'valid' : 'invalid',
+    `${counts.errors} errors`,
+    `${counts.warnings} warnings`,
+    `${counts.hints} hints`,
+    `${counts.filledIn} added`,
+    editing ? 'editing' : 'not editing',
+  ].join(' · ')
+
 function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [isMobile] = useMediaQuery('(max-width: 635px)')
@@ -46,6 +57,7 @@ function App() {
   const [options, setOptions] = useState<DemoOptions>(getInitOptions)
   const figTree = useMemo(() => buildFigTree(options), [options])
   const [isEvaluating, setIsEvaluating] = useState(false)
+  const [status, setStatus] = useState<EditorStatus | null>(null)
 
   const {
     data: objectData,
@@ -288,7 +300,16 @@ function App() {
               stringTruncateLength={500}
               jsonParse={JSON5.parse}
               collapse={expressionCollapse}
+              onStatusChange={(newStatus) => {
+                console.log('onStatusChange', newStatus)
+                setStatus(newStatus)
+              }}
             />
+            {status && (
+              <Text w="100%" maxW={600} fontSize="sm" mt={1} pr={1} color="gray.600">
+                Status: {describeStatus(status)}
+              </Text>
+            )}
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}
               <Link href="https://github.com/CarlosNZ/fig-tree-editor-react/" isExternal>

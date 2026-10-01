@@ -1261,21 +1261,22 @@ onStatusChange?: (status: EditorStatus) => void
 messagesMaxHeight?: number | string
 
 type EditorStatus = {
-  valid: boolean // no errors; warnings and hints do not count
+  valid: boolean // no errors; warnings, hints and filled-in values do not count
   counts: { errors: number; warnings: number; hints: number; filledIn: number }
   editing: boolean // an edit session is open: a value, raw JSON or the toolbar
   messages: EditorMessage[] // what the messages area lists, in its order
 }
 
 type EditorMessage = {
-  kind: 'issue' | 'filledIn'
   row: Path // the row the line marks, resolved as the messages area resolves it
-  issue?: Issue // fig-tree's own, unchanged, on 'issue' lines
+  message: string // the line's text: the issue's own message, or the filled-in wording
   fixes: { label: string; apply: () => void }[] // Remove, Rename to `then`, Dismiss, …
-}
+} & ({ kind: 'issue'; issue: Issue } | { kind: 'filledIn' }) // fig-tree's issue, unchanged
 ```
 
-- **It is called when the status changes,** compared by content (counts, `editing`, a line added, removed or changed), not on every render.
+`message` on every line, and the union in place of an optional `issue`, were settled in building (plan 10.4).
+
+- **It is called when the status changes,** compared by content (counts, `editing`, a line added, removed or changed), not on every render, and once as the editor mounts.
 - **`editing` covers every session, the toolbar's included.** Toolbar changes are committed as they are made, but Cancel can still revert them, so a host saving mid-session would save an intermediate state. The toolbar's reopening after each commit happens in the same event handler, so `editing` does not flicker. Closing a session before saving is the handle's ("The handle and edit sessions").
 - **Each fix carries an `apply` function,** running the same code as the built-in button, so a host needs no logic of its own to offer it. The status is therefore not serialisable, which a callback does not need.
 - **Revealing a row** from a host's own line is a method on the handle, not a field on each message.

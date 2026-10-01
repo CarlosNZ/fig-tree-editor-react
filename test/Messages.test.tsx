@@ -2,9 +2,8 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import userEvent from '@testing-library/user-event'
 import { StrictMode, createRef, useState, type ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { type JsonEditorHandle } from 'json-edit-react'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
-import { FigTreeEditor } from '../src'
+import { FigTreeEditor, type FigTreeEditorHandle } from '../src'
 import { revealRow } from '../src/revealRow'
 import { keyLabel } from './queries'
 
@@ -182,14 +181,37 @@ describe('revealing a row', () => {
     expect(scroll).not.toHaveBeenCalled()
   })
 
-  it("still gives the host json-edit-react's handle", () => {
-    const ref = createRef<JsonEditorHandle>()
+  it("gives the host json-edit-react's handle, with reveal, set once", () => {
+    const ref = createRef<FigTreeEditorHandle>()
     editor({ $plus: [1, 2] }, { editorRef: ref })
     expect(ref.current?.collapse).toBeTypeOf('function')
+    expect(ref.current?.reveal).toBeTypeOf('function')
     const callback = vi.fn()
-    editor({ $plus: [1, 2] }, { editorRef: callback })
-    const [handle] = callback.mock.calls.find(([value]) => value !== null) as [JsonEditorHandle]
-    expect(handle.startEdit).toBeTypeOf('function')
+    const { rerender } = editor({ $plus: [1, 2] }, { editorRef: callback })
+    rerender(
+      <FigTreeEditor
+        figTree={figTree}
+        expression={{ $plus: [1, 3] }}
+        setExpression={vi.fn()}
+        editorRef={callback}
+      />
+    )
+    expect(callback).toHaveBeenCalledTimes(1)
+    const [handle] = callback.mock.calls[0] as [FigTreeEditorHandle]
+    expect(handle.startEdit({ path: ['$plus', 0] })).toBe(true)
+  })
+
+  it("reveals a row from the host's handle, and reports a path that's gone", async () => {
+    const ref = createRef<FigTreeEditorHandle>()
+    editor({ a: { b: [1, { $upper: 5 }] } }, { editorRef: ref, collapse: 1 })
+    expect(screen.queryByText('5')).toBeNull()
+    let result: unknown
+    act(() => {
+      result = ref.current!.reveal({ path: ['a', 'b', 1, '$upper'] })
+    })
+    expect(result).toBe(true)
+    await waitFor(() => expect(screen.getByText('5')).toBeInTheDocument())
+    expect(ref.current!.reveal({ path: ['a', 'nope'] })).toBe('PATH_NOT_FOUND')
   })
 })
 
