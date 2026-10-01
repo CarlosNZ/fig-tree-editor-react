@@ -21,7 +21,8 @@ export interface Evaluation {
   path: Path // the row evaluated, in the tree
   mode: 'report' | 'throw'
   // Failed: the row gave no value, as a failure in throw mode, or in report
-  // mode a failure whose hole holds the row, or an evaluation fig-tree
+  // mode a failure whose hole holds the row, a failure with no hole, which
+  // fails the whole evaluation (a timeout), or an evaluation fig-tree
   // refused. A partial result in report mode is done, with its failures.
   status: 'done' | 'failed' | 'cancelled'
   result?: unknown // when done; in report mode it may hold nulls where holes failed
@@ -76,7 +77,7 @@ export const evaluateSubTree = async (
     // A refused evaluation has no trace
     const failed =
       trace === undefined ||
-      errors.some(({ holePath }) => holePath !== undefined && isWithin(subTree.row, holePath))
+      errors.some(({ holePath }) => holePath === undefined || isWithin(subTree.row, holePath))
     return failed
       ? settled('failed', errors, trace)
       : { ...settled('done', errors, trace), result: subTree.readResult(result) }

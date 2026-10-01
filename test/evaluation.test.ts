@@ -98,6 +98,18 @@ describe('evaluating a row', () => {
       expect(failures(evaluation)).toEqual([[['each'], [], 'divide']])
     })
 
+    it('fails where a failure has no hole, failing the whole evaluation, as a timeout does', async () => {
+      const slow = new FigTree({ operators: [coreOperators, [wait]], timeout: 50 })
+      const expression = { x: { operator: 'wait' } }
+      const subTree = buildSubTree(expression, ['x'], {
+        classification: classify(expression, registry),
+        operators: registry.operators,
+      })!
+      const evaluation = await evaluateSubTree(slow, ['x'], subTree, { mode: 'report' })
+      expect(evaluation.status).toBe('failed')
+      expect(failures(evaluation)).toEqual([[['x'], undefined, 'evaluation']])
+    })
+
     it('fails, with no trace, where fig-tree refuses it', async () => {
       const evaluation = await evaluate({ operator: 'plsu' }, [])
       expect(evaluation.status).toBe('failed')

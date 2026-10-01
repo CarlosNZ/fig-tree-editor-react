@@ -966,7 +966,7 @@ The region below the tree that topic 3 proposed, as a sibling of the `JsonEditor
 
 **It shows only when it has lines,** under a header of counts ("2 errors · 1 warning · 1 hint · 1 added") that collapses it, with a maximum height beyond which it scrolls, since a pasted expression can bring dozens of issues. The maximum height is a host prop, `messagesMaxHeight`, which also hides the region entirely when `0` (topic 8). Rejected: always shown, reading "No issues" when clean, which takes permanent space on every host; and collapsed by default, which leaves a new error signalled only by a changing count.
 
-**What it holds:** every `validate()` issue, hints included, since this is the only place hints appear ("Where issues attach"); and one line per value filled in on load (topic 2). Evaluation failures stay out of it ("Showing failures").
+**What it holds:** every `validate()` issue, hints included, since this is the only place hints appear ("Where issues attach"); and one line per value filled in on load (topic 2). Evaluation failures stay out of it ("How it ran, in the tree").
 
 **One list in tree order,** sorted by the row each line marks, as the tree displays it, so reading down the list is reading down the tree. On the same row the most severe comes first, then fig-tree's own order. The editor sorts, because `validate()`'s stream is not strictly in tree order (a node's own `missing-required` can follow a child's issue, and the sample-data warnings come after all the others). The filled-in lines are interleaved by their row. Rejected: grouped by severity, errors first, which separates the problems on one node when the pills already show severity (Carl was tempted by it; a sort or filter by severity could be added later); and grouped by node, a nested list that tree order already gives in effect.
 
@@ -990,39 +990,19 @@ Do later: the same fixes in the row's hover card ("Where issues attach"), which 
 
 **What the host receives for its own rendering** is `onStatusChange`'s `messages` (topic 8): what `validate()` alone does not give, the filled-in lines, each line's resolved row, tree order, and fixes that apply to the expression.
 
-### Evaluating — **Agreed**, except where marked
+### Evaluating — **Agreed**
 
-What an Evaluate affordance does: the node's button, a reference's ▶, a collapsed node's ▶, and the root container's bar (topic 3). How a sub-tree is turned into an expression is "Sub-tree evaluation" (below); failures are "Showing failures".
+What an Evaluate affordance does: the node's button, a reference's ▶, and the root container's bar (topic 3; a collapsed node's ▶ was dropped in plan 10.6). How a sub-tree is turned into an expression is "Sub-tree evaluation" (below); what the run leaves in the tree is "How it ran, in the tree".
 
-**The editor shows the result, and also passes it to the host.** A built-in result display shows each result by default; a callback is always called with it, as v1's `onEvaluate` was; and a host prop turns the display off for a host that shows results itself. This is the messages area's pattern (built in, with the same information to the host), and the extra machinery is one callback and one boolean. The callback and the prop are `onEvaluate` and `showEvaluationResult` (topic 8, "Evaluation"). Rejected: the host only, as in v1, which makes every host build a display before Evaluate appears to do anything; and the built-in display only, which leaves v1 hosts with nothing to wire.
+**The host shows the result, and the tree shows how it ran — revised** (Carl, plan 10.7). The callback, `onEvaluate`, is called with each evaluation (topic 8, "Evaluation"), and the host shows the result as it likes, as the demo's toasts do: it is the primary result viewer. The editor adds what only it can, how the run went, marked on the rows themselves, with each row's value, error and time in its hover card for looking deeper ("How it ran, in the tree"). Rejected, agreed here first: a built-in result display, the value printed by type and sized by it, with a type caption, ✕ and copy, placed inline beneath the node's header, anchored and floating, or docked below the tree, and a prop to turn it off (`showEvaluationResult`). It duplicates what a host already does with the callback, and for a reference it needs a place json-edit-react's value row doesn't offer: the row is one line, and its component has nothing after the line to render into. Rejected before that: the host only, as in v1, with nothing in the tree, which leaves the author to find where a run failed by hand.
 
-**What the result display shows — Agreed.** The value printed by type, and sized by it:
+**One run at a time.** The tree shows the latest evaluation only, which fits one evaluation at a time (below). Several results at once, as toasts that stack, are left to the host through the callback, as the demo's toasts do.
 
-- **A number, a boolean or `null`:** large and bold, with `null` muted, so it reads as "no value".
-- **A string:** without quotes. Up to about 30 characters it is medium-sized; longer, it is small and wrapped, cut off at about six lines with "Show all" to expand it. An empty string shows as a muted "empty string".
-- **An object or an array,** the one case that is JSON content: json-edit-react's read-only `JsonViewer`, in a small font, open two levels deep, with a maximum height and a scrollbar, so a whole API response does not fill the screen.
-- **A small type caption** beneath ("string", "number", "array · 3 items", "object · 5 keys"), which is what tells `'42'` from `42`, and `'null'` from `null`, once strings lose their quotes.
-- **A ✕ to close it, and a copy button.**
-
-Rejected: every result in `JsonViewer`, which suits the collections it is built for but draws most results, which are single values, as a one-row tree.
-
-**When it closes — Agreed:** on its ✕, on Esc, on the next Evaluate, and when any edit starts (json-edit-react's `onEditEvent` reports `startEdit`, `startRename`, `startAdd`, `delete` and `move`, and the editor knows when its own toolbar opens), since the result is stale as soon as the expression starts to change. Not when clicking elsewhere, so the author can scroll, or select and copy from it.
-
-**One result at a time — Agreed.** The built-in display shows the latest result only, which fits one evaluation at a time (below). Several results at once, as toasts that stack, are left to the host through the callback, as the demo's toasts do: built in, they would be detached from their nodes (each needing a label naming its node), would need positioning over the host's page (a portal and a z-index, colliding with the host's own notifications), and would make one-at-a-time evaluation harder to justify.
-
-**Where it is placed — Open.** It must not block the rest of the tree, which the author may want to inspect beside the result (Carl). The candidates:
-
-- **Inline:** a panel just beneath the node's header, pushing the rows below it down. It covers nothing, stays with its node and needs no positioning, at the cost of the tree shifting while it is open. The current lean.
-- **Anchored and floating,** beside the affordance and over the rows beneath it. No layout shift, but it hides what is under it.
-- **Docked:** a fixed results area below the tree, beside the messages area. It never covers anything, but it is detached from its node and needs a label naming it.
-
-A host prop could choose between placements, but each is its own component, so one is built first and others only if it proves wrong. To settle when a result display can be tried in the built editor.
-
-**While it runs,** the affordance shows a spinner, as in v1. **Clicking it again cancels** the evaluation through an `AbortSignal`, so a slow request can be stopped without waiting for its timeout. **One evaluation at a time:** starting another cancels the one running. Rejected: several running at once, which can show a result beside the wrong expectation.
+**While it runs,** the affordance shows a spinner, as in v1, and nothing else does: the trace arrives whole as the evaluation ends, so the nodes inside can't show their progress one by one (Carl, plan 10.7). **Clicking it again cancels** the evaluation through an `AbortSignal`, so a slow request can be stopped without waiting for its timeout. **One evaluation at a time:** starting another cancels the one running. Rejected: several running at once, which can show a result beside the wrong expectation.
 
 **A node that cannot be evaluated has its Evaluate disabled,** with the reason on hover ("Fix the 2 errors in this node to evaluate it"). fig-tree refuses an evaluation whose expression has a static error, so the editor disables the affordance where the issue list has an error at or under the node's path, or in what sub-tree evaluation would wrap around it: an ancestor `vars` block, or an enclosing iterator's `input` or `as`, which the `map` wrapper carries (plan 10.5). Warnings never disable it. At the root, Evaluate is therefore disabled while any error exists anywhere, as fig-tree would refuse it. A broken node has no Evaluate at all (topic 1). Rejected: leaving it enabled and showing the refusal in the popover, which offers an action that cannot succeed.
 
-**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` (always on, "Showing failures"), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop is `evaluationData` (topic 8; v1's was `objectData`).
+**What an evaluation uses.** The host's `FigTree` instance supplies everything but the call: its operators, fragments and options (HTTP settings, `timeout`, the cache, and `data`). The editor passes per call only `mode`, `signal`, `trace` (always on, "How it ran, in the tree"), and `data` where the host gives the editor sample data. That sample-data prop is optional: given, it is passed per call to `evaluate()` and to `validate()` (whose sample-data check reads it); absent, the instance's own `data` applies to both. So a host whose instance is shared across its application can give the editor sample data without `updateOptions()` on an instance it uses elsewhere. The prop is `evaluationData` (topic 8; v1's was `objectData`).
 
 ### Sub-tree evaluation — **Agreed**
 
@@ -1094,20 +1074,20 @@ which, with `{ orders: [{ total: 100 }, { total: 20 }] }`, evaluates to `{ value
 - **The row's position decides the rest,** from the walk: a var's own row is wrapped with its own block too, since a var can read its siblings; an iterator's `input` and `as` are outside that iterator's bindings (`as` is literal-only, so it has no Evaluate); a `fallback` row has its node's scope; a branch that is not running (`if`'s `else` while the condition holds, a `match` branch) is evaluated anyway, giving what it would produce.
 - **Ancestors' `fallback`s are not applied** (topic 1), so a failure inside the row is shown, not caught. **`$data`** is the sample data, or the instance's own ("Evaluating"). **`$params`** is parked with fragment-definition mode (topic 6).
 
-**A result with one value per element** (a row inside an iterator's `each`) is shown as the array it is, with a caption saying what it is, "one per element of `input` · 2 items", in place of "array · 2 items", so it is not read as the row returning an array. Nested iterators give nested arrays, captioned to match. A row that does not read the binding still gives one value per element (`'$vars.shipping'` in the example gives `[5, 5]`), since the row does run once per element.
+**A result with one value per element** (a row inside an iterator's `each`) reaches the host as the array it is. In the tree, the row ran once per element, and its card lists each element's value ("How it ran, in the tree"), so it is not read as the row returning an array (revised in plan 10.7, from a caption in the result display, "one per element of `input` · 2 items"). Nested iterators give nested arrays. A row that does not read the binding still gives one value per element (`'$vars.shipping'` in the example gives `[5, 5]`), since the row does run once per element.
 
 - Do later: stepping through the elements, one element's value at a time beside the element itself, with ‹ ›.
 - Do later: wrapping in an iterator only where the row reads its binding. The walk sees references written as strings, but not `{{$order.total}}` tokens in a template, whose grammar fig-tree does not export, and one missed would make the evaluation fail with `unresolved-binding`.
 - Rejected: a two-column table of elements and values.
 
-**Paths are mapped back to the tree.** Error and trace paths come back in the synthesised expression's coordinates. For each wrapper, the editor records which part of the tree its pieces stand for, and translates every path through that record: the `value` chain to the row's own path, a wrapper's `vars` to the real block's path, a `map` wrapper's `input` to the real iterator's `input`. So a failure in an ancestor's var or input is shown at its real row ("Showing failures").
+**Paths are mapped back to the tree.** Error and trace paths come back in the synthesised expression's coordinates. For each wrapper, the editor records which part of the tree its pieces stand for, and translates every path through that record: the `value` chain to the row's own path, a wrapper's `vars` to the real block's path, a `map` wrapper's `input` to the real iterator's `input`. So a failure in an ancestor's var or input is shown at its real row ("How it ran, in the tree").
 
 **A standalone function.** Building the expression is a distinct, self-contained operation, and its logic is intricate, so it is one pure function in a module of its own, with no React and nothing from the components mixed in (Carl). It takes the tree, the row's path and the scope chain the walk recorded for it, and returns the expression with the two ways back: reading the row's result out of the wrappers, and translating a path in the synthesised expression to the tree's. It is tested on its own, as the classification walk is (plan, working rule 4), including evaluation against fig-tree for each kind of scope.
 
 **Evaluation mode — Agreed: report by default, with a host prop for throw** (`evaluationMode`, topic 8). The two fig-tree options are independent. `mode` decides what happens to a failure no `fallback` caught: `'throw'` rejects with the first and discards the rest, while `'report'` never rejects, degrades the failed hole to `null`, completes everything else and returns `{ result, errors }` with every failure. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, errors, trace }` in either mode, and in throw mode a failure's thrown error carries the partial trace as `error.trace` (checked against 3.0.0-preview.1).
 
-- **Report is the default:** it gives the partial results and full failure list of "Showing failures", and it is the combination fig-tree's spec intends for editors.
-- **Throw, through the prop,** makes the result display behave as a host's production evaluation does, for a host that evaluates in throw mode: one failure fails the whole row. The display then shows "Failed" with the one error, with no partial value and no failures list; the failed-row marker and the fallbacks used still work, from `error.trace`.
+- **Report is the default:** it gives the partial results and every failure ("How it ran, in the tree"), and it is the combination fig-tree's spec intends for editors.
+- **Throw, through the prop,** shows a run as a host's production evaluation would have it, for a host that evaluates in throw mode: one failure fails the whole row. The failed node is marked, the rows the run didn't reach are marked as never run, and the fallbacks used still show, from the partial trace the thrown error carries (`error.trace`).
 - **`trace` is on in both modes.**
 - Rejected: following the host instance's own `mode` by default (`getOptions().mode`, `undefined` meaning throw unless the host set it). It matches production with no prop set, but most hosts set nothing, so most would get the poorer display without choosing it.
 
@@ -1130,40 +1110,53 @@ onEvaluate(evaluation: {
 
 Every path it carries is in the tree's coordinates, the errors' included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Topic 8 settles it: a `status`, one `failures` list in place of `error` and `errors`, the trace's own paths left in the synthesised coordinates with `toTreePath` to map them, `onEvaluateStart`, and a `cancelled` status.
 
-### Showing failures — **Agreed**
+### How it ran, in the tree — **Agreed** (Carl, plan 10.7)
 
-How a failure shows, for an evaluation in report mode (the default, "Evaluating"), with `trace: true`; in throw mode the display shows "Failed" with the one error. fig-tree returns a result and `errors`, one for each failure no `fallback` caught, with the failed row's `path` (mapped back to the tree, "Sub-tree evaluation") and the `holePath` that degraded to `null`.
+What an evaluation leaves in the tree, from its trace, which every editor evaluation records (`trace: true`, "Evaluation mode"), in place of a list in the result display (topic 7 had both "Showing failures" and a "Trace display" whose first item, the evaluated path in the tree, was do-later). The trace has an entry for every node instance in the evaluated row and the scope wrapped around it: its status (`value`, `failed`, `fallback`, `cancelled` or `skipped`), its value or error, its time (`elapsed`) and its events, with one entry per element inside an iterator. A row that didn't run is `skipped`, and what is inside it has no entry. `cancelled` is a race's losers, once the answer is known, and a node the instance's `timeout` cut off (checked against 3.0.0-preview.3).
 
-**In the result display** ("Evaluating"):
+**Which rows are marked:** every node inside the evaluated row (an operator, fragment call, shorthand or `literal` node) and every reference, and the parts of the wrapped scope that took part in the run: the iterator's `input`, and the wrapped `vars` blocks' vars, an unread one as never run. The evaluated row itself is marked whatever it is, so the root's bar shows how the whole ran. Plain objects and arrays and plain values aren't marked, nor is anything else outside the evaluated row.
 
-- **When the row itself failed** (an error's `holePath` is the row's own path), "Failed" in place of the value, with the error's message.
-- **When part of it failed** (a container, or a hole inside a wrapped row: `{ title: 'Ada', total: null }`), the value as usual, with a list of the failures beneath.
-- **Each failure line** gives the message and the path of the row that failed, which reveals the row, as in the messages area; the path is left out where the failure is the row itself. Where fig-tree adds detail: a failed fallback's `cause` ("the fallback also failed: …"), and an `and` or `or`'s `related` failures as "+1 more", listed on hover. I/O detail (`errorData`: status, URL) goes to the host with the result; showing it is do-later.
+**How a row is marked:** a node's border, and the ▶ in its Evaluate button.
 
-**The failed row is marked in the tree, in a style of its own,** distinct from `validate()`'s tint and flag (a red outline and a "failed" flag with the message, the exact style settled when built), for exactly as long as the result display is open, so it goes when the display closes. An evaluation failure is a fact about one run, often data-dependent (a 404, a missing field), not a lasting problem with the expression, so it neither looks like an issue nor outlives its result. Only the failed row is marked, not the hole that degraded: `holePath` serves production hosts splicing their own markers, and in the editor the hole is usually the evaluated row. Rejected: no marking, which leaves the author clicking through to find where it failed; and `validate()`'s error style until the next edit, which mixes a run's failure with the expression's static state.
+| How it ran                                                       | Border | Button  |
+| ---------------------------------------------------------------- | ------ | ------- |
+| Ran                                                              | green  | green ✓ |
+| Failed                                                           | red    | red ✕   |
+| Failed, and its `fallback` caught the failure                    | amber  | amber ✕ |
+| Cancelled                                                        | black  | ▶       |
+| Never ran: skipped, inside a row that didn't run, or not reached | grey   | ▶       |
 
-**Failures stay out of the messages area,** which holds the expression's static state (`validate()` issues and filled-in values), as `onStatusChange` reports it. They belong to the result display and reach the host with the result. Rejected: "evaluation" lines in the messages area until the next edit, which would mix a run's failures with lasting issues and make the status report problems `validate()` does not.
+- **A value from the cache** is marked as ran, with a cache icon beside the ✓.
+- **A fallback's mark is its node's,** the node that failed. Its `fallback` row is a row of its own, marked by its own run, and where the fallback fails too, the node is failed, its card saying so.
+- **A node inside an iterator** ran once per element, and is marked by the worst of its runs: failed, then fallback, cancelled, ran and never ran.
+- **A reference has no border,** which would put a small box round every reference in a large expression (Carl): its ▶ becomes the ✓ or ✕.
+- **A collapsed node** shows neither its border nor its button, so its summary text takes the colour, as it takes an issue's ("Where issues attach").
+- **The root's bar** takes the button's mark and its card.
+- **The evaluated row failing and part of it failing look the same:** each failure marks its own row, the evaluated row or one inside it.
+- **Told apart from `validate()`'s errors:** an error inside a row disables its Evaluate ("Evaluating"), so no evaluated row holds a broken node, and a red border after a run is always the run's. With the ✓ and ✕, colour is never the only sign.
+- **A cancelled evaluation leaves nothing:** a second click, or another Evaluate while it runs, resets the tree.
 
-**Fallbacks that fired are listed in the result display:** "Fallback used at `rate`: `http` failed: …", each with its row's path to reveal it. A fallback's catch succeeds, so nothing is in `errors`, and the author sees `1.0` without knowing the request failed; the trace records it (`status: 'fallback'`, with the error caught). So every editor evaluation runs with `trace: true`; the trace is read and discarded, so holding values by reference costs nothing lasting. Do later: marking those rows in the tree, in the failed marker's style in amber, for as long as the display is open.
+**A row's card** is the one its button or ▶ already has (topic 3), with the run's lines before the description:
 
-**A failure inside a fragment body** is shown on the call: its `path` is the call node, so the call row is the failed row, and the failure line adds "in fragment `getCountryData` at `url.$buildString[1]`", with `fragmentPath` in display form, as text, since the body is not in the tree. The host receives `fragment` and `fragmentPath` with the result, so a host that edits fragment definitions (Conforma) can open the body there.
+- **The value,** cut short where it is large, since a card can't scroll and closes as the pointer leaves; the host has it whole. For a row inside an iterator, a line per element, the failed one marked.
+- **A failure's message,** and where it came from a row beneath, which row, since every node above a failure fails with it. A failed fallback's `cause` ("the fallback also failed: …"), an `and` or `or`'s `related` failures as "+1 more", and for a failure inside a fragment body, "in fragment `getCountryData` at `url.$buildString[1]`", with `fragmentPath` in display form, since the body is not in the tree. The host receives `fragment` and `fragmentPath` with the result, so a host that edits fragment definitions (Conforma) can open the body there.
+- **A fallback's catch:** the failure it caught.
+- **Why a row didn't run,** in general terms, from what the editor knows already, since the trace gives no reason: "evaluated only when needed" for a lazy parameter, element or entry; "not needed: the node succeeded" for a `fallback`; "never read" for a var; "stopped once the answer was known" or "stopped by the timeout" for a cancelled node; "inside `else`, which didn't run" for a row inside one; and "not reached" for a row the run stopped short of, as throw mode does at its first failure.
+- **A null a failure left:** "`total` was null: `divide` failed", on the evaluated row. A failure fails every node above it, whatever the parameter's null policy, up to plain data outside any node, which keeps the null, so only an evaluated row that is plain data holds one, as the root's does (checked against 3.0.0-preview.3, plan 10.7a).
+- **The time** of each run, and "From the cache" where its value was.
+- **The evaluated node's card shows again as the result arrives.** The click hides it until the pointer leaves (plan 10.6b), so with the pointer still on the button, the result shows at once.
 
-**Do later: which element failed,** for a failure inside an iterator's `each` ("for element 2 of 3"). fig-tree's error does not say, but the trace has one entry per element.
+**When the marks go:** as soon as the expression starts to change, since they describe a run of the expression as it was. Any edit starting (json-edit-react's `startEdit`, `startRename` and `startAdd`, the toolbar's opening included, which is json-edit-react's session), any other change to the expression (`delete`, a quick fix, a conversion or respell, the host's own change or undo), and another evaluation starting. Not on collapsing, scrolling or clicking elsewhere, nor a change of `evaluationData`. A result whose expression changed while it ran (an edit doesn't cancel it, plan 10.6) isn't marked, since its paths may no longer be the rows'; the host has it. No ✕ or Esc to clear them: an edit or another evaluation does.
 
-### Trace display — **Agreed**
+**Failures stay out of the messages area,** which holds the expression's static state (`validate()` issues and filled-in values), as `onStatusChange` reports it. They reach the host with the result. Rejected: "evaluation" lines in the messages area until the next edit, which would mix a run's failures with lasting issues and make the status report problems `validate()` does not.
 
-What the result display and the tree show from an evaluation's trace. The trace records, for every node instance in the evaluated row (the wrapped ancestor vars and inputs included): its status (`value`, `failed`, `fallback`, `cancelled` or `skipped`), its value, one entry per iterator element, each reference's resolved value, the nodes inside fragment bodies, events (requests with method, URL and header names; SQL query text; cache hits and misses; template-token renders; `buildObject` key overwrites) and timing.
-
-**The first build shows nothing from it beyond what "Showing failures" uses:** the fallbacks that fired, and in throw mode the failed row. Those answer the two commonest questions, "why did I get the fallback?" and "where did it fail?". A host wanting more has the raw trace with each evaluation ("Evaluating", the callback).
-
-**Do later, in this order:**
-
-1. **The evaluated path in the tree.** While the result display is open, each row inside the evaluated row shows what it evaluated to, dimmed after it ("→ 15"), and skipped branches are greyed out, so a run lights up the paths that evaluated and shades the rest (Carl likes this: it is where the trace pays off most). It is the largest piece of UI in this topic: every row needs something drawn on it, plain value rows included, which have no component of their own; a row inside an iterator has one value per element; and the marks come and go with the display. It is designed once the result display exists and can be tried.
-2. **Which element failed,** and stepping through per-element results (both in "Sub-tree evaluation" and "Showing failures").
-3. **The requests and queries made,** as lines in the result display.
-4. **Timing for each node.**
-
-Rejected: a few text lines in the result display for the first build ("Requests: …", "Skipped: `else`"), detached from the rows and, apart from requests, explaining little.
+- Do later: the precise reason a row didn't run ("`else`: `condition` was true", "branch `a`: `value` was `'b'`"), which the trace doesn't record. A reason on fig-tree's `skipped` entries would give it for every operator, host operators included, where rules of the editor's own would cover the core ones only (Carl: not now).
+- Do later: each node's progress while the evaluation runs, which needs fig-tree to report trace entries as they settle.
+- Do later: a card the pointer can move into, to scroll and copy a large value, which the quick fixes in a row's card need too ("The messages area").
+- Do later: stepping through an iterator's elements ("Sub-tree evaluation").
+- Not shown (Carl): requests and SQL queries, which the expression shows; how template tokens rendered, which the string shows; `buildObject`'s overwritten keys, a rarely used operator.
+- Rejected: the failed row in `validate()`'s error style until the next edit, which mixes a run's failure with the expression's static state.
+- Rejected: what each row evaluated to, dimmed after it ("→ 15", the trace display's first sketch), which needs something drawn on every plain value row, where the card needs nothing new.
 
 ### The dependencies view — **Agreed**
 
@@ -1184,7 +1177,7 @@ The `FigTreeEditor` props, the callbacks and handle, theming, and what the packa
 2. **The expression and loading:** `expression` and `setExpression`, and completion on load and undo (topic 2, "Commit semantics").
 3. **Telling the host about state:** `onStatusChange` (topic 2, "Reporting state to the host"), what a host drawing its own messages receives (topic 7), and the messages area's hide and maximum-height props.
 4. **The handle and edit sessions:** the imperative handle, and whether the host needs edit-session boundaries for `useUndo` (topic 2, "Undo history"; J3).
-5. **Evaluation:** the sample-data prop (v1's `objectData`), the `onEvaluate` callback with v1's `onEvaluateStart` and cancelled evaluations, turning off the built-in result display, and the evaluation-mode prop (topic 7). The result display's placement stays open until it can be tried (topic 7), and is not decided here.
+5. **Evaluation:** the sample-data prop (v1's `objectData`), the `onEvaluate` callback with v1's `onEvaluateStart` and cancelled evaluations, and the evaluation-mode prop (topic 7). A prop turning off the built-in result display was agreed here, and went with the display (plan 10.7).
 6. **Defaults and what the pickers offer:** the default operator for each slot type (topic 4), the default fragment (topic 6), a preference for aliases on new operators (topic 2), hiding operators and fragments from the pickers (topics 4 and 6), an expected result type at the root (topic 4, "Slots"), v1's `addTopLevelFallback`, and the reserved name `isFragmentDefinition` (topic 6, parked).
 7. **Display overrides:** the host's display-data layer (topic 4, "The operator picker"; v1's `operatorDisplay`), and the default colour for host operators that have none.
 8. **Theming and CSS:** the editor's own tokens (topic 3; J5 in [v3-upstream.md](v3-upstream.md)), how they combine with json-edit-react's `theme`, and a standalone `./style.css` (plan, Phase 3).
@@ -1316,7 +1309,6 @@ The props for topic 7's evaluation design:
 ```ts
 evaluationData?: Record<string, unknown> // what `$data` is in the editor's evaluations and validate()'s sample-data check
 evaluationMode?: 'report' | 'throw' // default 'report'
-showEvaluationResult?: boolean // default true; false turns off the built-in result display
 onEvaluateStart?: (start: { path: Path }) => void
 onEvaluate?: (evaluation: Evaluation) => void
 
@@ -1342,13 +1334,13 @@ type EvaluationFailure = {
 ```
 
 - **`evaluationData`,** given, is passed per call to `evaluate()` and `validate()`; absent, the instance's own `data` applies to both (topic 7, "What an evaluation uses"). It cannot be `data`, which is json-edit-react's ("How the props relate to json-edit-react's"). It takes fig-tree's own type for `data`, `Record<string, unknown>` (plan, 10.1). Rejected: v1's `objectData`, fig-tree v2's wording; and `sampleData`, topic 7's wording, which misdescribes a host such as Conforma that passes the application's real context.
-- **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure in throw mode, or in report mode a failure at the row itself (the result display's "Failed", topic 7). A partial result in report mode is `'done'` with its failures listed.
+- **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure in throw mode, or in report mode a failure whose hole holds the row, or one with no hole, which fails the evaluation as a whole, as a timeout does (plan 10.7). A partial result in report mode is `'done'` with its failures listed.
 - **One `failures` list in both modes,** in place of the sketch's separate `error` and `errors`.
 - **Every path is in the tree's coordinates except the trace's.** Translating a whole trace for a host that rarely reads it is wasted work, so the host gets `toTreePath`, built from the mapping sub-tree evaluation already records (topic 7). At a row with no enclosing scope it is the identity.
-- **Every `onEvaluateStart` is followed by exactly one `onEvaluate`,** with `'done'`, `'failed'` or `'cancelled'`. A cancel is clicking the running affordance again, or starting another evaluation, in which case the host sees the running one's `'cancelled'` before the new one's start. So a host drawing its own results (`showEvaluationResult: false`) can clear a stale one and show that one is running, as the built-in display does, and a spinner it shows is always stopped. Nothing in the v1 demo or Conforma uses v1's `onEvaluateStart`, but v1 had no built-in display, so no host yet drew results itself in the way topic 7 allows. v1's `onEvaluateError` is covered by `status: 'failed'`.
+- **Every `onEvaluateStart` is followed by exactly one `onEvaluate`,** with `'done'`, `'failed'` or `'cancelled'`. A cancel is clicking the running affordance again, or starting another evaluation, in which case the host sees the running one's `'cancelled'` before the new one's start. So a host drawing results can clear a stale one and show that one is running, and a spinner it shows is always stopped. Nothing in the v1 demo or Conforma uses v1's `onEvaluateStart`, but v1 had no built-in display, so no host yet drew results itself in the way topic 7 allows. v1's `onEvaluateError` is covered by `status: 'failed'`.
 - **`onEvaluate` returns nothing** and the editor never lets fig-tree's rejection escape to the host (topic 7).
-- **`evaluationMode`** is named after fig-tree's `mode` option, qualified because `mode` alone says little among the props. **`showEvaluationResult`** follows json-edit-react's `show…` props.
-- Rejected: dropping `onEvaluateStart` and not reporting cancelled evaluations. It leaves a host's own result display unable to follow the built-in one.
+- **`evaluationMode`** is named after fig-tree's `mode` option, qualified because `mode` alone says little among the props.
+- Rejected: dropping `onEvaluateStart` and not reporting cancelled evaluations. It leaves a host's result display unable to tell a stale result, or that one is running.
 
 ### Defaults and what the pickers offer — **Agreed**
 
@@ -1450,7 +1442,11 @@ interface EditorTheme {
   error: string // row tint and flag (topic 7)
   warning: string // warning flag
   filledIn: string // the filled-in-on-load marker
-  failed: string // the failed-row marker (topic 7, "Showing failures")
+  runValue: string // how a row ran, its border and button (topic 7, "How it ran, in the tree")
+  runFailed: string
+  runFallback: string
+  runCancelled: string
+  runSkipped: string // never ran
   shorthandBorder: string // the dashed border (topic 3)
   fragmentBackground: string // a fragment with no colours of its own (topic 3)
   fragmentText: string
@@ -1460,7 +1456,7 @@ interface EditorTheme {
 - **The defaults are in the editor's code,** merged under the host's values, which are compared by content, so an inline object costs nothing. The key list is settled when the components are built.
 - **Operator and category colours are not here:** they are display data, in `operatorHints` and `categoryHints` ("Display overrides").
 - **A dark mode is a different object,** swapped by the host as it swaps json-edit-react's `theme`. Do later: `editorTheme` values to pair with `@json-edit-react/themes`' dark themes.
-- **How the values reach the editor's own components** (the DisplayBar, toolbar, messages area, result display and hover cards) is as json-edit-react applies its theme: each component reads the merged values and sets them as inline styles on its own elements. The stylesheet holds none of them, and no custom properties are involved.
+- **How the values reach the editor's own components** (the DisplayBar, toolbar, messages area and hover cards) is as json-edit-react applies its theme: each component reads the merged values and sets them as inline styles on its own elements. The stylesheet holds none of them, and no custom properties are involved.
 
 **Everything else is json-edit-react's `theme`,** layered over the editor's own theme layer: the editor passes `theme={[editorLayer, hostTheme]}`, so the host's layer wins wherever they overlap. The editor's styling that depends on a row's kind (brackets hidden on nodes, the node border, reference colours, the vars block) is written as style functions, which json-edit-react applies after every static style, so a host's static styles recolour json-edit-react's own elements without undoing the editor's structure. Reference colours come from `editorTheme`, not from `theme`'s `string`. This replaces v1's separate `styles` prop.
 
@@ -1473,7 +1469,7 @@ interface EditorTheme {
 
 **The first build is English only, with the mechanism for translation decided.** When it is built, the editor's strings join json-edit-react's `translations` under a prefix of their own (`FT_TO_SHORTHAND: 'To shorthand'`, `FT_MESSAGES_ERRORS: '{{count}} errors'`), with json-edit-react's `{{placeholder}}` style, following the rule that a json-edit-react prop keeps its meaning, extended ("How the props relate to json-edit-react's"). Adding them is not a break. **The rule from the start:** every string the editor shows sits in one module, under the key it would have, so translation is later a lookup.
 
-What it covers: the DisplayBar's and toolbar's labels, the pickers' group names, "Not valid here" and its reasons, the spelling-toggle hint, the modifier descriptions, the hover card's lines, the messages area's header, fixes and dismissals, the result display's captions, collapsed summaries and the disabled-Evaluate reason. Operator and category names are display data, already replaceable through `operatorHints` and `categoryHints` ("Display overrides").
+What it covers: the DisplayBar's and toolbar's labels, the pickers' group names, "Not valid here" and its reasons, the spelling-toggle hint, the modifier descriptions, the hover card's lines, the messages area's header, fixes and dismissals, the run's lines in the cards, collapsed summaries and the disabled-Evaluate reason. Operator and category names are display data, already replaceable through `operatorHints` and `categoryHints` ("Display overrides").
 
 - **The hover card's generated lines** join lists ("one of 'test', 'extract' or 'match'") and describe types, which does not reduce to placeholders, so when translation is built they take a function hook of their own rather than a template.
 - **`validate()`'s messages are fig-tree's,** in English, shown as they come (topic 7, "Where issues attach"), so a translated editor still shows them in English until fig-tree offers otherwise.
@@ -1518,7 +1514,6 @@ interface FigTreeEditorProps extends Omit<
   editorRef?: React.Ref<FigTreeEditorHandle> // json-edit-react's handle, plus reveal({ path })
   evaluationData?: Record<string, unknown>
   evaluationMode?: 'report' | 'throw'
-  showEvaluationResult?: boolean
   onEvaluateStart?: (start: { path: Path }) => void
   onEvaluate?: (evaluation: Evaluation) => void
   defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>
