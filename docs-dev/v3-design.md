@@ -304,6 +304,7 @@ The host needs the editor's state, for example to disable its own Save button wh
 - Parameters whose name the new operator also declares are kept, even where the kept value no longer type-checks against the new declaration: the error shows straight away, and the author's work is not lost. So `plus` to `multiply` keeps `values`, and `map` to `filter` keeps `input`, `each` and `as`.
 - The other parameters are dropped, and the new operator's missing required parameters are seeded.
 - There is no confirmation step, even when the switch drops a subtree.
+- **Switching to `literal` quotes the node** instead: the node as it stands becomes the literal's content (topic 5, "`literal`").
 
 The same rule repairs a broken node: picking `plus` for `{ operator: 'plsu', values: [1, 2] }` keeps `values`.
 
@@ -753,7 +754,7 @@ A `vars` block on an operator node, a fragment call, a shorthand node or a plain
 - Rejected for now: asking json-edit-react for a `startAdd({ path })` on its handle, so that creating a block opens its name input at once (J8 in [v3-upstream.md](v3-upstream.md), dropped). To revisit if the two steps prove awkward in use.
 - Rejected: seeding a new block with one var under a generated name (`var1`), which the author has to rename by double-clicking the key, and which is the kind of name that gets left in.
 
-**A new var starts as `'Replace me'` and opens for editing.** The value is the starting-value rule's for an `any` slot. Once the add commits, the editor calls `editorRef.startEdit` on the new var's path, so the author types the value or picks Operator, Data and the rest from the type dropdown straight away, as a new node's picker opens straight away (topic 2). The editor holds its own `editorRef` for this, merged with the one the host passes (topic 8, "The handle and edit sessions"). Until something reads it, a new var carries `validate()`'s `unreferenced-var` warning, which is true, so it stays. Rejected: leaving the new var closed, as json-edit-react leaves any other add.
+**A new var starts as `'Replace me'`, closed,** as json-edit-react leaves any other add (revised in planning Phase 9, Carl). The value is the starting-value rule's for an `any` slot. Until something reads it, a new var carries `validate()`'s `unreferenced-var` warning, which is true, so it stays. Rejected: opening it for editing with `editorRef.startEdit` once the add commits. A new parameter doesn't open, and a var shouldn't differ.
 
 **Names are checked by `validate()`, not at entry,** as topic 2's guards already say of a vars block's ＋. An illegal name (empty, containing `.`, `[` or `]`, or starting with `$`) is accepted and shows `invalid-name` on its row, and renaming the key fixes it. json-edit-react already refuses a duplicate. A `//` typed as a name makes a comment rather than a var, as the grammar says. Rejected: refusing illegal names in `onUpdate`, which would copy fig-tree's rule into the editor or need fig-tree to export a checker.
 
@@ -832,15 +833,17 @@ A comment's value is quoted content, so it stays plain json-edit-react data, edi
 
 **Other values** (`'//': { ticket: 123 }`, which the grammar allows) render as plain json-edit-react data with the `//` key's modifier styling and no note style, and edit like any data. Rejected: showing them as JSON text inside a note.
 
-**A new comment opens for editing.** "Add parameter → `//`" (or the node's ＋) adds `'Comment...'` (topic 4) and opens it for editing at once, as a new var does, since the placeholder is only there to be replaced. A line added with the array's ＋ starts and opens the same way.
+**A new comment starts as `'Comment...'`, closed** (revised in planning Phase 9, Carl): from "Add parameter → `//`" or the node's ＋ (topic 4), and a line added with the array's ＋ the same. Rejected: opening it for editing because the placeholder is only there to be replaced. A new parameter's placeholder is there to be replaced too, and parameters don't open.
 
 ### `literal` — **Agreed**
 
 Topics 1, 3 and 4 settled its display (its display name and colours from `./editor-hints`, and the editor's own description, since `literal` has no `getOperators()` entry), its place in the picker (Data & objects), its content as plain data with no badge, and "Add parameter" offering only `//` on it.
 
-**A new `literal` starts with an explanatory string:** `value` is `'No content inside a literal node is evaluated'`, so the placeholder says what the node is for. It is the seed in `literal`'s `./editor-hints` entry (F4 in [v3-upstream.md](v3-upstream.md)), which the starting-value rule reads (topic 4). A string is harmless as content: it evaluates to itself. Rejected: the `any` type seed `'Replace me'`, which says nothing about the node.
+**Switching a node to `literal` quotes it** (planning Phase 9, Carl). The usual case is an author finding that part of the tree is read as an expression when it should be data, so choosing `literal` in the operator picker makes the node, as it stands, the literal's content: `{ operator: 'plus', values: [1, 2] }` becomes `{ operator: 'literal', value: { operator: 'plus', values: [1, 2] } }`. The whole node goes in, its `//` and modifiers included, since everything quoted is quoted. It is the picker's, so it applies to full operator nodes. Switching away from a `literal` follows the ordinary rule (topic 2, "Node lifecycle"). The details are in the plan, 9.3.
 
-**Do later: "Quote" and "Unquote",** actions that wrap a node or subtree in `literal`, or unwrap one, without going through raw JSON. To be reconsidered once the built editor can be tried.
+**A new `literal` with nothing to quote starts with an explanatory string** (one the type dropdown has just created, or a host's `defaultOperators`): `value` is `'No content inside a literal node is evaluated'`, so the placeholder says what the node is for. It is the seed in `literal`'s `./editor-hints` entry (F4 in [v3-upstream.md](v3-upstream.md)), which the starting-value rule reads (topic 4). A string is harmless as content: it evaluates to itself. Rejected: the `any` type seed `'Replace me'`, which says nothing about the node.
+
+**Do later: "Quote" and "Unquote",** actions that wrap a node or subtree in `literal`, or unwrap one, without going through raw JSON. The picker quotes a full operator node, so "Quote" is left for fragment calls, shorthand nodes and plain containers. To be reconsidered once the built editor can be tried.
 
 ---
 
@@ -1283,7 +1286,7 @@ type EditorMessage = {
 
 ### The handle and edit sessions — **Agreed**
 
-**The handle is json-edit-react's, extended,** since `editorRef` is json-edit-react's prop (Combined, "How the props relate to json-edit-react's"), merged with the editor's own ref (topic 5 uses `startEdit` on a new var):
+**The handle is json-edit-react's, extended,** since `editorRef` is json-edit-react's prop (Combined, "How the props relate to json-edit-react's"), merged with the editor's own ref:
 
 ```ts
 editorRef?: React.Ref<FigTreeEditorHandle>

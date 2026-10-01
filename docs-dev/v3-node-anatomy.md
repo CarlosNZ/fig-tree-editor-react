@@ -426,7 +426,7 @@ The `vars` key on an operator node, a fragment call, a shorthand node (as a sibl
 - **`['…', 'vars']`:** a plain JER collection row, with no definition of its own. The theme styles it: the `vars` key takes the colour of `$vars` references, and the block gets a left rule and a tinted background, set slightly apart from the rows above it. JER draws the header row and its edit tools as usual, and the collapsed summary (`{ 2 vars }`) comes from `customText`. The block comes **last** among the node's rows (the fill-in step orders keys: `//`, the parameters, `fallback` and `useCache`, then `vars`). On a plain object it stays where it was written.
 - **The child rows:** plain JER rows on the block's tint. Each key is a var name, and each value is classified as usual: here a shorthand node and a plain number. A key must follow the name-legality rule (no `.`, `[`, `]`, no leading `$`), which the diagnostics report.
 
-The block's ＋ asks for a name, and the new var starts as `'Replace me'` with its value open for editing ("The vars block" in the design doc).
+The block's ＋ asks for a name, and the new var starts as `'Replace me'`, closed ("The vars block" in the design doc).
 
 ---
 

@@ -512,9 +512,35 @@ Most of what shorthand needs is already built: the walk's forms and `$name` role
 
 ## Phase 9 — `vars`, comments and `literal`
 
-- The vars block through the theme, proving the tint and rule, and a new var opening for editing (topic 5).
-- Comments, single and multi-line, never starting collapsed (topic 5).
-- `literal`, full and shorthand, with its seed (topic 5).
+Mostly theme work: the vars block and multi-line comments have no component of their own, a comment line has a thin one, and `literal` takes the Operator's. **No added row opens for editing** (Carl, keeping it consistent): a new var, comment or comment line starts closed, as a new parameter does, so topic 5's `startEdit` on them is gone, and `editorRef` joins the props with Phase 10's `reveal`.
+
+- **9.1 · Modifier keys and the vars block** (topic 3, "States"; topic 5, "The vars block").
+  - The keys, from a `property` style function: `vars` in `refVars`; `fallback`, `useCache` and a `//` holding anything other than a note, italic in `modifierKey`, as in the mockups. No phase had the modifier keys, and they share the style function, so they come here.
+  - The block, on a row the walk marks `vars`: its left rule and tint in `varsBlock`, set a little apart from the rows above. **To prove:** that the collection style functions can draw the rule and tint down the whole block. If not, the fallback is a Vars component that only wraps the child rows (topic 5).
+  - A malformed block (`vars: [1]`, `vars: 'x'`) has none of it, since the walk marks only an object, and shows its `invalid-vars` error as a plain row.
+  - The collapsed summary, `{ 2 vars }` (`{ 1 var }`), through `customText`, not counting a `//` in the block.
+  - `vars` added through a plain object's ＋ starts as `{}`, not the `any` seed, which `validate()` would report as `invalid-vars`. `newValue` reads the parent's row, which an evaluated plain object has and quoted content hasn't.
+  - A new var starts as `'Replace me'`, closed. The `vars` key's hover card is 6.5's.
+- **9.2 · Comments** (topic 3, "Kinds"; topic 5, "Comments").
+  - The Comment line definition takes its component: json-edit-react's exported `StringDisplay`, with quotes off and no truncation, in the `comment` colour with `white-space: pre-wrap`, so a Shift-Enter line break shows. With `showOnEdit: false`, ✎ and a double-click open json-edit-react's own input. It serves a string `//` and each line of an array.
+  - A multi-line comment: the `comment` definition loses its placeholder and has no component, with `showKey: false`. The theme hides its chevron and brackets, and styles the array as one note block. **To prove:** whether CSS can fold its header row, which holds only ＋ and ✕ on hover, into the block's top edge.
+  - Comments never start collapsed: the collapse filter keeps comment rows open, over a host's own filter too. **To prove:** whether a collapse-all on an ancestor reaches the comment array, whose chevron is hidden, so only an expand-all could reopen it. If it does, the fix is a json-edit-react change of J11's kind, or the chevron stays.
+  - A new comment starts as `'Comment...'`, closed: from "Add parameter", a node's ＋, or a plain object's ＋ with `//` as the key, and a line added with the array's ＋, which today takes the element rule's `'Replace me'` (6.1).
+  - Other values (`'//': { ticket: 123 }`) are plain data, with 9.1's modifier key.
+- **9.3 · `literal`, full and shorthand** (topics 1, 3 and 5; [v3-node-anatomy.md](v3-node-anatomy.md), sections 6 and 7).
+  - **The components** (Carl: a full `literal` is an operator node in every way but one, its content rendered as plain JSON whatever it holds, which the walk already gives; whichever build is easier). The `operator` definition takes full `literal` nodes too, and the `shorthand` definition `$literal`, each component reading the literal's kind for its header, unless that proves harder than a Literal component of its own.
+    - The DisplayBar: `literal`'s display data (F4), the editor's description on its card, the inert ▶, and the conversion button held back from 8.3 ("To shorthand" and "To full").
+    - The toolbar: the node-type switch, the picker, and "Add parameter" with `//` alone. ＋ comes off full `literal` nodes, as off full operator nodes (6.4).
+    - The shorthand has no toolbar, as any shorthand.
+  - **Settled before building** (agreed with Carl): **switching to `literal` quotes the node.** The usual case is an author finding that part of the tree is read as an expression when it should be data, so choosing `literal` in the picker makes the node, as it stands, the literal's content: `{ operator: 'plus', values: [1, '$data.x'] }` becomes `{ operator: 'literal', value: { operator: 'plus', values: [1, '$data.x'] } }`. Where the node keeps the Operator's definition, the toolbar carries on, where today it closes (5.3).
+    - A node the type dropdown has just created starts from the seed instead (`'No content inside a literal node is evaluated'`), since quoting its placeholder says nothing. So does a `literal` created any other way, such as through `defaultOperators`.
+    - Quoting is the picker's, so it applies to full operator nodes only. Quoting a fragment call or a shorthand node stays with the do-later "Quote" (topic 5).
+    - Switching away from a `literal` follows the ordinary rule (topic 2): the content goes unless the new operator declares `value`. ✗ restores the node from before the session. "Unquote" stays do-later.
+    - **The whole node goes in as written,** its `//`, `fallback`, `useCache` and `vars` included: once quoted, everything in it is quoted (Carl), so the `//` becomes data and appears in the output. Rejected: keeping the `//` on the literal as its comment, a special case.
+  - The content is quoted, so plain json-edit-react. **To check:** its type dropdown offers json-edit-react's types alone (no Operator, Fragment or reference entries), and `value` can't be deleted.
+  - The theme: brackets hidden, the solid or dashed border and the broken state, as for operator nodes. Collapsed, `{ Literal }`, and `{ Shorthand: $literal }` by 8.1's rule.
+  - The seed is already filled by 4.5 from F4; checked through the picker on a new node, the Operator entry and the node-type switch.
+  - With this, the placeholder is left on the root Container alone, which Phase 10 replaces. The anatomy doc's sections 6 and 7 follow what's built.
 
 ## Phase 10 — Diagnostics and evaluation
 
