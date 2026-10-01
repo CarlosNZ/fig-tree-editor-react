@@ -1,16 +1,28 @@
 import { describe, expect, it } from 'vitest'
 import { classify } from '../src/classify'
+import { type FilledInLine } from '../src/filledIn'
 import { countMessages, orderMessages } from '../src/messageLines'
-import { displayPath } from '../src/paths'
+import { displayPath, type Path } from '../src/paths'
 import { figTree, registry } from './fixtures'
 
-// Each line as [row, code], in the list's order
-const ordered = (expression: unknown, data?: Record<string, unknown>) =>
+// Each line as [row, code], or [row, 'added'], in the list's order
+const ordered = (
+  expression: unknown,
+  data?: Record<string, unknown>,
+  filledIn: FilledInLine[] = []
+) =>
   orderMessages(
     figTree.validate(expression, data === undefined ? undefined : { data }).issues,
+    filledIn,
     expression,
     classify(expression, registry)
-  ).map(({ row, issue }) => [displayPath(row), issue.code])
+  ).map((line) => [displayPath(line.row), line.kind === 'issue' ? line.issue.code : 'added'])
+
+const filledLine = (row: Path): FilledInLine => ({
+  key: JSON.stringify(row),
+  row,
+  message: 'added',
+})
 
 describe('the messages in tree order', () => {
   it("puts a node's own issue before its rows', where validate() reports it after", () => {
@@ -49,10 +61,32 @@ describe('the messages in tree order', () => {
       ({ severity, code, message: code, path: ['values'] }) as never
     const lines = orderMessages(
       [issue('hint', 'h'), issue('warning', 'w1'), issue('error', 'e'), issue('warning', 'w2')],
+      [filledLine(['values'])],
       expression,
       classification
     )
-    expect(lines.map(({ issue }) => issue.code)).toEqual(['e', 'w1', 'w2', 'h'])
+    expect(lines.map((line) => (line.kind === 'issue' ? line.issue.code : 'added'))).toEqual([
+      'e',
+      'w1',
+      'w2',
+      'h',
+      'added',
+    ])
+  })
+
+  it('interleaves the filled-in lines by their rows', () => {
+    const expression = {
+      a: { operator: 'if', condition: true, then: 'Yes' },
+      b: { $upper: 5 },
+      c: { operator: 'plus', values: [1, 2] },
+    }
+    expect(
+      ordered(expression, undefined, [filledLine(['c', 'values']), filledLine(['a', 'then'])])
+    ).toEqual([
+      ['a.then', 'added'],
+      ['b.$upper', 'type-check'],
+      ['c.values', 'added'],
+    ])
   })
 
   it('marks the row the issue shows on, not its own path', () => {
@@ -60,16 +94,17 @@ describe('the messages in tree order', () => {
     expect(ordered({ x: { $if: { condition: true } } })).toEqual([['x', 'missing-required']])
   })
 
-  it('counts each severity', () => {
+  it('counts each severity, and the filled-in lines', () => {
     const expression = {
       greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] },
       x: { $upper: 5 },
     }
     const lines = orderMessages(
       figTree.validate(expression).issues,
+      [filledLine(['x'])],
       expression,
       classify(expression, registry)
     )
-    expect(countMessages(lines)).toEqual({ errors: 1, warnings: 2, hints: 1 })
+    expect(countMessages(lines)).toEqual({ errors: 1, warnings: 2, hints: 1, filledIn: 1 })
   })
 })

@@ -24,7 +24,7 @@ export interface EditorTheme {
   error: string // row tint, flag and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
   hint: string // a hint's label in the messages area
-  filledIn: string // the filled-in-on-load marker
+  filledIn: string // the marker on a value the editor filled in, and its label
   failed: string // the failed-row marker
   nodeBorder: string // the border around a node's rows
   shorthandBorder: string // a shorthand node's dashed border
@@ -43,7 +43,7 @@ export const defaultEditorTheme: EditorTheme = {
   error: '#c0392b',
   warning: '#d68910',
   hint: '#6b7a90',
-  filledIn: '#e0a400',
+  filledIn: '#f2c200',
   failed: '#c0392b',
   nodeBorder: '#dbdbdb',
   shorthandBorder: '#9ca3af',
@@ -253,6 +253,10 @@ const TINT_GAP = '0.4em'
 
 // A warning's text: its colour, darkened to read on a light background
 export const warningText = (warning: string) => `color-mix(in srgb, ${warning}, black 35%)`
+
+// Text on the filled-in colour, which is too light for white: the colour,
+// darkened almost to black
+export const filledInText = (filledIn: string) => `color-mix(in srgb, ${filledIn}, black 80%)`
 
 const RULE_WIDTH = '2px'
 const RULE_GAP = '1.35em' // from the rule to the key

@@ -18,12 +18,21 @@ export const strings = {
   FT_FIX_REMOVE: 'Remove',
   FT_FIX_RENAME: (name: string) => `Rename to ${name}`,
   FT_FIX_CHANGE: (name: string) => `Change to ${name}`,
+  FT_DISMISS: 'Dismiss', // a filled-in line
+  FT_DISMISS_ALL: 'Dismiss all', // every filled-in line, from the header
   FT_COUNT_ERRORS: errors,
   FT_COUNT_WARNINGS: warnings,
   FT_COUNT_HINTS: hints,
+  FT_COUNT_FILLED_IN: (count: number) => `${count} added`,
   FT_SEVERITY_ERROR: 'error',
   FT_SEVERITY_WARNING: 'warning',
   FT_SEVERITY_HINT: 'hint',
+  FT_FILLED_IN: 'added', // a filled-in line's label, beside the severities
+  // A filled-in line: a value the editor added to an expression it was given
+  FT_FILLED_IN_OPERATOR: (parameter: string, operator: string) =>
+    `Added '${parameter}', which '${operator}' requires`,
+  FT_FILLED_IN_FRAGMENT: (parameter: string, fragment: string) =>
+    `Added '${parameter}', which fragment '${fragment}' requires`,
   FT_SELECT_NO_RESULTS: 'No results',
   FT_INVALID_NODE: 'invalid node', // an operator or fragment that isn't a string
   FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node

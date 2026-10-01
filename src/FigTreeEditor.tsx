@@ -4,6 +4,7 @@ import {
   useInsertionEffect,
   useMemo,
   useRef,
+  useState,
   type MutableRefObject,
   type Ref,
 } from 'react'
@@ -42,6 +43,13 @@ import {
 } from './displayData'
 import { layerTheme, mergeEditorTheme, type EditorTheme } from './editorTheme'
 import { fillAndTidy } from './fillAndTidy'
+import {
+  confirmFilledIn,
+  dismissFilledIn,
+  NO_FILLED_IN,
+  recordFilledIn,
+  standingFilledIn,
+} from './filledIn'
 import { type DefaultOperators } from './getStartingNode'
 import { canAdd, canDelete, type GuardContext } from './guards'
 import { getStartingElement } from './getStartingValue'
@@ -147,30 +155,38 @@ export const FigTreeEditor = ({
     figTree.validate(value, evaluationData === undefined ? undefined : { data: evaluationData })
       .issues
 
-  // An expression, filled in and tidied (the fill-in step). The issues are
-  // the ones `fillAndTidy`'s typo guard reads.
-  const fill = (value: unknown, issues = validate(value)) =>
-    fillAndTidy(value, { operators, fragments, displayData, issues }).expression
+  // An expression, filled in and tidied (the fill-in step), with the rows it
+  // filled. The issues are the ones `fillAndTidy`'s typo guard reads.
+  const fillWithRows = (value: unknown, issues = validate(value)) =>
+    fillAndTidy(value, { operators, fragments, displayData, issues })
+  const fill = (value: unknown) => fillWithRows(value).expression
 
   // The editor shows the expression as it writes it. One that arrives
   // incomplete or out of order (a load, an undo, the host's own change, or a
   // registry that now declares more) is written back once, marked; one that
   // needs nothing produces no write, so re-rendering never re-emits.
   const arrivalIssues = validate(expression)
-  const filled = fill(expression, arrivalIssues)
-  const changed = filled !== expression
-  const stableFilled = useStableValue(filled)
+  const arrival = fillWithRows(expression, arrivalIssues)
+  const changed = arrival.expression !== expression
+  const stableFilled = useStableValue(arrival.expression)
   const shown = changed ? stableFilled : expression
   const issues = changed ? validate(shown) : arrivalIssues
+  const classification = useStableValue(classify(shown, { operators, fragments }))
+
+  // The values those writes have added, which the messages area lists
+  // (filledIn.ts)
+  const [filledIn, setFilledIn] = useState(NO_FILLED_IN)
 
   // `setExpression` is left out on purpose: a host's inline setter is new on
   // every render, and the write must happen once per change, not per render
   useEffect(() => {
-    if (changed) setExpression(stableFilled, { autoUpdate: true })
+    if (!changed) return
+    setExpression(stableFilled, { autoUpdate: true })
+    if (arrival.filled.length > 0)
+      setFilledIn((record) => recordFilledIn(record, arrival.filled, stableFilled, classification))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [changed, stableFilled])
 
-  const classification = useStableValue(classify(shown, { operators, fragments }))
   // Read by the collapse filter, which keeps its identity across edits
   const latestClassification = useRef(classification)
   latestClassification.current = classification
@@ -252,6 +268,10 @@ export const FigTreeEditor = ({
     const { event } = editEvent
     if (event.startsWith('start')) editOpen.current = true
     if (event.startsWith('submit')) submitted.current = true
+    if (event === 'commitEdit' && filledIn.size > 0) {
+      const path = canonicalPath(latestClassification.current, editEvent.path)
+      setFilledIn((record) => confirmFilledIn(record, path))
+    }
     if (event.startsWith('commit')) {
       editOpen.current = false
       const fix = pendingFix.current
@@ -329,6 +349,8 @@ export const FigTreeEditor = ({
     if (outer.current && handle.current) revealRow(outer.current, path, handle.current.collapse)
   }
 
+  const dismiss = (key: string) => setFilledIn((record) => dismissFilledIn(record, key))
+
   const combinedText = useMemo(
     () => combineText(editorText(classification, rollUp, customText), customText),
     [classification, rollUp, customText]
@@ -369,15 +391,24 @@ export const FigTreeEditor = ({
       />
       {messagesMaxHeight !== 0 && (
         <Messages
-          lines={orderMessages(issues, shown, classification).map((line) => ({
+          lines={orderMessages(
+            issues,
+            filledIn.size === 0 ? [] : standingFilledIn(filledIn, shown, classification),
+            shown,
+            classification
+          ).map((line) => ({
             ...line,
-            fixes: getQuickFixes(line.issue, shown, { classification, operators, fragments }).map(
-              ({ label, fix }) => ({ label, apply: () => applyFix(fix) })
-            ),
+            fixes:
+              line.kind === 'issue'
+                ? getQuickFixes(line.issue, shown, { classification, operators, fragments }).map(
+                    ({ label, fix }) => ({ label, apply: () => applyFix(fix) })
+                  )
+                : [{ label: strings.FT_DISMISS, apply: () => dismiss(line.key) }],
           }))}
           maxHeight={messagesMaxHeight}
           editorTheme={mergedEditorTheme}
           onReveal={reveal}
+          onDismissAll={() => setFilledIn(NO_FILLED_IN)}
         />
       )}
     </div>

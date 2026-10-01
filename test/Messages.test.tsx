@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, createRef, useState, type ComponentProps } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -322,6 +322,106 @@ describe('quick fixes', () => {
         'commitEdit',
       ])
     })
+  })
+})
+
+describe('filled-in values', () => {
+  // A host holding the expression, so each write comes back as the editor's
+  // next expression, in StrictMode, with a way to change it as an undo would
+  const host = (initial: unknown) => {
+    const written: unknown[] = []
+    let replace: (expression: unknown) => void = () => {}
+    const Host = () => {
+      const [expression, setExpression] = useState(initial)
+      replace = setExpression
+      return (
+        <FigTreeEditor
+          figTree={figTree}
+          expression={expression}
+          setExpression={(next) => {
+            written.push(next)
+            setExpression(next)
+          }}
+          collapse={false}
+        />
+      )
+    }
+    render(<Host />, { wrapper: StrictMode })
+    return {
+      written,
+      replace: (next: unknown) => act(() => replace(next)),
+      user: userEvent.setup(),
+    }
+  }
+  const added = () => lines().filter((line) => line.textContent.startsWith('added'))
+  const SEED = '"The condition is true"' // `if.then`'s, as drawn
+
+  it('lists each value added to an expression as it arrives, and counts them', () => {
+    host({ x: { operator: 'if', condition: true } })
+    expect(added()).toHaveLength(1)
+    expect(added()[0]).toHaveTextContent("addedx.thenAdded 'then', which 'if' requires")
+    expect(within(added()[0]).getByRole('button', { name: 'Dismiss' })).toBeInTheDocument()
+    const counts = [...header().querySelectorAll('.ft-severity')].map((pill) => pill.textContent)
+    expect(counts).toEqual(['1 added'])
+  })
+
+  it('leaves out a value the fill-in step adds after an edit', () => {
+    host({ operator: 'if', condition: true, thn: 'Adult' })
+    fireEvent.click(screen.getByRole('button', { name: 'Remove' }))
+    expect(screen.getByText(SEED)).toBeInTheDocument()
+    expect(added()).toHaveLength(0)
+  })
+
+  it('are dismissed one at a time, or all at once where there is more than one', () => {
+    host({ a: { operator: 'if', condition: true }, b: { operator: 'if', condition: false } })
+    expect(added()).toHaveLength(2)
+    fireEvent.click(within(added()[0]).getByRole('button', { name: 'Dismiss' }))
+    expect(added().map((line) => line.querySelector('.ft-message-path')!.textContent)).toEqual([
+      'b.then',
+    ])
+    expect(screen.queryByRole('button', { name: 'Dismiss all' })).toBeNull()
+  })
+
+  it('are dismissed all at once from the header', () => {
+    const { written } = host({
+      a: { operator: 'if', condition: true },
+      b: { operator: 'if', condition: false },
+    })
+    const writes = written.length
+    fireEvent.click(screen.getByRole('button', { name: 'Dismiss all' }))
+    expect(lines()).toHaveLength(0)
+    // Dismissing writes nothing
+    expect(written).toHaveLength(writes)
+  })
+
+  it('clear when their row is edited, its value kept or not', async () => {
+    const { user } = host({ a: { operator: 'if', condition: true } })
+    await user.dblClick(screen.getByText(SEED))
+    await user.keyboard('{Enter}')
+    expect(added()).toHaveLength(0)
+  })
+
+  it('stay when an edit of their row is cancelled', async () => {
+    const { user } = host({ a: { operator: 'if', condition: true } })
+    await user.dblClick(screen.getByText(SEED))
+    await user.keyboard('{Escape}')
+    expect(added()).toHaveLength(1)
+  })
+
+  it('stay through an edit of the node holding the row that leaves the value', async () => {
+    const { user } = host({ operator: 'if', condition: true })
+    // json-edit-react's ✎ on the root node, confirmed as it is
+    await user.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+    fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+    expect(added()).toHaveLength(1)
+  })
+
+  it('hide while their row holds something else, and come back with the value', () => {
+    const { replace } = host({ operator: 'if', condition: true })
+    replace({ operator: 'if', condition: true, then: 'Yes' })
+    expect(added()).toHaveLength(0)
+    replace({ operator: 'if', condition: true, then: 'The condition is true' })
+    expect(added()).toHaveLength(1)
   })
 })
 

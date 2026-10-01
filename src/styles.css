@@ -171,14 +171,25 @@ input.ft-select-input::placeholder {
   color: #292929;
 }
 
+/* The header: the toggle, which folds the list away, then "Dismiss all"
+   where there is more than one filled-in line */
 .ft-messages-header {
   display: flex;
   align-items: center;
-  gap: 0.5em;
-  width: 100%;
-  padding: 0.5em 0.8em;
-  border: none;
+  gap: 0.4em;
+  padding-right: 0.8em;
   background-color: #f3f3f3;
+}
+
+.ft-messages-toggle {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+  padding: 0.5em 0 0.5em 0.8em;
+  border: none;
+  background: none;
   font: inherit;
   font-weight: bold;
   color: inherit;

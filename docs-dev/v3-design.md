@@ -984,7 +984,7 @@ The region below the tree that topic 3 proposed, as a sibling of the `JsonEditor
 
 Do later: the same fixes in the row's hover card ("Where issues attach"), which would need the card to stay open while the pointer moves into it.
 
-**A filled-in line clears** when its row is edited or when it is dismissed (topic 2).
+**A filled-in line clears** when its row is edited or when it is dismissed (topic 2). Its row is edited when an edit of the row itself, or of a row inside it, is committed, its value changed or not; an edit of the node holding it counts only where it changes or removes the value (Carl, plan 10.3). While the row holds something else the line is hidden, and it comes back with the value, as on an undo.
 
 **The filled-in marker fades — Agreed.** The amber marker on a row filled in on load fades after about three seconds, needing no edit, and its line stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed (topic 3's proposal). Rejected: keeping the marker until the line is dismissed, which leaves every row filled in on a large load amber indefinitely. The fade applies only to that marker: issues from `validate()`, warnings included, stay on their rows and in the list for as long as `validate()` reports them, whether they were present on load or caused by an edit.
 
