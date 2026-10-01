@@ -14,6 +14,17 @@ export const strings = {
   FT_SUMMARY_SHORTHAND: (name: string) => `Shorthand: ${name}`, // with its `$`
   FT_SUMMARY_LITERAL: 'Literal',
   FT_SUMMARY_VARS: (count: number) => (count === 1 ? '1 var' : `${count} vars`),
+  FT_ITEMS: (count: number) => (count === 1 ? '1 item' : `${count} items`), // a plain collection
+  // A collapsed row's summary, then the issues on and beneath it
+  FT_SUMMARY_ISSUES: (summary: string, issues: string) => `${summary} · ${issues}`,
+  FT_ISSUE_COUNTS: (errors: number, warnings: number) =>
+    [
+      errors > 0 && (errors === 1 ? '1 error' : `${errors} errors`),
+      warnings > 0 && (warnings === 1 ? '1 warning' : `${warnings} warnings`),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+  FT_FLAG_MORE: (count: number) => `+${count}`, // a row's other issues, after its flag
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎

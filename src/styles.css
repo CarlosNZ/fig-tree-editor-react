@@ -345,6 +345,108 @@ input.ft-select-input::placeholder {
   display: contents;
 }
 
+/* A node's flag: the issue's message, cut to the space left on the header's
+   line, then a count of the node's other issues. It starts from nothing and
+   grows to its message, so the controls before it keep their width and the
+   flag takes what is left. Where that is less than a few words, it goes onto
+   a line of its own. */
+.ft-flag-anchor {
+  display: inline-flex;
+  flex: 1 1 0;
+  min-width: 6em;
+  max-width: max-content;
+  margin-left: 0.5em;
+}
+
+.ft-flag-anchor > .ft-hover-card-anchor {
+  align-items: center;
+  gap: 0.3em;
+  min-width: 0;
+}
+
+.ft-display-bar-start:has(> .ft-flag-anchor) {
+  flex-wrap: wrap;
+  row-gap: 0.2em;
+}
+
+.ft-flag {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 0.05em 0.45em;
+  border: 1px solid;
+  border-radius: 4px;
+  font-family: sans-serif;
+  font-size: 0.7em;
+  font-weight: bold;
+  line-height: 1.4;
+}
+
+.ft-flag-more {
+  flex-shrink: 0;
+  font-family: sans-serif;
+  font-size: 0.7em;
+  font-weight: bold;
+  color: #6b7280;
+}
+
+/* A row's issues float beneath its value, or at the top of a collection's
+   rows, beneath its header line, so the tree lays out as it would without
+   them. They show while the row is hovered, a collection's anywhere over its
+   block, after the hover cards' delay. Only the innermost card shows: not
+   while the pointer is on something inside the row with a card of its own,
+   such as a key, a node, or a row or block with issues of its own. */
+.ft-flagged,
+.ft-reference {
+  position: relative;
+}
+
+.ft-flag-line {
+  position: relative;
+  height: 0;
+}
+
+.jer-value-main-row:hover .ft-issue-card,
+.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line > .ft-issue-card {
+  visibility: visible;
+  opacity: 1;
+  transition:
+    visibility 0s var(--ft-hover-card-delay),
+    opacity 0.1s var(--ft-hover-card-delay);
+}
+
+.jer-value-main-row:has(.ft-hover-card-anchor:hover) .ft-issue-card,
+.jer-collection-component:is(
+    :has(.ft-hover-card-anchor:hover),
+    :has(.jer-value-main-row:hover .ft-issue-card),
+    :has(.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line)
+  )
+  > .jer-collection-inner
+  > .ft-flag-line
+  > .ft-issue-card {
+  visibility: hidden;
+  opacity: 0;
+  transition: none;
+}
+
+/* The issues listed in a card */
+.ft-hover-card-line.ft-flag-issue {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.5em;
+  align-items: baseline;
+}
+
+.ft-flag-severity {
+  padding: 0 0.4em;
+  border: 1px solid;
+  border-radius: 4px;
+  font-size: 0.85em;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
 /* Hover card */
 .ft-hover-card-anchor {
   position: relative;

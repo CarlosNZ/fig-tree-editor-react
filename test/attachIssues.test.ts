@@ -1,6 +1,13 @@
 import { toPathString } from 'json-edit-react'
 import { describe, expect, it } from 'vitest'
-import { attachIssues, brokenIssue, issuesAt } from '../src/attachIssues'
+import {
+  attachIssues,
+  brokenIssue,
+  flaggedIssues,
+  issuesAt,
+  issuesBeneath,
+  rollUpIssues,
+} from '../src/attachIssues'
 import { classify } from '../src/classify'
 import { figTree, registry } from './fixtures'
 
@@ -42,6 +49,76 @@ describe('attaching issues to rows', () => {
   it('finds no issues at a row without any', () => {
     const index = attachIssues([], classify({ operator: 'plus', values: [1] }, registry))
     expect(issuesAt(index, [])).toEqual([])
+  })
+})
+
+describe("a row's flag", () => {
+  const issue = (severity: string, code: string, path: (string | number)[]) =>
+    ({ severity, code, message: code, path }) as never
+
+  it('shows errors, then warnings, each in order, and no hints', () => {
+    const expression = { values: [1] }
+    const index = attachIssues(
+      [
+        issue('warning', 'w1', ['values']),
+        issue('hint', 'h1', ['values']),
+        issue('error', 'e1', ['values']),
+        issue('warning', 'w2', ['values']),
+        issue('error', 'e2', ['values']),
+      ],
+      classify(expression, registry)
+    )
+    expect(flaggedIssues(index, ['values']).map(({ code }) => code)).toEqual([
+      'e1',
+      'e2',
+      'w1',
+      'w2',
+    ])
+  })
+
+  it("leaves out a hint beside fig-tree's warnings", () => {
+    const expression = { greeting: { $buildString: ['Hi %1 %3', '$data.first', '$data.last'] } }
+    const index = attachIssues(figTree.validate(expression).issues, classify(expression, registry))
+    const row = ['greeting', '$buildString', 0]
+    expect(issuesAt(index, row).map(({ severity }) => severity)).toEqual([
+      'warning',
+      'warning',
+      'hint',
+    ])
+    expect(flaggedIssues(index, row).map(({ code }) => code)).toEqual([
+      'unbound-token',
+      'unused-substitution',
+    ])
+  })
+})
+
+describe('the roll-up a collapsed row carries', () => {
+  const rolledUp = (expression: unknown, path: (string | number)[]) =>
+    issuesBeneath(
+      rollUpIssues(figTree.validate(expression).issues, classify(expression, registry)),
+      path
+    )
+
+  it("counts a row's own issues and those beneath it", () => {
+    const expression = {
+      age: { operator: 'if', condition: '$data.isAdult', thn: 'Adult', else: 'Child' },
+    }
+    expect(rolledUp(expression, [])).toEqual({ errors: 2, warnings: 0 })
+    expect(rolledUp(expression, ['age'])).toEqual({ errors: 2, warnings: 0 })
+    expect(rolledUp(expression, ['age', 'thn'])).toEqual({ errors: 1, warnings: 0 })
+    expect(rolledUp(expression, ['age', 'else'])).toEqual({ errors: 0, warnings: 0 })
+  })
+
+  it('counts warnings apart, and no hints', () => {
+    const expression = { greeting: { $buildString: ['Hi %1 %3', '$data.first', '$data.last'] } }
+    expect(rolledUp(expression, ['greeting'])).toEqual({ errors: 0, warnings: 2 })
+  })
+
+  it('counts an issue by the row it shows on', () => {
+    // `missing-required` on a named payload's row shows on its node
+    const expression = { x: { $if: { condition: true } } }
+    expect(rolledUp(expression, ['x'])).toEqual({ errors: 1, warnings: 0 })
+    expect(rolledUp(expression, ['x', '$if'])).toEqual({ errors: 0, warnings: 0 })
   })
 })
 

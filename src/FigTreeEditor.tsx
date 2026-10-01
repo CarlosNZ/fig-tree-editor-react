@@ -11,7 +11,7 @@ import {
   type TypeFilterFunction,
 } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
-import { attachIssues } from './attachIssues'
+import { attachIssues, issuesBeneath, rollUpIssues, type IssueRollUp } from './attachIssues'
 import { canonicalPath, classify, rowAt, type Classification, type Row } from './classify'
 import {
   clearCollapseRecord,
@@ -76,6 +76,9 @@ export interface FigTreeEditorProps extends Omit<
   defaultOperators?: DefaultOperators
   defaultFragment?: string
   referenceNames?: ReferenceNames // $data or $d, wherever the editor writes a reference
+  // What `$data` is in `validate()`'s sample-data check, in place of the
+  // instance's own `data`, so a host sharing its instance needn't change it
+  evaluationData?: Record<string, unknown>
 }
 
 export const FigTreeEditor = ({
@@ -85,6 +88,7 @@ export const FigTreeEditor = ({
   defaultOperators,
   defaultFragment,
   referenceNames = 'canonical',
+  evaluationData,
   operatorHints,
   categoryHints,
   editorTheme,
@@ -116,21 +120,25 @@ export const FigTreeEditor = ({
   const stableDefaultOperators = useStableValue(defaultOperators)
   const created = useRef<CreatedNode | null>(null)
 
+  const validate = (value: unknown) =>
+    figTree.validate(value, evaluationData === undefined ? undefined : { data: evaluationData })
+      .issues
+
   // An expression, filled in and tidied (the fill-in step). The issues are
   // the ones `fillAndTidy`'s typo guard reads.
-  const fill = (value: unknown, issues = figTree.validate(value).issues) =>
+  const fill = (value: unknown, issues = validate(value)) =>
     fillAndTidy(value, { operators, fragments, displayData, issues }).expression
 
   // The editor shows the expression as it writes it. One that arrives
   // incomplete or out of order (a load, an undo, the host's own change, or a
   // registry that now declares more) is written back once, marked; one that
   // needs nothing produces no write, so re-rendering never re-emits.
-  const arrivalIssues = figTree.validate(expression).issues
+  const arrivalIssues = validate(expression)
   const filled = fill(expression, arrivalIssues)
   const changed = filled !== expression
   const stableFilled = useStableValue(filled)
   const shown = changed ? stableFilled : expression
-  const issues = changed ? figTree.validate(shown).issues : arrivalIssues
+  const issues = changed ? validate(shown) : arrivalIssues
 
   // `setExpression` is left out on purpose: a host's inline setter is new on
   // every render, and the write must happen once per change, not per render
@@ -144,6 +152,7 @@ export const FigTreeEditor = ({
   const latestClassification = useRef(classification)
   latestClassification.current = classification
   const issueIndex = useStableValue(attachIssues(issues, classification))
+  const rollUp = useStableValue(rollUpIssues(issues, classification))
   const definitions = useMemo(
     () =>
       customNodeDefinitions({
@@ -229,14 +238,15 @@ export const FigTreeEditor = ({
       layerTheme(theme, {
         classification,
         issues: issueIndex,
+        rollUp,
         editorTheme: mergedEditorTheme,
         indent,
       }),
-    [theme, classification, issueIndex, mergedEditorTheme, indent]
+    [theme, classification, issueIndex, rollUp, mergedEditorTheme, indent]
   )
   const combinedText = useMemo(
-    () => combineText(editorText(classification), customText),
-    [classification, customText]
+    () => combineText(editorText(classification, rollUp, customText), customText),
+    [classification, rollUp, customText]
   )
 
   return (
@@ -382,8 +392,24 @@ const typesFor =
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes"), and a vars block's count of vars,
-// leaving out a `//` among them
-const editorText = (classification: Classification): CustomTextDefinitions => {
+// leaving out a `//` among them. A collapsed row with more than one issue on
+// or beneath it, a plain collection included, counts them after its summary
+// (topic 7, "Where issues attach"). The item count of a plain collection
+// that does is the editor's wording, or the host's `customText`.
+const editorText = (
+  classification: Classification,
+  rollUp: IssueRollUp,
+  host: CustomTextDefinitions = {}
+): CustomTextDefinitions => {
+  const withIssues =
+    (key: 'ITEM_SINGLE' | 'ITEMS_MULTIPLE') =>
+    (nodeData: NodeData): string | null => {
+      const text = summary(nodeData)
+      const { errors, warnings } = issuesBeneath(rollUp, nodeData.path)
+      if (!nodeData.collapsed || errors + warnings < 2) return text
+      const base = text ?? host[key]?.(nodeData) ?? strings.FT_ITEMS(nodeData.size ?? 0)
+      return strings.FT_SUMMARY_ISSUES(base, strings.FT_ISSUE_COUNTS(errors, warnings))
+    }
   const summary = ({ path, value }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
     if (kind?.kind === 'vars')
@@ -400,7 +426,7 @@ const editorText = (classification: Classification): CustomTextDefinitions => {
       kind.kind === 'operator' ? strings.FT_SUMMARY_OPERATOR : strings.FT_SUMMARY_FRAGMENT
     return text(kind.name ?? strings.FT_INVALID_NODE)
   }
-  return { ITEM_SINGLE: summary, ITEMS_MULTIPLE: summary }
+  return { ITEM_SINGLE: withIssues('ITEM_SINGLE'), ITEMS_MULTIPLE: withIssues('ITEMS_MULTIPLE') }
 }
 
 // The host's entry applies wherever the editor's gives nothing

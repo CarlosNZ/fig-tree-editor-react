@@ -946,15 +946,15 @@ Checked against the installed package:
 - **Broken** (topic 3's error border and stripe, with the name as an error) means exactly `malformed-node` at the node's own path or at one of its own keys (a stray sibling key such as `extra` in `{ $plus: [1], extra: 2 }`, a second `$name` key, or a fragment's `$name` row holding a string), or `unknown-operator` or `unknown-fragment` at its path: the node cannot be read as a node, and the compiler and `./format` both refuse it, so it has no Evaluate and no conversion. The key's own row carries the issue too. A node that is only missing something (`{ $if: ['$data.x'] }`, `missing-required` at the node) is well-formed, and converts.
 - **Any other issue at a node's path flags the node's DisplayBar line,** with no border: a missing `then` held back by the typo guard, `upper` feeding a number position, a fragment call missing a required argument. The node is well-formed, so its header reads as usual.
 
-**Severity on rows:**
+**Severity on rows — revised** (Carl, plan 10.1, once the flags could be seen in the built editor, where a badge on every row was too much): **the tint marks the row, and the messages float in a card while the row is hovered.**
 
-- **Error:** the row is tinted and flagged (topic 3).
-- **Warning:** a flag only, with no tint. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), so a tint would make a tree with a few warnings look as alarming as a broken one, while a flag still puts a warning such as `'$colour' is not a registered operator or fragment` on its row. The warning flag's colour must be told apart from the "filled in on load" marker's amber (topic 3); exact colours are settled when the components are built.
+- **Error:** the row is tinted, with a stripe down its left edge (topic 3). A plain array or object is tinted as a whole block, its header line included (Carl, plan 10.1).
+- **Warning:** the row is tinted fainter, in amber, without the stripe. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), and the fainter tint keeps a tree with a few warnings from looking as alarming as a broken one. Its amber must be told apart from the "filled in on load" marker's (topic 3).
 - **Hint:** the messages area only. fig-tree has one hint today (`token-renumber`, beside the warnings it explains).
 
-Rejected: one treatment for all three in different colours, which tints every new var's row; and warnings in the messages area only, which moves a row's problem away from the row.
+A node keeps a flag on its header's line, which has room for one, and isn't tinted. Rejected, first: a flag on every row with an issue, errors tinted as well and warnings flagged alone, which made a tree with several issues busy (Carl). Rejected earlier: one treatment for all three in different colours; and warnings in the messages area only, which moves a row's problem away from the row.
 
-**What a flag says: the issue's message, cut to the space left on the row with an ellipsis, with the full text on hover.** It works for every code, including a host operator's `validate` hook (`operator-validate`, with any message), and needs no text of the editor's own. A row with several issues flags the most severe first, followed by "+1" and so on, and the hover lists them all. Rejected: the editor's own short text per code ("not a parameter", "no such var"), which reads best but is a second copy of fig-tree's vocabulary, over 40 codes kept in step by hand and still nothing for host hooks; and an icon alone, which makes reading any problem take a hover.
+**What a row says: fig-tree's own messages,** in a card floating beneath its value, or at the top of a collection's rows, beneath json-edit-react's header line, which the editor can't add to (plan 10.1). The card lists every issue on the row, the most severe first, each with its severity, and shows while the row is hovered, after the hover cards' delay, except while the key's own card shows. It never moves the tree: every hover element floats (Carl). **A node's flag** is the most severe message, cut to the space left on its header's line with an ellipsis, then "+1" and so on, with every one listed on hover. Messages work for every code, including a host operator's `validate` hook (`operator-validate`, with any message), and need no text of the editor's own. A collapsed row's count of issues goes after its summary, inside the summary text ("Operator: if · 2 errors", "3 items · 2 warnings"), rather than as a flag after its closing bracket, which a custom component can't reach either. Rejected: the editor's own short text per code ("not a parameter", "no such var"), which reads best but is a second copy of fig-tree's vocabulary, over 40 codes kept in step by hand and still nothing for host hooks; and an icon alone, which makes reading any problem take a hover.
 
 **The sample-data warnings go on the rows that read the missing paths,** since fig-tree reports each at the path of its reading node (F12 in [v3-upstream.md](v3-upstream.md)): a reference string, a `get` with a literal path, or a string holding a `{{$data.…}}` token. A read inside a fragment body marks the call. Rejected: the editor checking the sample data itself with its walk and fig-tree's exported `resolvePath`, which duplicates `validate()`'s check and misses `get` paths and template tokens unless it re-implements them.
 
@@ -1311,7 +1311,7 @@ interface FigTreeEditorHandle extends JsonEditorHandle {
 The props for topic 7's evaluation design:
 
 ```ts
-evaluationData?: unknown // what `$data` is in the editor's evaluations and validate()'s sample-data check
+evaluationData?: Record<string, unknown> // what `$data` is in the editor's evaluations and validate()'s sample-data check
 evaluationMode?: 'report' | 'throw' // default 'report'
 showEvaluationResult?: boolean // default true; false turns off the built-in result display
 onEvaluateStart?: (start: { path: Path }) => void
@@ -1338,7 +1338,7 @@ type EvaluationFailure = {
 }
 ```
 
-- **`evaluationData`,** given, is passed per call to `evaluate()` and `validate()`; absent, the instance's own `data` applies to both (topic 7, "What an evaluation uses"). It cannot be `data`, which is json-edit-react's ("How the props relate to json-edit-react's"). Rejected: v1's `objectData`, fig-tree v2's wording; and `sampleData`, topic 7's wording, which misdescribes a host such as Conforma that passes the application's real context.
+- **`evaluationData`,** given, is passed per call to `evaluate()` and `validate()`; absent, the instance's own `data` applies to both (topic 7, "What an evaluation uses"). It cannot be `data`, which is json-edit-react's ("How the props relate to json-edit-react's"). It takes fig-tree's own type for `data`, `Record<string, unknown>` (plan, 10.1). Rejected: v1's `objectData`, fig-tree v2's wording; and `sampleData`, topic 7's wording, which misdescribes a host such as Conforma that passes the application's real context.
 - **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure in throw mode, or in report mode a failure at the row itself (the result display's "Failed", topic 7). A partial result in report mode is `'done'` with its failures listed.
 - **One `failures` list in both modes,** in place of the sketch's separate `error` and `errors`.
 - **Every path is in the tree's coordinates except the trace's.** Translating a whole trace for a host that rarely reads it is wasted work, so the host gets `toTreePath`, built from the mapping sub-tree evaluation already records (topic 7). At a row with no enclosing scope it is the identity.
@@ -1513,7 +1513,7 @@ interface FigTreeEditorProps extends Omit<
   onStatusChange?: (status: EditorStatus) => void
   messagesMaxHeight?: number | string // 0 hides the messages area
   editorRef?: React.Ref<FigTreeEditorHandle> // json-edit-react's handle, plus reveal({ path })
-  evaluationData?: unknown
+  evaluationData?: Record<string, unknown>
   evaluationMode?: 'report' | 'throw'
   showEvaluationResult?: boolean
   onEvaluateStart?: (start: { path: Path }) => void

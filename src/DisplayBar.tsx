@@ -3,6 +3,7 @@ import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
 import { Icon, Icons } from './Icons'
+import { IssueFlag } from './IssueFlag'
 import { strings } from './strings'
 
 // A node's header (design, topic 3, "Header and toolbar"): the Evaluate
@@ -15,7 +16,9 @@ import { strings } from './strings'
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
 // other spelling. A shorthand node's name is in italics, and its single value
 // can sit on the button's line. The conversion button, shown on hover, sits
-// beneath the display name, in the node's colours.
+// beneath the display name, in the node's colours. Any other issue at the
+// node's path flags the header's line, after the controls (design, topic 7,
+// "Where issues attach").
 //
 // TO-DO: evaluating (plan, Phase 10).
 
@@ -33,6 +36,7 @@ interface DisplayBarProps {
   card: string[] // the hover card's lines
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
+  flagged?: readonly Issue[] // the node's other issues, most severe first
   editorTheme: EditorTheme
   shorthand?: boolean
   inline?: React.ReactNode // after the button, on its line
@@ -50,6 +54,7 @@ export const DisplayBar = ({
   card,
   cardNote,
   broken,
+  flagged = [],
   editorTheme,
   shorthand = false,
   inline,
@@ -85,6 +90,7 @@ export const DisplayBar = ({
           </button>
         )}
         {inline && <div className="ft-display-bar-value">{inline}</div>}
+        {!broken && <IssueFlag issues={flagged} editorTheme={editorTheme} />}
       </span>
       {display && (
         <span className="ft-display-name">

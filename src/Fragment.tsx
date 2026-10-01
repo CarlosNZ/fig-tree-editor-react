@@ -1,6 +1,6 @@
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
-import { brokenIssue } from './attachIssues'
+import { brokenIssue, flaggedIssues } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar, type HeaderDisplay } from './DisplayBar'
@@ -100,6 +100,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
           display={fragmentHeader(hints, editorTheme)}
           card={hints?.description === undefined ? [] : [hints.description]}
           broken={broken}
+          flagged={flaggedIssues(issues, path)}
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}
           conversion={conversion}

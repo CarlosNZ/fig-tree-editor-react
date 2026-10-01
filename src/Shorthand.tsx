@@ -1,5 +1,5 @@
 import { type CustomComponentProps } from 'json-edit-react'
-import { brokenIssue } from './attachIssues'
+import { brokenIssue, flaggedIssues } from './attachIssues'
 import { rowAt, type Classification, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { DisplayBar } from './DisplayBar'
@@ -81,6 +81,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
           strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), `$${spelling}`)
         }
         broken={broken}
+        flagged={flaggedIssues(issues, path)}
         editorTheme={editorTheme}
         shorthand
         inline={row}

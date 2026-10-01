@@ -1,7 +1,7 @@
 import { FigTree } from 'fig-tree-evaluator'
 import { type NodeData, type Theme } from 'json-edit-react'
 import { describe, expect, it } from 'vitest'
-import { attachIssues } from '../src/attachIssues'
+import { attachIssues, rollUpIssues } from '../src/attachIssues'
 import { classify } from '../src/classify'
 import {
   defaultEditorTheme,
@@ -23,9 +23,11 @@ const registry = { operators: figTree.getOperators(), fragments: figTree.getFrag
 
 const contextFor = (expression: unknown): ThemeContext => {
   const classification = classify(expression, registry)
+  const { issues } = figTree.validate(expression)
   return {
     classification,
-    issues: attachIssues(figTree.validate(expression).issues, classification),
+    issues: attachIssues(issues, classification),
+    rollUp: rollUpIssues(issues, classification),
     editorTheme: defaultEditorTheme,
     indent: 2,
   }
@@ -44,7 +46,8 @@ const style = (
     | 'property'
     | 'valueRow'
     | 'headerRow'
-    | 'iconCollection',
+    | 'iconCollection'
+    | 'itemCount',
   path: (string | number)[],
   collapsed = false
 ) => {
@@ -274,13 +277,71 @@ describe('editor theme', () => {
       const node = { $plus: ['$vars.n'], vars: { n: 1 } }
       expect(style(node, 'property', ['vars', 'n'])).toBeNull()
       expect(style(node, 'collection', ['vars', 'n'])).toBeNull()
+      // A malformed block takes only its error's tint
       for (const malformed of [
         { $plus: [1], vars: [1] },
         { $plus: [1], vars: 'x' },
       ]) {
         expect(style(malformed, 'property', ['vars'])).toBeNull()
-        expect(style(malformed, 'collection', ['vars'])).toBeNull()
+        expect(style(malformed, 'collection', ['vars'])).not.toHaveProperty('borderLeft')
       }
+    })
+  })
+
+  describe('issues', () => {
+    const tint: unknown = expect.objectContaining({
+      background: `color-mix(in srgb, ${defaultEditorTheme.error} 9%, transparent)`,
+      boxShadow: `inset 3px 0 0 ${defaultEditorTheme.error}`,
+    })
+
+    it('tints a value row with an error', () => {
+      const expression = { operator: 'if', condition: true, thn: 1, else: 2 }
+      expect(style(expression, 'valueRow', ['thn'])).toEqual(tint)
+      expect(style(expression, 'valueRow', ['else'])).toBeNull()
+    })
+
+    it("tints a plain collection's whole block with an error, its chevron included", () => {
+      const expression = { operator: 'round', value: [1, 2] }
+      const block = style(expression, 'collection', ['value'])
+      expect(block).toEqual(tint)
+      // Out past the chevron, as a vars block's rule is, then padded back
+      expect(block).toEqual(
+        expect.objectContaining({ marginLeft: 'calc(1em - 1.35em)', paddingLeft: '1.35em' })
+      )
+      expect(style(expression, 'headerRow', ['value'])).toBeNull()
+      expect(style({ $plus: [1, true] }, 'collection', ['$plus'])).toEqual(tint)
+    })
+
+    it('tints a row with only a warning fainter, without the stripe', () => {
+      const warning = style({ style: { $colour: 'red' } }, 'valueRow', ['style', '$colour'])
+      expect(warning).toEqual(
+        expect.objectContaining({
+          background: `color-mix(in srgb, ${defaultEditorTheme.warning} 10%, transparent)`,
+        })
+      )
+      expect(warning).not.toHaveProperty('boxShadow')
+    })
+
+    it("doesn't tint a node, whose header carries its flag", () => {
+      const expression = { age: { operator: 'if', condition: true, thn: 1 } }
+      expect(style(expression, 'collection', ['age'])).toBeNull()
+    })
+
+    it("colours a collapsed row's summary by the most severe issue beneath it", () => {
+      const both = { a: { operator: 'round', value: [1] }, b: { $colour: 'red' } }
+      expect(style(both, 'itemCount', [], true)).toEqual({
+        color: defaultEditorTheme.error,
+        fontWeight: 600,
+      })
+      expect(style(both, 'itemCount', ['b'], true)).toEqual({
+        color: `color-mix(in srgb, ${defaultEditorTheme.warning}, black 35%)`,
+        fontWeight: 600,
+      })
+      expect(style({ a: [1] }, 'itemCount', ['a'], true)).toBeNull()
+    })
+
+    it("leaves an open row's summary alone", () => {
+      expect(style({ a: { operator: 'round', value: [1] } }, 'itemCount', ['a'])).toBeNull()
     })
   })
 })

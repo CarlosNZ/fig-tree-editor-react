@@ -5,7 +5,7 @@ import {
 } from 'json-edit-react'
 import { type FC } from 'react'
 import { type FigTree, type ReferenceNamespace } from 'fig-tree-evaluator'
-import { type IssueIndex } from './attachIssues'
+import { flaggedIssues, type IssueIndex } from './attachIssues'
 import { type ReferenceNames } from './conversions'
 import { rowAt, type Classification, type Row } from './classify'
 import { CommentLine } from './CommentLine'
@@ -15,6 +15,7 @@ import { type EditorTheme } from './editorTheme'
 import { getStartingFragment } from './getStartingFragment'
 import { getStartingNode, type DefaultOperators } from './getStartingNode'
 import { Fragment } from './Fragment'
+import { Flagged } from './IssueFlag'
 import { Operator } from './Operator'
 import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
@@ -211,6 +212,19 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       )
     )
 
+  // A row json-edit-react draws takes the flag where it has an error or a
+  // warning (design, topic 7, "Where issues attach"): a definition with no
+  // component of its own comes in two, with the flag first. The editor's own
+  // components draw their own.
+  const flagged = (base: CustomNodeDefinition): CustomNodeDefinition => ({
+    ...base,
+    condition: (nodeData) =>
+      flaggedIssues(shared.issues, nodeData.path).length > 0 && base.condition(nodeData),
+    component: Flagged as unknown as CustomNodeDefinition['component'],
+    passOriginalNode: true,
+  })
+  const withFlag = (base: CustomNodeDefinition) => [flagged(base), base]
+
   return [
     // A full node owns both its editors: every edit session renders the
     // component, which shows json-edit-react's raw-JSON editor as
@@ -274,17 +288,22 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       { showCollectionWrapper: false, showKey: false }
     ),
     // A `$name` row holding a plain value or an argument list
-    definition(
-      'unlabelled',
-      matches((row) => row.payload === 'unlabelled'),
-      { showKey: false }
+    ...withFlag(
+      definition(
+        'unlabelled',
+        matches((row) => row.payload === 'unlabelled'),
+        { showKey: false }
+      )
     ),
     // Any other row with a hover card, such as a plain value at a parameter,
     // keeps json-edit-react's rendering, and gains only the card on its key
-    {
+    ...withFlag({
       condition: matches(hasCard),
       keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
       componentProps: { ...shared },
-    },
+    }),
+    // Any row left with an error or a warning, such as an unknown key or a
+    // var, gains only its flag
+    flagged({ condition: () => true, componentProps: { ...shared } }),
   ]
 }

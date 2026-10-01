@@ -9,8 +9,6 @@ import { type Path } from './paths'
 // `fragment` rows a node's header shows, and a flattened payload's own row.
 // Keyed by json-edit-react's `toPathString`, as the classification is, and in
 // `validate()`'s order.
-//
-// TO-DO: a collapsed row's roll-up of the issues beneath it (plan, Phase 10).
 
 export type IssueIndex = ReadonlyMap<string, readonly Issue[]>
 
@@ -29,6 +27,49 @@ export const attachIssues = (
 const NONE: readonly Issue[] = []
 
 export const issuesAt = (index: IssueIndex, path: Path) => index.get(toPathString(path)) ?? NONE
+
+// What a row's flag shows: its errors, then its warnings, each in
+// `validate()`'s order. A hint shows in the messages area alone.
+export const flaggedIssues = (index: IssueIndex, path: Path) =>
+  issuesAt(index, path)
+    .filter(({ severity }) => severity !== 'hint')
+    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+
+const SEVERITY_RANK: Record<Issue['severity'], number> = { error: 0, warning: 1, hint: 2 }
+
+// The errors and warnings on a row and every row beneath it, which a
+// collapsed row carries in its summary (topic 7), keyed as the index is
+export interface IssueCounts {
+  errors: number
+  warnings: number
+}
+
+export type IssueRollUp = ReadonlyMap<string, IssueCounts>
+
+export const rollUpIssues = (
+  issues: readonly Issue[],
+  classification: Classification
+): IssueRollUp => {
+  const rollUp = new Map<string, IssueCounts>()
+  for (const { severity, path } of issues) {
+    if (severity === 'hint') continue
+    const row = drawnRow(path, classification)
+    for (let length = 0; length <= row.length; length++) {
+      const key = toPathString(row.slice(0, length))
+      const counts = rollUp.get(key) ?? { errors: 0, warnings: 0 }
+      rollUp.set(key, {
+        errors: counts.errors + (severity === 'error' ? 1 : 0),
+        warnings: counts.warnings + (severity === 'warning' ? 1 : 0),
+      })
+    }
+  }
+  return rollUp
+}
+
+const NO_COUNTS: IssueCounts = { errors: 0, warnings: 0 }
+
+export const issuesBeneath = (rollUp: IssueRollUp, path: Path) =>
+  rollUp.get(toPathString(path)) ?? NO_COUNTS
 
 const drawnRow = (path: Path, classification: Classification) => {
   let row = path

@@ -274,6 +274,7 @@ function App() {
                 setLocalStorage('expression', newExpression)
               }}
               rootName="expression"
+              evaluationData={objectData as Record<string, unknown>}
               onCopy={({ stringValue, type }) =>
                 toast({
                   title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
