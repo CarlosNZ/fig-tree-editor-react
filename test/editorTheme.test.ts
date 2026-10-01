@@ -27,6 +27,7 @@ const contextFor = (expression: unknown): ThemeContext => {
     classification,
     issues: attachIssues(figTree.validate(expression).issues, classification),
     editorTheme: defaultEditorTheme,
+    indent: 2,
   }
 }
 
@@ -36,7 +37,7 @@ const empty = contextFor(null)
 // applied to a row
 const style = (
   expression: unknown,
-  element: 'bracket' | 'collectionInner' | 'collection',
+  element: 'bracket' | 'collectionInner' | 'collection' | 'property',
   path: (string | number)[],
   collapsed = false
 ) => {
@@ -148,6 +149,77 @@ describe('editor theme', () => {
       })
       expect(style({ $plus: [1, 2] }, 'collection', ['$plus'])).toBeNull()
       expect(style({ total: { operator: 'plus' } }, 'collection', ['total'])).toBeNull()
+    })
+  })
+
+  describe('modifier keys', () => {
+    const modifier = { color: defaultEditorTheme.modifierKey, fontStyle: 'italic' }
+
+    it('mark fallback and useCache, on any node', () => {
+      const node = { operator: 'plus', values: [1], fallback: 0, useCache: false }
+      expect(style(node, 'property', ['fallback'])).toEqual(modifier)
+      expect(style(node, 'property', ['useCache'])).toEqual(modifier)
+      expect(style({ $plus: [1], fallback: { $minus: [2] } }, 'property', ['fallback'])).toEqual(
+        modifier
+      )
+      expect(style(node, 'property', ['values'])).toBeNull()
+    })
+
+    it('mark a comment that holds something other than a note', () => {
+      const node = { '//': { ticket: 123 }, operator: 'plus', values: [1] }
+      expect(style(node, 'property', ['//'])).toEqual(modifier)
+      expect(style(node, 'property', ['//', 'ticket'])).toBeNull()
+    })
+
+    it('leave plain data and quoted content alone', () => {
+      expect(style({ fallback: 1 }, 'property', ['fallback'])).toBeNull()
+      const quoted = { operator: 'literal', value: { fallback: 1, vars: { a: 1 } } }
+      expect(style(quoted, 'property', ['value', 'fallback'])).toBeNull()
+      expect(style(quoted, 'property', ['value', 'vars'])).toBeNull()
+    })
+  })
+
+  describe('vars blocks', () => {
+    const block = {
+      borderLeft: `2px solid ${defaultEditorTheme.varsBlock}`,
+      background: `color-mix(in srgb, ${defaultEditorTheme.varsBlock} 7%, transparent)`,
+    }
+
+    it('colour the vars key, and draw the rule and tint down the block', () => {
+      for (const holder of [
+        { operator: 'plus', values: ['$vars.n'], vars: { n: 1 } },
+        { $plus: ['$vars.n'], vars: { n: 1 } },
+        { fragment: 'greet', parameters: { name: '$vars.n' }, vars: { n: 'Ada' } },
+        { title: '$vars.n', vars: { n: 'Ada' } },
+      ]) {
+        expect(style(holder, 'property', ['vars'])).toEqual({ color: defaultEditorTheme.refVars })
+        expect(style(holder, 'collection', ['vars'])).toMatchObject(block)
+      }
+    })
+
+    it("take the host's colours", () => {
+      const context = {
+        ...contextFor({ $plus: ['$vars.n'], vars: { n: 1 } }),
+        editorTheme: mergeEditorTheme({ refVars: 'teal', varsBlock: 'navy' }),
+      }
+      const { styles } = layerTheme(undefined, context) as Theme
+      const at = (element: 'property' | 'collection') =>
+        (styles[element] as (nodeData: NodeData) => unknown)({ path: ['vars'] } as NodeData)
+      expect(at('property')).toEqual({ color: 'teal' })
+      expect(at('collection')).toMatchObject({ borderLeft: '2px solid navy' })
+    })
+
+    it("leave a var's own key and a malformed block unstyled", () => {
+      const node = { $plus: ['$vars.n'], vars: { n: 1 } }
+      expect(style(node, 'property', ['vars', 'n'])).toBeNull()
+      expect(style(node, 'collection', ['vars', 'n'])).toBeNull()
+      for (const malformed of [
+        { $plus: [1], vars: [1] },
+        { $plus: [1], vars: 'x' },
+      ]) {
+        expect(style(malformed, 'property', ['vars'])).toBeNull()
+        expect(style(malformed, 'collection', ['vars'])).toBeNull()
+      }
     })
   })
 })

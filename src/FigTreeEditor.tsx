@@ -6,12 +6,13 @@ import {
   type FilterFunction,
   type JsonEditorProps,
   type NewKeyOptionsFunction,
+  type NodeData,
   type OnCollapseFunction,
   type TypeFilterFunction,
 } from 'json-edit-react'
 import { type FigTree, type Issue } from 'fig-tree-evaluator'
 import { attachIssues } from './attachIssues'
-import { canonicalPath, classify, rowAt, type Classification } from './classify'
+import { canonicalPath, classify, rowAt, type Classification, type Row } from './classify'
 import {
   clearCollapseRecord,
   emptyCollapseRecord,
@@ -221,14 +222,16 @@ export const FigTreeEditor = ({
     pruneCollapseRecord(collapseRecord.current, shown, classification)
   }, [shown, classification])
 
+  const indent = props.indent ?? editorDefaults.indent
   const layeredTheme = useMemo(
     () =>
       layerTheme(theme, {
         classification,
         issues: issueIndex,
         editorTheme: mergedEditorTheme,
+        indent,
       }),
-    [theme, classification, issueIndex, mergedEditorTheme]
+    [theme, classification, issueIndex, mergedEditorTheme, indent]
   )
   const combinedText = useMemo(
     () => combineText(editorText(classification), customText),
@@ -305,19 +308,31 @@ const hostFilter = (
 
 // What json-edit-react's ＋ adds. An array's new element starts by the
 // element rule; a key added to a node starts as the toolbar's "Add parameter"
-// would start it, and any other key as anything.
+// would start it; `vars` on an evaluated plain object is a block, as on a
+// node (design, topic 5, "The vars block"); and any other key starts as
+// anything.
 const newValue =
   (figTree: FigTree, classification: Classification, displayData: DisplayData) =>
   ({ path, value }: Parameters<DefaultValueFunction>[0], newKey = '') => {
     const operators = figTree.getOperators()
     if (Array.isArray(value))
       return getStartingElement(path, value, { classification, operators, displayData })
-    return getNewKeyValue(newKey, rowAt(classification, path)?.kind, {
+    const row = rowAt(classification, path)
+    if (newKey === 'vars' && isPlainObjectRow(row)) return {}
+    return getNewKeyValue(newKey, row?.kind, {
       operators,
       displayData,
       useCache: figTree.getOptions().useCache,
     })
   }
+
+// A plain object whose values are evaluated: the walk gives it a slot, as it
+// does every evaluated value, and finds no node there. Quoted content has no
+// row, and a flattened payload's keys are its node's parameters.
+const isPlainObjectRow = (row: Row | undefined) =>
+  row?.slot !== undefined &&
+  row.payload !== 'flattened' &&
+  (row.kind === undefined || row.kind.kind === 'container')
 
 // The keys json-edit-react's ＋ offers: on a node, the same list as "Add
 // parameter", by name, less the entries that don't add a key to the node
@@ -357,10 +372,15 @@ const typesFor =
     typeOptions(rowAt(classification, path), value, fullData, figTree.getFragments())
 
 // A collapsed node's summary, in place of json-edit-react's item count
-// (design, topic 3, "Collapsed nodes")
+// (design, topic 3, "Collapsed nodes"), and a vars block's count of vars,
+// leaving out a `//` among them
 const editorText = (classification: Classification): CustomTextDefinitions => {
-  const summary = ({ path }: { path: (string | number)[] }) => {
+  const summary = ({ path, value }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
+    if (kind?.kind === 'vars')
+      return strings.FT_SUMMARY_VARS(
+        Object.keys(value as object).filter((key) => key !== '//').length
+      )
     if (kind?.kind !== 'operator' && kind?.kind !== 'fragment') return null
     if (kind.form === 'shorthand') return strings.FT_SUMMARY_SHORTHAND(`$${kind.name}`)
     const text =

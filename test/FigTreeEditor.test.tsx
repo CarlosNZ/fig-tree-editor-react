@@ -204,6 +204,42 @@ describe('FigTreeEditor', () => {
       expect(setExpression).toHaveBeenCalledExactlyOnceWith({ a: 1, b: 'Replace me' })
     })
 
+    it('starts vars on an evaluated plain object as an empty block', () => {
+      const typeKey = (key: string) => {
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: key } })
+        fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+      }
+      const setExpression = vi.fn()
+      const { unmount } = render(
+        <FigTreeEditor figTree={figTree} expression={{ a: 1 }} setExpression={setExpression} />
+      )
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+      typeKey('vars')
+      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ a: 1, vars: {} })
+      unmount()
+
+      // A var called `vars`, and a key in quoted content, start as anything
+      for (const [expression, added] of [
+        [
+          { $plus: [1], vars: { n: 1 } },
+          { $plus: [1], vars: { n: 1, vars: 'Replace me' } },
+        ],
+        [
+          { operator: 'literal', value: { a: 1 } },
+          { operator: 'literal', value: { a: 1, vars: 'Replace me' } },
+        ],
+      ]) {
+        const set = vi.fn()
+        const { unmount } = render(
+          <FigTreeEditor figTree={figTree} expression={expression} setExpression={set} />
+        )
+        addToLast()
+        typeKey('vars')
+        expect(set).toHaveBeenCalledExactlyOnceWith(added)
+        unmount()
+      }
+    })
+
     it("starts an array's new element by the element rule", () => {
       const setExpression = vi.fn()
       render(
@@ -289,6 +325,46 @@ describe('FigTreeEditor', () => {
       expect(screen.queryByDisplayValue('value')).toBeNull()
       fireEvent.doubleClick(keyLabel('decimals'))
       expect(screen.getByDisplayValue('decimals')).toBeInTheDocument()
+    })
+  })
+
+  describe('vars blocks', () => {
+    it('summarise a collapsed block by its vars, leaving out a comment', () => {
+      const collapseVars = ({ key }: { key: unknown }) => key === 'vars'
+      const { unmount } = render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ $plus: ['$vars.a', '$vars.b'], vars: { '//': 'Two', a: 1, b: 2 } }}
+          setExpression={vi.fn()}
+          collapse={collapseVars}
+        />
+      )
+      expect(screen.getByText('2 vars')).toBeInTheDocument()
+      unmount()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ title: '$vars.a', vars: { a: 1 } }}
+          setExpression={vi.fn()}
+          collapse={collapseVars}
+        />
+      )
+      expect(screen.getByText('1 var')).toBeInTheDocument()
+    })
+
+    it('take the vars colour on the key, and the rule down the block', () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={{ $plus: ['$vars.a'], vars: { a: 1 } }}
+          setExpression={vi.fn()}
+          editorTheme={{ refVars: 'rgb(1, 2, 3)', varsBlock: 'rgb(4, 5, 6)' }}
+        />
+      )
+      expect(keyLabel('vars')).toHaveStyle({ color: 'rgb(1, 2, 3)' })
+      expect(keyLabel('vars').closest('.jer-collection-component')).toHaveStyle({
+        borderLeft: '2px solid rgb(4, 5, 6)',
+      })
     })
   })
 

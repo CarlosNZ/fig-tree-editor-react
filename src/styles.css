@@ -369,6 +369,8 @@ input.ft-select-input::placeholder {
   font-size: 0.8em;
   line-height: 1.25;
   color: #333;
+  /* Not the italic of a modifier's key, which it can sit inside */
+  font-style: normal;
   white-space: normal;
   pointer-events: none;
 }
