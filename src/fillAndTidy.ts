@@ -23,7 +23,7 @@ import { type Path } from './paths'
 //   "Rename" quick fix instead.
 // - Tidy: each node's keys in order, `//` first, then `operator` or
 //   `fragment`, the parameters (`positionalParams` first, then declared
-//   order), any unknown keys as written, `fallback` and `useCache`, and
+//   order), any unknown keys as written, `fallback` and `noCache`, and
 //   `vars` last. Plain objects, vars blocks and quoted content keep theirs.
 //
 // It removes nothing: a key that doesn't belong stays, for its diagnostic and
@@ -45,7 +45,7 @@ export interface FillResult {
   filled: Path[] // the rows filled in, for the filled-in marker
 }
 
-const MODIFIERS = ['fallback', 'useCache', 'vars']
+const MODIFIERS = ['fallback', 'noCache', 'vars']
 
 type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 

@@ -73,7 +73,7 @@ describe('quick fixes', () => {
         { operator: 'plus', values: [1] },
       ],
       [
-        { fragment: 'greet', parameters: { name: 'Ada' }, useCache: true },
+        { fragment: 'greet', parameters: { name: 'Ada' }, noCache: false },
         { fragment: 'greet', parameters: { name: 'Ada' } },
       ],
     ])('removes it: %j', (expression, result) => {

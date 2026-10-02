@@ -148,11 +148,11 @@ describe('slots', () => {
   })
 
   it('resolve the modifiers and vars', () => {
-    const node = { $plus: [1], fallback: 0, useCache: true, vars: { price: 5 } }
+    const node = { $plus: [1], fallback: 0, noCache: true, vars: { price: 5 } }
     expect(slotAt(node, ['fallback'])).toMatchObject({ role: 'modifier', admits: 'any' })
-    expect(slotAt(node, ['useCache'])).toMatchObject({
+    expect(slotAt(node, ['noCache'])).toMatchObject({
       role: 'modifier',
-      admits: 'boolean',
+      admits: { literal: [true] },
       literalOnly: true,
     })
     expect(slotAt(node, ['vars', 'price'])).toMatchObject({ role: 'var', admits: 'any' })

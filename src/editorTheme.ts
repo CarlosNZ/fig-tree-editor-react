@@ -22,7 +22,7 @@ export interface EditorTheme {
   refParams: string // `$params` references
   refBinding: string // `$element`, `$index` and `as` names
   varsBlock: string // the vars block's tint and rule
-  modifierKey: string // the `//`, fallback and useCache keys
+  modifierKey: string // the `//`, fallback and noCache keys
   comment: string // comment notes
   error: string // row tint, flag and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
@@ -142,7 +142,7 @@ const editorThemeLayer = ({
   return {
     styles: {
       // The vars key takes the `$vars` colour, and a modifier's key is muted
-      // and italic (topic 3, "States"): `fallback`, `useCache`, and a `//`
+      // and italic (topic 3, "States"): `fallback`, `noCache`, and a `//`
       // whose key shows, since it holds something other than a note
       property: ({ path }) => {
         const row = rowAt(classification, path)
@@ -159,11 +159,12 @@ const editorThemeLayer = ({
       collection: (nodeData) => {
         const row = rowAt(classification, nodeData.path)
         if (row?.payload === 'flattened') return { marginLeft: `${ROWS_PULL}em` }
-        if (row?.kind?.kind === 'vars') return varsBlock(editorTheme.varsBlock, indent)
+        if (row?.kind?.kind === 'vars')
+          return varsBlock(editorTheme.varsBlock, indent, nodeData.collapsed)
         if (comment(nodeData) === 'lines') return noteBlock(editorTheme.comment)
         const blockTint = tint(nodeData)
         const rowIndent = nodeData.path.length === 0 ? 0 : indent
-        const own = blockTint && issueBlock(blockTint, rowIndent)
+        const own = blockTint && issueBlock(blockTint, rowIndent, nodeData.collapsed)
         return filledIn ? highlight(nodeData, own, blockShape(rowIndent)) : own
       },
       // A comment is a note (topic 5, "Comments"): a string comment's row is
@@ -207,8 +208,8 @@ const editorThemeLayer = ({
           ? { display: 'none' }
           : null,
       // A collapsed node is its summary alone, with no border. A shorthand
-      // node's border is dashed, and a broken node has an error border and
-      // stripe, whatever its form (topic 3). After an evaluation, a node that
+      // node's border is dashed, and a broken node's is in the error colour,
+      // whatever its form (topic 3). After an evaluation, a node that
       // took part has its border in the colour of how it ran (topic 7, "How
       // it ran, in the tree"). No broken node takes part, since its errors
       // block the evaluation. Any other collection's rows are pulled back as
@@ -229,7 +230,6 @@ const editorThemeLayer = ({
             : shorthand
               ? editorTheme.shorthandBorder
               : editorTheme.nodeBorder,
-          ...(broken && { borderLeftWidth: '0.3em' }),
           ...(ran !== undefined && { borderColor: runColour(ran, editorTheme) }),
         }
       },
@@ -240,16 +240,17 @@ const editorThemeLayer = ({
 // The tint is the rule's colour, faint, so a host sets both with one value.
 // The rule sits left of the block's chevron, which json-edit-react hangs
 // left of the key, and the padding puts the key back in line with its
-// siblings' (json-edit-react's margin is half the indent). The closing
+// siblings' (json-edit-react's margin is half the indent). Open, the closing
 // bracket ends the block as far above its bottom as the key starts below its
-// top.
-const varsBlock = (colour: string, indent: number) => ({
+// top; collapsed, the header row is the whole block, already as far.
+const varsBlock = (colour: string, indent: number, collapsed: boolean) => ({
   borderLeft: `${RULE_WIDTH} solid ${colour}`,
   background: `color-mix(in srgb, ${colour} 7%, transparent)`,
   marginTop: '0.4em',
   marginLeft: `calc(${indent / 2}em - ${RULE_GAP} - ${RULE_WIDTH})`,
   paddingLeft: RULE_GAP,
-  paddingBottom: BRACKET_PAD,
+  paddingBottom: collapsed ? 0 : BRACKET_PAD,
+  borderRadius: BLOCK_RADIUS,
 })
 
 // A comment's note: a rule and a tint from the comment colour, fainter than
@@ -275,7 +276,9 @@ interface Tint {
 
 const ERROR_TINT = '9%'
 const WARNING_TINT = '10%'
-const STRIPE_WIDTH = '3px'
+// As wide as a vars block's rule. An inset shadow, not a border, so it takes
+// no room, and a row's text stays put as its stripe comes and goes.
+const STRIPE_WIDTH = '2px'
 const TINT_GAP = '0.4em'
 
 const tintStyle = ({ colour, strength, stripe }: Tint) => ({
@@ -283,7 +286,11 @@ const tintStyle = ({ colour, strength, stripe }: Tint) => ({
   ...(stripe && { boxShadow: `inset ${STRIPE_WIDTH} 0 0 ${colour}` }),
 })
 
-const ROW_SHAPE = { marginLeft: `-${TINT_GAP}`, paddingLeft: TINT_GAP, borderRadius: '0.25em' }
+// A tinted block's corners: square on the left, where a rule or a stripe runs
+// down it, and rounded on the right
+const BLOCK_RADIUS = '0 0.5em 0.5em 0'
+
+const ROW_SHAPE = { marginLeft: `-${TINT_GAP}`, paddingLeft: TINT_GAP, borderRadius: BLOCK_RADIUS }
 
 const issueRow = (tint: Tint) => ({ ...tintStyle(tint), ...ROW_SHAPE })
 
@@ -291,15 +298,15 @@ const issueRow = (tint: Tint) => ({ ...tintStyle(tint), ...ROW_SHAPE })
 const blockShape = (indent: number) => ({
   marginLeft: `calc(${indent / 2}em - ${RULE_GAP})`,
   paddingLeft: RULE_GAP,
-  borderRadius: '0.25em',
+  borderRadius: BLOCK_RADIUS,
 })
 
-// The closing bracket's line is shorter than a row, so the block is padded
-// below it
-const issueBlock = (tint: Tint, indent: number) => ({
+// Padded below its closing bracket as a vars block is, open, and not at all
+// collapsed, where the header row is the whole block
+const issueBlock = (tint: Tint, indent: number, collapsed: boolean) => ({
   ...tintStyle(tint),
   ...blockShape(indent),
-  paddingBottom: '0.5em',
+  paddingBottom: collapsed ? 0 : BRACKET_PAD,
 })
 
 // The filled-in highlight, in the tint's shape, so the row's text stays where

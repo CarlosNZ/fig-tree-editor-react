@@ -27,7 +27,7 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { filterObjectRecursive } from './helpers'
-import { buildFigTree, type DemoOptions } from './figTree'
+import { buildFigTree, setCaching, usesCache, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
 import { type FragmentDefinition } from 'fig-tree-evaluator'
 
@@ -48,7 +48,7 @@ const resetFormState = (options: DemoOptions) => {
     runtimeTypeCheck: options.runtimeTypeCheck ?? true,
     strictDataPaths: options.strictDataPaths ?? false,
     fragments: options.fragments,
-    useCache: options.useCache ?? true,
+    useCache: usesCache(options),
     maxCacheSize: options.cache?.maxSize,
     maxCacheTime: options.cache?.maxTime,
   }
@@ -95,7 +95,7 @@ export const OptionsModal = ({
         graphQL: { endpoint: gqlEndpoint, headers: { Authorization: gqlAuth, ...gqlHeaders } },
         runtimeTypeCheck,
         strictDataPaths,
-        useCache,
+        operatorDefaults: setCaching(options.operatorDefaults, useCache),
         cache: { maxSize: maxCacheSize, maxTime: maxCacheTime },
       }),
       fragments,

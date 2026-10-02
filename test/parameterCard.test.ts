@@ -190,14 +190,14 @@ describe('parameterCard', () => {
   })
 
   it('describes the modifiers and the vars block', () => {
-    const node = { operator: 'round', value: 1, fallback: 0, useCache: true, vars: {} }
+    const node = { operator: 'round', value: 1, fallback: 0, noCache: true, vars: {} }
     expect(cardAt(node, ['fallback'])).toEqual([
       '`fallback` · optional · takes anything',
       'The value to use if this node fails',
     ])
-    expect(cardAt(node, ['useCache'])).toEqual([
-      '`useCache` · optional · takes a boolean',
-      "Cache this node's result",
+    expect(cardAt(node, ['noCache'])).toEqual([
+      '`noCache` · optional · takes true',
+      "Don't cache this node or anything inside it",
     ])
     expect(cardAt(node, ['vars'])).toEqual([
       '`vars`',
@@ -221,15 +221,17 @@ describe('parameterCard', () => {
 })
 
 describe('operatorDefaultsLine', () => {
-  const from = instance({ operatorDefaults: { http: { fallback: null, timeout: 5000 } } })
+  const from = instance({
+    operatorDefaults: { http: { fallback: null, timeout: 5000, noCache: true } },
+  })
   const http = from.operators.find(({ name }) => name === 'http')!
 
   it("lists what the instance sets on every node that doesn't set its own", () => {
     expect(operatorDefaultsLine(http, { operator: 'http', url: 'https://a.b' })).toBe(
-      "This application sets `fallback: null` and `timeout: 5000` on every `http` node that doesn't set its own"
+      "This application sets `fallback: null`, `noCache: true` and `timeout: 5000` on every `http` node that doesn't set its own"
     )
     expect(operatorDefaultsLine(http, { operator: 'http', url: 'https://a.b', timeout: 1 })).toBe(
-      "This application sets `fallback: null` on every `http` node that doesn't set its own"
+      "This application sets `fallback: null` and `noCache: true` on every `http` node that doesn't set its own"
     )
   })
 

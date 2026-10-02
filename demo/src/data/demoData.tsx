@@ -137,20 +137,24 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
 
 This expression fetches a random user object by making an HTTP request to [https://randomuser.me/api/](https://randomuser.me/api/), and keeps it in a var. We then use this data to populate a templated string.
 
-Note that this query requires the FigTree [cache](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#caching-memoization) to be disabled, otherwise we'd get the same result every time it's run. (You can see the "Use cache" option has been disabled in the "Configuration" panel.)
+FigTree [caches](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#caching-memoization) every request, so the request has \`noCache: true\`, otherwise we'd get the same user every time it's run.
 
-Try toggling the "Use cache" setting to see the difference.
+Try removing \`noCache\` to see the difference.
     `,
     expression: {
       operator: 'buildString',
       template:
         'Hello, {{$vars.user.name.first}} {{$vars.user.name.last}} from {{$vars.user.location.city}}, {{$vars.user.location.country}}!',
       vars: {
-        user: { operator: 'http', url: 'https://randomuser.me/api/', returnPath: 'results[0]' },
+        user: {
+          operator: 'http',
+          url: 'https://randomuser.me/api/',
+          returnPath: 'results[0]',
+          noCache: true,
+        },
       },
     },
     objectJsonEditorProps: { collapse: 1 },
-    figTreeOptions: { useCache: false },
   },
   {
     name: '🧵 Complex string substitution',
@@ -167,7 +171,6 @@ The values substituted into the output string are based on several different fac
 
 Try changing all these values and see the output differences.
     `,
-    figTreeOptions: { useCache: true },
     objectData: {
       user: {
         name: {
@@ -255,7 +258,6 @@ This expression returns the city list based on the \`country\` value in \`userRe
 
 Note the \`fallback\` property used here — an array with a *"Loading..."* indicator. This ensures that the Cities dropdown can render with a valid \`options\` list even if the online lookup returns an error due to an invalid or incomplete "country" value.
 `,
-    figTreeOptions: { useCache: true },
     objectJsonEditorProps: {
       allowAdd: false,
       allowDelete: false,
@@ -561,7 +563,6 @@ They both take a \`country\` parameter, which the fragment reads as \`"$params.c
       },
     },
     expressionCollapse: 3,
-    figTreeOptions: { useCache: true },
   },
   {
     name: '➡ Custom Operators',

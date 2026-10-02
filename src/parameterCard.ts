@@ -22,7 +22,7 @@ type Declaration = ParameterInfo | FragmentParameter
 
 const MODIFIERS: Record<string, string> = {
   fallback: strings.FT_MODIFIER_FALLBACK,
-  useCache: strings.FT_MODIFIER_USE_CACHE,
+  noCache: strings.FT_MODIFIER_NO_CACHE,
 }
 
 // Whether a row has a card: a declared parameter or fragment argument, a
@@ -195,14 +195,14 @@ const replacementLine = (declaration: Declaration) => {
 // ── The operator's own card ─────────────────────────────────────────────────
 
 // What the instance sets on every node of this operator that doesn't set its
-// own (topic 4): a fallback, whether to cache, and parameters' defaults
+// own (topic 4): a fallback, that it never caches, and parameters' defaults
 export const operatorDefaultsLine = (operator: OperatorInfo, node: Record<string, unknown>) => {
   const set: string[] = []
   const add = (key: string, value: unknown) => {
     if (value !== undefined && !(key in node)) set.push(code(`${key}: ${formatValue(value)}`))
   }
   add('fallback', operator.instanceFallback)
-  add('useCache', operator.instanceUseCache)
+  add('noCache', operator.instanceNoCache)
   for (const [key, parameter] of Object.entries(operator.parameters))
     add(key, parameter.instanceDefault)
   if (set.length === 0) return undefined

@@ -199,7 +199,7 @@ describe('FigTreeEditor', () => {
 
     it('offers a shorthand node its modifiers by name, and starts the one chosen', () => {
       const setExpression = vi.fn()
-      render(
+      const { unmount } = render(
         <FigTreeEditor
           figTree={figTree}
           expression={{ $plus: [1, 2] }}
@@ -207,9 +207,21 @@ describe('FigTreeEditor', () => {
         />
       )
       const { select, options } = keyOptions()
-      expect(options).toEqual(['//', 'fallback', 'useCache', 'vars'])
+      expect(options).toEqual(['//', 'fallback', 'vars'])
       fireEvent.change(select, { target: { value: 'fallback' } })
       expect(setExpression).toHaveBeenCalledExactlyOnceWith({ $plus: [1, 2], fallback: null })
+      unmount()
+
+      // `noCache` where the node caches, the demo's registry having the HTTP
+      // operators
+      const request = { $http: 'https://example.com' }
+      render(
+        <FigTreeEditor figTree={demoFigTree} expression={request} setExpression={setExpression} />
+      )
+      const cached = keyOptions()
+      expect(cached.options).toEqual(['//', 'fallback', 'noCache', 'vars'])
+      fireEvent.change(cached.select, { target: { value: 'noCache' } })
+      expect(setExpression).toHaveBeenLastCalledWith({ ...request, noCache: true })
     })
 
     it('starts a free-typed key as anything', () => {
@@ -235,9 +247,9 @@ describe('FigTreeEditor', () => {
           />
         )
         addToLast()
-        const { value } = screen.getByRole<HTMLInputElement>('textbox')
+        const { placeholder } = screen.getByRole<HTMLInputElement>('textbox')
         unmount()
-        return value
+        return placeholder
       }
       expect(prompt({ $plus: [1], vars: { n: 1 } })).toBe('New variable name')
       expect(prompt({ operator: 'match', value: 'a', branches: { a: 1 } })).toBe('Add branch name')

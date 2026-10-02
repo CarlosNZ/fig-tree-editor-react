@@ -87,8 +87,8 @@ export const drawnRow = (path: Path, classification: Classification) => {
 //
 // `validate()` reports some malformations on the node's own key, and the
 // key's row shows the issue too: a stray key beside a shorthand's `$name`, a
-// second `$name`, a fragment's `$name` row holding a string, `useCache` on a
-// fragment call, `parameters` on an operator node. A key whose row is a node
+// second `$name`, a fragment's `$name` row holding a string, `noCache` other
+// than `true`, `parameters` on an operator node. A key whose row is a node
 // is left out, since an issue there may be that node's own
 // (`condition: { operator: 42 }`).
 const BROKEN = new Set<string>(['malformed-node', 'unknown-operator', 'unknown-fragment'])

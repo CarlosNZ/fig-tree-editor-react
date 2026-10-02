@@ -61,12 +61,12 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   // a broken node's toolbar offers the picker alone
   const addParameter = () => {
     const context = {
+      classification,
       operators: figTree.getOperators(),
       fragments: figTree.getFragments(),
       displayData,
-      useCache: figTree.getOptions().useCache,
     }
-    const keys = addableKeys(node, kind, context)
+    const keys = addableKeys(node, path, kind, context)
     if (broken || keys === null) return null
     return (
       <AddParameter keys={keys} onAdd={(entry) => commit(addKey(node, entry, kind, context))} />

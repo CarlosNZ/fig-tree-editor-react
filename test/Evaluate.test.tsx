@@ -31,6 +31,7 @@ const once = defineOperator({
   category: 'other',
   description: 'Cached',
   parameters: {},
+  cache: true,
   evaluate: (_, { cache }) => cache.memo('once', () => Promise.resolve(42)),
 })
 
@@ -435,7 +436,7 @@ describe('evaluating', () => {
       })
 
       it('says a result came from the cache, with no icon of its own', async () => {
-        const cached = new FigTree({ operators: [coreOperators, [once]], useCache: true })
+        const cached = new FigTree({ operators: [coreOperators, [once]] })
         const { reports } = host({ x: { operator: 'once' } }, { figTree: cached })
         fireEvent.click(nodeButton('once'))
         await done(reports, 1)

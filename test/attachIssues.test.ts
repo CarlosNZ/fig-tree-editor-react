@@ -141,7 +141,7 @@ describe('a broken node', () => {
     expect(brokenAt({ $greet: '$data.x' })).toBe('malformed-node')
     expect(brokenAt({ $greet: { name: 'Ada' }, useCache: true })).toBe('malformed-node')
     expect(brokenAt({ operator: 'plus', values: [1], parameters: {} })).toBe('malformed-node')
-    expect(brokenAt({ fragment: 'greet', parameters: { name: 'Ada' }, useCache: true })).toBe(
+    expect(brokenAt({ fragment: 'greet', parameters: { name: 'Ada' }, noCache: false })).toBe(
       'malformed-node'
     )
   })

@@ -20,7 +20,7 @@ export type SlotRole =
   | 'entry' // a value in a `lazyEntries` map (`match.branches`)
   | 'field' // a field of an `elementShape` element (`buildObject.entries`)
   | 'arguments' // a fragment call's `parameters`, computed
-  | 'modifier' // `fallback`, `useCache`
+  | 'modifier' // `fallback`, `noCache`
   | 'var' // a value in a `vars` block
   | 'data' // plain data inside an evaluated position
   | 'root'
@@ -38,7 +38,7 @@ export interface Slot {
   parameter?: string // the declared name, where there is one
   declaration?: Declaration
   admits: ExpectedType
-  literalOnly: boolean // `as`, `useCache`: no nodes or references
+  literalOnly: boolean // `as`, `noCache`: no nodes or references
 }
 
 const slot = (
@@ -94,10 +94,17 @@ export const fieldSlot = (
 export const argumentsSlot = (path: Path, ownerPath: Path) =>
   slot(path, ownerPath, 'arguments', 'object', { parameter: 'parameters' })
 
-export const modifierSlot = (path: Path, ownerPath: Path, modifier: 'fallback' | 'useCache') =>
+// `noCache` takes only `true`, since it can only turn caching off
+export const modifierSlot = (path: Path, ownerPath: Path, modifier: 'fallback' | 'noCache') =>
   modifier === 'fallback'
     ? slot(path, ownerPath, 'modifier', 'any', { parameter: modifier })
-    : slot(path, ownerPath, 'modifier', 'boolean', { parameter: modifier, literalOnly: true })
+    : slot(
+        path,
+        ownerPath,
+        'modifier',
+        { literal: [true] },
+        { parameter: modifier, literalOnly: true }
+      )
 
 export const varSlot = (path: Path, ownerPath: Path) => slot(path, ownerPath, 'var', 'any')
 

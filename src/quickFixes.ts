@@ -16,7 +16,7 @@ import { switchOperator } from './switchOperator'
 //   renaming would overwrite.
 // - Remove, on any unknown key, and on a key that doesn't belong on its node
 //   (`malformed-node` at the key: a stray key beside a shorthand's `$name`, a
-//   second `$name`, `useCache` on a fragment call, `parameters` on an operator
+//   second `$name`, `noCache` other than `true`, `parameters` on an operator
 //   node). Not on a node's own `$name`, which holds its content.
 // - Change to, where fig-tree suggests a registered operator or fragment for
 //   an unknown one: the picker's switch on a broken node, which cleans it.

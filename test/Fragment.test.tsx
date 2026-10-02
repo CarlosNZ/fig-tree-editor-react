@@ -223,15 +223,15 @@ describe('the fragment call', () => {
       expect(within(displayBar(container)).getByText('invalid node')).toBeInTheDocument()
     })
 
-    it('is broken by `useCache`, which fragment calls may not have', () => {
+    it('is broken by a `noCache` other than `true`', () => {
       const { container } = editor({
         fragment: 'greet',
         parameters: { name: 'Ada' },
-        useCache: true,
+        noCache: false,
       })
       const bar = within(displayBar(container))
       expect(bar.queryByRole('button', { name: 'greet' })).not.toBeInTheDocument()
-      expect(bar.getByText(/'useCache' is not available on fragment calls/)).toBeInTheDocument()
+      expect(bar.getByText(/'noCache' takes only the literal true/)).toBeInTheDocument()
     })
   })
 

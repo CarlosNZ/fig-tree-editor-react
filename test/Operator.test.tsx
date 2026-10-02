@@ -386,7 +386,7 @@ describe('the operator node', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
       expect(screen.queryByText('Add parameter')).toBeNull()
       unmount()
-      const complete = { '//': 'x', operator: 'abs', value: 1, fallback: 0, useCache: true }
+      const complete = { '//': 'x', operator: 'abs', value: 1, fallback: 0 }
       editor({ ...complete, vars: {} })
       fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
       expect(screen.queryByText('Add parameter')).toBeNull()

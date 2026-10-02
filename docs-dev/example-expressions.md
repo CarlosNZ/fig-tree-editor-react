@@ -53,8 +53,7 @@ The expression:
         { "$equal": ["$data.user.tier", "gold"] },
         { "$lessThan": [{ "$length": "$data.user.trips" }, 3] }
       ]
-    },
-    "useCache": false
+    }
   },
   "iterator": {
     "$map": {
@@ -89,7 +88,7 @@ The expression:
         ]
       }
     },
-    "shorthand": { "$getFlag": { "country": "Peru" } }
+    "shorthand": { "$getFlag": { "country": "Peru" }, "noCache": true }
   },
   "hostOperators": [{ "$reverse": "$data.user.lastName" }, { "operator": "currentDate" }],
   "runMarks": {
@@ -130,7 +129,7 @@ The expression:
 | Fragment calls: static, dynamic by reference and by node, and shorthand       | `fragments`                                                                            |
 | `match` branches, `buildObject` fields                                        | `match`, `fragments.byNode`                                                            |
 | Iterators, `as` bindings, `$element` and `$index`, a comment of several lines | `iterator`, `longTrips`                                                                |
-| A vars block, `fallback`, `useCache`                                          | `fullNode`, `namedPayload`                                                             |
+| A vars block, `fallback`, `noCache`                                           | `fullNode`, `fragments.shorthand`                                                      |
 | Plain data: every value type, a string that wraps, empty collections          | `plainData`                                                                            |
 | Broken nodes, and error and warning tints on rows and blocks                  | `issues`                                                                               |
 | Collapsed summaries, with issue counts                                        | the demo's default collapse, and `issues` collapsed                                    |
@@ -168,7 +167,8 @@ Nested, and showing every node kind and row role the classification walk records
   "capital": {
     "fragment": "getCapital",
     "parameters": { "country": "$data.user.country" },
-    "fallback": "Unknown"
+    "fallback": "Unknown",
+    "noCache": true
   },
   "flag": { "$getFlag": { "country": "$data.user.country" } },
   "flagFromForm": { "fragment": "getFlag", "parameters": "$data.form" },
@@ -207,8 +207,7 @@ Nested, and showing every node kind and row role the classification walk records
     "operator": "match",
     "value": "$data.user.tier",
     "branches": { "gold": "Priority boarding", "silver": { "$literal": "Standard {{boarding}}" } },
-    "default": "Economy",
-    "useCache": false
+    "default": "Economy"
   },
   "isAdult": { "$not": { "$lessThan": ["$data.user.age", 18] } },
   "noAddress": { "$not": "$data.user.address" },
@@ -233,7 +232,7 @@ Nested, and showing every node kind and row role the classification walk records
 | Literal, full and shorthand                                                         | `template`, `tier.branches.silver`                                                                      |
 | References: `$data`, `$vars`, `$element`, and `as` bindings (`$trip`, `$tripIndex`) | throughout, `greeting.then`, `longTrips`, `trips`                                                       |
 | Comment line, and a comment of several lines                                        | the root's `//`, the `//` in `trips`' `each`                                                            |
-| A vars block, `fallback`, `useCache`                                                | `greeting`, `capital`, `tier`                                                                           |
+| A vars block, `fallback`, `noCache`                                                 | `greeting`, `capital`                                                                                   |
 | Host operators                                                                      | `reversedName`, and `$changeCase` in `flagFromNode`                                                     |
 | `match` branches, `buildObject` fields                                              | `tier.branches`, `flagFromNode`                                                                         |
 | Plain data in an evaluated position                                                 | `details`                                                                                               |
@@ -249,7 +248,7 @@ One of each way a node can be broken (design, topic 7, "Where issues attach"). E
   "strayKey": { "$plus": [1], "extra": 2 },
   "twoNames": { "$plus": 1, "$minus": 2 },
   "stringPayload": { "$getFlag": "$data.x" },
-  "cachedCall": { "$getFlag": { "country": "Peru" }, "useCache": true },
+  "cacheTurnedOn": { "$getFlag": { "country": "Peru" }, "noCache": false },
   "parametersKey": { "operator": "plus", "values": [1], "parameters": {} },
   "unknown": { "operator": "flibble", "values": [1] }
 }
@@ -257,7 +256,7 @@ One of each way a node can be broken (design, topic 7, "Where issues attach"). E
 
 ## Every operator, at work
 
-One expression that evaluates in full, using every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments, and most of FigTree's grammar. Paste the data into the demo's data editor first. It validates with four warnings, each deliberate: an unread var, two contact fields for `firstOf` to pass over, and a passport number that's absent, so `get` gives its default. Evaluating the root takes about a second, making HTTP and GraphQL requests to httpbin.org, countriesnow.space and countries.trevorblades.com; a second run comes from the cache.
+One expression that evaluates in full, using every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments, and most of FigTree's grammar. Paste the data into the demo's data editor first. It validates with four warnings, each deliberate: an unread var, two contact fields for `firstOf` to pass over, and a passport number that's absent, so `get` gives its default. Evaluating the root takes about a second, making HTTP and GraphQL requests to httpbin.org, countriesnow.space and countries.trevorblades.com; a second run comes from the cache, all but `echo`, which has `noCache`.
 
 After the root's Evaluate, the tree shows every way a node can run: green throughout, amber where a fallback caught a failure (`trips`' `$divide` for Lisbon, which has no travellers, and `safeRatio`), grey where a node never ran (`vars.unused`, `eligibility.else`, `perk`'s `default`), black for the request `race` stopped, and red for `unsafeRatio`, whose `$divide` fails the `$plus` above it and leaves a null in the root's value, as the root's card says.
 
@@ -445,7 +444,7 @@ The expression:
     "query": { "city": "$data.user.trips[1].city" },
     "returnPath": "args.city",
     "timeout": 5000,
-    "useCache": true
+    "noCache": true
   },
   "country": {
     "operator": "graphQL",
@@ -494,7 +493,7 @@ The expression:
 | Forms: full, shorthand with an argument list, a named payload or a single value, and aliases                | throughout                                                                   |
 | Nested iterators, each with its own `as`                                                                    | `cheaperThan`                                                                |
 | `fallback` on a node, on a request, on a fragment call, and catching for one element of an iterator         | `safeRatio`, `country`, `capital`, `trips`                                   |
-| `useCache`, and the instance's cache on a second run                                                        | `echo`, and the fragments in `trips`                                         |
+| `noCache`, and the instance's cache on a second run                                                         | `echo`, which is never cached, and the fragments in `trips`                  |
 | Comments of one line and of several                                                                         | `trips`' `each`, the root                                                    |
 | Lazy evaluation: an untaken branch, unchosen `match` branches, `firstOf` stopping at its first value        | `eligibility`, `perk`, `contact`                                             |
 | A race stopping the slower request                                                                          | `race`                                                                       |
@@ -504,7 +503,7 @@ The expression:
 
 ## The mother of all expressions
 
-After fig-tree's v2 test of the same name (`test/V2/17_complexExpressions.test.ts`), and in the same spirit: a `buildString` at the root whose twenty named tokens each come from a tree of their own, most of them drawing on vars that draw on each other. It evaluates to the opening crawl of a space opera. It uses every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments and `literal`. Paste the data into the demo's data editor first. It validates with no issues, and evaluating the root takes about a second, making requests to countries.trevorblades.com, countriesnow.space and httpbin.org; a second run takes about half that, from the cache.
+After fig-tree's v2 test of the same name (`test/V2/17_complexExpressions.test.ts`), and in the same spirit: a `buildString` at the root whose twenty named tokens each come from a tree of their own, most of them drawing on vars that draw on each other. It evaluates to the opening crawl of a space opera. It uses every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments and `literal`. Paste the data into the demo's data editor first. It validates with no issues, and evaluating the root takes about a second, making requests to countries.trevorblades.com, countriesnow.space and httpbin.org; a second run takes about half that, from the cache, all but the race, which has `noCache`.
 
 The data:
 
@@ -859,7 +858,8 @@ The expression:
         "$or": [
           { "operator": "http", "url": "https://httpbin.org/delay/3", "returnPath": "url" },
           { "operator": "http", "url": "https://httpbin.org/get", "returnPath": "url" }
-        ]
+        ],
+        "noCache": true
       },
       "then": {
         "operator": "http",
@@ -868,8 +868,7 @@ The expression:
         "query": { "code": "$vars.code" },
         "body": { "heading": "$d.ship.heading", "crew": { "$length": "$vars.crew" } },
         "returnPath": "json.heading",
-        "timeout": 5000,
-        "useCache": true
+        "timeout": 5000
       },
       "else": "the nearest moon"
     },
@@ -1001,7 +1000,7 @@ To be continued…
 | `course`           | whether `some` member is a navigator, then the one `find` finds                                                                                                                          |
 | `cloak`            | empty, since the ship isn't cloaked, and `closeGaps` takes the space before it                                                                                                           |
 | `{{$d.ship.name}}` | a reference token in the template                                                                                                                                                        |
-| `destination`      | an `or` racing two requests, where the first to answer lets it go on to a POST that httpbin echoes back                                                                                  |
+| `destination`      | an `or` racing two requests, made afresh on every run by its `noCache`, where the first to answer lets it go on to a POST that httpbin echoes back                                       |
 | `pursuit`          | the gap between the ships, from a vars block on the node, by `-`, `abs`, `ceil` and `min`                                                                                                |
 | `signoff`          | read by `get` from a `literal`, whose `upper` node is data, so it never runs                                                                                                             |
 

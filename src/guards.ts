@@ -91,7 +91,7 @@ export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   const kind = row?.kind
   const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
   if (isNode && kind.form === 'full') return false
-  const keys = addableKeys(value as Record<string, unknown>, kind, context)
+  const keys = addableKeys(value as Record<string, unknown>, path, kind, context)
   return keys === null || keys.parameters.length + keys.modifiers.length > 0
 }
 

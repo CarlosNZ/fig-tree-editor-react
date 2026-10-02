@@ -211,7 +211,7 @@ describe('the shorthand node', () => {
       [{ $plus: [1], extra: 2 }, '$plus', /'extra' may not sit beside/],
       [{ $plus: 1, $minus: 2 }, '$plus', /'\$minus' may not sit beside/],
       [{ $greet: '$data.x' }, '$greet', /no single-value or positional form/],
-      [{ $greet: { name: 'Ada' }, useCache: true }, '$greet', /'useCache' may not sit beside/],
+      [{ $greet: { name: 'Ada' }, noCache: false }, '$greet', /'noCache' takes only the literal/],
     ])('shows %j as an error, with the message and no button', (expression, name, message) => {
       const { container } = editor(expression)
       const bar = within(displayBar(container))

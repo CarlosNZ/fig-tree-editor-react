@@ -67,7 +67,7 @@ describe('typeOptions', () => {
       [...STANDARD, 'Data', 'Variable', 'Element', 'Operator', 'Fragment'],
     ],
     ['`map.as`', { operator: 'map', input: [1], each: 1, as: 'item' }, ['as'], ['string']],
-    ['`useCache`', { operator: 'plus', values: [1], useCache: true }, ['useCache'], ['boolean']],
+    ['`noCache`', { operator: 'plus', values: [1], noCache: true }, ['noCache'], ['boolean']],
     ['quoted content', { operator: 'literal', value: { a: 1 } }, ['value', 'a'], STANDARD],
   ])('offers %s its slot’s options', (_, expression, path, options) => {
     expect(optionsAt(expression, path)).toEqual(options)

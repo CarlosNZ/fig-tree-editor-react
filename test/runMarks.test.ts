@@ -29,6 +29,7 @@ const once = defineOperator({
   category: 'other',
   description: 'Cached',
   parameters: {},
+  cache: true,
   evaluate: (_, { cache }) => cache.memo('once', () => Promise.resolve(42)),
 })
 
@@ -338,7 +339,7 @@ describe('marking how a run went', () => {
   })
 
   it('marks a value from the cache', async () => {
-    const instance = new FigTree({ operators: [coreOperators, [once]], useCache: true })
+    const instance = new FigTree({ operators: [coreOperators, [once]] })
     const expression = { operator: 'once' }
     const first = await evaluate(expression, [], { instance })
     expect(at(first.marks, []).runs[0].cached).toBe(false)
@@ -350,13 +351,13 @@ describe('marking how a run went', () => {
     const echo = defineOperator({
       name: 'echo',
       category: 'other',
-      description: 'Gives its value',
+      description: 'Gives its value, cached by it',
       parameters: { value: { type: 'any' } },
-      evaluate: ({ value }) => value,
+      cache: true,
+      evaluate: ({ value }, { cache }) => cache.memo(`echo ${String(value)}`, () => value),
     })
     const instance = new FigTree({
       operators: [coreOperators, [once, echo]],
-      useCache: true,
       fragments: {
         cachedOnce: { expression: { operator: 'once' } },
         // One lookup hits on a second run, and one, for a new `n`, misses

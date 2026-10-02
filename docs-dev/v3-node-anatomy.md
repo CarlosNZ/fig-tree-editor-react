@@ -34,7 +34,7 @@ When a definition gives the row a **custom component**, the component renders in
 - **Flattened payload:** a collection row with `showCollectionWrapper: false` and `showKey: false` and no component. JER then draws neither its header row nor its brackets: its child rows appear directly beneath whatever is above. It has no edit tools of its own.
 - **Unlabelled:** a row whose definition is a copy of its usual one with `showKey: false`, so it renders exactly as usual minus its key label. Used on a shorthand's `$name` row when that row holds a single value.
 - **Quoted:** inside a `literal` payload or a `//` value. No definition matches a quoted row, so everything there is plain JER.
-- **Modifier styling:** the `//`, `fallback` and `useCache` keys are styled (the `vars` key takes the `$vars` colour instead) through the theme (a style function on the key), not through a custom definition. Styling and definitions are separate mechanisms in JER, so a `fallback` row can be any kind of row and still have its key marked as a modifier.
+- **Modifier styling:** the `//`, `fallback` and `noCache` keys are styled (the `vars` key takes the `$vars` colour instead) through the theme (a style function on the key), not through a custom definition. Styling and definitions are separate mechanisms in JER, so a `fallback` row can be any kind of row and still have its key marked as a modifier.
 
 In the sketches, `✎ ＋ ✕` stands for JER's edit tools, `▾` for its chevron, and `▶` for an Evaluate affordance. The theme hides the brackets of node rows, as v1's does. JER's edit tools, the DisplayBar's pencil and the conversion buttons all appear on hover only; the sketches draw them permanently.
 
@@ -84,7 +84,7 @@ While either editor is open, JER hides the node's own edit tools, which is the k
 
 - **Symbolic alias:** `{ operator: '+', values: [1, 2] }`. Identical, except the DisplayBar's button shows `+`. Switching between `plus` and `+` in the picker keeps the node as it is.
 - **At the root or in an array:** `{ operator: 'plus', values: [1, 2] }` as the whole expression, or as an array element. Identical, except the JER header row has no key label.
-- **With every modifier:** `{ '//': 'why', operator: 'http', url: '…', vars: { … }, fallback: null, useCache: false }`. The `//` row is a **Comment** (kind 11) and comes first, as the fill-in step places it first. `vars` is a **Vars block** (kind 12). `fallback` and `useCache` are plain rows with modifier styling. If `fallback`'s value is itself a node, that row is that kind of node, still with modifier styling on its key.
+- **With every modifier:** `{ '//': 'why', operator: 'http', url: '…', vars: { … }, fallback: null, noCache: true }`. The `//` row is a **Comment** (kind 11) and comes first, as the fill-in step places it first. `vars` is a **Vars block** (kind 12). `fallback` and `noCache` are plain rows with modifier styling. If `fallback`'s value is itself a node, that row is that kind of node, still with modifier styling on its key.
 - **Broken:** `{ operator: 'flibble' }`, `{ operator: 42 }`, `{ operator: 'plus', fragment: 'x' }`. The same component and rows. The DisplayBar shows the name, or "invalid node", as an error with the issue's message. The toolbar still opens, so a valid operator can be picked. There is no Evaluate and no conversion, since the compiler and `./format` both refuse the node.
 
 ---
@@ -423,16 +423,16 @@ The `vars` key on an operator node, a fragment call, a shorthand node (as a sibl
   ┃     limit: 5                                ✎ ✕
 ```
 
-- **`['…', 'vars']`:** a plain JER collection row, with no definition of its own. The theme styles it: the `vars` key takes the colour of `$vars` references, and the block gets a left rule and a tinted background, set slightly apart from the rows above it. JER draws the header row and its edit tools as usual, and the collapsed summary (`{ 2 vars }`) comes from `customText`. The block comes **last** among the node's rows (the fill-in step orders keys: `//`, the parameters, `fallback` and `useCache`, then `vars`). On a plain object it stays where it was written.
+- **`['…', 'vars']`:** a plain JER collection row, with no definition of its own. The theme styles it: the `vars` key takes the colour of `$vars` references, and the block gets a left rule and a tinted background, set slightly apart from the rows above it. JER draws the header row and its edit tools as usual, and the collapsed summary (`{ 2 vars }`) comes from `customText`. The block comes **last** among the node's rows (the fill-in step orders keys: `//`, the parameters, `fallback` and `noCache`, then `vars`). On a plain object it stays where it was written.
 - **The child rows:** plain JER rows on the block's tint. Each key is a var name, and each value is classified as usual: here a shorthand node and a plain number. A key must follow the name-legality rule (no `.`, `[`, `]`, no leading `$`), which the diagnostics report.
 
 The block's ＋ asks for a name, and the new var starts as `'Replace me'`, closed ("The vars block" in the design doc).
 
 ---
 
-## 13. `fallback` and `useCache`
+## 13. `fallback` and `noCache`
 
 Neither is a kind of its own. They are ordinary rows with modifier styling on the key.
 
 - **`fallback`:** its value is an expression, so the row is whatever that value is: a plain value, a reference or a node of any kind.
-- **`useCache`:** always a boolean, so a plain value row whose type dropdown offers only boolean. It is legal on operator nodes only, not on fragment calls.
+- **`noCache`:** always `true`, so a plain value row whose type dropdown offers only boolean. It is legal on operator nodes and fragment calls, and turns caching off for everything inside the node.

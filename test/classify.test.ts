@@ -224,7 +224,7 @@ describe('the classification walk', () => {
     })
 
     it('reads nothing in a literal-only slot', () => {
-      expect(row({ $plus: [1], useCache: '$data.x' }, ['useCache'])).not.toHaveProperty('kind')
+      expect(row({ $plus: [1], noCache: '$data.x' }, ['noCache'])).not.toHaveProperty('kind')
     })
   })
 
@@ -378,7 +378,8 @@ describe('the classification walk', () => {
   describe('parity with the compiler', () => {
     const shapes = [
       { operator: 'plus', values: [1, '$data.x'] },
-      { '//': 'why', operator: 'http', url: '$data.url', fallback: null, useCache: false },
+      { '//': 'why', operator: 'http', url: '$data.url', fallback: null, noCache: true },
+      { fragment: 'greet', parameters: { name: '$data.name' }, noCache: true },
       { fragment: 'greet', parameters: { name: '$data.name' } },
       { fragment: 'greet', parameters: '$data.form' },
       { fragment: 'greet', parameters: { $buildObject: [{ key: 'name', value: '$data.n' }] } },

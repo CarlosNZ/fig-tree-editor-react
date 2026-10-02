@@ -674,11 +674,7 @@ const newValue =
     const row = rowAt(classification, path)
     if (newKey === '//' && row !== undefined) return strings.FT_NEW_COMMENT
     if (newKey === 'vars' && isPlainObjectRow(row)) return {}
-    return getNewKeyValue(newKey, row?.kind, {
-      operators,
-      displayData,
-      useCache: figTree.getOptions().useCache,
-    })
+    return getNewKeyValue(newKey, row?.kind, { operators, displayData })
   }
 
 // A plain object whose values are evaluated: the walk gives it a slot, as it
@@ -697,10 +693,12 @@ const newKeys =
   (figTree: FigTree, classification: Classification) =>
   ({ path, value }: Parameters<NewKeyOptionsFunction>[0]) => {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-    const keys = addableKeys(value as Record<string, unknown>, rowAt(classification, path)?.kind, {
-      operators: figTree.getOperators(),
-      fragments: figTree.getFragments(),
-    })
+    const keys = addableKeys(
+      value as Record<string, unknown>,
+      path,
+      rowAt(classification, path)?.kind,
+      { classification, operators: figTree.getOperators(), fragments: figTree.getFragments() }
+    )
     return (
       keys &&
       [...keys.parameters, ...keys.modifiers]

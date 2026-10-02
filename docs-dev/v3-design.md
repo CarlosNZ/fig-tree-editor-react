@@ -43,12 +43,12 @@ Topics, in the order they are worked through:
 
 **`literal` is grammar, not an operator.** It is absent from `getOperators()`, which covers the 40 operator definitions, so an Operator component would find no description or parameter declaration for it. Its display data (display name, `docUrl`, colours and the seed for `value`) is its entry in `./editor-hints`' `operatorHints` (F4 in [v3-upstream.md](v3-upstream.md)), and the editor supplies its description and `value`'s declaration itself. The operator picker lists it explicitly. Its one parameter, `value`, accepts any type, and its content is quoted. In shorthand, `{ $literal: X }` is never read as named or positional: the payload is the content.
 
-**Modifier rows.** The reserved keys on a node, `//`, `vars`, `fallback` and `useCache`, are not parameters, and they form one family of child rows with their own treatment (designed in topics 3 and 5):
+**Modifier rows.** The reserved keys on a node, `//`, `vars`, `fallback` and `noCache`, are not parameters, and they form one family of child rows with their own treatment (designed in topics 3 and 5):
 
 - `//` is a comment, formatted as a note belonging to its node. Its value is a string or an array of strings. The fill-in step places it first among the node's keys, so it renders at the top.
 - `vars` is a block of names to expressions, with a header.
 - `fallback` is an expression slot.
-- `useCache` is a literal boolean (and is not legal on fragment calls).
+- `noCache` is the literal `true`, on an operator node or a fragment call, and turns caching off for the node and everything inside it (fig-tree 3.0.0-preview.4, [fig-tree-evaluator#204](https://github.com/CarlosNZ/fig-tree-evaluator/issues/204)).
 
 **Quoted subtrees are plain data.** Everything inside a `literal` payload or a `//` value renders as plain data: no node headers, no Evaluate affordances on reference-shaped strings, no conversions. So plain data has two sources: values that are not expressions, and values that are quoted.
 
@@ -178,12 +178,12 @@ const unlabelledVariants = (def: CustomNodeDefinition): CustomNodeDefinition[] =
 
 #### Full operator nodes
 
-| Shape                                                                                     | Rows → definition                                        | Renders                                                                                                                 | Behaviour                                                                                                                                                                  |
-| ----------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{ operator: 'plus', values: [1, 2] }`                                                    | object → Node (Operator); `operator` → Filtered          | Header: Evaluate button showing the name as written, display name linked to `docUrl`, description tooltip, To shorthand | DisplayBar pencil opens the toolbar (operator picker, add parameter, node type switch); edit-tools pencil opens raw JSON; parameter rows get the per-parameter type filter |
-| `{ operator: '+', values: [1, 2] }`                                                       | as above                                                 | Button shows `+`                                                                                                        | Switching between `plus` and `+` keeps the node                                                                                                                            |
-| `{ '//': 'why', operator: 'http', url: '…', fallback: null, vars: {…}, useCache: false }` | as above; each modifier row → its own definition (below) | Comment first, then parameters and modifiers                                                                            | As above                                                                                                                                                                   |
-| `{ operator: 'flibble' }`, `{ operator: 42 }`, `{ operator: 'plus', fragment: 'x' }`      | object → Node (Operator, broken state)                   | Header shows the name (or "invalid node") as an error, with the issue's message                                         | Toolbar available, to pick a valid operator; no Evaluate or conversion, since the compiler and `./format` refuse the node                                                  |
+| Shape                                                                                   | Rows → definition                                        | Renders                                                                                                                 | Behaviour                                                                                                                                                                  |
+| --------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{ operator: 'plus', values: [1, 2] }`                                                  | object → Node (Operator); `operator` → Filtered          | Header: Evaluate button showing the name as written, display name linked to `docUrl`, description tooltip, To shorthand | DisplayBar pencil opens the toolbar (operator picker, add parameter, node type switch); edit-tools pencil opens raw JSON; parameter rows get the per-parameter type filter |
+| `{ operator: '+', values: [1, 2] }`                                                     | as above                                                 | Button shows `+`                                                                                                        | Switching between `plus` and `+` keeps the node                                                                                                                            |
+| `{ '//': 'why', operator: 'http', url: '…', fallback: null, vars: {…}, noCache: true }` | as above; each modifier row → its own definition (below) | Comment first, then parameters and modifiers                                                                            | As above                                                                                                                                                                   |
+| `{ operator: 'flibble' }`, `{ operator: 42 }`, `{ operator: 'plus', fragment: 'x' }`    | object → Node (Operator, broken state)                   | Header shows the name (or "invalid node") as an error, with the issue's message                                         | Toolbar available, to pick a valid operator; no Evaluate or conversion, since the compiler and `./format` refuse the node                                                  |
 
 A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node is well-formed and the `thn` row carries a diagnostic (topic 7).
 
@@ -229,15 +229,15 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 
 #### Plain data and modifier rows
 
-| Shape                                                              | Rows → definition                                             | Renders                                           | Behaviour                                                             |
-| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------- | --------------------------------------------------------------------- |
-| `{ title: '$data.name', total: { $plus: […] } }`, `['$data.a', 1]` | Node (Container)                                              | A bare Evaluate button above the rows             | Evaluate only, at the root only (topic 3)                             |
-| `{ a: 1 }`, `{ $typo: 1 }`                                         | None                                                          | Plain json-edit-react (`$typo` carries a warning) | —                                                                     |
-| `'//': 'note'`                                                     | Leaf (Comment line), with `showKey: false`                    | A note belonging to its node                      | Edits as a string                                                     |
-| `'//': ['line 1', 'line 2']`                                       | a plain array with `showKey: false`; each line a Comment line | A multi-line note, styled as one block            | Each line edits as a string; ＋ adds a line (topic 5)                 |
-| `vars: { country: {…}, n: 5 }`                                     | None, with theme styling on the block (topic 5)               | A tinted block; each row's key is a var name      | Values classified as usual; names follow the name-legality rule       |
-| `fallback: …`, `useCache: false`                                   | None, with a modifier style on the key                        | The row, marked as a modifier                     | `fallback`'s value is classified as usual; `useCache` is boolean only |
-| Inside a `literal` payload or a `//` value                         | None throughout                                               | Plain data                                        | No Evaluate, conversion or reference styling                          |
+| Shape                                                              | Rows → definition                                             | Renders                                           | Behaviour                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
+| `{ title: '$data.name', total: { $plus: […] } }`, `['$data.a', 1]` | Node (Container)                                              | A bare Evaluate button above the rows             | Evaluate only, at the root only (topic 3)                           |
+| `{ a: 1 }`, `{ $typo: 1 }`                                         | None                                                          | Plain json-edit-react (`$typo` carries a warning) | —                                                                   |
+| `'//': 'note'`                                                     | Leaf (Comment line), with `showKey: false`                    | A note belonging to its node                      | Edits as a string                                                   |
+| `'//': ['line 1', 'line 2']`                                       | a plain array with `showKey: false`; each line a Comment line | A multi-line note, styled as one block            | Each line edits as a string; ＋ adds a line (topic 5)               |
+| `vars: { country: {…}, n: 5 }`                                     | None, with theme styling on the block (topic 5)               | A tinted block; each row's key is a var name      | Values classified as usual; names follow the name-legality rule     |
+| `fallback: …`, `noCache: true`                                     | None, with a modifier style on the key                        | The row, marked as a modifier                     | `fallback`'s value is classified as usual; `noCache` is `true` only |
+| Inside a `literal` payload or a `//` value                         | None throughout                                               | Plain data                                        | No Evaluate, conversion or reference styling                        |
 
 ### Conversions — **Agreed**
 
@@ -275,7 +275,7 @@ The editor's step that changes the tree, run over the whole expression after eve
 
 - **Complete: insert missing required parameters with their starting values** (the seed rule from `./editor-hints`), on load and after every update. For a fragment call with static arguments, the same applies to its required arguments, with the fragment's `FragmentHints` seeds. It is form-aware: a named payload gains a key, and a positional payload gains trailing elements, since supplied positional arguments are always an unbroken prefix. It cannot apply to dynamic arguments.
 - **Clean: remove parameters that do not belong only when the editor switches a node's operator, fragment or node type, or creates a node,** and only on that node. Never on load, on a content edit, or on the other structural actions: adding a parameter or converting makes nothing obsolete, so cleaning there would remove keys the author wrote, such as a typo the "Rename" quick fix should repair.
-- **Put keys in order:** `//` first, then the node's parameters (`positionalParams` first, then declared order, topic 4), then `fallback` and `useCache`, then `vars` last (topics 1 and 3).
+- **Put keys in order:** `//` first, then the node's parameters (`positionalParams` first, then declared order, topic 4), then `fallback` and `noCache`, then `vars` last (topics 1 and 3).
 - **Unknown keys stay,** with the error state and quick fixes: remove the key, or rename it where fig-tree suggests a name (`Issue.suggestion`, F3 in [v3-upstream.md](v3-upstream.md)).
 
 **Structural actions — Agreed.** The actions where the editor itself rewrites a node's identity: creating a node from the type dropdown, switching operator, fragment or node type, adding a parameter from the picker, and the conversions. Everything else is a content edit: value edits, json-edit-react's add and delete, drag and drop, the host's input, and raw-JSON submits. A raw-JSON submit is content because the author has typed exactly what they want, and it is the escape hatch for what the structured path cannot express: changing `operator: 'plus'` to `'if'` in the textarea removes nothing, and the leftover parameters show as unknown-key errors. The rule: **the editor only removes what the editor itself made obsolete.**
@@ -300,7 +300,7 @@ The host needs the editor's state, for example to disable its own Save button wh
 
 **Switching operator** (full form, from the toolbar's picker) is a structural action, so it cleans:
 
-- The modifiers are kept: `//`, `vars`, `fallback` and `useCache`.
+- The modifiers are kept: `//`, `vars`, `fallback` and `noCache`.
 - Parameters whose name the new operator also declares are kept, even where the kept value no longer type-checks against the new declaration: the error shows straight away, and the author's work is not lost. So `plus` to `multiply` keeps `values`, and `map` to `filter` keeps `input`, `each` and `as`.
 - The other parameters are dropped, and the new operator's missing required parameters are seeded.
 - There is no confirmation step, even when the switch drops a subtree.
@@ -310,7 +310,7 @@ The same rule repairs a broken node: picking `plus` for `{ operator: 'plsu', val
 
 **Switching node type** (Operator, Fragment or Value, from the toolbar):
 
-- Operator to Fragment gives the default fragment with its required arguments seeded, keeping `//`, `vars` and `fallback` and dropping `useCache`, which fragment calls do not allow.
+- Operator to Fragment gives the default fragment with its required arguments seeded, keeping the modifiers, `//`, `vars`, `fallback` and `noCache`, which fragment calls take too.
 - Fragment to Operator gives the default operator, seeded, keeping the same modifiers.
 - Either to Value replaces the node with the starting value for its position: the parameter's seed where it is a parameter, otherwise the seed for its declared type, and the string seed anywhere else.
 - After a switch the new node's picker opens, as in v1.
@@ -379,7 +379,7 @@ Allowed, with any resulting error shown: optional parameters, modifiers and comm
 **Adding** (json-edit-react's ＋). json-edit-react's `newKeyOptions` turns an object row's ＋ into a choice of allowed keys, omitting those already present, and its `defaultValue` receives the new key, so each can be seeded:
 
 - on a full operator node, none: the toolbar's "Add parameter" offers its declared parameters and modifiers, and a second control for the same list only duplicated it (plan, 6.4). So its keys cannot be renamed in the tree either, by json-edit-react's rule below;
-- on a full fragment call, the modifiers other than `useCache`, and `parameters` if absent; arguments are added through the toolbar, since they belong inside `parameters`;
+- on a full fragment call, the modifiers, and `parameters` if absent; arguments are added through the toolbar, since they belong inside `parameters`;
 - on a shorthand node, the modifiers only, since any other key would make it malformed;
 - on a vars block, a free-typed name, with the name rules reported by `validate()`;
 - on an array parameter, an element seeded for its type, blocked at a declared fixed length;
@@ -405,7 +405,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 
 ### States — **Agreed**
 
-- **Modifier keys look different from parameters** (`fallback`, `useCache`; italic and muted in the mockups, the exact style to be settled later).
+- **Modifier keys look different from parameters** (`fallback`, `noCache`; italic and muted in the mockups, the exact style to be settled later).
 - **A broken node** has an error border and stripe (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge. Which row an issue marks, which codes make a node broken, and how warnings and hints differ are settled in topic 7 ("Where issues attach").
 - **A collapsed node with an issue** colours its summary line as an error.
 - **Filled in on load — Agreed** in topic 7: the marker fades after a few seconds, needing no edit to clear. Its line in the messages area stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed.
@@ -422,7 +422,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **References:** Evaluate is a small ▶ inline after the text, always visible (settled in plan 10.6, over a place among the edit tools, which show on hover only). "To get node" is a json-edit-react custom button on reference rows, appearing on hover with the other edit tools, once a custom button can commit through `onUpdate` (J13); until then the Reference component draws it after the ▶ (plan, 8.3). **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** through the `editorTheme` prop (topic 8, "Theming and CSS").
 - **Plain containers with holes** get the bare Evaluate button **at the root only,** for now.
 - **Comments** render as a note beneath the header, with json-edit-react's edit tools on hover like any row.
-- **Row order:** the node's parameters, then `fallback` and `useCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
+- **Row order:** the node's parameters, then `fallback` and `noCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
 - **Fragment display name:** as on an operator, the button shows the name as written (`getCapital`) and the top right shows the display name from `FragmentHints` ("Capital city · fragment"), so neither repeats the other. The "· fragment" suffix shows where there is room, and is hidden when the editor is narrow. **A fragment with no display name** shows "Fragment" alone at the top right, as in v1, rather than falling back to its name, which the button already shows. Nothing extra is shown while the toolbar is open, although the picker then shows only the display name (topic 6). Rejected: "Fragment | getCapital" in place of the display name, and "Capital city | getCapital", both of which repeat the button.
 - **Fragment default colour:** a generic colour for every fragment whose metadata defines none: v1's default for now, to be tweaked later, yellow text (`#ebdf5a`) on dark steel blue (`#477799`), for every fragment whose metadata carries no colours. Every operator button is a light shade of its category's hue, so a dark button stands apart by treatment without borrowing any category's hue. Deriving a colour from the fragment's name (hashing the name to a hue, then making a light background and dark text as editor-hints' palette does) would tell fragments apart, but an arbitrary hue can land on an operator category's colour and suggest a category the fragment does not belong to, and renaming a fragment would change its colour. A host that wants fragments told apart gives them `FragmentHints` colours.
 
@@ -453,7 +453,7 @@ type Slot = {
   parameter?: string // the declared name, where there is one
   declaration?: ParameterInfo // from getOperators() or getFragments()
   admits: ExpectedType // what a value here must be
-  literalOnly: boolean // `as`, `useCache`: no nodes or references
+  literalOnly: boolean // `as`, `noCache`: no nodes or references
 }
 ```
 
@@ -472,7 +472,7 @@ type Slot = {
 | `parameters: { name: X }` (static fragment call)              | parameter, from the fragment's declaration, which has the same shape as an operator's                                         |
 | `parameters: X` (dynamic)                                     | arguments: `object`                                                                                                           |
 | `fallback: X`                                                 | modifier: `any`                                                                                                               |
-| `useCache: X`                                                 | modifier: `boolean`, literal only                                                                                             |
+| `noCache: X`                                                  | modifier: `true`, literal only                                                                                                |
 | `vars: { price: X }`                                          | var: `any`. A separate role from `modifier`, since vars are names that make a scope (topic 5)                                 |
 | `as: X`                                                       | parameter, structural: `string`, literal only                                                                                 |
 | the root                                                      | root: `any`. A host prop for an expected result type would fit here (topic 8, do later)                                       |
@@ -568,7 +568,7 @@ A slot finds its default by its type: an `any` slot the `any` entry; a basic typ
 | a `buildObject` entry                             | `object`                         | object · Data · Operator · Fragment                                            |
 | `map.each`, where the node sits in a `vars` scope | `any`                            | the six standard types · Data · Variable · Element · Operator · Fragment       |
 | `map.as`                                          | `string`, literal only           | string                                                                         |
-| `useCache`                                        | `boolean`, literal only          | boolean                                                                        |
+| `noCache`                                         | `true`, literal only             | boolean                                                                        |
 | quoted content                                    | no slot                          | string · number · boolean · null · object · array                              |
 
 **Collection rows: raw JSON — Agreed.** A parameter holding an array or object (`values: [1, 2]`, `entries`, `body`) has no type dropdown, so turning it into a reference or a node goes through raw JSON, as in v1. A type selector for collection rows is logged as J6 in [v3-upstream.md](v3-upstream.md), Maybe, to revisit once the editor is in use.
@@ -619,16 +619,17 @@ Each change has a case in `Select`'s test suite (plan, 1.7).
 
 **What "Add parameter" offers:**
 
-| Node                  | Offers                                                                                                                                                          |
-| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Full operator         | its declared parameters not yet present, then the modifiers not yet present: `//`, `fallback`, `useCache`, `vars`                                               |
-| Static fragment call  | its declared parameters not yet present, written into `parameters` (created if absent), then the modifiers except `useCache`, which fragment calls do not allow |
-| Dynamic fragment call | the modifiers only, since its arguments are computed                                                                                                            |
-| `literal`             | `//` only: `fallback`, `vars` and `useCache` are legal there, but `validate()` warns that each is dead                                                          |
+| Node                  | Offers                                                                                                                   |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Full operator         | its declared parameters not yet present, then the modifiers not yet present: `//`, `fallback`, `noCache` (below), `vars` |
+| Static fragment call  | its declared parameters not yet present, written into `parameters` (created if absent), then the modifiers               |
+| Dynamic fragment call | the modifiers only, since its arguments are computed                                                                     |
+| `literal`             | `//` only: `fallback`, `vars` and `noCache` are legal there, but `validate()` warns that each is dead                    |
 
+- **`noCache` is offered only where it would do something,** as `validate()` judges it with its dead and redundant warnings: something at or beneath the node caches, which is a caching operator the host hasn't turned off (`cache`, `instanceNoCache`) or a call to a fragment whose body caches (`getFragments()`' `caches`), and no node above it has `noCache` already. A node the editor can't read, malformed or naming nothing registered, may cache, as fig-tree has it. So an expression with no requests is never offered it.
 - **A missing required parameter is listed first, marked required.** Fill-in normally adds it, but it can be missing where the typo guard held it back (`thn` beside a missing `then`) or a raw-JSON edit removed it.
 - **Two groups, Parameters and Modifiers,** with headers that cannot be selected ("The operator picker").
-- **Each entry is labelled with its key exactly as it will appear in the tree** (`nullValueDefault`, `fallback`), with its description beneath: the declaration's for a parameter, and the editor's own for a modifier (`fallback`: "The value to use if this node fails"; `useCache`: "Cache this node's result"; `vars`: "Named values for this node and everything inside it"; `//`: "A note, never evaluated"). How required, defaults and the rest are shown is "Parameter metadata", below.
+- **Each entry is labelled with its key exactly as it will appear in the tree** (`nullValueDefault`, `fallback`), with its description beneath: the declaration's for a parameter, and the editor's own for a modifier (`fallback`: "The value to use if this node fails"; `noCache`: "Don't cache this node or anything inside it"; `vars`: "Named values for this node and everything inside it"; `//`: "A note, never evaluated"). How required, defaults and the rest are shown is "Parameter metadata", below.
 - **json-edit-react's ＋ offers the same list by name** (`newKeyOptions` takes names only) on the nodes whose toolbar has no "Add parameter" yet, or that have no toolbar: shorthand nodes, and until Phases 7 and 9 fragment calls and `literal`. A full operator node has no ＋ (plan, 6.4).
 - **Nothing is left out for being unwise.** `body` is offered beside `method: 'get'`, and `validate()` reports the conflict.
 
@@ -653,7 +654,7 @@ Examples:
 | `find.noMatchDefault`                     | `'Replace me'`            | the `any` type seed                                                 |
 | `regex.mode` (default `'test'`)           | `'extract'`               | not the default                                                     |
 
-**The modifiers** start as: `//`, `'Comment...'` (never evaluated, so an unedited note is harmless); `fallback`, `null`, the common "degrade to null"; `useCache`, the negation of its effective value (`instanceUseCache ?? the useCache option ?? the definition's useCache`), so `false` on `http`; `vars`, `{}`, whose ＋ then asks for a name.
+**The modifiers** start as: `//`, `'Comment...'` (never evaluated, so an unedited note is harmless); `fallback`, `null`, the common "degrade to null"; `noCache`, `true`, the only value it takes; `vars`, `{}`, whose ＋ then asks for a name.
 
 **An element added to an array — Agreed.** Editor-hints' seeds are for whole parameters, so a new element needs its own rule. The first that applies:
 
@@ -716,7 +717,7 @@ Mocked up as section K of the mockups.
 
 **No persistent marker for required or optional.** The card says it, required parameters already have no ✕ (topic 2's guards), and modifiers already look different (topic 3). Rejected: an asterisk or bold key on required parameters, or muted optional ones, which style every row for a distinction rarely needed while reading.
 
-**The operator's own card**, shown on hovering the node's operator button (whose click still evaluates), carries topic 3's description tooltip and the `docUrl` link, and gains a line for the host's defaults for that operator, since they change behaviour without appearing in the tree: `instanceFallback`, `instanceUseCache`, and `instanceDefault` on any parameter the node does not set ("This application sets `fallback: null` and `timeout: 5000` on every `http` node that doesn't set its own").
+**The operator's own card**, shown on hovering the node's operator button (whose click still evaluates), carries topic 3's description tooltip and the `docUrl` link, and gains a line for the host's defaults for that operator, since they change behaviour without appearing in the tree: `instanceFallback`, `instanceNoCache`, and `instanceDefault` on any parameter the node does not set ("This application sets `fallback: null` and `timeout: 5000` on every `http` node that doesn't set its own").
 
 **The add-parameter picker** shows each entry's description, with no default: beside an entry, a default reads as the value choosing it gives, which is the seed (plan, 6.2). Showing defaults somewhere other than the hover card: do later.
 
@@ -742,7 +743,7 @@ How topic 2's guards apply to arrays with declared constraints, and the rule beh
 
 A `vars` block on an operator node, a fragment call, a shorthand node or a plain object. Earlier topics fixed its place and look: last among a node's keys, in the `$vars` colour and set slightly apart from the rows above (topic 3), `{ 2 vars }` when collapsed (topic 3), created as `{}` by "Add parameter" or the node's ＋ (topic 4), and each var a slot admitting `any` (topic 4).
 
-**Drawn by the theme, with no component of its own.** json-edit-react renders the block as the plain collection it is, with its own edit tools (✎ for raw JSON, ＋, ✕). The editor's theme style functions, which receive each row's data and read the kind map, colour the `vars` key and give the block its left rule and tinted background, and `customText` gives the collapsed summary. The `vars` key carries topic 4's hover card, with the modifier's description ("Named values for this node and everything inside it"). So the vars block has no definition of its own, only theme styling, as for `fallback` and `useCache` (topic 1's table).
+**Drawn by the theme, with no component of its own.** json-edit-react renders the block as the plain collection it is, with its own edit tools (✎ for raw JSON, ＋, ✕). The editor's theme style functions, which receive each row's data and read the kind map, colour the `vars` key and give the block its left rule and tinted background, and `customText` gives the collapsed summary. The `vars` key carries topic 4's hover card, with the modifier's description ("Named values for this node and everything inside it"). So the vars block has no definition of its own, only theme styling, as for `fallback` and `noCache` (topic 1's table).
 
 - Whether a collection's style can draw the rule and tint down the whole block is to be proved in Phase 9. If it cannot, the fallback is a Vars component that only wraps the child rows, with no caption.
 - Rejected: a Vars component with a caption line ("vars · for this node and everything inside it"). Always-visible text goes against topic 3's uncluttered tree, and the hover card already says it.
@@ -914,7 +915,7 @@ The searchable list of registered fragments in a full fragment call's toolbar. I
 
 Choosing another fragment in the picker is a structural action (topic 2), so it cleans, by the same rule as switching operator:
 
-- **The modifiers are kept:** `//`, `vars` and `fallback`. `useCache` is not legal on a fragment call.
+- **The modifiers are kept:** `//`, `vars`, `fallback` and `noCache`.
 - **Static arguments whose name the new fragment also declares are kept,** even where the kept value no longer type-checks against the new declaration, so the error shows and the author's work is not lost. The others are dropped, and the new fragment's missing required arguments are seeded by the starting-value rule (its `FragmentHints` seeds, then the type rule).
 - **Dynamic arguments are kept unchanged** (`parameters: '$data.form'`, or a node): the editor cannot know what they compute, and they are checked at runtime.
 - **An emptied `parameters` map is removed,** so switching to a fragment with no parameters leaves `{ fragment: 'today' }` rather than `parameters: {}`. The editor removes what the editor made obsolete (topic 2).
@@ -1204,7 +1205,7 @@ Every json-edit-react prop falls into one of four groups:
 - Rejected: a curated subset of json-edit-react's props, which would free the editor's API from json-edit-react's but make every json-edit-react feature a host wants an addition to the editor, and break every v1 host.
 - Rejected: json-edit-react's props in a separate `jsonEditorProps` object, which removes the possibility of a name clash that careful naming already avoids, at the cost of a clumsier and v1-breaking API.
 
-**Host custom node definitions — Agreed, do later.** A host may want its own definitions for plain data in the tree, such as `@json-edit-react/components`' `booleanToggleDefinition()` on `useCache` or `caseInsensitive`, or a hyperlink or Markdown display inside a `literal`. The host's `customNodeDefinitions` would be combined with the editor's, in this order:
+**Host custom node definitions — Agreed, do later.** A host may want its own definitions for plain data in the tree, such as `@json-edit-react/components`' `booleanToggleDefinition()` on `caseInsensitive`, or a hyperlink or Markdown display inside a `literal`. The host's `customNodeDefinitions` would be combined with the editor's, in this order:
 
 1. **The editor's own definitions,** so a host definition can never take a node, a payload row, a reference or a comment.
 2. **The host's, each condition wrapped to match plain rows only:** rows with no kind of the editor's own (topic 1's map), which means plain values, in evaluated positions or quoted, and plain collections that contain no node or reference. A host collection definition on a container with holes would otherwise hide the nodes inside it.
@@ -1437,7 +1438,7 @@ interface EditorTheme {
   refParams: string
   refBinding: string // $element, $index and `as` names
   varsBlock: string // the vars block's tint and rule (topic 5)
-  modifierKey: string // the `//`, fallback and useCache keys (topic 3); the vars key takes refVars
+  modifierKey: string // the `//`, fallback and noCache keys (topic 3); the vars key takes refVars
   comment: string // comment notes (topic 5)
   error: string // row tint and flag (topic 7)
   warning: string // warning flag

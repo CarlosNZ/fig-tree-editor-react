@@ -13,7 +13,7 @@ describe('switchOperator', () => {
       operator: 'plus',
       values: [1, 2],
       fallback: 0,
-      useCache: false,
+      noCache: true,
       vars: { a: 1 },
     }
     expect(switched(node, 'multiply', 'plus')).toEqual({ ...node, operator: 'multiply' })

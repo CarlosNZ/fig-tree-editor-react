@@ -6,9 +6,9 @@
 // everything there is already complete. The fill-in step completes and
 // orders what it returns.
 //
-// `//` and the modifiers stay. A fragment call has no `useCache`, and a static
-// `parameters` map that cleaning leaves empty goes, so a call to a fragment
-// with no parameters reads `{ fragment: 'today' }`.
+// `//` and the modifiers stay, and a static `parameters` map that cleaning
+// leaves empty goes, so a call to a fragment with no parameters reads
+// `{ fragment: 'today' }`.
 
 // Only the parameters' names are read
 type Parameters = Record<string, unknown>
@@ -16,8 +16,8 @@ export type Declaration =
   | { kind: 'operator'; operator: { parameters: Parameters } }
   | { kind: 'fragment'; fragment: { parameters: Parameters } }
 
-const OPERATOR_KEYS = ['//', 'operator', 'fallback', 'useCache', 'vars']
-const FRAGMENT_KEYS = ['//', 'fragment', 'parameters', 'fallback', 'vars']
+const OPERATOR_KEYS = ['//', 'operator', 'fallback', 'noCache', 'vars']
+const FRAGMENT_KEYS = ['//', 'fragment', 'parameters', 'fallback', 'noCache', 'vars']
 
 export const cleanNode = (node: Record<string, unknown>, declaration: Declaration) => {
   if (declaration.kind === 'operator') {

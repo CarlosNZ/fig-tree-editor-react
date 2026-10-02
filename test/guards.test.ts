@@ -67,8 +67,9 @@ describe('canAdd', () => {
     ['a full operator node', { operator: 'round', value: 1 }, []],
     ['a broken full operator node', { operator: 'plsu', values: [1] }, []],
     [
+      // `noCache` isn't offered, since nothing in it caches
       'a shorthand node with nothing left to add',
-      { '//': 'x', $plus: [1], fallback: 0, useCache: true, vars: {} },
+      { '//': 'x', $plus: [1], fallback: 0, vars: {} },
       [],
     ],
     ['a full fragment call', { fragment: 'greet' }, []],

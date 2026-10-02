@@ -1,9 +1,10 @@
 import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
-import { type RowKind } from './classify'
+import { type Classification, type RowKind } from './classify'
 import { type DisplayData } from './displayData'
 import { parameterOrder } from './fillAndTidy'
 import { getStartingValue } from './getStartingValue'
+import { isWithin, type Path } from './paths'
 import { strings } from './strings'
 
 // What can be added to a node (design, topic 4, "Adding parameters and
@@ -18,9 +19,14 @@ import { strings } from './strings'
 //   `parameters`, creating it where absent; then "Dynamic arguments", which
 //   replaces them with a reference to compute them from. A call with dynamic
 //   arguments has "Static arguments" in their place, which replaces the
-//   reference or node with a map of arguments. Then the modifiers other than
-//   `useCache`, which fragment calls don't allow.
+//   reference or node with a map of arguments. Then the modifiers not yet
+//   present.
 // - A shorthand node: the modifiers, since any other key makes it malformed.
+//
+// `noCache` is among the modifiers only where it would do something, as
+// `validate()` has it: something at or beneath the node caches, and no node
+// above it has `noCache` already. fig-tree warns of the rest as dead or
+// redundant.
 // - A `literal`: `//` only, since the other modifiers are dead there.
 // - A broken node (an unknown operator or fragment, or a malformed node): the
 //   modifiers only, since the editor can't say what else belongs.
@@ -41,47 +47,89 @@ export interface AddableKeys {
 }
 
 export interface AddContext {
+  classification: Classification
   operators: readonly OperatorInfo[]
   fragments: readonly FragmentInfo[]
   displayData: DisplayData
-  useCache: boolean | undefined // the instance's `useCache` option
 }
 
 const MODIFIERS: AddableKey[] = [
   { key: '//', required: false, description: strings.FT_MODIFIER_COMMENT },
   { key: 'fallback', required: false, description: strings.FT_MODIFIER_FALLBACK },
-  { key: 'useCache', required: false, description: strings.FT_MODIFIER_USE_CACHE },
+  { key: 'noCache', required: false, description: strings.FT_MODIFIER_NO_CACHE },
   { key: 'vars', required: false, description: strings.FT_MODIFIER_VARS },
 ]
 
 // Null where the key is free-typed
 export const addableKeys = (
   node: Record<string, unknown>,
+  path: Path,
   kind: RowKind | undefined,
-  { operators, fragments }: Pick<AddContext, 'operators' | 'fragments'>
+  context: Pick<AddContext, 'classification' | 'operators' | 'fragments'>
 ): AddableKeys | null => {
   const absent = (entries: AddableKey[]) => entries.filter(({ key }) => !(key in node))
+  const modifiers = () =>
+    absent(MODIFIERS.filter(({ key }) => key !== 'noCache' || takesNoCache(path, context)))
   switch (kind?.kind) {
     case 'literal':
       return { parameters: [], modifiers: absent(MODIFIERS.slice(0, 1)) }
     case 'fragment': {
-      const modifiers = absent(MODIFIERS.filter(({ key }) => key !== 'useCache'))
-      const fragment = fragments.find(({ name }) => name === kind.name)
+      const fragment = context.fragments.find(({ name }) => name === kind.name)
       const declared = kind.form === 'full' && kind.malformed === undefined && fragment
-      return { parameters: declared ? argumentsOf(node, kind, fragment) : [], modifiers }
+      return {
+        parameters: declared ? argumentsOf(node, kind, fragment) : [],
+        modifiers: modifiers(),
+      }
     }
     case 'operator': {
-      const operator = operators.find(({ name }) => name === kind.operator)
+      const operator = context.operators.find(({ name }) => name === kind.operator)
       const declared =
         kind.form === 'full' && kind.malformed === undefined && operator !== undefined
       return {
         parameters: declared ? absent(parametersOf(operator)) : [],
-        modifiers: absent(MODIFIERS),
+        modifiers: modifiers(),
       }
     }
     default:
       return null
   }
+}
+
+// Whether `noCache` on the node at `path` would do something: no node above
+// it has one, and it or something beneath it caches
+const takesNoCache = (
+  path: Path,
+  context: Pick<AddContext, 'classification' | 'operators' | 'fragments'>
+) => {
+  let caches = false
+  for (const { kind, slot } of context.classification.values()) {
+    if (slot === undefined) continue
+    const { ownerPath } = slot
+    const above = ownerPath !== null && ownerPath.length < path.length && isWithin(path, ownerPath)
+    if (above && slot.role === 'modifier' && slot.parameter === 'noCache') return false
+    if (!caches && isWithin(slot.path, path) && mayCache(kind, context)) caches = true
+  }
+  return caches
+}
+
+// A caching operator the host hasn't turned off, or a call to a fragment
+// whose body caches. One the editor can't read, malformed or naming nothing
+// registered, may cache, as `validate()` has it, so that a `noCache` on it
+// isn't called dead.
+const mayCache = (
+  kind: RowKind | undefined,
+  { operators, fragments }: Pick<AddContext, 'operators' | 'fragments'>
+) => {
+  if (kind?.kind === 'operator') {
+    const operator = operators.find(({ name }) => name === kind.operator)
+    if (operator === undefined || kind.malformed !== undefined) return true
+    return operator.cache && operator.instanceNoCache !== true
+  }
+  if (kind?.kind === 'fragment') {
+    const fragment = fragments.find(({ name }) => name === kind.name)
+    return fragment === undefined || kind.malformed !== undefined || fragment.caches
+  }
+  return false
 }
 
 // The arguments not yet in a static map, then the switch to the other kind
@@ -157,13 +205,13 @@ export const addKey = (
 }
 
 // The value a key added to a node starts as: a declared parameter's by the
-// starting-value rule, a modifier's by its own (`useCache` the opposite of
-// its effective setting, so adding it changes something), and a free-typed
-// key, which admits anything, the `any` seed
+// starting-value rule, a modifier's by its own (`noCache` as `true`, the only
+// value it takes), and a free-typed key, which admits anything, the `any`
+// seed
 export const getNewKeyValue = (
   key: string,
   kind: RowKind | undefined,
-  { operators, displayData, useCache }: Omit<AddContext, 'fragments'>
+  { operators, displayData }: Pick<AddContext, 'operators' | 'displayData'>
 ): unknown => {
   const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
   if (!isNode) return structuredClone(typeSeeds.any)
@@ -177,8 +225,8 @@ export const getNewKeyValue = (
       return strings.FT_NEW_COMMENT
     case 'fallback':
       return null
-    case 'useCache':
-      return !(operator?.instanceUseCache ?? useCache ?? operator?.useCache ?? false)
+    case 'noCache':
+      return true
     case 'vars':
       return {}
   }

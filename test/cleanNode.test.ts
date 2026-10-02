@@ -20,7 +20,7 @@ describe('cleanNode', () => {
       decimals: 2,
       thn: 1,
       fallback: null,
-      useCache: false,
+      noCache: true,
       vars: { a: 1 },
     }
     expect(cleanNode(switched, operator('upper'))).toEqual({
@@ -28,7 +28,7 @@ describe('cleanNode', () => {
       operator: 'upper',
       value: 'x',
       fallback: null,
-      useCache: false,
+      noCache: true,
       vars: { a: 1 },
     })
   })
@@ -40,13 +40,13 @@ describe('cleanNode', () => {
     expect((cleaned as { value: unknown }).value).toBe(inner)
   })
 
-  it("removes a fragment call's undeclared arguments and useCache", () => {
+  it("removes a fragment call's undeclared arguments, keeping the modifiers", () => {
     expect(
       cleanNode(
-        { fragment: 'greet', parameters: { name: 'Ada', extra: 1 }, useCache: true },
+        { fragment: 'greet', parameters: { name: 'Ada', extra: 1 }, noCache: true, thn: 1 },
         fragment('greet')
       )
-    ).toEqual({ fragment: 'greet', parameters: { name: 'Ada' } })
+    ).toEqual({ fragment: 'greet', parameters: { name: 'Ada' }, noCache: true })
   })
 
   it('removes a parameters map that cleaning empties, and keeps one already empty', () => {

@@ -109,11 +109,10 @@ describe('editor theme', () => {
       expect(style(node, 'collectionInner', [])).toEqual({ marginLeft: '-1em' })
     })
 
-    it('draw an error border and stripe around a broken node', () => {
+    it('draw an error border around a broken node', () => {
       for (const broken of [{ operator: 'flibble' }, { operator: 42 }]) {
         expect(style({ total: broken }, 'collectionInner', ['total'])).toMatchObject({
           borderColor: defaultEditorTheme.error,
-          borderLeftWidth: '0.3em',
         })
       }
       // Missing a parameter, the node is still well-formed
@@ -134,7 +133,6 @@ describe('editor theme', () => {
       })
       expect(style({ total: { fragment: 'nope' } }, 'collectionInner', ['total'])).toMatchObject({
         borderColor: defaultEditorTheme.error,
-        borderLeftWidth: '0.3em',
       })
     })
   })
@@ -157,12 +155,11 @@ describe('editor theme', () => {
       })
     })
 
-    it("draw a broken node's border dashed, in the error colour, with the stripe", () => {
+    it("draw a broken node's border dashed, in the error colour", () => {
       for (const broken of [{ $plus: [1], extra: 2 }, { $greet: '$data.x' }]) {
         expect(style({ total: broken }, 'collectionInner', ['total'])).toMatchObject({
           borderStyle: 'dashed',
           borderColor: defaultEditorTheme.error,
-          borderLeftWidth: '0.3em',
         })
       }
     })
@@ -186,10 +183,10 @@ describe('editor theme', () => {
   describe('modifier keys', () => {
     const modifier = { color: defaultEditorTheme.modifierKey, fontStyle: 'italic' }
 
-    it('mark fallback and useCache, on any node', () => {
-      const node = { operator: 'plus', values: [1], fallback: 0, useCache: false }
+    it('mark fallback and noCache, on any node', () => {
+      const node = { operator: 'plus', values: [1], fallback: 0, noCache: true }
       expect(style(node, 'property', ['fallback'])).toEqual(modifier)
-      expect(style(node, 'property', ['useCache'])).toEqual(modifier)
+      expect(style(node, 'property', ['noCache'])).toEqual(modifier)
       expect(style({ $plus: [1], fallback: { $minus: [2] } }, 'property', ['fallback'])).toEqual(
         modifier
       )
@@ -306,7 +303,7 @@ describe('editor theme', () => {
   describe('issues', () => {
     const tint: unknown = expect.objectContaining({
       background: `color-mix(in srgb, ${defaultEditorTheme.error} 9%, transparent)`,
-      boxShadow: `inset 3px 0 0 ${defaultEditorTheme.error}`,
+      boxShadow: `inset 2px 0 0 ${defaultEditorTheme.error}`,
     })
 
     it('tints a value row with an error', () => {
@@ -375,7 +372,7 @@ describe('editor theme', () => {
         background: highlight,
         marginLeft: '-0.4em',
         paddingLeft: '0.4em',
-        borderRadius: '0.25em',
+        borderRadius: '0 0.5em 0.5em 0',
       })
       expect(style(expression, 'valueRow', ['condition'], false, markers)).toBeNull()
     })
@@ -384,7 +381,7 @@ describe('editor theme', () => {
       expect(style(expression, 'valueRow', ['then'], false, marked(true, ['then']))).toEqual({
         marginLeft: '-0.4em',
         paddingLeft: '0.4em',
-        borderRadius: '0.25em',
+        borderRadius: '0 0.5em 0.5em 0',
         transition: fade,
       })
       // Over a tint, which it covers, then fades to
@@ -404,7 +401,7 @@ describe('editor theme', () => {
         background: highlight,
         marginLeft: 'calc(1em - 1.35em)',
         paddingLeft: '1.35em',
-        borderRadius: '0.25em',
+        borderRadius: '0 0.5em 0.5em 0',
       })
     })
 

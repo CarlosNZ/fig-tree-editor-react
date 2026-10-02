@@ -274,9 +274,9 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
   const nodeContext = (value: Record<string, unknown>, path: Path, context: Context) =>
     withVars(value, path, { ...context, owner: path })
 
-  // `fallback`, `useCache` and `vars`, on any node. False for any other key.
+  // `fallback`, `noCache` and `vars`, on any node. False for any other key.
   const modifier = (key: string, value: unknown, path: Path, nodePath: Path, inner: Context) => {
-    if (key === 'fallback' || key === 'useCache')
+    if (key === 'fallback' || key === 'noCache')
       visit(value, path, modifierSlot(path, nodePath, key), inner)
     else if (key === 'vars') varsBlock(value, path, nodePath, inner)
     else return false

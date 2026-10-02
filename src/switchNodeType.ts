@@ -9,9 +9,8 @@ import { type Path } from './paths'
 // Switching a full node's type from the toolbar (design, topic 2, "Node
 // lifecycle"), a structural action:
 //
-// - Operator to Fragment starts the slot's starting fragment, keeping `//`,
-//   `vars` and `fallback`; `useCache` goes, since fragment calls don't allow
-//   it.
+// - Operator to Fragment starts the slot's starting fragment, keeping the
+//   modifiers: `//`, `vars`, `fallback` and `noCache`.
 // - Fragment to Operator starts the slot's default operator, keeping the same
 //   modifiers.
 // - Either to Value replaces the node with the starting value for its
@@ -32,7 +31,7 @@ export interface NodeTypeContext {
   defaultFragment?: string
 }
 
-const KEPT = ['//', 'vars', 'fallback']
+const KEPT = ['//', 'vars', 'fallback', 'noCache']
 
 export const nodeTypes = (path: Path, context: NodeTypeContext): NodeType[] => {
   const admits = rowAt(context.classification, path)?.slot?.admits ?? 'any'

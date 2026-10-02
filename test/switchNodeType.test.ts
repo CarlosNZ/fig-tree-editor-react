@@ -34,19 +34,20 @@ const switchAt = (expression: unknown, path: Path, target: NodeType) => {
 }
 
 describe('switchNodeType', () => {
-  it('switches an operator to the starting fragment, keeping the modifiers but useCache', () => {
+  it('switches an operator to the starting fragment, keeping the modifiers', () => {
     const node = {
       '//': 'why',
       operator: 'upper',
       value: 'x',
       fallback: 'y',
-      useCache: true,
+      noCache: true,
       vars: { a: 1 },
     }
     expect(switchAt(node, [], 'fragment')).toEqual({
       fragment: 'today',
       '//': 'why',
       fallback: 'y',
+      noCache: true,
       vars: { a: 1 },
     })
   })
