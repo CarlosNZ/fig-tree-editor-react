@@ -240,13 +240,16 @@ const editorThemeLayer = ({
 // The tint is the rule's colour, faint, so a host sets both with one value.
 // The rule sits left of the block's chevron, which json-edit-react hangs
 // left of the key, and the padding puts the key back in line with its
-// siblings' (json-edit-react's margin is half the indent).
+// siblings' (json-edit-react's margin is half the indent). The closing
+// bracket ends the block as far above its bottom as the key starts below its
+// top.
 const varsBlock = (colour: string, indent: number) => ({
   borderLeft: `${RULE_WIDTH} solid ${colour}`,
   background: `color-mix(in srgb, ${colour} 7%, transparent)`,
   marginTop: '0.4em',
   marginLeft: `calc(${indent / 2}em - ${RULE_GAP} - ${RULE_WIDTH})`,
   paddingLeft: RULE_GAP,
+  paddingBottom: BRACKET_PAD,
 })
 
 // A comment's note: a rule and a tint from the comment colour, fainter than
@@ -330,6 +333,10 @@ export const filledInText = (filledIn: string) => `color-mix(in srgb, ${filledIn
 
 const RULE_WIDTH = '2px'
 const RULE_GAP = '1.35em' // from the rule to the key
+// The space above a row's text: json-edit-react's rows are at least 1.7em,
+// with a 1em line centred in them. A closing bracket's line is only the 1em,
+// so a block ending in one is padded by this below it.
+const BRACKET_PAD = '0.35em'
 
 // How far a collection's rows are pulled back left of json-edit-react's
 // indent, in em: a node's box, so it sits under its key's chevron, and any
