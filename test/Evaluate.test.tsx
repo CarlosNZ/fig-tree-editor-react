@@ -266,7 +266,7 @@ describe('evaluating', () => {
       )
     })
 
-    it('leaves a row that never ran its ▶, in a grey border', async () => {
+    it('leaves a node that never ran its ▶ and its border, and marks it to be dimmed', async () => {
       const { reports } = host({
         operator: 'if',
         condition: true,
@@ -277,7 +277,13 @@ describe('evaluating', () => {
       await done(reports, 1)
       expect(ran(nodeButton('$plus'))).toBe('value')
       expect(ran(nodeButton('$subtract'))).toBeUndefined()
-      expect(border(nodeButton('$subtract')).borderColor).toBe(toRgb(defaultEditorTheme.runSkipped))
+      expect(border(nodeButton('$subtract')).borderColor).toBe(
+        toRgb(defaultEditorTheme.shorthandBorder)
+      )
+      // The stylesheet dims a node by its mark
+      const node = (button: HTMLElement) => button.closest('.ft-node')!
+      expect(node(nodeButton('$subtract'))).toHaveAttribute('data-node-run', 'skipped')
+      expect(node(nodeButton('$plus'))).toHaveAttribute('data-node-run', 'value')
     })
 
     it("colours a collapsed node's summary by how it ran", async () => {

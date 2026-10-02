@@ -28,14 +28,15 @@ export interface EditorTheme {
   warning: string // the same for a warning, and a collapsed summary holding only warnings
   hint: string // a hint's label in the messages area
   filledIn: string // the marker on a value the editor filled in, and its label
-  // How a node ran, after an evaluation: its border and its button's icon
+  // How a node ran, after an evaluation: its border and its button's icon,
+  // its card's text, and a collapsed node's summary
   runValue: string
   runFailed: string
   runFallback: string // failed, and its fallback caught the failure
   runCancelled: string
-  runSkipped: string // never ran
+  runSkipped: string // never ran: no border or icon, since the node is dimmed
   nodeBorder: string // the border around a node's rows
-  shorthandBorder: string // a shorthand node's dashed border
+  shorthandBorder: string // a shorthand node's dotted border
   fragmentBackground: string // a fragment with no colours of its own
   fragmentText: string
 }
@@ -208,10 +209,11 @@ const editorThemeLayer = ({
           ? { display: 'none' }
           : null,
       // A collapsed node is its summary alone, with no border. A shorthand
-      // node's border is dashed, and a broken node's is in the error colour,
+      // node's border is dotted, and a broken node's is in the error colour,
       // whatever its form (topic 3). After an evaluation, a node that
       // took part has its border in the colour of how it ran (topic 7, "How
-      // it ran, in the tree"). No broken node takes part, since its errors
+      // it ran, in the tree"), but one that never ran keeps its own, since
+      // the stylesheet dims it. No broken node takes part, since its errors
       // block the evaluation. Any other collection's rows are pulled back as
       // a node's box is.
       collectionInner: (nodeData) => {
@@ -230,7 +232,8 @@ const editorThemeLayer = ({
             : shorthand
               ? editorTheme.shorthandBorder
               : editorTheme.nodeBorder,
-          ...(ran !== undefined && { borderColor: runColour(ran, editorTheme) }),
+          ...(ran !== undefined &&
+            ran !== 'skipped' && { borderColor: runColour(ran, editorTheme) }),
         }
       },
     },

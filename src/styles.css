@@ -4,6 +4,28 @@
      shows, so cards don't flash up on the way to a click or as the pointer
      crosses the tree */
   --ft-hover-card-delay: 0.5s;
+  /* How far a node that never ran in the latest evaluation is dimmed */
+  --ft-never-ran-opacity: 0.45;
+}
+
+/* A node that never ran is dimmed, and shows in full while the pointer or
+   focus is in it. Its hover cards are drawn inside it, so they would dim with
+   it, and a node below full opacity is drawn beneath the rows after it, which
+   would cover a card hanging below it. */
+.ft-node[data-node-run='skipped'] {
+  opacity: var(--ft-never-ran-opacity);
+  transition: opacity 0.15s;
+}
+
+.ft-node[data-node-run='skipped']:hover,
+.ft-node[data-node-run='skipped']:focus-within {
+  opacity: 1;
+}
+
+/* Every node inside one that never ran never ran either, and is dimmed with
+   it rather than again, so the branch dims, and shows in full, as one */
+.ft-node[data-node-run='skipped'] .ft-node[data-node-run='skipped'] {
+  opacity: 1;
 }
 
 /* Select component */

@@ -83,7 +83,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const { row, rest } = onLine ? takeRow(children, key) : { row: undefined, rest: children }
 
   return (
-    <div className="ft-node" {...rowMark(path)}>
+    <div className="ft-node" {...rowMark(path)} data-node-run={evaluation.mark?.status}>
       <DisplayBar
         name={key}
         display={display}

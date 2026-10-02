@@ -104,7 +104,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
     )
 
   return (
-    <div className="ft-node" {...rowMark(path)}>
+    <div className="ft-node" {...rowMark(path)} data-node-run={evaluation.mark?.status}>
       {editor === 'toolbar' ? (
         <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
           <NodeTypeSwitch

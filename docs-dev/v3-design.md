@@ -1125,7 +1125,7 @@ What an evaluation leaves in the tree, from its trace, which every editor evalua
 
 **Which rows are marked:** every node inside the evaluated row (an operator, fragment call, shorthand or `literal` node) and every reference, and the parts of the wrapped scope that took part in the run: the iterator's `input`, and the wrapped `vars` blocks' vars, an unread one as never run. The evaluated row itself is marked whatever it is, so the root's bar shows how the whole ran. Plain objects and arrays and plain values aren't marked, nor is anything else outside the evaluated row.
 
-**How a row is marked:** a node's border, and the ▶ in its Evaluate button.
+**How a row is marked:** a node's border, and the ▶ in its Evaluate button, or, where it never ran, the whole node dimmed.
 
 | How it ran                                                       | Border | Button  |
 | ---------------------------------------------------------------- | ------ | ------- |
@@ -1133,11 +1133,12 @@ What an evaluation leaves in the tree, from its trace, which every editor evalua
 | Failed                                                           | red    | red ✕   |
 | Failed, and its `fallback` caught the failure                    | amber  | amber ✕ |
 | Cancelled                                                        | black  | ▶       |
-| Never ran: skipped, inside a row that didn't run, or not reached | grey   | ▶       |
+| Never ran: skipped, inside a row that didn't run, or not reached | dimmed | ▶       |
 
 - **A value from the cache** is marked as ran, and its card says it was a cached result. No icon reads as "cached" without a label, so none goes on the button (Carl, plan 10.7c). A node in the tree says so by its own cache lookup only, not its children's. A fragment call is the exception: fig-tree doesn't cache a call, and its body's nodes, whose lookups the trace records, have no rows of their own, so the call stands in for them, and is a cached result where its body made lookups and every one hit (Carl, plan 10.7c).
 - **A fallback's mark is its node's,** the node that failed. Its `fallback` row is a row of its own, marked by its own run, and where the fallback fails too, the node is failed, its card saying so.
 - **A node inside an iterator** ran once per element, and is marked by the worst of its runs: failed, then fallback, cancelled, ran and never ran.
+- **A node that never ran is dimmed,** its border as it was, rather than given a grey border, which was too like a node's own (Carl). It shows in full while the pointer or focus is in it, since its hover cards and edit tools are drawn inside it and would dim with it. How far it dims is the stylesheet's `--ft-never-ran-opacity`.
 - **A reference has no border,** which would put a small box round every reference in a large expression (Carl): its ▶ becomes the ✓ or ✕.
 - **A collapsed node** shows neither its border nor its button, so its summary text takes the colour, as it takes an issue's ("Where issues attach").
 - **The root's bar** takes the button's mark and its card.

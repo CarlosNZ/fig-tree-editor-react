@@ -138,12 +138,12 @@ describe('editor theme', () => {
   })
 
   describe('shorthand nodes', () => {
-    it('hide their brackets, and draw a dashed border', () => {
+    it('hide their brackets, and draw a dotted border', () => {
       for (const node of [{ $plus: [1, 2] }, { $greet: { name: 'Ada' } }]) {
         expect(style({ total: node }, 'bracket', ['total'])).toEqual({ display: 'none' })
         expect(style({ total: node }, 'bracket', ['total'], true)).toBeNull()
         expect(style({ total: node }, 'collectionInner', ['total'])).toMatchObject({
-          borderStyle: 'dashed',
+          borderStyle: 'dotted',
           borderColor: defaultEditorTheme.shorthandBorder,
         })
         expect(style({ total: node }, 'collectionInner', ['total'], true)).toEqual({
@@ -155,10 +155,10 @@ describe('editor theme', () => {
       })
     })
 
-    it("draw a broken node's border dashed, in the error colour", () => {
+    it("draw a broken node's border dotted, in the error colour", () => {
       for (const broken of [{ $plus: [1], extra: 2 }, { $greet: '$data.x' }]) {
         expect(style({ total: broken }, 'collectionInner', ['total'])).toMatchObject({
-          borderStyle: 'dashed',
+          borderStyle: 'dotted',
           borderColor: defaultEditorTheme.error,
         })
       }
@@ -440,14 +440,28 @@ describe('editor theme', () => {
       })
     })
 
-    it("keeps a shorthand node's border dashed", () => {
+    it("keeps a shorthand node's border dotted", () => {
       const expression = { a: { $plus: [1, 2] } }
       expect(
-        style(expression, 'collectionInner', ['a'], false, null, ran([['a'], 'skipped']))
+        style(expression, 'collectionInner', ['a'], false, null, ran([['a'], 'value']))
       ).toMatchObject({
-        borderStyle: 'dashed',
-        borderColor: defaultEditorTheme.runSkipped,
+        borderStyle: 'dotted',
+        borderColor: defaultEditorTheme.runValue,
         ...unmoved,
+      })
+    })
+
+    // The stylesheet dims it instead
+    it('leaves the border of a node that never ran as it is', () => {
+      const expression = { a: { $plus: [1, 2] }, b: { operator: 'plus', values: [1] } }
+      const marks = ran([['a'], 'skipped'], [['b'], 'skipped'])
+      expect(style(expression, 'collectionInner', ['a'], false, null, marks)).toMatchObject({
+        borderStyle: 'dotted',
+        borderColor: defaultEditorTheme.shorthandBorder,
+      })
+      expect(style(expression, 'collectionInner', ['b'], false, null, marks)).toMatchObject({
+        borderStyle: 'solid',
+        borderColor: defaultEditorTheme.nodeBorder,
       })
     })
 
