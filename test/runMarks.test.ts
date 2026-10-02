@@ -106,7 +106,7 @@ describe('marking how a run went', () => {
       expect(at(marks, ['else']).reason).toEqual({ kind: 'whenNeeded' })
       expect(at(marks, ['else', '$subtract', 0])).toMatchObject({
         runs: [],
-        reason: { kind: 'inside', path: ['else'] },
+        reason: { kind: 'inside', path: ['else'], status: 'skipped' },
       })
     })
 
@@ -165,7 +165,11 @@ describe('marking how a run went', () => {
         then: 'skipped',
         'then.$plus[0]': 'skipped',
       })
-      expect(at(marks, ['then', '$plus', 0]).reason).toEqual({ kind: 'inside', path: ['then'] })
+      expect(at(marks, ['then', '$plus', 0]).reason).toEqual({
+        kind: 'inside',
+        path: ['then'],
+        status: 'skipped',
+      })
     })
   })
 
@@ -196,6 +200,8 @@ describe('marking how a run went', () => {
         'each.$divide[1]': 'value',
       })
       expect(at(marks, ['each']).runs.map(({ status }) => status)).toEqual(['value', 'failed'])
+      expect(at(marks, ['each']).perElement).toBe(true)
+      expect(at(marks, []).perElement).toBe(false)
       expect(at(marks, ['each', '$divide', 1]).runs.map(({ value }) => value)).toEqual([1, 0])
     })
 

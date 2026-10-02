@@ -413,7 +413,10 @@ describe('editor theme', () => {
     // Marks with each row's status, as an evaluation leaves them
     const ran = (...rows: [(string | number)[], RowRun['status']][]): RunMarks =>
       new Map(
-        rows.map(([path, status]) => [toPathString(path), { path, status, runs: [], nulls: [] }])
+        rows.map(([path, status]) => [
+          toPathString(path),
+          { path, status, runs: [], perElement: false, nulls: [] },
+        ])
       )
     const heavier = { borderWidth: '2px', padding: 'calc(0.5em - (2px - 1px))' }
 

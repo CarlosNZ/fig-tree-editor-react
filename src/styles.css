@@ -644,6 +644,54 @@ input.ft-select-input::placeholder {
   font-size: 0.95em;
 }
 
+/* A row's card after an evaluation: how it ran, in its colour, with the time
+   muted, then its value, cut to three lines, or a line per element inside an
+   iterator, each cut to one */
+.ft-run-status {
+  font-weight: bold;
+}
+
+.ft-run-time {
+  font-weight: normal;
+  color: #6b7280;
+}
+
+.ft-hover-card-line.ft-run-value {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-family: monospace;
+}
+
+.ft-hover-card-line.ft-run-elements {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.15em 0.7em;
+  align-items: baseline;
+}
+
+.ft-run-index {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: #6b7280;
+}
+
+.ft-run-element {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ft-run-json {
+  font-family: monospace;
+}
+
+.ft-run-more {
+  color: #6b7280;
+}
+
 /* Shown after the delay, and hidden at once. Focus shows it only from the
    keyboard, so a click doesn't leave it open once the pointer has gone. */
 .ft-hover-card-anchor:hover .ft-hover-card,

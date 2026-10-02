@@ -301,16 +301,168 @@ describe('evaluating', () => {
       expect(summary.style.color).toBe(toRgb(defaultEditorTheme.runValue))
     })
 
-    it('adds a bolt where the value came from the cache', async () => {
-      const cached = new FigTree({ operators: [coreOperators, [once]], useCache: true })
-      const { reports } = host({ x: { operator: 'once' } }, { figTree: cached })
-      fireEvent.click(nodeButton('once'))
-      await done(reports, 1)
-      expect(nodeButton('once').querySelector('[data-run="cached"]')).toBeNull()
-      fireEvent.click(nodeButton('once'))
-      await done(reports, 2)
-      expect(ran(nodeButton('once'))).toBe('value')
-      expect(nodeButton('once').querySelector('[data-run="cached"]')).toBeInTheDocument()
+    describe('its card', () => {
+      // A button's card, its lines one to an entry, as the stylesheet shows
+      // them on hover
+      const card = (button: HTMLElement) =>
+        [
+          ...button
+            .closest('.ft-hover-card-anchor')!
+            .querySelectorAll(':scope > .ft-hover-card > .ft-hover-card-line'),
+        ].map(({ textContent }) => textContent)
+      const TIME = /^ · (<1ms|\d+ms)$/
+      const status = (button: HTMLElement) => {
+        const [line] = card(button)
+        const time = button
+          .closest('.ft-hover-card-anchor')!
+          .querySelector('.ft-run-time')?.textContent
+        if (time) expect(time).toMatch(TIME)
+        return time ? line.slice(0, -time.length) : line
+      }
+
+      it('says it ran, with its value as compact JSON in place of its description', async () => {
+        const { reports } = host(
+          { x: { $upper: '$data.name' } },
+          { evaluationData: { name: 'Ada' } }
+        )
+        fireEvent.click(nodeButton('$upper'))
+        await done(reports, 1)
+        expect(status(nodeButton('$upper'))).toBe('Ran')
+        expect(card(nodeButton('$upper')).slice(1)).toEqual(['"ADA"'])
+        expect(card(referenceButton())).toEqual([expect.stringMatching(/^Ran/), '"Ada"'])
+      })
+
+      it('lists one value per element inside an iterator, up to ten', async () => {
+        const { reports } = host({
+          operator: 'map',
+          input: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+          each: { $greaterThan: ['$element', 6] },
+        })
+        fireEvent.click(nodeButton('$greaterThan'))
+        await done(reports, 1)
+        const button = nodeButton('$greaterThan')
+        expect(status(button)).toBe('Ran once per element')
+        const anchor = button.closest('.ft-hover-card-anchor')!
+        expect([...anchor.querySelectorAll('.ft-run-element')].map((el) => el.textContent)).toEqual(
+          ['false', 'false', 'false', 'false', 'false', 'false', 'true', 'true', 'true', 'true']
+        )
+        expect(card(button).at(-1)).toBe('+2 more')
+      })
+
+      it('says where a failure came from, where it is a row beneath', async () => {
+        const { container, reports } = host({ total: { $plus: [{ $divide: [1, 0] }, 1] } })
+        fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+        await done(reports, 1)
+        const message = 'divide – produced a non-finite number (Infinity)'
+        expect(status(nodeButton('$divide'))).toBe('Failed')
+        expect(card(nodeButton('$divide')).slice(1)).toEqual([message])
+        expect(card(nodeButton('$plus')).slice(1)).toEqual([`At total.$plus[0]: ${message}`])
+        // The root holds the null the failure left
+        const root = within(container.querySelector('.ft-root-bar')!).getByRole('button')
+        expect(card(root).slice(1)).toEqual(['{"total":null}', `total is null: ${message}`])
+      })
+
+      it('says what a fallback caught, and where the fallback failed too', async () => {
+        const { reports } = host(
+          {
+            caught: { $divide: [1, 0], fallback: 0 },
+            failed: { $divide: [2, 0], fallback: { $plus: ['$data.s', 1] } },
+          },
+          { evaluationData: { s: 'a' } }
+        )
+        const [caught, failed] = screen
+          .getAllByRole('button')
+          .filter(({ textContent }) => textContent === '$divide')
+        fireEvent.click(caught)
+        await done(reports, 1)
+        expect(status(caught)).toBe('Fallback used')
+        expect(card(caught).slice(1)).toEqual([
+          '0',
+          'Caught: divide – produced a non-finite number (Infinity)',
+        ])
+        fireEvent.click(failed)
+        await done(reports, 2)
+        expect(status(failed)).toBe('Failed')
+        expect(card(failed).slice(1)).toEqual([
+          'divide – produced a non-finite number (Infinity)',
+          expect.stringMatching(/^The fallback also failed: plus – /),
+        ])
+      })
+
+      it('says where in a fragment body a call failed', async () => {
+        const withFragment = new FigTree({
+          operators: [coreOperators],
+          fragments: { ratio: { expression: { $plus: [1, { $divide: [1, 0] }] } } },
+        })
+        const { reports } = host({ x: { fragment: 'ratio' } }, { figTree: withFragment })
+        fireEvent.click(nodeButton('ratio'))
+        await done(reports, 1)
+        expect(card(nodeButton('ratio')).slice(1)).toEqual([
+          // Where in the registered definition, as fig-tree gives it
+          'In fragment ratio at expression.$plus[1]: divide – produced a non-finite number (Infinity)',
+        ])
+      })
+
+      it("says why a row didn't run, with no time", async () => {
+        const { reports } = host({
+          vars: { unused: { $upper: 'never read' } },
+          operator: 'if',
+          condition: true,
+          then: { $upper: 'yes' },
+          else: { $lower: { $upper: 'no' } },
+          fallback: { $upper: 'unknown' },
+        })
+        fireEvent.click(nodeButton('if'))
+        await done(reports, 1)
+        const uppers = screen
+          .getAllByRole('button')
+          .filter(({ textContent }) => textContent === '$upper')
+        // In the tree's order: then, inside else, fallback, the var
+        expect(uppers.map((button) => card(button))).toEqual([
+          [expect.stringMatching(/^Ran/), '"YES"'],
+          ['Never ran', "Inside else, which didn't run"],
+          ['Never ran', 'Not needed: the node succeeded'],
+          ['Never ran', 'Never read'],
+        ])
+        expect(card(nodeButton('$lower'))).toEqual(['Never ran', 'Evaluated only when needed'])
+      })
+
+      it('says a race stopped a node', async () => {
+        const { reports } = host({ x: { $and: [{ operator: 'wait' }, { $equal: [1, 2] }] } })
+        fireEvent.click(nodeButton('$and'))
+        await done(reports, 1)
+        expect(status(nodeButton('wait'))).toBe('Cancelled')
+        expect(card(nodeButton('wait')).slice(1)).toEqual(['Stopped once the answer was known'])
+      })
+
+      it('says a result came from the cache, with no icon of its own', async () => {
+        const cached = new FigTree({ operators: [coreOperators, [once]], useCache: true })
+        const { reports } = host({ x: { operator: 'once' } }, { figTree: cached })
+        fireEvent.click(nodeButton('once'))
+        await done(reports, 1)
+        expect(status(nodeButton('once'))).toBe('Ran')
+        fireEvent.click(nodeButton('once'))
+        await done(reports, 2)
+        expect(status(nodeButton('once'))).toBe('Ran, cached result')
+        expect(nodeButton('once').querySelectorAll('[data-run]')).toHaveLength(1)
+      })
+
+      it('cuts a long value short', async () => {
+        const { reports } = host({ x: { $upper: 'a'.repeat(1000) } })
+        fireEvent.click(nodeButton('$upper'))
+        await done(reports, 1)
+        const [, value] = card(nodeButton('$upper'))
+        expect(value).toBe(`"${'A'.repeat(299)}…`)
+      })
+
+      it('shows again as the result arrives, where a click hid it', async () => {
+        const { reports } = host({ x: { $plus: [1, 2] } })
+        const anchor = nodeButton('$plus').closest('.ft-hover-card-anchor')!
+        fireEvent.click(nodeButton('$plus'))
+        expect(anchor).toHaveAttribute('data-clicked')
+        await done(reports, 1)
+        expect(anchor).not.toHaveAttribute('data-clicked')
+      })
     })
 
     describe('the marks go', () => {

@@ -43,6 +43,10 @@ export const updateAt = (
   return { ...value, [key]: updateAt(child, rest, update) }
 }
 
+// Whether two paths are the same
+export const samePath = (a: Readonly<Path>, b: Readonly<Path>) =>
+  a.length === b.length && a.every((segment, index) => segment === b[index])
+
 // Whether `path` is `prefix` or a path beneath it
 export const isWithin = (path: Readonly<Path>, prefix: Readonly<Path>) =>
   prefix.length <= path.length && prefix.every((key, index) => path[index] === key)

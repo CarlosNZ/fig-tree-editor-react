@@ -20,6 +20,7 @@ export interface RowRun {
   // Each time it ran, or was passed over, in order: one per element inside
   // an iterator, and none where the run never reached it
   runs: readonly RunInstance[]
+  perElement: boolean // inside an iterator, so it runs once per element
   reason?: NotRunReason // where it was skipped or cancelled
   // On the evaluated row, the failures that left nulls in its value
   nulls: readonly EvaluationFailure[]
@@ -41,7 +42,7 @@ export type NotRunReason =
   | { kind: 'race' } // stopped once the answer was known
   | { kind: 'timeout' } // stopped by the instance's timeout
   | { kind: 'stopped' } // cancelled, otherwise
-  | { kind: 'inside'; path: Path } // a row that didn't run holds it
+  | { kind: 'inside'; path: Path; status: 'skipped' | 'cancelled' } // a row that didn't run holds it
   | { kind: 'notReached' } // the run stopped short of it
   | { kind: 'notEvaluated' } // skipped, otherwise
 
@@ -79,17 +80,19 @@ export const markRun = (
       path,
       status,
       runs: instances,
+      perElement: inIterator(row),
       ...(status === 'skipped' && { reason: skippedReason(row) }),
       ...(status === 'cancelled' && { reason: cancelledReason(row, evaluation) }),
       nulls: [],
     })
   }
-  for (const [key, { path }] of marked)
+  for (const [key, { path, row }] of marked)
     if (!marks.has(key))
       marks.set(key, {
         path,
         status: 'skipped',
         runs: [],
+        perElement: inIterator(row),
         reason: unrunReason(path, runs, marks),
         nulls: [],
       })
@@ -145,6 +148,11 @@ const takesPart = ({ kind }: Row) =>
   kind?.kind === 'literal' ||
   kind?.kind === 'reference'
 
+// A row inside an iterator's per-element parameter, which the run wraps in
+// the iterator, as it does every iterator in the evaluated row
+const inIterator = (row: Row | undefined) =>
+  row?.scope?.some(({ kind }) => kind === 'iterator') ?? false
+
 // Inside an iterator, a row is marked by the worst of its runs
 const SEVERITY: TraceStatus[] = ['failed', 'fallback', 'cancelled', 'value', 'skipped']
 const worst = (instances: readonly RunInstance[]) =>
@@ -187,7 +195,7 @@ const unrunReason = (
     if (instances === undefined) continue
     const status = marks.get(key)?.status ?? worst(instances)
     return status === 'skipped' || status === 'cancelled'
-      ? { kind: 'inside', path: above }
+      ? { kind: 'inside', path: above, status }
       : { kind: 'notReached' }
   }
   return { kind: 'notReached' }
@@ -216,6 +224,7 @@ const failedWithoutTrace = ({ path, failures }: Evaluation): RunMarks =>
       {
         path,
         status: 'failed',
+        perElement: false,
         runs: failures.slice(0, 1).map(({ error }) => ({ status: 'failed', error, cached: false })),
         nulls: [],
       },

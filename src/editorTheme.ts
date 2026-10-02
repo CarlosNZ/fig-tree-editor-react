@@ -354,6 +354,15 @@ export const runColour = (status: TraceStatus, editorTheme: EditorTheme) =>
     skipped: editorTheme.runSkipped,
   })[status]
 
+// Text in the colour of how a row ran, the light ones darkened to read on a
+// card's white, as a warning's text is
+export const runText = (status: TraceStatus, editorTheme: EditorTheme) => {
+  const colour = runColour(status, editorTheme)
+  return status === 'fallback' || status === 'skipped'
+    ? `color-mix(in srgb, ${colour}, black 30%)`
+    : colour
+}
+
 export const layerTheme = (
   hostTheme: ThemeInput | undefined,
   context: ThemeContext

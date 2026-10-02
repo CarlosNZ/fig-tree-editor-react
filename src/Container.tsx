@@ -3,12 +3,14 @@ import { type ComponentConfig } from './customNodeDefinitions'
 import { CardLines, HoverCard } from './HoverCard'
 import { EvaluateIcon } from './Icons'
 import { rowMark } from './revealRow'
+import { RunCard } from './RunCard'
 import { strings } from './strings'
 import { useEvaluation } from './useEvaluation'
 
 // The root, where it is plain data holding nodes or references (design,
 // topic 3, "Kinds"; mockup F1): a bare Evaluate button above its rows, which
-// evaluates the whole expression, as a node's button does its node.
+// evaluates the whole expression, as a node's button does its node, and after
+// an evaluation says in its card how the whole ran.
 export const Container = ({
   componentProps,
   nodeData,
@@ -25,8 +27,11 @@ export const Container = ({
       <div className="ft-root-bar" {...rowMark(nodeData.path)}>
         <HoverCard
           hideOnClick
+          showAgainOn={mark}
           card={
-            disabled ? (
+            mark ? (
+              <RunCard mark={mark} editorTheme={editorTheme} />
+            ) : disabled ? (
               <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
             ) : undefined
           }

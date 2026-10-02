@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useKeyboardListener, type CustomComponentProps, type JsonData } from 'json-edit-react'
 import { type CreatedNode } from './customNodeDefinitions'
-import { type Path } from './paths'
+import { samePath, type Path } from './paths'
 
 // A full node's two editors (design, topic 2, "Two editors per node" and
 // "Commit semantics"): the toolbar, opened by the DisplayBar's pencil, and
@@ -114,6 +114,3 @@ export const useOpenCreated = (
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 }
-
-const samePath = (a: readonly unknown[], b: readonly unknown[]) =>
-  a.length === b.length && a.every((segment, index) => segment === b[index])

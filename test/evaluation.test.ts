@@ -206,11 +206,14 @@ describe('the evaluator', () => {
     }
     const evaluator = createEvaluator(() => handlers)
     const finish = async (name: string) => {
+      await started()
       settle.get(name)!(evaluation([name], 'done'))
       await Promise.resolve()
     }
     return { evaluator, calls, finish, signals }
   }
+  // The evaluator starts each evaluation on the next task
+  const started = () => new Promise((resolve) => setTimeout(resolve, 0))
 
   it('reports the start, then the evaluation, and says which row is running', async () => {
     const { evaluator, calls, finish } = setup()
@@ -228,6 +231,7 @@ describe('the evaluator', () => {
   it('cancels the one running when it is started again, at once, ignoring its result', async () => {
     const { evaluator, calls, finish, signals } = setup()
     evaluator.evaluate(['a'])
+    await started()
     evaluator.evaluate(['a'])
     expect(calls).toEqual(['start a', 'cancelled a'])
     expect(signals.get('a')!.aborted).toBe(true)
@@ -238,10 +242,20 @@ describe('the evaluator', () => {
   it('cancels the one running when another starts, reporting it first', async () => {
     const { evaluator, calls, finish } = setup()
     evaluator.evaluate(['a'])
+    await started()
     evaluator.evaluate(['b'])
     await finish('a')
     await finish('b')
     expect(calls).toEqual(['start a', 'cancelled a', 'start b', 'done b'])
+  })
+
+  it('never starts one cancelled before its turn came', async () => {
+    const { evaluator, calls, signals } = setup()
+    evaluator.evaluate(['a'])
+    evaluator.evaluate(['b'])
+    await started()
+    expect(calls).toEqual(['start a', 'cancelled a', 'start b'])
+    expect([...signals.keys()]).toEqual(['b'])
   })
 
   it("reports nothing for a row that can't be evaluated, cancelling the one running", () => {

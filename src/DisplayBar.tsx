@@ -4,6 +4,7 @@ import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
 import { EvaluateIcon, Icon } from './Icons'
 import { IssueFlag } from './IssueFlag'
+import { RunCard } from './RunCard'
 import { strings } from './strings'
 import { type EvaluateControl } from './useEvaluation'
 
@@ -23,7 +24,8 @@ import { type EvaluateControl } from './useEvaluation'
 //
 // A click on the button evaluates the node, and a spinner takes the ▶'s place
 // while it runs, until a second click cancels it (topic 7, "Evaluating"), then
-// a ✓ or ✕ for how it ran ("How it ran, in the tree").
+// a ✓ or ✕ for how it ran, and its card says how in place of its usual lines
+// ("How it ran, in the tree").
 // Where the node can't be evaluated, the button is dimmed, a plain click does
 // nothing, and its card says why; it isn't `disabled`, so a modifier-click
 // still respells. After a click, its card stays hidden until the pointer
@@ -155,8 +157,11 @@ const NameOrButton = ({
   ) : (
     <HoverCard
       hideOnClick
+      showAgainOn={mark}
       card={
-        card.length > 0 || cardNote !== undefined || disabled ? (
+        mark ? (
+          <RunCard mark={mark} editorTheme={editorTheme} />
+        ) : card.length > 0 || cardNote !== undefined || disabled ? (
           <CardLines
             lines={card}
             note={cardNote}

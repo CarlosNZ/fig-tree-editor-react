@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 
 // A card shown once its anchor has been hovered, or focused from the
 // keyboard, for a moment (the stylesheet's `--ft-hover-card-delay`), and
@@ -6,18 +6,23 @@ import { useId, useState, type ReactNode } from 'react'
 // changes the tree's layout (design, topic 4, "Parameter metadata"), and the
 // stylesheet alone shows and hides it, so hovering re-renders nothing. With
 // `hideOnClick`, a click on the anchor hides it until the pointer leaves, so
-// it doesn't cover what the click shows.
+// it doesn't cover what the click shows, or until `showAgainOn` changes, as
+// an Evaluate's does when its result arrives: with the pointer still there,
+// the card then shows, after the usual delay.
 export const HoverCard = ({
   card,
   hideOnClick = false,
+  showAgainOn,
   children,
 }: {
   card: ReactNode
   hideOnClick?: boolean
+  showAgainOn?: unknown
   children: ReactNode
 }) => {
   const id = useId()
   const [clicked, setClicked] = useState(false)
+  useEffect(() => setClicked(false), [showAgainOn])
   if (card === undefined || card === null || card === '') return children
   return (
     <span
@@ -74,7 +79,7 @@ export const CardLines = ({
   </>
 )
 
-const withCode = (line: string) =>
+export const withCode = (line: string) =>
   line
     .split('`')
     .map((segment, part) => (part % 2 === 1 ? <code key={part}>{segment}</code> : segment))

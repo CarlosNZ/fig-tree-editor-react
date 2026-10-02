@@ -172,12 +172,18 @@ export const createEvaluator = (handlers: () => EvaluatorHandlers): Evaluator =>
     handlers().onStart(path)
     const current = { key, abort, prepared }
     setRunning(current)
-    void prepared.start(abort.signal).then((evaluation) => {
-      // Cancelled meanwhile, and reported then
+    // It starts once the editor has drawn what starting changes, the spinner
+    // and the last run's marks going, which fig-tree's trace would otherwise
+    // time as part of the first node
+    setTimeout(() => {
       if (running !== current) return
-      setRunning(null)
-      handlers().onEvaluate(evaluation)
-    })
+      void prepared.start(abort.signal).then((evaluation) => {
+        // Cancelled meanwhile, and reported then
+        if (running !== current) return
+        setRunning(null)
+        handlers().onEvaluate(evaluation)
+      })
+    }, 0)
   }
 
   return {

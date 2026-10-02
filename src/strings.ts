@@ -59,6 +59,44 @@ export const strings = {
   FT_EVALUATE_NO_INPUT: "It's inside an iterator with no input to go over",
   FT_EVALUATE_NO_MAP: 'Evaluating inside an iterator needs the `map` operator',
 
+  // A row's card after an evaluation, saying how it ran. Paths arrive in
+  // backticks, shown as code.
+  FT_RUN_VALUE: 'Ran',
+  FT_RUN_VALUE_PER_ELEMENT: 'Ran once per element',
+  FT_RUN_CACHED: (ran: string) => `${ran}, cached result`,
+  FT_RUN_FAILED: 'Failed',
+  FT_RUN_FALLBACK: 'Fallback used',
+  FT_RUN_FALLBACK_PER_ELEMENT: 'Fallback used once per element',
+  FT_RUN_CANCELLED: 'Cancelled',
+  FT_RUN_SKIPPED: 'Never ran',
+  FT_RUN_TIME: (ms: number) =>
+    ms < 1 ? '<1ms' : ms < 1000 ? `${Math.round(ms)}ms` : `${(ms / 1000).toFixed(1)}s`,
+  // Where a failure is from, where that isn't the row itself
+  FT_RUN_FAILURE_AT: (path: string, message: string) => `At \`${path}\`: ${message}`,
+  FT_RUN_FAILURE_IN_FRAGMENT: (fragment: string, path: string, message: string) =>
+    `In fragment \`${fragment}\` at \`${path}\`: ${message}`,
+  FT_RUN_FAILURE_AT_IN_FRAGMENT: (at: string, fragment: string, path: string, message: string) =>
+    `At \`${at}\`, in fragment \`${fragment}\` at \`${path}\`: ${message}`,
+  FT_RUN_FALLBACK_FAILED: (message: string) => `The fallback also failed: ${message}`,
+  FT_RUN_ALSO_FAILED: (message: string) => `Also failed: ${message}`,
+  FT_RUN_CAUGHT: (message: string) => `Caught: ${message}`,
+  FT_RUN_NULL: (path: string, message: string) => `\`${path}\` is null: ${message}`,
+  // An element's line, inside an iterator
+  FT_RUN_ELEMENT_FAILED: (message: string) => `Failed: ${message}`,
+  FT_RUN_ELEMENT_CAUGHT: (message: string) => `, caught: ${message}`, // after its value
+  FT_RUN_MORE: (count: number) => `+${count} more`, // elements beyond those listed
+  // Why a row didn't run
+  FT_RUN_WHEN_NEEDED: 'Evaluated only when needed',
+  FT_RUN_FALLBACK_UNUSED: 'Not needed: the node succeeded',
+  FT_RUN_UNREAD: 'Never read',
+  FT_RUN_RACE: 'Stopped once the answer was known',
+  FT_RUN_TIMEOUT: 'Stopped by the timeout',
+  FT_RUN_STOPPED: 'Stopped before it finished',
+  FT_RUN_INSIDE_SKIPPED: (path: string) => `Inside \`${path}\`, which didn't run`,
+  FT_RUN_INSIDE_CANCELLED: (path: string) => `Inside \`${path}\`, which was stopped`,
+  FT_RUN_NOT_REACHED: 'Not reached',
+  FT_RUN_NOT_EVALUATED: 'Not evaluated',
+
   // The conversion buttons
   FT_TO_SHORTHAND: 'To shorthand',
   FT_TO_POSITIONAL: 'To positional',

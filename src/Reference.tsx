@@ -9,6 +9,7 @@ import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
 import { EvaluateIcon } from './Icons'
 import { IssueCard } from './IssueFlag'
+import { RunCard } from './RunCard'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
 import { ToGetNodeButton } from './upstream'
@@ -36,7 +37,8 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // "Evaluating"): a spinner while it runs, a second click cancelling it, and
 // where it can't be evaluated, dimmed, with the reason in a card on hover.
 // After an evaluation it shows how the reference ran, as a ✓ or ✕, the
-// reference having no border to colour ("How it ran, in the tree").
+// reference having no border to colour, and its card says how, with the
+// value it resolved to ("How it ran, in the tree").
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
   const { classification, issues, editorTheme, entry, referenceNames } = componentProps!
@@ -86,8 +88,11 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
       />
       <HoverCard
         hideOnClick
+        showAgainOn={mark}
         card={
-          disabled ? (
+          mark ? (
+            <RunCard mark={mark} editorTheme={editorTheme} />
+          ) : disabled ? (
             <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
           ) : undefined
         }

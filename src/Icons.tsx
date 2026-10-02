@@ -48,19 +48,9 @@ const runIcon = (name: keyof typeof RUN_ICONS, colour: string, status: string) =
   </div>
 )
 
-// Beside the ✓ where the value came from the cache
-const cachedIcon = (colour: string) => (
-  <div className="ft-icon ft-evaluate-icon" data-run="cached" style={{ color: colour }}>
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-      <path d="M13.5 2 4 13.5h6.5L9.5 22 20 9.5h-6.5z" />
-    </svg>
-  </div>
-)
-
 // An Evaluate's icon (design, topic 7, "How it ran, in the tree"): the ▶, a
-// spinner while its row runs, and after an evaluation, how the row ran. A
-// row that ran has a ✓, with a bolt where every value it gave came from the
-// cache, and one that failed, or whose fallback caught a failure, a ✕. A
+// spinner while its row runs, and after an evaluation, how the row ran: a ✓
+// where it ran, and a ✕ where it failed or its fallback caught a failure. A
 // row cancelled or never run keeps its ▶.
 export const EvaluateIcon = ({
   running,
@@ -76,14 +66,7 @@ export const EvaluateIcon = ({
   const colour = runColour(mark.status, editorTheme)
   if (mark.status === 'failed' || mark.status === 'fallback')
     return runIcon('failed', colour, mark.status)
-  if (mark.status !== 'value') return Icons.evaluate
-  const values = mark.runs.filter(({ status }) => status === 'value')
-  return (
-    <>
-      {runIcon('ran', colour, mark.status)}
-      {values.every(({ cached }) => cached) && cachedIcon(colour)}
-    </>
-  )
+  return mark.status === 'value' ? runIcon('ran', colour, mark.status) : Icons.evaluate
 }
 
 /**
