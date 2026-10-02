@@ -588,7 +588,6 @@ export const FigTreeEditor = ({
         allowDrag={false}
         data={shown}
         setData={commit}
-        indent={2}
       />
       {messagesMaxHeight !== 0 && (
         <Messages
@@ -607,7 +606,7 @@ export const FigTreeEditor = ({
 // change how the tree looks and where a click collapses it.
 const editorDefaults = {
   showArrayIndexes: false,
-  indent: 2,
+  indent: 3,
   stringTruncateLength: 100,
   // A collection's left edge doesn't collapse it, so a node's toolbar, which
   // can wrap onto that edge, gets every click

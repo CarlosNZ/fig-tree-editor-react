@@ -57,6 +57,23 @@ describe('FigTreeEditor', () => {
     expect(screen.getByText('1')).toBeInTheDocument()
   })
 
+  it('indents by 3, which the host can change, and lays its own rows out by the same', () => {
+    const expression = { a: { b: 1 }, vars: { n: 1 } }
+    // A collection row's margin, json-edit-react's or the editor's own
+    const margin = (key: string) =>
+      keyLabel(key).closest<HTMLElement>('.jer-collection-component')!.style.marginLeft
+    const { rerender } = render(
+      <FigTreeEditor figTree={figTree} expression={expression} setExpression={vi.fn()} />
+    )
+    expect(margin('a')).toBe('1.5em')
+    expect(margin('vars')).toContain('1.5em')
+    rerender(
+      <FigTreeEditor figTree={figTree} expression={expression} setExpression={vi.fn()} indent={4} />
+    )
+    expect(margin('a')).toBe('2em')
+    expect(margin('vars')).toContain('2em')
+  })
+
   it("applies the host's json-edit-react theme", () => {
     render(
       <FigTreeEditor

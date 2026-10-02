@@ -152,12 +152,13 @@ const editorThemeLayer = ({
         return null
       },
       // A flattened payload's rows line up as the node's own, so its row adds
-      // no indent (design, topic 1, finding 7). A vars block has a rule down
+      // no indent: its margin cancels the pull on its rows (design, topic 1,
+      // finding 7). A vars block has a rule down
       // its left edge and a tint, set a little apart from the rows above
       // (topic 5, "The vars block").
       collection: (nodeData) => {
         const row = rowAt(classification, nodeData.path)
-        if (row?.payload === 'flattened') return { marginLeft: 0 }
+        if (row?.payload === 'flattened') return { marginLeft: `${ROWS_PULL}em` }
         if (row?.kind?.kind === 'vars') return varsBlock(editorTheme.varsBlock, indent)
         if (comment(nodeData) === 'lines') return noteBlock(editorTheme.comment)
         const blockTint = tint(nodeData)
@@ -210,15 +211,16 @@ const editorThemeLayer = ({
       // stripe, whatever its form (topic 3). After an evaluation, a node that
       // took part has its border in the colour of how it ran (topic 7, "How
       // it ran, in the tree"). No broken node takes part, since its errors
-      // block the evaluation.
+      // block the evaluation. Any other collection's rows are pulled back as
+      // a node's box is.
       collectionInner: (nodeData) => {
         if (comment(nodeData) === 'lines') return { marginLeft: `-${indent / 2}em` }
         const form = nodeForm(nodeData)
-        if (form === undefined || nodeData.collapsed) return null
+        if (form === undefined || nodeData.collapsed) return { marginLeft: `-${ROWS_PULL}em` }
         const broken =
           brokenIssue(issues, classification, nodeData.path, nodeData.value) !== undefined
-        const shorthand = form === 'shorthand'
         const ran = run?.get(toPathString(nodeData.path))?.status
+        const shorthand = form === 'shorthand'
         return {
           ...NODE_BORDER,
           borderStyle: shorthand ? 'dashed' : 'solid',
@@ -329,12 +331,20 @@ export const filledInText = (filledIn: string) => `color-mix(in srgb, ${filledIn
 const RULE_WIDTH = '2px'
 const RULE_GAP = '1.35em' // from the rule to the key
 
+// How far a collection's rows are pulled back left of json-edit-react's
+// indent, in em: a node's box, so it sits under its key's chevron, and any
+// other collection's rows, so they sit closer. One value for every
+// collection, so a row that changes kind at the same path, as a conversion
+// makes it, keeps its rows' margin and changes only its own, which
+// json-edit-react 2.0.2's collapse transition doesn't animate.
+const ROWS_PULL = 1
+
 const NODE_BORDER = {
   borderWidth: '2px',
   borderRadius: '0.75em',
   padding: '0.5em',
   marginBottom: '0.5em',
-  marginLeft: '-1em',
+  marginLeft: `-${ROWS_PULL}em`,
 }
 
 // The colour of how a row ran

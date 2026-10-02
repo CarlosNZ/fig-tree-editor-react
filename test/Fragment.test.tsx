@@ -125,14 +125,18 @@ describe('the fragment call', () => {
       call: { fragment: 'greet', parameters: { name: 'Ada' } },
       sum: { operator: 'plus', values: [1, 2] },
     })
-    const margin = (key: string) =>
+    // The row holding a key's row: its margin, and its inner part's
+    const holder = (key: string) =>
       keyLabel(key)
         .closest<HTMLElement>('.jer-component')!
-        .parentElement!.closest<HTMLElement>('.jer-collection-component')!.style.marginLeft
-    // The static arguments' own row adds no indent; the operator's node does
-    // its own, as the call does
-    expect(margin('name')).toBe('0px')
-    expect(margin('values')).toBe('1em')
+        .parentElement!.closest<HTMLElement>('.jer-collection-component')!
+    const inner = (key: string) =>
+      holder(key).querySelector<HTMLElement>(':scope > .jer-collection-inner')!.style.marginLeft
+    // The static arguments' own row adds no indent, its margin cancelling the
+    // pull on its rows; the operator's node pulls its rows back as far
+    expect(holder('name').style.marginLeft).toBe('1em')
+    expect(inner('name')).toBe('-1em')
+    expect(inner('values')).toBe('-1em')
     expect(container.querySelectorAll('.ft-node')).toHaveLength(2)
   })
 

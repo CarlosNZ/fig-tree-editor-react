@@ -101,11 +101,12 @@ describe('editor theme', () => {
       expect(style(node, 'bracket', ['total', 'values'])).toBeNull()
     })
 
-    it('draw a border around a node', () => {
+    it("draw a border around a node, pulled back as far as other collections' rows", () => {
       expect(style(node, 'collectionInner', ['total'])).toMatchObject({
         borderColor: defaultEditorTheme.nodeBorder,
+        marginLeft: '-1em',
       })
-      expect(style(node, 'collectionInner', [])).toBeNull()
+      expect(style(node, 'collectionInner', [])).toEqual({ marginLeft: '-1em' })
     })
 
     it('draw an error border and stripe around a broken node', () => {
@@ -147,7 +148,9 @@ describe('editor theme', () => {
           borderStyle: 'dashed',
           borderColor: defaultEditorTheme.shorthandBorder,
         })
-        expect(style({ total: node }, 'collectionInner', ['total'], true)).toBeNull()
+        expect(style({ total: node }, 'collectionInner', ['total'], true)).toEqual({
+          marginLeft: '-1em',
+        })
       }
       expect(style({ total: { operator: 'plus' } }, 'collectionInner', ['total'])).toMatchObject({
         borderStyle: 'solid',
@@ -167,11 +170,13 @@ describe('editor theme', () => {
 
   describe('flattened payloads', () => {
     it("take out their row's indent, and only theirs", () => {
+      // The row's margin cancels the pull on its rows
       const call = { fragment: 'greet', parameters: { name: 'Ada' } }
-      expect(style(call, 'collection', ['parameters'])).toEqual({ marginLeft: 0 })
+      expect(style(call, 'collection', ['parameters'])).toEqual({ marginLeft: '1em' })
+      expect(style(call, 'collectionInner', ['parameters'])).toEqual({ marginLeft: '-1em' })
       expect(style({ ...call, parameters: '$data.form' }, 'collection', ['parameters'])).toBeNull()
       expect(style({ $if: { condition: true, then: 1 } }, 'collection', ['$if'])).toEqual({
-        marginLeft: 0,
+        marginLeft: '1em',
       })
       expect(style({ $plus: [1, 2] }, 'collection', ['$plus'])).toBeNull()
       expect(style({ total: { operator: 'plus' } }, 'collection', ['total'])).toBeNull()
