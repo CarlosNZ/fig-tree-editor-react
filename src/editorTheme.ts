@@ -58,7 +58,7 @@ export const defaultEditorTheme: EditorTheme = {
   runCancelled: '#262626',
   runSkipped: '#a3a3a3',
   nodeBorder: '#dbdbdb',
-  shorthandBorder: '#9ca3af',
+  shorthandBorder: '#BCBFC5', //#9ca3af
   fragmentBackground: '#477799',
   fragmentText: '#ebdf5a',
 }
@@ -224,7 +224,7 @@ const editorThemeLayer = ({
         const shorthand = form === 'shorthand'
         return {
           ...NODE_BORDER,
-          borderStyle: shorthand ? 'dashed' : 'solid',
+          borderStyle: shorthand ? 'dotted' : 'solid',
           borderColor: broken
             ? editorTheme.error
             : shorthand
