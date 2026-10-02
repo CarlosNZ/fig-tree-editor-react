@@ -2,6 +2,154 @@
 
 Expressions for trying the editor by hand. Each one is written against the demo's registry: the core, HTTP and SQL operators, the demo's own operators (`reverse`, `changeCase`, `currentDate`) and its fragments (`getCapital`, `getFlag`), all in `demo/src/figTree.ts` and `demo/src/data/evaluatorConfig.ts`. To load one, paste it into the demo's raw-JSON editor, the ✎ on the root `expression` row. The demo collapses below two levels by default, so expand the nodes to see everything.
 
+## Layout check
+
+Every block, node and display style the editor draws, in one expression, for checking layout and spacing after a styling change. Paste the data into the demo's data editor first, or its references raise sample-data warnings of their own. In the editor it has five errors, four warnings and a hint, each deliberate and all under `issues`, so the messages area has a line of every severity and every quick fix. The errors disable the root's Evaluate, but every node outside `issues` evaluates.
+
+`issues.incomplete` is an `if` missing its `then`. Pasting it fills the `then` in without a word, since pasting is an edit. The "added" line and the highlight that fades show only when an expression arrives from outside the editor, as when a host loads it.
+
+The data:
+
+```json
+{
+  "user": {
+    "firstName": "Ada",
+    "lastName": "Lovelace",
+    "country": "New Zealand",
+    "age": 36,
+    "tier": "gold",
+    "banned": false,
+    "trips": [
+      { "city": "Wellington", "nights": 4 },
+      { "city": "Lisbon", "nights": 9 }
+    ]
+  },
+  "form": { "country": "Japan" }
+}
+```
+
+The expression:
+
+```json
+{
+  "//": "Every block, node and display style the editor draws, for checking layout",
+  "fullNode": {
+    "operator": "if",
+    "condition": {
+      "$and": [
+        { "$greaterThan": ["$data.user.age", 17] },
+        { "$not": "$data.user.banned" },
+        { "operator": "!", "value": { "$equal": ["$d.user.country", "Antarctica"] } }
+      ]
+    },
+    "then": { "$upper": "$vars.greeting" },
+    "else": { "operator": "+", "values": ["Sorry, ", "$data.user.firstName"] },
+    "vars": { "greeting": "Welcome aboard" },
+    "fallback": "Unknown"
+  },
+  "namedPayload": {
+    "$or": {
+      "values": [
+        { "$equal": ["$data.user.tier", "gold"] },
+        { "$lessThan": [{ "$length": "$data.user.trips" }, 3] }
+      ]
+    },
+    "useCache": false
+  },
+  "iterator": {
+    "$map": {
+      "input": "$data.user.trips",
+      "as": "trip",
+      "each": {
+        "//": ["One line per trip,", "numbered from 1"],
+        "$buildString": ["%1. %2", { "$plus": ["$tripIndex", 1] }, "$trip.city"]
+      }
+    }
+  },
+  "longTrips": {
+    "$filter": {
+      "input": "$data.user.trips",
+      "each": { "$greaterThan": ["$element.nights", { "$plus": ["$index", 5] }] }
+    }
+  },
+  "match": {
+    "operator": "match",
+    "value": "$data.user.tier",
+    "branches": { "gold": "Lounge access", "silver": { "$literal": "{{not}} a template" } },
+    "default": { "operator": "literal", "value": { "$plus": ["left", "as data"] } }
+  },
+  "fragments": {
+    "static": { "fragment": "getCapital", "parameters": { "country": "$data.user.country" } },
+    "byReference": { "fragment": "getFlag", "parameters": "$data.form" },
+    "byNode": {
+      "fragment": "getFlag",
+      "parameters": {
+        "$buildObject": [
+          { "key": "country", "value": { "$changeCase": ["$data.form.country", "lower"] } }
+        ]
+      }
+    },
+    "shorthand": { "$getFlag": { "country": "Peru" } }
+  },
+  "hostOperators": [{ "$reverse": "$data.user.lastName" }, { "operator": "currentDate" }],
+  "runMarks": {
+    "$plus": [{ "$divide": [1, 0], "fallback": 0 }, { "$divide": [1, 0] }],
+    "fallback": -1
+  },
+  "plainData": {
+    "number": 42,
+    "decimal": 3.14,
+    "boolean": true,
+    "nothing": null,
+    "text": "A string long enough to wrap onto a second line in a narrow editor, so its continuation can be checked against the key",
+    "list": [1, "two", false],
+    "emptyObject": {},
+    "emptyList": []
+  },
+  "issues": {
+    "unknownOperator": { "operator": "plsu", "values": [1, 2] },
+    "strayKey": { "$plus": [1], "extra": 2 },
+    "unknownKey": { "operator": "if", "condition": true, "then": "yes", "els": "no" },
+    "wrongType": { "$upper": 5 },
+    "bareVars": { "$lower": "$vars" },
+    "passThrough": { "$plsu": [1, 2] },
+    "unreadVar": { "$upper": "shout", "vars": { "unused": 1 } },
+    "skippedNumber": { "$buildString": ["%2 and %3", "a", "b"] },
+    "incomplete": { "operator": "if", "condition": true }
+  }
+}
+```
+
+| Style                                                                         | Where                                                                                  |
+| ----------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Root container, with its bar, and a comment of one line                       | the whole expression, the root's `//`                                                  |
+| Full operator node, an alias, and a host operator with no parameters          | `fullNode`, `fullNode.else` (`+`) and the `!` in `fullNode.condition`, `hostOperators` |
+| Shorthand: argument list, named payload, single value                         | `fullNode.condition`, `namedPayload` and `iterator`, `fullNode.then`                   |
+| Node boxes as array elements: in an argument list, a named payload and data   | `fullNode.condition`, `namedPayload`, `hostOperators`                                  |
+| Literal, full and shorthand                                                   | `match.default`, `match.branches.silver`                                               |
+| Fragment calls: static, dynamic by reference and by node, and shorthand       | `fragments`                                                                            |
+| `match` branches, `buildObject` fields                                        | `match`, `fragments.byNode`                                                            |
+| Iterators, `as` bindings, `$element` and `$index`, a comment of several lines | `iterator`, `longTrips`                                                                |
+| A vars block, `fallback`, `useCache`                                          | `fullNode`, `namedPayload`                                                             |
+| Plain data: every value type, a string that wraps, empty collections          | `plainData`                                                                            |
+| Broken nodes, and error and warning tints on rows and blocks                  | `issues`                                                                               |
+| Collapsed summaries, with issue counts                                        | the demo's default collapse, and `issues` collapsed                                    |
+| How each node ran                                                             | after Evaluate on `fullNode` (its `else` never runs), `namedPayload` and `runMarks`    |
+
+| Under `issues`    | In the messages area                                                     |
+| ----------------- | ------------------------------------------------------------------------ |
+| `unknownOperator` | an error, with Change to plus                                            |
+| `strayKey`        | an error, with Remove                                                    |
+| `unknownKey`      | an error, with Rename to else and Remove                                 |
+| `wrongType`       | an error, from the type check                                            |
+| `bareVars`        | an error, on a reference                                                 |
+| `passThrough`     | a warning, with Rename to $plus                                          |
+| `unreadVar`       | a warning                                                                |
+| `skippedNumber`   | two warnings and a hint, on one row                                      |
+| `incomplete`      | the "added" line, with Dismiss, when the expression arrives from outside |
+
+`runMarks` shows the colours a failure leaves: amber on the first `$divide`, whose fallback catches it, red on the second, and amber on the `$plus`, whose fallback catches the failure the second passes up. A cancelled node needs a race between requests, as in "Every operator, at work".
+
 ## Every kind of node
 
 Nested, and showing every node kind and row role the classification walk records. It validates with one issue, the deliberate `unknown-operator` on `broken`.
