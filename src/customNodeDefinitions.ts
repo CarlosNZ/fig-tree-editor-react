@@ -22,8 +22,9 @@ import { Operator } from './Operator'
 import { hasCard } from './parameterCard'
 import { ParameterKey } from './ParameterKey'
 import { type Path } from './paths'
+import { PlainCollection, PlainRun } from './PlainRun'
 import { Reference } from './Reference'
-import { type RunMarks } from './runMarks'
+import { plainMark, type RunMarks } from './runMarks'
 import { Shorthand } from './Shorthand'
 import { strings } from './strings'
 import { REFERENCE_ENTRIES, referenceStart } from './typeOptions'
@@ -70,6 +71,8 @@ export type DefinitionName =
   | 'commentLine'
   | 'flattened'
   | 'unlabelled'
+  | 'plainValue'
+  | 'plainCollection'
 
 export interface ComponentConfig extends Shared {
   definition: DefinitionName
@@ -82,7 +85,8 @@ type Condition = (row: Row, nodeData: NodeData) => boolean
 // Each definition's component. A flattened payload has none: json-edit-react
 // draws its rows, and its flags hide the row itself. Nor has an unlabelled row
 // or a comment of several lines: json-edit-react draws them, without their
-// key, and the theme draws the comment's block.
+// key, and the theme draws the comment's block. Nor has a plain collection
+// the evaluation marked, which json-edit-react draws, inside a wrapper.
 const COMPONENTS: Record<DefinitionName, FC<CustomComponentProps<ComponentConfig>> | null> = {
   operator: Operator,
   fragment: Fragment,
@@ -93,6 +97,8 @@ const COMPONENTS: Record<DefinitionName, FC<CustomComponentProps<ComponentConfig
   commentLine: CommentLine,
   flattened: null,
   unlabelled: null,
+  plainValue: PlainRun,
+  plainCollection: null,
 }
 
 export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] => {
@@ -148,6 +154,13 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
 
   const isPart = (part: ReturnType<typeof commentPart>) => (nodeData: NodeData) =>
     commentPart(shared.classification, nodeData) === part
+
+  // A plain value, or a plain collection, that the latest evaluation marked
+  const isPlainRun =
+    (collection: boolean) =>
+    (_: Row, { path, value }: NodeData) =>
+      plainMark(shared.run, path) !== undefined &&
+      (typeof value === 'object' && value !== null) === collection
 
   // The type dropdown's Operator entry: the slot's default operator, marked
   // so the node's picker opens on it
@@ -288,6 +301,18 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       matches((row) => row.payload === 'flattened'),
       { showCollectionWrapper: false, showKey: false }
     ),
+    // Plain data the latest evaluation marked, a `$name` row's included,
+    // drawn by json-edit-react with its mark (topic 7, "How it ran, in the
+    // tree")
+    ...unlabelledVariants(
+      definition('plainValue', matches(isPlainRun(false)), { passOriginalNode: true })
+    ).flatMap(withFlag),
+    ...unlabelledVariants(
+      definition('plainCollection', matches(isPlainRun(true)), {
+        wrapperComponent: PlainCollection as unknown as CustomNodeDefinition['wrapperComponent'],
+        wrapperProps: { run: shared.run },
+      })
+    ).flatMap(withFlag),
     // A `$name` row holding a plain value or an argument list
     ...withFlag(
       definition(

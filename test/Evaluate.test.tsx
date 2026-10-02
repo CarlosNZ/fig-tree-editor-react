@@ -286,6 +286,28 @@ describe('evaluating', () => {
       expect(node(nodeButton('$plus'))).toHaveAttribute('data-node-run', 'value')
     })
 
+    it('marks plain data and references by how they ran, to dim what never did', async () => {
+      const { container, reports } = host(
+        {
+          a: { operator: 'if', condition: false, then: 'yes', else: { why: 'no' } },
+          b: { operator: 'if', condition: true, then: '$data.x', else: '$data.y' },
+        },
+        { evaluationData: { x: 1, y: 2 } }
+      )
+      fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+      await done(reports, 1)
+      const mark = (text: string) =>
+        screen.getByText(text).closest('[data-node-run]')?.getAttribute('data-node-run')
+      // A constant value, and a constant collection, wrapped whole
+      expect(mark('"yes"')).toBe('skipped')
+      expect(screen.getByText('"yes"').closest('.ft-plain-value')).not.toBeNull()
+      expect(mark('"no"')).toBe('value')
+      expect(screen.getByText('"no"').closest('.ft-plain-collection')).not.toBeNull()
+      // A reference
+      expect(mark('$data.x')).toBe('value')
+      expect(mark('$data.y')).toBe('skipped')
+    })
+
     it("colours a collapsed node's summary by how it ran", async () => {
       const editorRef = createRef<FigTreeEditorHandle>()
       const { container, reports } = host(

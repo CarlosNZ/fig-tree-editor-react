@@ -4,6 +4,7 @@ import { flaggedIssues } from './attachIssues'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { warningText, type EditorTheme } from './editorTheme'
 import { HoverCard } from './HoverCard'
+import { PlainValue } from './PlainRun'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
 
@@ -99,7 +100,9 @@ export const Flagged = ({
   if (children === undefined)
     return (
       <span className="ft-flagged" {...rowMark(nodeData.path)}>
-        {originalNode}
+        <PlainValue path={nodeData.path} shared={componentProps!}>
+          {originalNode}
+        </PlainValue>
         {card}
       </span>
     )

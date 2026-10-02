@@ -58,10 +58,17 @@ const evaluate = async (
   return { evaluation, marks: markRun(evaluation, classification, subTree.row)! }
 }
 
-// Each marked row's status, by its path in display form
-const statuses = (marks: RunMarks) =>
+// Each marked row's status, by its path in display form: the nodes and
+// references, with the evaluated row whatever it is, or the plain data
+const statuses = (marks: RunMarks, plain = false) =>
   Object.fromEntries(
-    [...marks.values()].map(({ path, status }) => [displayPath(path) || '(root)', status])
+    [...marks.values()]
+      .filter(({ path, part }) =>
+        plain
+          ? part === 'constant' || part === 'container'
+          : part === 'node' || part === 'reference' || path.length === 0
+      )
+      .map(({ path, status }) => [displayPath(path) || '(root)', status])
   )
 
 const at = (marks: RunMarks, path: Path) => marks.get(toPathString(path))!
@@ -196,6 +203,83 @@ describe('marking how a run went', () => {
         path: ['then'],
         status: 'skipped',
       })
+    })
+  })
+
+  describe('plain data', () => {
+    it('marks a constant branch by whether the run took it, saying why where it passed one over', async () => {
+      const { marks } = await evaluate(
+        { operator: 'if', condition: true, then: 'yes', else: { why: 'no' } },
+        []
+      )
+      expect(statuses(marks, true)).toEqual({ condition: 'value', then: 'value', else: 'skipped' })
+      expect(at(marks, ['then']).part).toBe('constant')
+      expect(at(marks, ['else']).reason).toEqual({ kind: 'whenNeeded' })
+    })
+
+    it('marks a constant as one piece, leaving the rows inside it unmarked', async () => {
+      const { marks } = await evaluate(
+        { operator: 'match', value: 'a', branches: { a: { x: 1 }, b: [1, 2] } },
+        []
+      )
+      expect(statuses(marks, true)).toEqual({ value: 'value', branches: 'value' })
+
+      // A shorthand's argument list of constants, which has no slot of its own
+      const { marks: listed } = await evaluate({ $firstOf: [null, 'first', 'second'] }, [])
+      expect(statuses(listed, true)).toEqual({})
+    })
+
+    it('marks a container, and each constant in it as reached wherever the container ran', async () => {
+      const { marks } = await evaluate(
+        {
+          operator: 'if',
+          condition: false,
+          then: [1, { $upper: 'x' }],
+          else: { a: 1, b: '$data.x' },
+        },
+        [],
+        { data: { x: 'y' } }
+      )
+      expect(statuses(marks, true)).toEqual({
+        condition: 'value',
+        then: 'skipped',
+        'then[0]': 'skipped',
+        'then[1].$upper': 'skipped',
+        else: 'value',
+        'else.a': 'value',
+      })
+      expect(at(marks, ['else']).part).toBe('container')
+      expect(at(marks, ['else', 'a'])).toMatchObject({ part: 'constant', runs: [] })
+      expect(at(marks, ['then', 0]).reason).toEqual({
+        kind: 'inside',
+        path: ['then'],
+        status: 'skipped',
+      })
+    })
+
+    it('marks a fallback not needed and a var nothing read, but not what configures a node', async () => {
+      const { marks } = await evaluate(
+        {
+          operator: 'plus',
+          values: ['$vars.used', 1],
+          fallback: 0,
+          vars: { used: 2, unused: 3 },
+        },
+        []
+      )
+      expect(statuses(marks, true)).toEqual({
+        values: 'value',
+        'values[1]': 'value',
+        fallback: 'skipped',
+        'vars.used': 'value',
+        'vars.unused': 'skipped',
+      })
+      expect(at(marks, ['fallback']).reason).toEqual({ kind: 'fallbackUnused' })
+      expect(at(marks, ['vars', 'unused']).reason).toEqual({ kind: 'unread' })
+
+      // An `as` name
+      const { marks: mapped } = await evaluate({ $map: { input: [1, 2], as: 'n', each: '$n' } }, [])
+      expect(statuses(mapped, true)).toEqual({ '$map.input': 'value' })
     })
   })
 

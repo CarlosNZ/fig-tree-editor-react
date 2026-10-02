@@ -4,27 +4,36 @@
      shows, so cards don't flash up on the way to a click or as the pointer
      crosses the tree */
   --ft-hover-card-delay: 0.5s;
-  /* How far a node that never ran in the latest evaluation is dimmed */
+  /* How far what never ran in the latest evaluation is dimmed */
   --ft-never-ran-opacity: 0.45;
 }
 
-/* A node that never ran is dimmed, and shows in full while the pointer or
-   focus is in it. Its hover cards are drawn inside it, so they would dim with
-   it, and a node below full opacity is drawn beneath the rows after it, which
-   would cover a card hanging below it. */
-.ft-node[data-node-run='skipped'] {
+/* What never ran is dimmed: a node, a reference, a plain value and a plain
+   collection's rows, but not a key, which belongs to the row holding it. It
+   shows in full while the pointer or focus is in it. Its hover cards are
+   drawn inside it, so they would dim with it, and anything below full
+   opacity is drawn beneath the rows after it, which would cover a card
+   hanging below it. */
+:is(.ft-node, .ft-reference, .ft-plain-value)[data-node-run='skipped'],
+.ft-plain-collection[data-node-run='skipped'] > .jer-collection-component > .jer-collection-inner {
   opacity: var(--ft-never-ran-opacity);
   transition: opacity 0.15s;
 }
 
-.ft-node[data-node-run='skipped']:hover,
-.ft-node[data-node-run='skipped']:focus-within {
+:is(.ft-node, .ft-reference, .ft-plain-value)[data-node-run='skipped']:is(:hover, :focus-within),
+.ft-plain-collection[data-node-run='skipped']:is(:hover, :focus-within)
+  > .jer-collection-component
+  > .jer-collection-inner {
   opacity: 1;
 }
 
-/* Every node inside one that never ran never ran either, and is dimmed with
-   it rather than again, so the branch dims, and shows in full, as one */
-.ft-node[data-node-run='skipped'] .ft-node[data-node-run='skipped'] {
+/* Everything inside what never ran never ran either, and is dimmed with it
+   rather than again, so the branch dims, and shows in full, as one */
+[data-node-run='skipped'] :is(.ft-node, .ft-reference, .ft-plain-value)[data-node-run='skipped'],
+[data-node-run='skipped']
+  .ft-plain-collection[data-node-run='skipped']
+  > .jer-collection-component
+  > .jer-collection-inner {
   opacity: 1;
 }
 

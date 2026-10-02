@@ -74,7 +74,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   const colour = namespaceColour(row?.kind as ReferenceKind, editorTheme)
   return (
-    <span className="ft-reference" {...rowMark(nodeData.path)}>
+    <span className="ft-reference" {...rowMark(nodeData.path)} data-node-run={mark?.status}>
       <StringDisplay
         nodeData={nodeData}
         styles={{ ...getStyles('string', nodeData), color: colour }}
