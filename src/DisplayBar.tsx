@@ -17,10 +17,11 @@ import { type EvaluateControl } from './useEvaluation'
 // A modifier-click on the button, with json-edit-react's clipboard modifier
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
 // other spelling. A shorthand node's name is in italics, and its single value
-// can sit on the button's line. The conversion button, shown on hover, sits
-// beneath the display name, in the node's colours. Any other issue at the
-// node's path flags the header's line, after the controls (design, topic 7,
-// "Where issues attach").
+// can sit on the button's line. The conversion button sits beneath the display
+// name, in the node's colours, shown while it is hovered on a full node, and
+// on a shorthand node while the header is, away from the Evaluate button. Any
+// other issue at the node's path flags the header's line, after the controls
+// (design, topic 7, "Where issues attach").
 //
 // A click on the button evaluates the node, and a spinner takes the ▶'s place
 // while it runs, until a second click cancels it (topic 7, "Evaluating"), then

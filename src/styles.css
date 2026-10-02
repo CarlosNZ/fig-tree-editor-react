@@ -790,8 +790,11 @@ input.ft-select-input::placeholder {
 }
 
 /* The conversion button, beneath the display name, where v1 had it: 1em
-   below the header's top, lined up with the display name on the right. Shown
-   while the header is hovered. */
+   below the header's top, lined up with the display name on the right. On a
+   full node it shows only while it is hovered itself, so it doesn't compete
+   with the pencil. A shorthand node has no pencil, so its button shows while
+   the header is hovered anywhere but the Evaluate button and its card: it is
+   the way back to the full form and its pencil. */
 .ft-convert-area {
   position: absolute;
   top: 1em;
@@ -813,8 +816,10 @@ input.ft-select-input::placeholder {
   transition: opacity 0.2s;
 }
 
-.ft-display-bar:hover .ft-convert-button,
-.ft-convert-button:focus-visible {
+.ft-convert-button:hover,
+.ft-convert-button:focus-visible,
+.ft-shorthand:hover:not(:has(.ft-hover-card-anchor:hover, .ft-evaluate-button:hover))
+  .ft-convert-button {
   opacity: 1;
 }
 
