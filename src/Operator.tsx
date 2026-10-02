@@ -3,11 +3,12 @@ import { AddParameter } from './AddParameter'
 import { brokenIssue, flaggedIssues } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
+import { type CardLine } from './HoverCard'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
 import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { OperatorPicker } from './OperatorPicker'
-import { operatorDefaultsLine } from './parameterCard'
+import { cacheLine, operatorDefaultsLine } from './parameterCard'
 import { rowMark } from './revealRow'
 import { addKey, addableKeys } from './parameterOptions'
 import { modifierNames, otherSpelling } from './spelling'
@@ -82,12 +83,18 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
       ? () => setValue({ ...node, operator: spelling })
       : undefined
 
-  // The operator's description, then what the host sets on every such node
-  // that doesn't set its own
+  // The operator's description, whether its cache is in force, then what the
+  // host sets on every such node that doesn't set its own
   const operatorCard = () =>
-    [display?.description, operator && operatorDefaultsLine(operator, node)].filter(
-      (line): line is string => line !== undefined
-    )
+    [
+      display?.description,
+      cacheLine(path, kind, {
+        classification,
+        operators: figTree.getOperators(),
+        fragments: figTree.getFragments(),
+      }),
+      operator && operatorDefaultsLine(operator, node),
+    ].filter((line): line is CardLine => line !== undefined)
 
   if (editor === 'json')
     return (

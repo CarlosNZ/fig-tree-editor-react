@@ -4,8 +4,10 @@ import {
   type OperatorInfo,
   type ParameterInfo,
 } from 'fig-tree-evaluator'
-import { type Row } from './classify'
+import { cacheStatus, type CacheContext } from './caching'
+import { type Row, type RowKind } from './classify'
 import { describeType } from './describeType'
+import { type Path } from './paths'
 import { strings } from './strings'
 
 // What a parameter's hover card says (design, topic 4, "Parameter metadata"),
@@ -207,6 +209,16 @@ export const operatorDefaultsLine = (operator: OperatorInfo, node: Record<string
     add(key, parameter.instanceDefault)
   if (set.length === 0) return undefined
   return strings.FT_CARD_INSTANCE_SETS(andList(set), code(operator.name))
+}
+
+// On a node that caches, whether its cache is in force, since a `noCache`
+// several levels up turns it off unseen (topic 4, "Caching")
+export const cacheLine = (path: Path, kind: RowKind | undefined, context: CacheContext) => {
+  const status = cacheStatus(path, kind, context)
+  if (status === undefined) return undefined
+  return {
+    detail: status === 'active' ? strings.FT_CARD_CACHE_ACTIVE : strings.FT_CARD_CACHE_DISABLED,
+  }
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────────────

@@ -42,6 +42,11 @@ export const HoverCard = ({
   )
 }
 
+// A card line, or a detail: a fact about the row in its current place, such
+// as whether its cache is in force, muted and bulleted under what the card
+// describes
+export type CardLine = string | { detail: string }
+
 // A card's lines, one to a line, with the names in backticks shown as code.
 // A parameter's card starts with a title line, and a node's can end with a
 // note, a tip about the control set smaller than what the card describes. An
@@ -52,7 +57,7 @@ export const CardLines = ({
   note,
   alert,
 }: {
-  lines: string[]
+  lines: CardLine[]
   titled?: boolean
   note?: string
   alert?: { text: string; colour: string }
@@ -63,16 +68,22 @@ export const CardLines = ({
         {withCode(alert.text)}
       </span>
     )}
-    {lines.map((line, index) => (
-      <span
-        className={
-          titled && index === 0 ? 'ft-hover-card-line ft-hover-card-title' : 'ft-hover-card-line'
-        }
-        key={index}
-      >
-        {withCode(line)}
-      </span>
-    ))}
+    {lines.map((line, index) =>
+      typeof line === 'string' ? (
+        <span
+          className={
+            titled && index === 0 ? 'ft-hover-card-line ft-hover-card-title' : 'ft-hover-card-line'
+          }
+          key={index}
+        >
+          {withCode(line)}
+        </span>
+      ) : (
+        <span className="ft-hover-card-line ft-hover-card-detail" key={index}>
+          {withCode(line.detail)}
+        </span>
+      )
+    )}
     {note !== undefined && (
       <span className="ft-hover-card-line ft-hover-card-note">{withCode(note)}</span>
     )}

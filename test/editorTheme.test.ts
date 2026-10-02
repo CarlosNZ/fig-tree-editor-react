@@ -324,14 +324,14 @@ describe('editor theme', () => {
       expect(style({ $plus: [1, true] }, 'collection', ['$plus'])).toEqual(tint)
     })
 
-    it('tints a row with only a warning fainter, without the stripe', () => {
+    it('tints a row with only a warning fainter, in amber, with an amber stripe', () => {
       const warning = style({ style: { $colour: 'red' } }, 'valueRow', ['style', '$colour'])
       expect(warning).toEqual(
         expect.objectContaining({
           background: `color-mix(in srgb, ${defaultEditorTheme.warning} 10%, transparent)`,
         })
       )
-      expect(warning).not.toHaveProperty('boxShadow')
+      expect(warning).toHaveProperty('boxShadow', `inset 2px 0 0 ${defaultEditorTheme.warning}`)
     })
 
     it("doesn't tint a node, whose header carries its flag", () => {

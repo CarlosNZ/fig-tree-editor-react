@@ -2,10 +2,11 @@ import { type CustomComponentProps } from 'json-edit-react'
 import { brokenIssue, flaggedIssues } from './attachIssues'
 import { rowAt, type Classification, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
+import { type CardLine } from './HoverCard'
 import { DisplayBar } from './DisplayBar'
 import { fragmentHeader } from './Fragment'
 import { takeRow } from './nodeRows'
-import { operatorDefaultsLine } from './parameterCard'
+import { cacheLine, operatorDefaultsLine } from './parameterCard'
 import { renameKey, type Path } from './paths'
 import { rowMark } from './revealRow'
 import { modifierNames, otherSpelling } from './spelling'
@@ -51,20 +52,28 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
       ? () => setValue(renameKey(node, key, `$${spelling}`))
       : undefined
 
+  // Each card says whether the node's cache is in force, where it caches
+  const cache = () =>
+    cacheLine(path, kind, {
+      classification,
+      operators: figTree.getOperators(),
+      fragments: figTree.getFragments(),
+    })
   const header = () => {
     if (kind.kind === 'fragment') {
       const hints = displayData.fragments[kind.name!]
       return {
         display: fragmentHeader(hints, editorTheme),
-        card: hints?.description === undefined ? [] : [hints.description],
+        card: [hints?.description, cache()].filter((line): line is CardLine => line !== undefined),
       }
     }
     const operatorName = kind.kind === 'literal' ? 'literal' : kind.operator
     const display = operatorName === null ? undefined : displayData.operators[operatorName]
     const card = [
       display?.description,
+      cache(),
       operator && operatorDefaultsLine(operator, settings(node, key, path, classification)),
-    ].filter((line): line is string => line !== undefined)
+    ].filter((line): line is CardLine => line !== undefined)
     return { display, card }
   }
   const { display, card } = header()

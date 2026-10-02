@@ -118,17 +118,17 @@ const editorThemeLayer = ({
   }
 
   // A row is tinted by its most severe issue (topic 7, "Where issues
-  // attach"): an error with a stripe, a warning fainter and without one. A
-  // value row's tint is its line, and a collection's its whole block, its
-  // header line included. A node isn't tinted, since its header carries a
-  // flag.
+  // attach"), with a stripe of its colour: an error in red, a warning in
+  // amber and fainter. A value row's tint is its line, and a collection's its
+  // whole block, its header line included. A node isn't tinted, since its
+  // header carries a flag.
   const tint = (nodeData: NodeData) => {
     if (nodeForm(nodeData) !== undefined) return null
     const severity = flaggedIssues(issues, nodeData.path)[0]?.severity
     if (severity === undefined || severity === 'hint') return null
     return severity === 'error'
-      ? { colour: editorTheme.error, strength: ERROR_TINT, stripe: true }
-      : { colour: editorTheme.warning, strength: WARNING_TINT, stripe: false }
+      ? { colour: editorTheme.error, strength: ERROR_TINT }
+      : { colour: editorTheme.warning, strength: WARNING_TINT }
   }
 
   // A row the editor has just filled in is highlighted over its own style,
@@ -243,7 +243,7 @@ const editorThemeLayer = ({
 // siblings' (json-edit-react's margin is half the indent). Open, the closing
 // bracket ends the block as far above its bottom as the key starts below its
 // top; collapsed, the header row is the whole block, already as far.
-const varsBlock = (colour: string, indent: number, collapsed: boolean) => ({
+const varsBlock = (colour: string, indent: number, collapsed?: boolean) => ({
   borderLeft: `${RULE_WIDTH} solid ${colour}`,
   background: `color-mix(in srgb, ${colour} 7%, transparent)`,
   marginTop: '0.4em',
@@ -264,26 +264,25 @@ const noteBlock = (colour: string) => ({
   padding: '0.15em 0.4em 0.15em 0',
 })
 
-// An issue's tint, with a stripe down its left edge for an error. A value
+// An issue's tint, with a stripe of its colour down its left edge. A value
 // row's starts a little left of the row, and a collection's left of its
 // chevron, as a vars block's rule does, each padded so its text stays in line
 // with its siblings'.
 interface Tint {
   colour: string
   strength: string
-  stripe: boolean
 }
 
 const ERROR_TINT = '9%'
 const WARNING_TINT = '10%'
 // As wide as a vars block's rule. An inset shadow, not a border, so it takes
-// no room, and a row's text stays put as its stripe comes and goes.
+// no room, and a row's text stays put as its tint comes and goes.
 const STRIPE_WIDTH = '2px'
 const TINT_GAP = '0.4em'
 
-const tintStyle = ({ colour, strength, stripe }: Tint) => ({
+const tintStyle = ({ colour, strength }: Tint) => ({
   background: `color-mix(in srgb, ${colour} ${strength}, transparent)`,
-  ...(stripe && { boxShadow: `inset ${STRIPE_WIDTH} 0 0 ${colour}` }),
+  boxShadow: `inset ${STRIPE_WIDTH} 0 0 ${colour}`,
 })
 
 // A tinted block's corners: square on the left, where a rule or a stripe runs
@@ -303,7 +302,7 @@ const blockShape = (indent: number) => ({
 
 // Padded below its closing bracket as a vars block is, open, and not at all
 // collapsed, where the header row is the whole block
-const issueBlock = (tint: Tint, indent: number, collapsed: boolean) => ({
+const issueBlock = (tint: Tint, indent: number, collapsed?: boolean) => ({
   ...tintStyle(tint),
   ...blockShape(indent),
   paddingBottom: collapsed ? 0 : BRACKET_PAD,

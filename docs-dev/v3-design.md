@@ -406,7 +406,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 ### States — **Agreed**
 
 - **Modifier keys look different from parameters** (`fallback`, `noCache`; italic and muted in the mockups, the exact style to be settled later).
-- **A broken node** has an error border and stripe (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge. Which row an issue marks, which codes make a node broken, and how warnings and hints differ are settled in topic 7 ("Where issues attach").
+- **A broken node** has an error border (A5). **A row an issue points at** is tinted, with a short flag. There is no issue-count badge on the header, and no "unknown operator" badge. Which row an issue marks, which codes make a node broken, and how warnings and hints differ are settled in topic 7 ("Where issues attach").
 - **A collapsed node with an issue** colours its summary line as an error.
 - **Filled in on load — Agreed** in topic 7: the marker fades after a few seconds, needing no edit to clear. Its line in the messages area stays until its row is edited or the line dismissed, so the record is not lost if the marker is missed.
 - **No badge for dynamic fragment arguments:** `parameters` there is a property with a value, and nothing needs to call attention to it.
@@ -735,6 +735,14 @@ How topic 2's guards apply to arrays with declared constraints, and the rule beh
 - **Changing an element's type so that it breaks `homogeneous` is allowed** (`18` to a string in `greaterThan`'s `['$data.age', 18]`). It is a content edit, `validate()` reports it, and the author may be about to change the other element too.
 - Unaffected: arrays supplied dynamically (`values: '$data.list'`) have no element rows to guard; reordering does not change a count; positional payloads keep topic 2's rules, and deleting the last element of `{ $and: ['$data.x'] }` leaves `[]`, allowed as above.
 
+### Caching — **Agreed** (Carl, with fig-tree 3.0.0-preview.4)
+
+fig-tree caches where an operator's definition declares `cache: true` (the I/O operators), and nothing else can turn caching on ([fig-tree-evaluator#204](https://github.com/CarlosNZ/fig-tree-evaluator/issues/204)). The host turns an operator off with `noCache: true` in its `operatorDefaults` (`getOperators()`' `instanceNoCache`), and an expression with `noCache: true` on an operator node or a fragment call, which turns caching off for the node and everything inside it. A call caches where its body does (`getFragments()`' `caches`).
+
+- **"Add parameter" offers `noCache` only where it would do something** ("Adding parameters and starting values", above), starting as `true`, the only value it takes.
+- **A node that caches says on its card whether its cache is in force.** On a caching operator, or a call to a fragment whose body caches, the node's own card has a line after the description: "Cache: active", or "Cache: disabled" where a `noCache` on the node or on any node holding it turns it off, or the host's does. A `noCache` several levels up is otherwise invisible from the node. The card doesn't say which `noCache` it is. A call to a fragment that only the host's `noCache` keeps from caching reports `caches: false`, so its card has no line.
+- **The warnings are fig-tree's** (`useless-modifier`, at the key): dead where nothing inside could cache, and redundant where a node above already has `noCache` or, with the change made for the editor, where all that could cache is operators the host turned off ("'noCache' is redundant — caching is already disabled for 'http'").
+
 ---
 
 ## 5. References and `vars`, then comments and `literal`
@@ -944,13 +952,13 @@ Checked against the installed package:
 
 **An issue at a node's own path.**
 
-- **Broken** (topic 3's error border and stripe, with the name as an error) means exactly `malformed-node` at the node's own path or at one of its own keys (a stray sibling key such as `extra` in `{ $plus: [1], extra: 2 }`, a second `$name` key, or a fragment's `$name` row holding a string), or `unknown-operator` or `unknown-fragment` at its path: the node cannot be read as a node, and the compiler and `./format` both refuse it, so it has no Evaluate and no conversion. The key's own row carries the issue too. A node that is only missing something (`{ $if: ['$data.x'] }`, `missing-required` at the node) is well-formed, and converts.
+- **Broken** (topic 3's error border, with the name as an error) means exactly `malformed-node` at the node's own path or at one of its own keys (a stray sibling key such as `extra` in `{ $plus: [1], extra: 2 }`, a second `$name` key, or a fragment's `$name` row holding a string), or `unknown-operator` or `unknown-fragment` at its path: the node cannot be read as a node, and the compiler and `./format` both refuse it, so it has no Evaluate and no conversion. The key's own row carries the issue too. A node that is only missing something (`{ $if: ['$data.x'] }`, `missing-required` at the node) is well-formed, and converts.
 - **Any other issue at a node's path flags the node's DisplayBar line,** with no border: a missing `then` held back by the typo guard, `upper` feeding a number position, a fragment call missing a required argument. The node is well-formed, so its header reads as usual.
 
 **Severity on rows — revised** (Carl, plan 10.1, once the flags could be seen in the built editor, where a badge on every row was too much): **the tint marks the row, and the messages float in a card while the row is hovered.**
 
 - **Error:** the row is tinted, with a stripe down its left edge (topic 3). A plain array or object is tinted as a whole block, its header line included (Carl, plan 10.1).
-- **Warning:** the row is tinted fainter, in amber, without the stripe. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), and the fainter tint keeps a tree with a few warnings from looking as alarming as a broken one. Its amber must be told apart from the "filled in on load" marker's (topic 3), which is a stronger, purer yellow that fades (plan 10.3).
+- **Warning:** the row is tinted fainter, in amber, with an amber stripe. Warnings are common and often transient (a new var carries `unreferenced-var` until something reads it, topic 5), and the fainter tint keeps a tree with a few warnings from looking as alarming as a broken one. Its amber must be told apart from the "filled in on load" marker's (topic 3), which is a stronger, purer yellow that fades (plan 10.3).
 - **Hint:** the messages area only. fig-tree has one hint today (`token-renumber`, beside the warnings it explains).
 
 A node keeps a flag on its header's line, which has room for one, and isn't tinted. Rejected, first: a flag on every row with an issue, errors tinted as well and warnings flagged alone, which made a tree with several issues busy (Carl). Rejected earlier: one treatment for all three in different colours; and warnings in the messages area only, which moves a row's problem away from the row.

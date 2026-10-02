@@ -3,12 +3,14 @@ import { AddParameter } from './AddParameter'
 import { brokenIssue, flaggedIssues } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
+import { type CardLine } from './HoverCard'
 import { DisplayBar, type HeaderDisplay } from './DisplayBar'
 import { type FragmentDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { FragmentPicker } from './FragmentPicker'
 import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { withoutFilteredRows } from './nodeRows'
+import { cacheLine } from './parameterCard'
 import { addKey, addableKeys } from './parameterOptions'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
@@ -106,7 +108,14 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
         <DisplayBar
           name={kind.name}
           display={fragmentHeader(hints, editorTheme)}
-          card={hints?.description === undefined ? [] : [hints.description]}
+          card={[
+            hints?.description,
+            cacheLine(path, kind, {
+              classification,
+              operators: figTree.getOperators(),
+              fragments: figTree.getFragments(),
+            }),
+          ].filter((line): line is CardLine => line !== undefined)}
           broken={broken}
           flagged={flaggedIssues(issues, path)}
           editorTheme={editorTheme}

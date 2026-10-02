@@ -354,7 +354,8 @@ describe('marking how a run went', () => {
       description: 'Gives its value, cached by it',
       parameters: { value: { type: 'any' } },
       cache: true,
-      evaluate: ({ value }, { cache }) => cache.memo(`echo ${String(value)}`, () => value),
+      evaluate: ({ value }, { cache }) =>
+        cache.memo(`echo ${String(value)}`, () => Promise.resolve(value)),
     })
     const instance = new FigTree({
       operators: [coreOperators, [once, echo]],

@@ -1,10 +1,11 @@
 import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
+import { takesNoCache } from './caching'
 import { type Classification, type RowKind } from './classify'
 import { type DisplayData } from './displayData'
 import { parameterOrder } from './fillAndTidy'
 import { getStartingValue } from './getStartingValue'
-import { isWithin, type Path } from './paths'
+import { type Path } from './paths'
 import { strings } from './strings'
 
 // What can be added to a node (design, topic 4, "Adding parameters and
@@ -93,43 +94,6 @@ export const addableKeys = (
     default:
       return null
   }
-}
-
-// Whether `noCache` on the node at `path` would do something: no node above
-// it has one, and it or something beneath it caches
-const takesNoCache = (
-  path: Path,
-  context: Pick<AddContext, 'classification' | 'operators' | 'fragments'>
-) => {
-  let caches = false
-  for (const { kind, slot } of context.classification.values()) {
-    if (slot === undefined) continue
-    const { ownerPath } = slot
-    const above = ownerPath !== null && ownerPath.length < path.length && isWithin(path, ownerPath)
-    if (above && slot.role === 'modifier' && slot.parameter === 'noCache') return false
-    if (!caches && isWithin(slot.path, path) && mayCache(kind, context)) caches = true
-  }
-  return caches
-}
-
-// A caching operator the host hasn't turned off, or a call to a fragment
-// whose body caches. One the editor can't read, malformed or naming nothing
-// registered, may cache, as `validate()` has it, so that a `noCache` on it
-// isn't called dead.
-const mayCache = (
-  kind: RowKind | undefined,
-  { operators, fragments }: Pick<AddContext, 'operators' | 'fragments'>
-) => {
-  if (kind?.kind === 'operator') {
-    const operator = operators.find(({ name }) => name === kind.operator)
-    if (operator === undefined || kind.malformed !== undefined) return true
-    return operator.cache && operator.instanceNoCache !== true
-  }
-  if (kind?.kind === 'fragment') {
-    const fragment = fragments.find(({ name }) => name === kind.name)
-    return fragment === undefined || kind.malformed !== undefined || fragment.caches
-  }
-  return false
 }
 
 // The arguments not yet in a static map, then the switch to the other kind

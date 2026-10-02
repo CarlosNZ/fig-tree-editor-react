@@ -4,6 +4,7 @@ import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
+import { figTree as withRequests } from './fixtures'
 import { keyLabel } from './queries'
 
 // A registry with one fragment carrying `FragmentHints`, and two without, one
@@ -233,6 +234,22 @@ describe('the fragment call', () => {
       expect(bar.queryByRole('button', { name: 'greet' })).not.toBeInTheDocument()
       expect(bar.getByText(/'noCache' takes only the literal true/)).toBeInTheDocument()
     })
+  })
+
+  it("says on the card whether the call's cache is in force, where its body caches", () => {
+    const card = (container: HTMLElement) =>
+      within(displayBar(container)).getByRole('tooltip', { hidden: true })
+    const active = editor({ fragment: 'getFlag' }, { figTree: withRequests })
+    expect(card(active.container)).toHaveTextContent('Cache: active')
+    active.unmount()
+    const off = editor({ fragment: 'getFlag', noCache: true }, { figTree: withRequests })
+    expect(card(off.container)).toHaveTextContent('Cache: disabled')
+    off.unmount()
+    const greet = editor(
+      { fragment: 'greet', parameters: { name: 'Ada' } },
+      { figTree: withRequests }
+    )
+    expect(within(displayBar(greet.container)).queryByRole('tooltip', { hidden: true })).toBeNull()
   })
 
   it('converts a static call to shorthand, and offers nothing on a dynamic one', () => {

@@ -547,6 +547,24 @@ describe('the operator node', () => {
       ).toHaveTextContent('This application sets timeout: 5000 on every http node')
     })
 
+    it("says on a caching node's card whether its cache is in force", () => {
+      const card = (container: HTMLElement, index = 0) =>
+        within(displayBar(container, index)).getByRole('tooltip', { hidden: true })
+      const request = { operator: 'http', url: 'https://example.com' }
+      const active = editor(request)
+      expect(card(active.container)).toHaveTextContent('Cache: active')
+      active.unmount()
+      // A noCache two levels up turns it off, and a node that never caches
+      // has no line
+      const held = editor({
+        operator: 'upper',
+        value: { operator: 'buildString', template: '%1', substitutions: [request] },
+        noCache: true,
+      })
+      expect(card(held.container, 2)).toHaveTextContent('Cache: disabled')
+      expect(card(held.container, 0)).not.toHaveTextContent('Cache:')
+    })
+
     it('waits before showing any card, by a delay in the stylesheet', () => {
       editor({ operator: 'round', value: 1 })
       const styles = document.head.querySelector('style[data-fig-tree-editor-styles]')!.textContent

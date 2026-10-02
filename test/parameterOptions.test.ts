@@ -6,7 +6,7 @@ import { addKey, addableKeys, getNewKeyValue, type AddContext } from '../src/par
 import { valueAt, type Path } from '../src/paths'
 import { registry } from './fixtures'
 
-type Registry = Pick<AddContext, 'operators' | 'fragments'>
+type Registry = typeof registry
 
 // The context for adding to a row of `expression`
 const contextFor = (expression: unknown, from: Registry = registry): AddContext => ({

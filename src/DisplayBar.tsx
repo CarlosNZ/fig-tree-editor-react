@@ -1,7 +1,7 @@
 import { type Issue } from 'fig-tree-evaluator'
 import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
-import { CardLines, HoverCard } from './HoverCard'
+import { CardLines, HoverCard, type CardLine } from './HoverCard'
 import { EvaluateIcon, Icon } from './Icons'
 import { IssueFlag } from './IssueFlag'
 import { RunCard } from './RunCard'
@@ -42,7 +42,7 @@ export interface HeaderDisplay extends Pick<
 interface DisplayBarProps {
   name: string | null // as written; null when it isn't a string
   display: HeaderDisplay | undefined // undefined when nothing is registered
-  card: string[] // the hover card's lines
+  card: CardLine[] // the hover card's lines
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
   flagged?: readonly Issue[] // the node's other issues, most severe first

@@ -177,6 +177,16 @@ describe('the shorthand node', () => {
     ).not.toHaveTextContent(line)
   })
 
+  it('says on the card whether the cache is in force, where the node caches', () => {
+    const card = (container: HTMLElement) =>
+      within(displayBar(container)).getByRole('tooltip', { hidden: true })
+    const request = editor({ $http: 'https://example.com' })
+    expect(card(request.container)).toHaveTextContent('Cache: active')
+    request.unmount()
+    const off = editor({ $http: 'https://example.com', noCache: true })
+    expect(card(off.container)).toHaveTextContent('Cache: disabled')
+  })
+
   describe('its spelling', () => {
     const button = (container: HTMLElement, name: string) =>
       within(displayBar(container)).getByRole('button', { name })

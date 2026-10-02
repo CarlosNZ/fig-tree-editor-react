@@ -640,6 +640,25 @@ input.ft-select-input::placeholder {
   color: #6b7280;
 }
 
+/* A fact about the row where it is, muted and bulleted, its wrapped lines
+   hanging under its first's text */
+.ft-hover-card-detail {
+  position: relative;
+  padding-left: 0.9em;
+  color: #6b7280;
+}
+
+.ft-hover-card-detail::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+}
+
+/* Set further apart from the lines above, and not from each other */
+.ft-hover-card-line:not(.ft-hover-card-detail) + .ft-hover-card-detail {
+  margin-top: 0.6em;
+}
+
 .ft-hover-card code {
   font-size: 0.95em;
 }
