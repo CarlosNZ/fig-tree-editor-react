@@ -71,6 +71,38 @@ const evaluatorAliases =
       ]
     : []
 
+// json-edit-react can be swapped the same way, by VITE_JER_SOURCE:
+//   npm   – the package in node_modules (default)
+//   local – the raw TypeScript source of a sibling checkout
+//           (../../json-edit-react/src), to try a change before publishing it
+// `@json-edit-react/utils`, which the demo imports, comes from the same
+// checkout (packages/utils/src), so that it imports the same json-edit-react.
+type JerOption = 'npm' | 'local'
+
+const jerProvider: JerOption = (process.env.VITE_JER_SOURCE as JerOption) ?? 'npm'
+
+const jerRoot = path.resolve(__dirname, '../../json-edit-react')
+
+console.log(`Using json-edit-react from: ${jerProvider}`)
+
+if (jerProvider === 'local' && !fs.existsSync(path.join(jerRoot, 'src/index.ts')))
+  throw new Error(`VITE_JER_SOURCE=local needs a json-edit-react checkout at ${jerRoot}`)
+
+const jerAliases =
+  jerProvider === 'local'
+    ? [
+        { find: /^json-edit-react$/, replacement: path.join(jerRoot, 'src') },
+        {
+          find: /^@json-edit-react\/utils$/,
+          replacement: path.join(jerRoot, 'packages/utils/src'),
+        },
+        {
+          find: /^@json-edit-react\/utils\/(.+)$/,
+          replacement: path.join(jerRoot, 'packages/utils/src/$1'),
+        },
+      ]
+    : []
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -79,6 +111,7 @@ export default defineConfig({
     alias: [
       { find: /^@fig-tree-editor-react$/, replacement: figTreeEditorSrcMap[provider] },
       ...evaluatorAliases,
+      ...jerAliases,
     ],
     // In local/build/pack modes the library + its source live outside
     // demo/node_modules. Without dedupe, vite's walk-up resolution can pick up
@@ -97,11 +130,12 @@ export default defineConfig({
   server: {
     // Allow serving the library source / build / packed output that lives one
     // level up from the demo (../src, ../build, ../pack-output), and the local
-    // fig-tree-evaluator checkout beside the repo.
+    // fig-tree-evaluator and json-edit-react checkouts beside the repo.
     fs: {
       allow: [
         path.resolve(__dirname, '..'),
         ...(evaluatorProvider === 'local' ? [evaluatorRoot] : []),
+        ...(jerProvider === 'local' ? [jerRoot] : []),
       ],
     },
   },

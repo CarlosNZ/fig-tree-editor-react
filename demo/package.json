@@ -9,6 +9,7 @@
     "start": "concurrently --kill-others-on-fail \"pnpm serve\" \"vite --host\"",
     "start:local": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=local vite --host\"",
     "start:local-evaluator": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=local VITE_EVALUATOR_SOURCE=local vite --host\"",
+    "start:local-jer": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=local VITE_JER_SOURCE=local vite --host\"",
     "start:build": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=build vite --host\"",
     "start:pack": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=pack vite --host\"",
     "dev": "pnpm start:local",

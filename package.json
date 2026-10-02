@@ -44,6 +44,7 @@
     "demo": "pnpm -C demo start",
     "demo:local": "pnpm -C demo dev",
     "demo:local-evaluator": "pnpm -C demo start:local-evaluator",
+    "demo:local-jer": "pnpm -C demo start:local-jer",
     "pack-demo": "pnpm build && pnpm check:package",
     "demo:pack": "pnpm pack-demo && pnpm -C demo start:pack"
   },

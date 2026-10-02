@@ -37,6 +37,7 @@ The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm i
 - **Run the demo** (the primary way to see changes live):
   - `pnpm dev` / `pnpm demo:local` → demo against the **raw `src/` TypeScript**, with HMR.
   - `pnpm demo:local-evaluator` → the same, with fig-tree-evaluator also taken from the source of a sibling checkout (`../fig-tree-evaluator`).
+  - `pnpm demo:local-jer` → the same, with json-edit-react and `@json-edit-react/utils` taken from the source of a sibling checkout (`../json-edit-react`), to try a JER change before publishing it.
   - `pnpm demo` → demo against the **published npm package**. No published editor runs on fig-tree v3 yet, so until the first v3 pre-release this mode stops with a message and the demo doesn't depend on the npm package.
   - `pnpm demo:pack` → builds, runs `check:package`, then runs the demo against the packed copy in `pack-output/`. This is the closest test to a real publish.
 
@@ -44,8 +45,8 @@ The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm i
 
 Two layers let you swap between local source and published packages without code edits:
 
-1. **`v1-src/_imports.ts`** re-exports `json-edit-react`. It exists so the v1 library's own import of JER can be flipped between the published package and a local checkout (`../package`) by toggling one line. The v3 `src/` has no equivalent so far.
-2. **`demo/vite.config.ts`** aliases `@fig-tree-editor-react` (note the `@`) to one of four sources selected by `VITE_FIG_SOURCE` (`npm` | `local` | `build` | `pack`), set by the demo scripts above. Separately, `VITE_EVALUATOR_SOURCE=local` aliases `fig-tree-evaluator` and each of its subpaths to the sibling checkout's `src/`, for every importer, the library included. In non-`npm` modes the config must `dedupe` react/react-dom/fig-tree-evaluator/json-edit-react: a duplicate React breaks hooks, and a duplicate fig-tree or JER breaks `instanceof` checks and editor context.
+1. **`v1-src/_imports.ts`** re-exports `json-edit-react`. It exists so the v1 library's own import of JER can be flipped between the published package and a local checkout (`../package`) by toggling one line. The v3 `src/` has no equivalent, since the demo's `VITE_JER_SOURCE` (below) covers it.
+2. **`demo/vite.config.ts`** aliases `@fig-tree-editor-react` (note the `@`) to one of four sources selected by `VITE_FIG_SOURCE` (`npm` | `local` | `build` | `pack`), set by the demo scripts above. Separately, `VITE_EVALUATOR_SOURCE=local` aliases `fig-tree-evaluator` and each of its subpaths to the sibling checkout's `src/`, for every importer, the library included. `VITE_JER_SOURCE=local` does the same for `json-edit-react` (the checkout's `src/`) and `@json-edit-react/utils` (its `packages/utils/src/`), which the demo imports. In non-`npm` modes the config must `dedupe` react/react-dom/fig-tree-evaluator/json-edit-react: a duplicate React breaks hooks, and a duplicate fig-tree or JER breaks `instanceof` checks and editor context.
 
 `demo/` is a **workspace package** (`pnpm-workspace.yaml`). It shares the root's lockfile and install, but keeps its own `package.json` and `node_modules`. In `npm` mode it resolves the editor from npm rather than through a `workspace:` link, once a v3 editor is published. When bumping a shared dependency (fig-tree-evaluator, json-edit-react), update it in **both** `package.json` files, since there are no catalogs.
 
