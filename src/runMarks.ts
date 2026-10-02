@@ -32,7 +32,9 @@ export interface RunInstance {
   error?: FigTreeError // why it failed, or what its fallback caught, as fig-tree has it
   failedAt?: Path // where that error is from, in the tree
   elapsed?: number // in milliseconds, what it holds included
-  cached: boolean // a value from the cache
+  // A value from the cache: its own lookup's, or for a fragment call, every
+  // lookup its body made, since the body has no rows to show them
+  cached: boolean
 }
 
 export type NotRunReason =
@@ -110,24 +112,45 @@ interface MarkedRow {
 // The trace's entries by the tree's rows, and the parts of the tree the run
 // took in: the evaluated row, and each part of the scope wrapped around it
 // that ran for it. A wrapper's own entry stands for the row's ancestor
-// holding the scope, which itself never ran, and a fragment body's entries
-// are in the body, not the tree.
+// holding the scope, which itself never ran. A fragment body's entries are
+// in the body, not the tree, so the call stands in for them: its run is
+// cached where the body made cache lookups and every one hit.
 const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation) => {
   const runs = new Map<string, RunInstance[]>()
   const regions: Path[] = [evaluated]
-  const visit = (entry: TraceNode) => {
-    if (entry.source !== undefined) return
+  const bodies = new Map<RunInstance, { hits: number; misses: number }>()
+  const visit = (entry: TraceNode, call: RunInstance | undefined) => {
+    if (entry.source !== undefined) {
+      if (call) {
+        const count = bodies.get(call) ?? { hits: 0, misses: 0 }
+        bodies.set(call, count)
+        countLookups(entry, count)
+      }
+      return
+    }
     const path = toTreePath(entry.path)
     const wrapper = path.length < evaluated.length && isWithin(evaluated, path)
-    if (!wrapper) {
+    const run = wrapper ? undefined : instance(entry, toTreePath)
+    if (run) {
       const key = toPathString(path)
-      runs.set(key, [...(runs.get(key) ?? []), instance(entry, toTreePath)])
+      runs.set(key, [...(runs.get(key) ?? []), run])
       if (!regions.some((region) => isWithin(path, region))) regions.push(path)
     }
-    entry.children?.forEach(visit)
+    entry.children?.forEach((child) => visit(child, run))
   }
-  visit(trace)
+  visit(trace, undefined)
+  for (const [call, { hits, misses }] of bodies) if (hits > 0 && misses === 0) call.cached = true
   return { runs, regions }
+}
+
+// The cache lookups an entry and everything in it made
+const countLookups = (entry: TraceNode, count: { hits: number; misses: number }) => {
+  for (const { type, hit } of entry.events ?? [])
+    if (type === 'cache') {
+      if (hit === true) count.hits++
+      else count.misses++
+    }
+  entry.children?.forEach((child) => countLookups(child, count))
 }
 
 const instance = (

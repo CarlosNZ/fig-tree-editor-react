@@ -321,6 +321,43 @@ describe('marking how a run went', () => {
     expect(at(second.marks, []).runs[0]).toMatchObject({ status: 'value', value: 42, cached: true })
   })
 
+  it("marks a fragment call's result cached where every lookup its body made hit", async () => {
+    const echo = defineOperator({
+      name: 'echo',
+      category: 'other',
+      description: 'Gives its value',
+      parameters: { value: { type: 'any' } },
+      evaluate: ({ value }) => value,
+    })
+    const instance = new FigTree({
+      operators: [coreOperators, [once, echo]],
+      useCache: true,
+      fragments: {
+        cachedOnce: { expression: { operator: 'once' } },
+        // One lookup hits on a second run, and one, for a new `n`, misses
+        mixed: {
+          expression: { $plus: [{ operator: 'once' }, { operator: 'echo', value: '$params.n' }] },
+          parameters: { n: { type: 'number' } },
+        },
+      },
+    })
+    const expression = (n: number) => ({
+      a: { fragment: 'cachedOnce' },
+      b: { fragment: 'mixed', parameters: { n } },
+      c: { operator: 'once' },
+      d: { $plus: [{ operator: 'once' }, 1] },
+    })
+    const first = await evaluate(expression(1), [], { instance })
+    expect(at(first.marks, ['a']).runs[0].cached).toBe(false)
+    const { marks } = await evaluate(expression(2), [], { instance })
+    expect(at(marks, ['a']).runs[0].cached).toBe(true)
+    expect(at(marks, ['b']).runs[0].cached).toBe(false)
+    expect(at(marks, ['c']).runs[0].cached).toBe(true)
+    // A node in the tree is cached by its own lookup only, not its children's
+    expect(at(marks, ['d']).runs[0].cached).toBe(false)
+    expect(at(marks, ['d', '$plus', 0]).runs[0].cached).toBe(true)
+  })
+
   it('marks only the evaluated row, failed, where there is no trace', async () => {
     const { evaluation, marks } = await evaluate(
       { x: { operator: 'nope' }, y: { $plus: [1, 1] } },

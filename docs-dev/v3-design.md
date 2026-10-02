@@ -1126,7 +1126,7 @@ What an evaluation leaves in the tree, from its trace, which every editor evalua
 | Cancelled                                                        | black  | ▶       |
 | Never ran: skipped, inside a row that didn't run, or not reached | grey   | ▶       |
 
-- **A value from the cache** is marked as ran, and its card says it was a cached result. No icon reads as "cached" without a label, so none goes on the button (Carl, plan 10.7c).
+- **A value from the cache** is marked as ran, and its card says it was a cached result. No icon reads as "cached" without a label, so none goes on the button (Carl, plan 10.7c). A node in the tree says so by its own cache lookup only, not its children's. A fragment call is the exception: fig-tree doesn't cache a call, and its body's nodes, whose lookups the trace records, have no rows of their own, so the call stands in for them, and is a cached result where its body made lookups and every one hit (Carl, plan 10.7c).
 - **A fallback's mark is its node's,** the node that failed. Its `fallback` row is a row of its own, marked by its own run, and where the fallback fails too, the node is failed, its card saying so.
 - **A node inside an iterator** ran once per element, and is marked by the worst of its runs: failed, then fallback, cancelled, ran and never ran.
 - **A reference has no border,** which would put a small box round every reference in a large expression (Carl): its ▶ becomes the ✓ or ✕.
