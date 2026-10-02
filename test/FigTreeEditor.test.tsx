@@ -1,7 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { FigTree } from 'fig-tree-evaluator'
+import { type CustomTextDefinitions } from 'json-edit-react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
+import { figTree as demoFigTree } from './fixtures'
 import { keyLabel } from './queries'
 
 const figTree = new FigTree()
@@ -202,6 +204,41 @@ describe('FigTreeEditor', () => {
       fireEvent.change(screen.getByRole('textbox'), { target: { value: 'b' } })
       fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
       expect(setExpression).toHaveBeenCalledExactlyOnceWith({ a: 1, b: 'Replace me' })
+    })
+
+    it('prompts for what a typed key names, where the editor knows', () => {
+      const prompt = (expression: unknown, customText?: CustomTextDefinitions) => {
+        // The demo's registry, which has the HTTP operators
+        const { unmount } = render(
+          <FigTreeEditor
+            figTree={demoFigTree}
+            expression={expression}
+            setExpression={vi.fn()}
+            customText={customText}
+          />
+        )
+        addToLast()
+        const { value } = screen.getByRole<HTMLInputElement>('textbox')
+        unmount()
+        return value
+      }
+      expect(prompt({ $plus: [1], vars: { n: 1 } })).toBe('New variable name')
+      expect(prompt({ operator: 'match', value: 'a', branches: { a: 1 } })).toBe('Add branch name')
+      expect(prompt({ $match: ['a', { a: 1 }] })).toBe('Add branch name')
+      expect(prompt({ operator: 'buildString', template: '{{a}}', substitutions: { a: 1 } })).toBe(
+        'Add token name'
+      )
+      expect(prompt({ operator: 'http', url: 'u', query: { a: 1 } })).toBe('URL query name')
+      expect(prompt({ operator: 'http', url: 'u', headers: { a: 'b' } })).toBe('Add header')
+      expect(prompt({ operator: 'graphQL', query: 'q', headers: { a: 'b' } })).toBe('Add header')
+      expect(prompt({ operator: 'graphQL', query: 'q', variables: { a: 1 } })).toBe('New variable')
+
+      // Elsewhere, json-edit-react's own, or the host's
+      const body = { operator: 'http', url: 'u', body: { a: 1 } }
+      expect(prompt(body)).toBe('Enter new key')
+      const hostText = { KEY_NEW: () => 'Name it' }
+      expect(prompt(body, hostText)).toBe('Name it')
+      expect(prompt({ $plus: [1], vars: { n: 1 } }, hostText)).toBe('New variable name')
     })
 
     it('starts vars on an evaluated plain object as an empty block', () => {

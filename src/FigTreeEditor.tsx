@@ -732,7 +732,8 @@ const typesFor =
 // leaving out a `//` among them. A collapsed row with more than one issue on
 // or beneath it, a plain collection included, counts them after its summary
 // (topic 7, "Where issues attach"). The item count of a plain collection
-// that does is the editor's wording, or the host's `customText`.
+// that does is the editor's wording, or the host's `customText`. A ＋ that
+// takes a typed key prompts for what the key names, where the editor knows.
 const editorText = (
   classification: Classification,
   rollUp: IssueRollUp,
@@ -763,7 +764,31 @@ const editorText = (
       kind.kind === 'operator' ? strings.FT_SUMMARY_OPERATOR : strings.FT_SUMMARY_FRAGMENT
     return text(kind.name ?? strings.FT_INVALID_NODE)
   }
-  return { ITEM_SINGLE: withIssues('ITEM_SINGLE'), ITEMS_MULTIPLE: withIssues('ITEMS_MULTIPLE') }
+  return {
+    ITEM_SINGLE: withIssues('ITEM_SINGLE'),
+    ITEMS_MULTIPLE: withIssues('ITEMS_MULTIPLE'),
+    KEY_NEW: ({ path }) => newKeyPrompt(classification, path),
+  }
+}
+
+// What a typed key names in a vars block, or in an object given to one of
+// these core parameters
+const NEW_KEY_PROMPTS: Record<string, Record<string, string>> = {
+  match: { branches: strings.FT_KEY_NEW_BRANCH },
+  buildString: { substitutions: strings.FT_KEY_NEW_TOKEN },
+  http: { query: strings.FT_KEY_NEW_QUERY, headers: strings.FT_KEY_NEW_HEADER },
+  graphQL: { headers: strings.FT_KEY_NEW_HEADER, variables: strings.FT_KEY_NEW_GRAPHQL_VARIABLE },
+}
+
+const newKeyPrompt = (classification: Classification, path: Path): string | null => {
+  const row = rowAt(classification, path)
+  if (row?.kind?.kind === 'vars') return strings.FT_KEY_NEW_VAR
+  const slot = row?.slot
+  if (slot?.role !== 'parameter' || slot.ownerPath === null || slot.parameter === undefined)
+    return null
+  const owner = rowAt(classification, slot.ownerPath)?.kind
+  if (owner?.kind !== 'operator' || owner.operator === null) return null
+  return NEW_KEY_PROMPTS[owner.operator]?.[slot.parameter] ?? null
 }
 
 // A host's ref, an object or a function, set as React sets one

@@ -41,6 +41,13 @@ export const strings = {
   FT_SUMMARY_LITERAL: 'Literal',
   FT_SUMMARY_VARS: (count: number) => (count === 1 ? '1 var' : `${count} vars`),
   FT_ITEMS: (count: number) => (count === 1 ? '1 item' : `${count} items`), // a plain collection
+  // The prompt in a ＋'s typed key, where the editor knows what the key names
+  FT_KEY_NEW_VAR: 'New variable name', // a vars block
+  FT_KEY_NEW_BRANCH: 'Add branch name', // `match.branches`
+  FT_KEY_NEW_TOKEN: 'Add token name', // `buildString.substitutions`, as an object
+  FT_KEY_NEW_QUERY: 'URL query name', // `http.query`
+  FT_KEY_NEW_HEADER: 'Add header', // `http.headers`, `graphQL.headers`
+  FT_KEY_NEW_GRAPHQL_VARIABLE: 'New variable', // `graphQL.variables`
   // A collapsed row's summary, then the issues on and beneath it
   FT_SUMMARY_ISSUES: (summary: string, issues: string) => `${summary} · ${issues}`,
   FT_ISSUE_COUNTS: (errorCount: number, warningCount: number) =>
