@@ -37,6 +37,25 @@
   opacity: 1;
 }
 
+/* A plain value the latest evaluation marked: its text, then its ✓, as a
+   reference's text and ▶ */
+.ft-plain-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+/* The ✓ on plain data that ran, beside its value or its key */
+.ft-ran-tick {
+  display: inline-flex;
+  font-size: 0.8em;
+  line-height: 0;
+}
+
+.jer-key-text .ft-ran-tick {
+  margin-left: 0.3em;
+}
+
 /* Select component */
 .ft-select-container {
   font-size: 0.8em;

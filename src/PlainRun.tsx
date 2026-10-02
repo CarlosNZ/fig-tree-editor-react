@@ -1,14 +1,18 @@
 import { type CustomComponentProps, type CustomWrapperProps } from 'json-edit-react'
 import { type ReactNode } from 'react'
+import { rowAt } from './classify'
 import { type ComponentConfig, type Shared } from './customNodeDefinitions'
+import { RanTick } from './Icons'
 import { type Path } from './paths'
-import { plainMark } from './runMarks'
+import { plainMark, showsTick } from './runMarks'
 
 // Plain data json-edit-react draws, marked by how the latest evaluation
 // reached it (design, topic 7, "How it ran, in the tree"). The mark is an
-// attribute, by which the stylesheet dims what never ran, as it dims a node.
+// attribute, by which the stylesheet dims what never ran, as it dims a node,
+// and where it ran, it may show a ✓ (`showsTick`).
 
-// A plain value: its value marked, its key left as it is, as a node's is
+// A plain value: its value marked, its key left as it is, as a node's is, and
+// its ✓ after it
 export const PlainRun = ({
   componentProps,
   nodeData,
@@ -33,6 +37,9 @@ export const PlainValue = ({
   return (
     <span className="ft-plain-value" data-node-run={mark.status}>
       {children}
+      {showsTick(mark, rowAt(shared.classification, path)) && (
+        <RanTick editorTheme={shared.editorTheme} />
+      )}
     </span>
   )
 }

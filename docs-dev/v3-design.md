@@ -1139,6 +1139,7 @@ What an evaluation leaves in the tree, from its trace, which every editor evalua
 - **A fallback's mark is its node's,** the node that failed. Its `fallback` row is a row of its own, marked by its own run, and where the fallback fails too, the node is failed, its card saying so.
 - **A node inside an iterator** ran once per element, and is marked by the worst of its runs: failed, then fallback, cancelled, ran and never ran.
 - **A node that never ran is dimmed,** its border as it was, rather than given a grey border, which was too like a node's own (Carl). It shows in full while the pointer or focus is in it, since its hover cards and edit tools are drawn inside it and would dim with it. How far it dims is the stylesheet's `--ft-never-ran-opacity`. A reference, a plain value and a plain collection's rows that never ran are dimmed the same way, their keys left as a node's is.
+- **Every constant that ran shows a ✓,** as one piece, as a reference does, so everything the run reached is ticked and everything it didn't is dimmed. The ✓ follows a value, as a reference's does, and a collection's key. A container shows none, since each piece in it shows its own.
 - **A reference has no border,** which would put a small box round every reference in a large expression (Carl): its ▶ becomes the ✓ or ✕.
 - **A collapsed node** shows neither its border nor its button, so its summary text takes the colour, as it takes an issue's ("Where issues attach").
 - **The root's bar** takes the button's mark and its card.
