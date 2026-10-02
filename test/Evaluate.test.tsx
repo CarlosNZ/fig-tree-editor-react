@@ -240,9 +240,8 @@ describe('evaluating', () => {
       expect(ran(nodeButton('$multiply'))).toBe('value')
       expect(ran(referenceButton())).toBe('value')
       expect(ran(y)).toBeUndefined()
-      expect(border(x)).toMatchObject({ borderWidth: '2px' })
       expect(border(x).borderColor).toBe(toRgb(defaultEditorTheme.runValue))
-      expect(border(y)).toMatchObject({ borderWidth: '1px' })
+      expect(border(y).borderColor).toBe(toRgb(defaultEditorTheme.shorthandBorder))
     })
 
     it('marks a failure, every node it failed, and a node whose fallback caught one', async () => {

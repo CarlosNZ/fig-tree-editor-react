@@ -208,10 +208,9 @@ const editorThemeLayer = ({
       // A collapsed node is its summary alone, with no border. A shorthand
       // node's border is dashed, and a broken node has an error border and
       // stripe, whatever its form (topic 3). After an evaluation, a node that
-      // took part has a heavier border in the colour of how it ran (topic 7,
-      // "How it ran, in the tree"), padded in by as much, so its rows stay
-      // where they are. No broken node takes part, since its errors block the
-      // evaluation.
+      // took part has its border in the colour of how it ran (topic 7, "How
+      // it ran, in the tree"). No broken node takes part, since its errors
+      // block the evaluation.
       collectionInner: (nodeData) => {
         if (comment(nodeData) === 'lines') return { marginLeft: `-${indent / 2}em` }
         const form = nodeForm(nodeData)
@@ -229,11 +228,7 @@ const editorThemeLayer = ({
               ? editorTheme.shorthandBorder
               : editorTheme.nodeBorder,
           ...(broken && { borderLeftWidth: '0.3em' }),
-          ...(ran !== undefined && {
-            borderColor: runColour(ran, editorTheme),
-            borderWidth: RUN_BORDER_WIDTH,
-            padding: `calc(${NODE_BORDER.padding} - (${RUN_BORDER_WIDTH} - ${NODE_BORDER.borderWidth}))`,
-          }),
+          ...(ran !== undefined && { borderColor: runColour(ran, editorTheme) }),
         }
       },
     },
@@ -335,14 +330,12 @@ const RULE_WIDTH = '2px'
 const RULE_GAP = '1.35em' // from the rule to the key
 
 const NODE_BORDER = {
-  borderWidth: '1px',
+  borderWidth: '2px',
   borderRadius: '0.75em',
   padding: '0.5em',
   marginBottom: '0.5em',
   marginLeft: '-1em',
 }
-
-const RUN_BORDER_WIDTH = '2px'
 
 // The colour of how a row ran
 export const runColour = (status: TraceStatus, editorTheme: EditorTheme) =>

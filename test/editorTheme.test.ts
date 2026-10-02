@@ -418,9 +418,10 @@ describe('editor theme', () => {
           { path, status, runs: [], perElement: false, nulls: [] },
         ])
       )
-    const heavier = { borderWidth: '2px', padding: 'calc(0.5em - (2px - 1px))' }
+    // The border's width and padding, which a run leaves as they are
+    const unmoved = { borderWidth: '2px', padding: '0.5em' }
 
-    it('gives a node a heavier border in the colour of how it ran, and leaves the others', () => {
+    it('colours the border of a node by how it ran, and leaves the others', () => {
       const expression = {
         a: { operator: 'plus', values: [1] },
         b: { operator: 'plus', values: [2] },
@@ -429,12 +430,11 @@ describe('editor theme', () => {
       expect(style(expression, 'collectionInner', ['a'], false, null, marks)).toMatchObject({
         borderStyle: 'solid',
         borderColor: defaultEditorTheme.runFailed,
-        ...heavier,
+        ...unmoved,
       })
       expect(style(expression, 'collectionInner', ['b'], false, null, marks)).toMatchObject({
         borderColor: defaultEditorTheme.nodeBorder,
-        borderWidth: '1px',
-        padding: '0.5em',
+        ...unmoved,
       })
     })
 
@@ -445,7 +445,7 @@ describe('editor theme', () => {
       ).toMatchObject({
         borderStyle: 'dashed',
         borderColor: defaultEditorTheme.runSkipped,
-        ...heavier,
+        ...unmoved,
       })
     })
 
