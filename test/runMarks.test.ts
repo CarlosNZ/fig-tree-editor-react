@@ -54,7 +54,7 @@ const evaluate = async (
     operators: registry.operators,
   })!
   const evaluation = await evaluateSubTree(instance, path, subTree, { mode: 'report', ...options })
-  return { evaluation, marks: markRun(evaluation, classification)! }
+  return { evaluation, marks: markRun(evaluation, classification, subTree.row)! }
 }
 
 // Each marked row's status, by its path in display form
@@ -83,6 +83,30 @@ describe('marking how a run went', () => {
     const { marks } = await evaluate({ a: { $plus: [1, 2] }, b: 3 }, [])
     expect(statuses(marks)).toEqual({ '(root)': 'value', a: 'value' })
     expect(at(marks, []).runs[0].value).toEqual({ a: 3, b: 3 })
+  })
+
+  it('marks a var evaluated on its own by its run, not the unread copy its scope holds', async () => {
+    const { marks } = await evaluate(
+      {
+        a: '$vars.total',
+        vars: { rate: { $plus: [1, 1] }, total: { $multiply: ['$vars.rate', 3] } },
+      },
+      ['vars', 'total']
+    )
+    expect(statuses(marks)).toEqual({
+      'vars.total': 'value',
+      'vars.total.$multiply[0]': 'value',
+      'vars.rate': 'value',
+    })
+    expect(at(marks, ['vars', 'total']).runs).toMatchObject([{ status: 'value', value: 6 }])
+
+    const { marks: nested } = await evaluate(
+      { a: 1, vars: { inner: { b: { $plus: ['$vars.n', 1] }, vars: { n: { $plus: [2, 2] } } } } },
+      ['vars', 'inner', 'vars', 'n']
+    )
+    expect(at(nested, ['vars', 'inner', 'vars', 'n']).runs).toMatchObject([
+      { status: 'value', value: 4 },
+    ])
   })
 
   describe('rows that never ran', () => {
@@ -144,7 +168,8 @@ describe('marking how a run went', () => {
       }
       const marks = markRun(
         evaluation,
-        classify(expression, { operators: figTree.getOperators(), fragments: [] })
+        classify(expression, { operators: figTree.getOperators(), fragments: [] }),
+        []
       )!
       expect(at(marks, ['$plus', 0])).toMatchObject({
         status: 'skipped',
@@ -381,6 +406,6 @@ describe('marking how a run went', () => {
     const abort = new AbortController()
     const pending = evaluateSubTree(figTree, [], subTree, { mode: 'report', signal: abort.signal })
     abort.abort()
-    expect(markRun(await pending, classification)).toBeNull()
+    expect(markRun(await pending, classification, subTree.row)).toBeNull()
   })
 })

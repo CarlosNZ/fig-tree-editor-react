@@ -53,16 +53,17 @@ export type RunMarks = ReadonlyMap<string, RowRun>
 
 // Every node and reference that took part in the evaluation, with the
 // evaluated row whatever it is, or null for a cancelled one, which leaves
-// nothing
+// nothing. `row` is where the row is in the trace, as the sub-tree has it.
 export const markRun = (
   evaluation: Evaluation,
-  classification: Classification
+  classification: Classification,
+  row: Path
 ): RunMarks | null => {
   if (evaluation.status === 'cancelled') return null
   const { path: evaluated, trace } = evaluation
   if (trace === undefined) return failedWithoutTrace(evaluation)
 
-  const { runs, regions } = readTrace(trace, evaluation)
+  const { runs, regions } = readTrace(trace, evaluation, row)
   const marked = new Map<string, MarkedRow>([
     [toPathString(evaluated), { path: evaluated, row: rowAt(classification, evaluated) }],
   ])
@@ -112,10 +113,12 @@ interface MarkedRow {
 // The trace's entries by the tree's rows, and the parts of the tree the run
 // took in: the evaluated row, and each part of the scope wrapped around it
 // that ran for it. A wrapper's own entry stands for the row's ancestor
-// holding the scope, which itself never ran. A fragment body's entries are
-// in the body, not the tree, so the call stands in for them: its run is
-// cached where the body made cache lookups and every one hit.
-const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation) => {
+// holding the scope, which itself never ran. A wrapped vars block holds the
+// var the row is, or is in, as well, and nothing reads that copy, so only
+// the row's own entries stand for it. A fragment body's entries are in the
+// body, not the tree, so the call stands in for them: its run is cached
+// where the body made cache lookups and every one hit.
+const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation, row: Path) => {
   const runs = new Map<string, RunInstance[]>()
   const regions: Path[] = [evaluated]
   const bodies = new Map<RunInstance, { hits: number; misses: number }>()
@@ -129,6 +132,7 @@ const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation
       return
     }
     const path = toTreePath(entry.path)
+    if (isWithin(path, evaluated) && !isWithin(entry.path, row)) return
     const wrapper = path.length < evaluated.length && isWithin(evaluated, path)
     const run = wrapper ? undefined : instance(entry, toTreePath)
     if (run) {

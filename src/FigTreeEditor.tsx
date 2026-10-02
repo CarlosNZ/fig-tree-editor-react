@@ -351,13 +351,21 @@ export const FigTreeEditor = ({
 
   // A row's evaluation, from the expression and props as they are when it
   // starts, which its marks are drawn against as it ends
-  const evaluating = useRef<{ expression: unknown; classification: Classification } | null>(null)
+  const evaluating = useRef<{
+    expression: unknown
+    classification: Classification
+    row: Path
+  } | null>(null)
   evaluationHandlers.current = {
     prepare: (path) => {
       const context = { classification: latestClassification.current, operators }
       const subTree = buildSubTree(latest.current, path, context)
       if (subTree === null) return null
-      evaluating.current = { expression: latest.current, classification: context.classification }
+      evaluating.current = {
+        expression: latest.current,
+        classification: context.classification,
+        row: subTree.row,
+      }
       const options = { mode: evaluationMode, data: evaluationData }
       return {
         start: (signal) => evaluateSubTree(figTree, path, subTree, { ...options, signal }),
@@ -370,7 +378,7 @@ export const FigTreeEditor = ({
     },
     onEvaluate: (evaluation) => {
       const started = evaluating.current
-      const marks = started && markRun(evaluation, started.classification)
+      const marks = started && markRun(evaluation, started.classification, started.row)
       if (marks) setRun({ marks, expression: started.expression })
       onEvaluate?.(evaluation)
     },
@@ -580,6 +588,7 @@ export const FigTreeEditor = ({
         allowDrag={false}
         data={shown}
         setData={commit}
+        indent={2}
       />
       {messagesMaxHeight !== 0 && (
         <Messages
