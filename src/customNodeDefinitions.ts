@@ -42,6 +42,7 @@ export interface Shared {
   classification: Classification
   displayData: DisplayData
   issues: IssueIndex // by the row each shows on
+  nodeIssues: IssueIndex // by the node each marks (`attachToNodes`)
   editorTheme: EditorTheme // merged over the defaults
   defaultOperators: DefaultOperators | undefined
   defaultFragment: string | undefined

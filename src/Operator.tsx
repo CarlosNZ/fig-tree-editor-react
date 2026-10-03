@@ -1,6 +1,6 @@
 import { type CustomComponentProps } from 'json-edit-react'
 import { AddParameter } from './AddParameter'
-import { brokenIssue, flaggedIssues } from './attachIssues'
+import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type CardLine } from './HoverCard'
@@ -33,7 +33,8 @@ type OperatorKind = Extract<RowKind, { kind: 'operator' | 'literal' }>
 export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, originalNode, canEdit, editConfirmRef } = props
   const { setValue, keyboardControls } = props
-  const { figTree, classification, displayData, issues, editorTheme, created } = componentProps!
+  const { figTree, classification, displayData, issues, nodeIssues, editorTheme, created } =
+    componentProps!
   const {
     editor,
     created: isNew,
@@ -139,7 +140,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
             strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), spelling!)
           }
           broken={broken}
-          flagged={flaggedIssues(issues, path)}
+          flagged={issuesAt(nodeIssues, path)}
           editorTheme={editorTheme}
           onEdit={canEdit ? () => openToolbar() : undefined}
           onRespell={respell}

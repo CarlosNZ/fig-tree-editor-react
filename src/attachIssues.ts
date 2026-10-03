@@ -68,6 +68,46 @@ export const rollUpIssues = (
 
 const NO_COUNTS: IssueCounts = { errors: 0, warnings: 0 }
 
+// Each node's errors and warnings, which its button's card lists and its
+// badge shows (topic 7): its own, and those on its rows, each going to the
+// nearest node holding its row, so an issue marks one node and not every
+// node above it. The most severe come first, a node's own before its rows'.
+// Keyed as the index is.
+export const attachToNodes = (
+  issues: readonly Issue[],
+  classification: Classification
+): IssueIndex => {
+  const index = new Map<string, { issue: Issue; own: boolean }[]>()
+  for (const issue of issues) {
+    if (issue.severity === 'hint') continue
+    const row = drawnRow(issue.path, classification)
+    const node = nearestNode(row, classification)
+    if (node === null) continue
+    const key = toPathString(node)
+    index.set(key, [...(index.get(key) ?? []), { issue, own: node.length === row.length }])
+  }
+  return new Map(
+    [...index].map(([key, entries]) => [
+      key,
+      entries
+        .sort(
+          (a, b) =>
+            SEVERITY_RANK[a.issue.severity] - SEVERITY_RANK[b.issue.severity] ||
+            Number(b.own) - Number(a.own)
+        )
+        .map(({ issue }) => issue),
+    ])
+  )
+}
+
+const nearestNode = (row: Path, classification: Classification) => {
+  for (let length = row.length; length >= 0; length--) {
+    const path = row.slice(0, length)
+    if (NODE_KINDS.has(rowAt(classification, path)?.kind?.kind ?? '')) return path
+  }
+  return null
+}
+
 export const issuesBeneath = (rollUp: IssueRollUp, path: Path) =>
   rollUp.get(toPathString(path)) ?? NO_COUNTS
 

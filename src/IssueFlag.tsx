@@ -9,10 +9,10 @@ import { strings } from './strings'
 
 // How issues show on rows (design, topic 7, "Where issues attach"). A row is
 // tinted by its most severe issue, and its issues float beneath it in a card
-// while it is hovered, so they never change the tree's layout. A node's own
-// issues are listed in its button's card, and a badge on the button's corner
-// shows the most severe. `issues` comes from `flaggedIssues`, most severe
-// first, with no hints.
+// while it is hovered, so they never change the tree's layout. A node's
+// issues, and its rows', are listed in its button's card, and a badge on the
+// button's corner shows the most severe. `issues` comes from `flaggedIssues`
+// or `attachToNodes`, most severe first, with no hints.
 
 // A row's card, listing its issues, which the stylesheet shows while the row
 // is hovered, as a hover card is shown

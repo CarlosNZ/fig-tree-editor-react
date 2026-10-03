@@ -23,7 +23,13 @@ import {
   toPathString,
 } from 'json-edit-react'
 import { type FigTree } from 'fig-tree-evaluator'
-import { attachIssues, issuesBeneath, rollUpIssues, type IssueRollUp } from './attachIssues'
+import {
+  attachIssues,
+  attachToNodes,
+  issuesBeneath,
+  rollUpIssues,
+  type IssueRollUp,
+} from './attachIssues'
 import { canonicalPath, classify, rowAt, type Classification, type Row } from './classify'
 import {
   clearCollapseRecord,
@@ -253,6 +259,7 @@ export const FigTreeEditor = ({
   const latestClassification = useRef(classification)
   latestClassification.current = classification
   const issueIndex = useStableValue(attachIssues(issues, classification))
+  const nodeIssueIndex = useStableValue(attachToNodes(issues, classification))
   const rollUp = useStableValue(rollUpIssues(issues, classification))
   // Each Evaluate, one at a time (evaluation.ts). The evaluator keeps its
   // identity, reading the latest props as each evaluation starts and ends,
@@ -279,6 +286,7 @@ export const FigTreeEditor = ({
         classification,
         displayData,
         issues: issueIndex,
+        nodeIssues: nodeIssueIndex,
         editorTheme: mergedEditorTheme,
         defaultOperators: stableDefaultOperators,
         defaultFragment,
@@ -292,6 +300,7 @@ export const FigTreeEditor = ({
       classification,
       displayData,
       issueIndex,
+      nodeIssueIndex,
       mergedEditorTheme,
       stableDefaultOperators,
       defaultFragment,

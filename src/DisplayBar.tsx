@@ -19,11 +19,11 @@ import { type EvaluateControl } from './useEvaluation'
 // other spelling. A shorthand node's name is in italics, and its single value
 // can sit on the button's line. The conversion button sits beneath the display
 // name, in the node's colours, shown while it is hovered on a full node, and
-// on a shorthand node while the header is, away from the Evaluate button. Any
-// other issue at the node's path is listed at the top of the button's card,
-// which then shows sooner, and a "!" badge on the button's corner, in the
-// colour of the most severe, shows there is one without a hover (design,
-// topic 7, "Where issues attach").
+// on a shorthand node while the header is, away from the Evaluate button. The
+// node's other issues, and those on rows it holds that no nearer node does,
+// are listed at the top of the button's card, which then shows sooner, and a
+// "!" badge on the button's corner, in the colour of the most severe, shows
+// there is one without a hover (design, topic 7, "Where issues attach").
 //
 // A click on the button evaluates the node, and a spinner takes the ▶'s place
 // while it runs, until a second click cancels it (topic 7, "Evaluating"), then
@@ -48,7 +48,7 @@ interface DisplayBarProps {
   card: CardLine[] // the hover card's lines
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
-  flagged?: readonly Issue[] // the node's other issues, most severe first, in its card
+  flagged?: readonly Issue[] // the node's other issues and its rows', for its card
   editorTheme: EditorTheme
   shorthand?: boolean
   inline?: React.ReactNode // after the button, on its line

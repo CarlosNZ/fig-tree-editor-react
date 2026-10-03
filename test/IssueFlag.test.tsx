@@ -167,11 +167,30 @@ describe("a node's issues", () => {
   it('leave out a missing parameter held back for a misspelt key, which shows the mistake', () => {
     const { container } = editor({ operator: 'if', condition: true, thn: 'Adult' })
     const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
-    expect(cards(container)).toEqual([["'thn' is not a parameter of 'if' — did you mean 'then'?"]])
-    expect(anchor.querySelector('.ft-issue-badge')).toBeNull()
+    const typo = "'thn' is not a parameter of 'if' — did you mean 'then'?"
+    expect(cards(container)).toEqual([[typo]])
+    expect(listed(anchor)).toEqual([typo])
     expect(anchor.querySelector('.ft-hover-card')).toHaveTextContent(
       'Fix the error to evaluate this'
     )
+  })
+
+  it("include those on its rows, but not a nested node's", () => {
+    const { container } = editor({
+      operator: 'if',
+      condition: { operator: 'upper', valeu: 'x' },
+      then: { $round: { value: [1, 2] } },
+    })
+    const [ifBar, upperBar, roundBar] = container.querySelectorAll('.ft-display-bar')
+    expect(listed(buttonAnchor(ifBar))).toEqual([])
+    expect(buttonAnchor(ifBar).querySelector('.ft-issue-badge')).toBeNull()
+    expect(listed(buttonAnchor(upperBar))).toEqual([
+      "'valeu' is not a parameter of 'upper' — did you mean 'value'?",
+    ])
+    expect(listed(buttonAnchor(roundBar))).toEqual([
+      "'round.value': expected number | null, received array",
+    ])
+    expect(buttonAnchor(roundBar).querySelector('.ft-issue-badge')).not.toBeNull()
   })
 
   it("show a warning's badge in amber, before the card's usual lines", () => {

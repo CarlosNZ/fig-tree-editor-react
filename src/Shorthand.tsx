@@ -1,5 +1,5 @@
 import { type CustomComponentProps } from 'json-edit-react'
-import { brokenIssue, flaggedIssues } from './attachIssues'
+import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type Classification, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type CardLine } from './HoverCard'
@@ -30,7 +30,7 @@ type ShorthandKind = Extract<RowKind, { kind: 'operator' | 'fragment' | 'literal
 // header's line holds the issue's message.
 export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, children, canEdit, setValue, keyboardControls } = props
-  const { figTree, classification, displayData, issues, editorTheme } = componentProps!
+  const { figTree, classification, displayData, issues, nodeIssues, editorTheme } = componentProps!
   const { path } = nodeData
   const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
   const kind = rowAt(classification, path)?.kind as ShorthandKind
@@ -93,7 +93,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
           strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), `$${spelling}`)
         }
         broken={broken}
-        flagged={flaggedIssues(issues, path)}
+        flagged={issuesAt(nodeIssues, path)}
         editorTheme={editorTheme}
         shorthand
         inline={row}
