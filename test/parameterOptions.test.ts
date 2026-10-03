@@ -112,9 +112,9 @@ describe('addableKeys', () => {
   })
 
   it('offers a shorthand node its modifiers only', () => {
-    expect(keysOf({ $plus: [1, 2], '//': 'Sum' })).toEqual({
+    expect(keysOf({ $plus: [1, 2], fallback: 0 })).toEqual({
       parameters: [],
-      modifiers: ['fallback', 'vars'],
+      modifiers: ['//', 'vars'],
     })
     expect(keysOf({ $round: { value: 1 } })).toEqual({ parameters: [], modifiers: MODIFIERS })
   })
@@ -194,6 +194,36 @@ describe('addableKeys', () => {
         fragment: 'odd',
         fallback: null,
       })
+    })
+  })
+
+  describe('a comment already there', () => {
+    const add = (node: Record<string, unknown>) => {
+      const kind = kindAt(node)
+      const entry = addableKeys(node, [], kind, contextFor(node))!.modifiers[0]
+      return { entry, added: addKey(node, entry, kind, contextFor(node)) }
+    }
+
+    it('is offered again, adding a line at the end', () => {
+      const { entry, added } = add({ '//': 'One', operator: 'abs', value: 1 })
+      expect(entry).toMatchObject({ key: '//', description: 'Another line for the note' })
+      expect(added).toEqual({ '//': ['One', 'Comment...'], operator: 'abs', value: 1 })
+      expect(add({ '//': ['One', 'Two'], $abs: 1 }).added).toEqual({
+        '//': ['One', 'Two', 'Comment...'],
+        $abs: 1,
+      })
+      expect(add({ operator: 'literal', value: 1, '//': 'One' }).added).toEqual({
+        operator: 'literal',
+        value: 1,
+        '//': ['One', 'Comment...'],
+      })
+    })
+
+    it('is not offered again while it holds another value', () => {
+      expect(keysOf({ '//': { ticket: 1 }, operator: 'abs', value: 1 })?.modifiers).toEqual([
+        'fallback',
+        'vars',
+      ])
     })
   })
 

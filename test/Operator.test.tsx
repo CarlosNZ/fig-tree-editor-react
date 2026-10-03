@@ -371,6 +371,20 @@ describe('the operator node', () => {
       expect(latest(written)).toEqual({ operator: 'round', value: 3.14159 })
     })
 
+    it('adds a line to the comment each time the comment is chosen again', async () => {
+      const { written, user } = host({ '//': 'One', operator: 'abs', value: 1 })
+      await openAdd(user)
+      await user.click(screen.getByText('//'))
+      expect(latest(written)).toEqual({ '//': ['One', 'Comment...'], operator: 'abs', value: 1 })
+      await user.click(screen.getByText('Add parameter'))
+      await user.click(screen.getByText('//'))
+      expect(latest(written)).toEqual({
+        '//': ['One', 'Comment...', 'Comment...'],
+        operator: 'abs',
+        value: 1,
+      })
+    })
+
     it('lists a missing required parameter first, marked required', async () => {
       const { user } = host({ operator: 'if', condition: true, thn: 'x' })
       await openAdd(user)
@@ -386,7 +400,8 @@ describe('the operator node', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
       expect(screen.queryByText('Add parameter')).toBeNull()
       unmount()
-      const complete = { '//': 'x', operator: 'abs', value: 1, fallback: 0 }
+      // A comment holding another value isn't offered again for a line
+      const complete = { '//': { ticket: 1 }, operator: 'abs', value: 1, fallback: 0 }
       editor({ ...complete, vars: {} })
       fireEvent.click(screen.getByRole('button', { name: 'Open toolbar' }))
       expect(screen.queryByText('Add parameter')).toBeNull()

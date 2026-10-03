@@ -40,7 +40,7 @@ import {
   type CollapseRecord,
 } from './collapseRecord'
 import { type ReferenceNames } from './conversions'
-import { commentPart } from './comments'
+import { commentPart, settleCommentLines } from './comments'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
   buildDisplayData,
@@ -338,14 +338,15 @@ export const FigTreeEditor = ({
   const pendingFix = useRef<((expression: unknown) => unknown) | null>(null)
 
   // A node the type dropdown created is marked for this commit only: where
-  // the commit doesn't carry it, the host's `onUpdate` rejected it
+  // the commit doesn't carry it, the host's `onUpdate` rejected it. A comment
+  // a write leaves a line short of two is settled in the same write.
   const commit = (data: unknown) => {
     const fix = pendingFix.current
     pendingFix.current = null
     const next = fix ? fix(data) : data
     const mark = created.current
     if (mark && valueAt(next, mark.path) !== mark.node) created.current = null
-    setExpression(fill(next))
+    setExpression(fill(settleCommentLines(latest.current, next, latestClassification.current)))
   }
 
   // Whether json-edit-react has an edit open, followed through its events,
@@ -712,7 +713,7 @@ const newKeys =
     return (
       keys &&
       [...keys.parameters, ...keys.modifiers]
-        .filter(({ argument, label }) => !argument && label === undefined)
+        .filter(({ key, argument, label }) => !argument && label === undefined && !(key in value))
         .map(({ key }) => key)
     )
   }
@@ -728,11 +729,14 @@ const combineFilter = (
 }
 
 // Each value row's type dropdown, from its slot and the fragments registered
-// when it opens
+// when it opens. A comment has none, since it is always a string (plan, 9.4).
 const typesFor =
   (figTree: FigTree, classification: Classification) =>
-  ({ path, value, fullData }: Parameters<TypeFilterFunction>[0]) =>
-    typeOptions(rowAt(classification, path), value, fullData, figTree.getFragments())
+  ({ path, value, parentData, fullData }: Parameters<TypeFilterFunction>[0]) => {
+    const part = commentPart(classification, { path, value, parentData })
+    if (part === 'note' || part === 'line') return false
+    return typeOptions(rowAt(classification, path), value, fullData, figTree.getFragments())
+  }
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes"), and a vars block's count of vars,

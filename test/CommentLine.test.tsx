@@ -24,8 +24,8 @@ const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEdit
       />
     )
   }
-  const { container } = render(<Host />, { wrapper: StrictMode })
-  return { container, written, user: userEvent.setup() }
+  const { container, unmount } = render(<Host />, { wrapper: StrictMode })
+  return { container, unmount, written, user: userEvent.setup() }
 }
 const latest = (written: unknown[]) => written[written.length - 1]
 
@@ -94,13 +94,59 @@ describe('a comment', () => {
     expect(latest(written)).toEqual({ '//': 'New', $plus: [1] })
   })
 
-  it('becomes a comment of lines through the type dropdown', async () => {
-    const { container, written, user } = host({ '//': 'One', $plus: [1] })
-    const row = notes(container)[0].closest<HTMLElement>('.jer-value-main-row')!
-    await user.click(within(row).getByRole('button', { name: 'Edit' }))
-    await user.selectOptions(screen.getByRole('combobox'), 'array')
-    expect(latest(written)).toEqual({ '//': ['One'], $plus: [1] })
-    expect(noteTexts(container)).toEqual(['One'])
+  it('has no type dropdown, since it is always a string, nor has a line', async () => {
+    for (const comment of ['One', ['One', 'Two']]) {
+      const { container, user, unmount } = host({ '//': comment, $plus: [1] })
+      const row = notes(container)[0].closest<HTMLElement>('.jer-value-main-row')!
+      await user.click(within(row).getByRole('button', { name: 'Edit' }))
+      expect(screen.getByRole('textbox')).toBeInTheDocument()
+      expect(screen.queryByRole('combobox')).not.toBeInTheDocument()
+      unmount()
+    }
+    // A `//` holding another value is plain data, with its types
+    const { user } = host({ '//': { ticket: 1 }, $plus: [1] })
+    const ticket = screen.getByText('ticket').closest<HTMLElement>('.jer-value-main-row')!
+    await user.click(within(ticket).getByRole('button', { name: 'Edit' }))
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+  })
+
+  describe('deleting a line', () => {
+    const deleteLine = (container: HTMLElement, index: number) => {
+      const row = notes(container)[index].closest<HTMLElement>('.jer-value-main-row')!
+      fireEvent.click(within(row).getByRole('button', { name: 'Delete' }))
+    }
+
+    it('leaves the other of two as a string comment, in one write', () => {
+      const { container, written } = host({ '//': ['One', 'Two'], $plus: [1] })
+      deleteLine(container, 1)
+      expect(written).toEqual([{ '//': 'One', $plus: [1] }])
+      expect(noteTexts(container)).toEqual(['One'])
+    })
+
+    it('leaves a comment of three as two lines', () => {
+      const { container, written } = host({ '//': ['One', 'Two', 'Three'], $plus: [1] })
+      deleteLine(container, 0)
+      expect(written).toEqual([{ '//': ['Two', 'Three'], $plus: [1] }])
+    })
+
+    it('deletes a one-line comment, as loaded, with its line', () => {
+      const { container, written } = host({ '//': ['One'], $plus: [1] })
+      // Loaded, it stays as it is
+      expect(written).toEqual([])
+      deleteLine(container, 0)
+      expect(written).toEqual([{ $plus: [1] }])
+      expect(notes(container)).toEqual([])
+    })
+
+    it('settles a comment in a nested node, and leaves quoted content alone', () => {
+      const nested = host({ $plus: [{ '//': ['One', 'Two'], $abs: -1 }] })
+      deleteLine(nested.container, 0)
+      expect(latest(nested.written)).toEqual({ $plus: [{ '//': 'Two', $abs: -1 }] })
+      nested.unmount()
+      const quoted = host({ operator: 'literal', value: { '//': ['One', 'Two'] } })
+      fireEvent.click(screen.getAllByRole('button', { name: 'Delete' }).at(-1)!)
+      expect(latest(quoted.written)).toEqual({ operator: 'literal', value: { '//': ['One'] } })
+    })
   })
 
   it('adds a line as a placeholder note, closed', async () => {

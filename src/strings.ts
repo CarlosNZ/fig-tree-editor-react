@@ -143,6 +143,7 @@ export const strings = {
   FT_STATIC_ARGUMENTS: 'Static arguments',
   FT_STATIC_ARGUMENTS_DESCRIPTION: 'Enter the arguments one by one, in place of this',
   FT_MODIFIER_COMMENT: 'A note, never evaluated',
+  FT_MODIFIER_COMMENT_LINE: 'Another line for the note', // `//` offered again
   FT_MODIFIER_FALLBACK: 'The value to use if this node fails',
   FT_MODIFIER_NO_CACHE: "Don't cache this node or anything inside it",
   FT_MODIFIER_VARS: 'Named values for this node and everything inside it',

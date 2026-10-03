@@ -91,8 +91,10 @@ export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   const kind = row?.kind
   const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
   if (isNode && kind.form === 'full') return false
+  // A key already there, a comment offered again for a line, isn't one ＋
+  // can add
   const keys = addableKeys(value as Record<string, unknown>, path, kind, context)
-  return keys === null || keys.parameters.length + keys.modifiers.length > 0
+  return keys === null || [...keys.parameters, ...keys.modifiers].some(({ key }) => !(key in value))
 }
 
 // The operator whose argument list the array at `arrayPath` is, if it is one

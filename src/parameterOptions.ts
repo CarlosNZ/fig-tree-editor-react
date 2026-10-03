@@ -61,6 +61,15 @@ const MODIFIERS: AddableKey[] = [
   { key: 'vars', required: false, description: strings.FT_MODIFIER_VARS },
 ]
 
+// A node's comment is offered again while it is a note or lines, and adds a
+// line to it (plan, 9.4)
+const COMMENT_LINE: AddableKey = {
+  key: '//',
+  required: false,
+  description: strings.FT_MODIFIER_COMMENT_LINE,
+}
+const takesLine = (comment: unknown) => typeof comment === 'string' || Array.isArray(comment)
+
 // Null where the key is free-typed
 export const addableKeys = (
   node: Record<string, unknown>,
@@ -68,7 +77,11 @@ export const addableKeys = (
   kind: RowKind | undefined,
   context: Pick<AddContext, 'classification' | 'operators' | 'fragments'>
 ): AddableKeys | null => {
-  const absent = (entries: AddableKey[]) => entries.filter(({ key }) => !(key in node))
+  const absent = (entries: AddableKey[]) =>
+    entries.flatMap((entry) => {
+      if (!(entry.key in node)) return [entry]
+      return entry.key === '//' && takesLine(node['//']) ? [COMMENT_LINE] : []
+    })
   const modifiers = () =>
     absent(MODIFIERS.filter(({ key }) => key !== 'noCache' || takesNoCache(path, context)))
   switch (kind?.kind) {
@@ -146,7 +159,8 @@ const parametersOf = (operator: OperatorInfo): AddableKey[] => {
 // call's `parameters`, creating it where absent. Switching to dynamic
 // arguments starts them as the whole of `$data`, as the type dropdown's Data
 // entry does, and switching to static starts them empty, for the fill-in step
-// to seed the required ones.
+// to seed the required ones. A line added to a comment goes at its end, a
+// string comment becoming its first line.
 export const addKey = (
   node: Record<string, unknown>,
   entry: AddableKey,
@@ -162,6 +176,11 @@ export const addKey = (
       : structuredClone(typeSeeds.any)
     const present = isObject(node.parameters) ? node.parameters : {}
     return { ...node, parameters: { ...present, [entry.key]: value } }
+  }
+  if (entry === COMMENT_LINE) {
+    const comment = node['//']
+    const lines: unknown[] = Array.isArray(comment) ? comment : [comment]
+    return { ...node, '//': [...lines, strings.FT_NEW_COMMENT] }
   }
   if (entry === DYNAMIC_ARGUMENTS) return { ...node, parameters: '$data' }
   if (entry === STATIC_ARGUMENTS) return { ...node, parameters: {} }
