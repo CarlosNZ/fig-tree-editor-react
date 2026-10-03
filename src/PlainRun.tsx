@@ -1,7 +1,7 @@
 import { type CustomComponentProps, type CustomWrapperProps } from 'json-edit-react'
-import { type ReactNode } from 'react'
-import { rowAt } from './classify'
+import { type CSSProperties, type ReactNode } from 'react'
 import { type ComponentConfig, type Shared } from './customNodeDefinitions'
+import { runColour } from './editorTheme'
 import { RanTick } from './Icons'
 import { type Path } from './paths'
 import { plainMark, showsTick } from './runMarks'
@@ -37,24 +37,35 @@ export const PlainValue = ({
   return (
     <span className="ft-plain-value" data-node-run={mark.status}>
       {children}
-      {showsTick(mark, rowAt(shared.classification, path)) && (
-        <RanTick editorTheme={shared.editorTheme} />
-      )}
+      {showsTick(mark) && <RanTick editorTheme={shared.editorTheme} />}
     </span>
   )
 }
 
 // A plain collection, wrapped whole, so the stylesheet can dim its rows and
-// show them in full while the pointer is anywhere in it, its key included
+// show them in full while the pointer is anywhere in it, its key included.
+// Its ✓ follows its closing bracket, which json-edit-react draws, so the
+// stylesheet draws the ✓ too, in the colour the wrapper gives it.
 export const PlainCollection = ({
   nodeData,
   wrapperProps,
   children,
-}: CustomWrapperProps<Pick<Shared, 'run'>>) => (
-  <div
-    className="ft-plain-collection"
-    data-node-run={plainMark(wrapperProps!.run, nodeData.path)?.status}
-  >
-    {children}
-  </div>
-)
+}: CustomWrapperProps<Pick<Shared, 'run' | 'editorTheme'>>) => {
+  const { run, editorTheme } = wrapperProps!
+  const mark = plainMark(run, nodeData.path)
+  const ticked = mark !== undefined && showsTick(mark)
+  return (
+    <div
+      className="ft-plain-collection"
+      data-node-run={mark?.status}
+      data-ticked={ticked || undefined}
+      style={
+        ticked
+          ? ({ '--ft-tick-colour': runColour('value', editorTheme) } as CSSProperties)
+          : undefined
+      }
+    >
+      {children}
+    </div>
+  )
+}

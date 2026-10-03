@@ -310,7 +310,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ...unlabelledVariants(
       definition('plainCollection', matches(isPlainRun(true)), {
         wrapperComponent: PlainCollection as unknown as CustomNodeDefinition['wrapperComponent'],
-        wrapperProps: { run: shared.run },
+        wrapperProps: { run: shared.run, editorTheme: shared.editorTheme },
       })
     ).flatMap(withFlag),
     // A `$name` row holding a plain value or an argument list

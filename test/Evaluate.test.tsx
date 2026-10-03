@@ -320,8 +320,11 @@ describe('evaluating', () => {
       )
       fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
       await done(reports, 1)
-      // A value's ✓ follows it, and a collection's its key
+      // A value's ✓ follows it. A collection's follows its closing bracket,
+      // which the stylesheet draws, by the mark on its wrapper.
       const ticked = (element: Element) => element.querySelector('[data-run="value"]') !== null
+      const tickedCollection = (key: Element) =>
+        key.closest('.ft-plain-collection')!.hasAttribute('data-ticked')
       const values = (text: string) =>
         [...container.querySelectorAll('.ft-plain-value')].filter(
           (element) => element.textContent === text
@@ -337,12 +340,10 @@ describe('evaluating', () => {
       expect(ticked(aThen)).toBe(true)
       expect(ticked(values('"v"')[0])).toBe(true)
       expect(ticked(values('true')[0])).toBe(true)
-      const [aElse, bElse] = keys('else')
-      expect(ticked(aElse)).toBe(false)
-      expect(ticked(bElse)).toBe(true)
+      expect(tickedCollection(keys('else')[1])).toBe(true)
       // A container's constants, but not the container
       expect(ticked(values('1')[0])).toBe(true)
-      expect(ticked(keys('then')[2])).toBe(false)
+      expect(tickedCollection(keys('then')[2])).toBe(false)
       // Not where it never ran
       expect(ticked(bThen)).toBe(false)
       expect(ticked(values('"no"')[0])).toBe(false)

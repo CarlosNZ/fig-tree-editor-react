@@ -52,8 +52,25 @@
   line-height: 0;
 }
 
-.jer-key-text .ft-ran-tick {
+/* A plain collection's ✓, after its closing bracket: on its own line, or
+   after its summary when collapsed. It is the ✓ the icon draws, as a mask. */
+.ft-plain-collection[data-ticked]
+  > .jer-collection-component
+  > .jer-collection-inner
+  > .jer-bracket-outside::after,
+.ft-plain-collection[data-ticked]
+  > .jer-collection-component
+  > .jer-collection-header-row
+  > .jer-brackets.jer-visible::after {
+  content: '';
+  display: inline-block;
+  width: 0.8em;
+  height: 0.8em;
   margin-left: 0.3em;
+  vertical-align: -0.05em;
+  background-color: var(--ft-tick-colour);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 12.5l5 5L20 6.5'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
 /* Select component */

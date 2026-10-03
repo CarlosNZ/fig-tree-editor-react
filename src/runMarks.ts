@@ -203,8 +203,7 @@ export const plainMark = (run: RunMarks | null, path: Path) => {
 // Whether plain data that ran shows a ✓, as a reference does: every constant
 // that ran, as one piece. A container shows none, since each piece in it
 // shows its own.
-export const showsTick = (mark: RowRun, _row?: Row) =>
-  mark.status === 'value' && mark.part === 'constant'
+export const showsTick = (mark: RowRun) => mark.status === 'value' && mark.part === 'constant'
 
 // What each row the tree marks is, or undefined where it marks none: a node,
 // a reference, and plain data in an evaluated position other than the root,
