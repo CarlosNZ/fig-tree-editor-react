@@ -1,0 +1,15 @@
+{
+  // tsconfig.test.json, with fig-tree-evaluator and its subpaths read from
+  // the source of a sibling checkout (../fig-tree-evaluator/src), as the
+  // demo's VITE_EVALUATOR_SOURCE=local runs it. `pnpm typecheck:local-evaluator`
+  // checks the editor against an unpublished fig-tree change. The checkout's
+  // own source is checked too, under these settings, so rootDir takes in both.
+  "extends": "./tsconfig.test.json",
+  "compilerOptions": {
+    "rootDir": "..",
+    "paths": {
+      "fig-tree-evaluator": ["../fig-tree-evaluator/src"],
+      "fig-tree-evaluator/*": ["../fig-tree-evaluator/src/*"]
+    }
+  }
+}

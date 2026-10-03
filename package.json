@@ -31,10 +31,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:local-evaluator": "VITE_EVALUATOR_SOURCE=local vitest run",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.test.json",
+    "typecheck:local-evaluator": "tsc -p tsconfig.local-evaluator.json",
     "build": "rimraf ./build && rollup -c && rimraf ./build/dts",
     "size": "node scripts/bundleSize.mjs",
     "check:package": "node scripts/checkPackage.mjs",
