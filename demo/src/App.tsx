@@ -232,7 +232,7 @@ function App() {
         {/** DATA COLUMN */}
         <Flex wrap="wrap" h="100%" w="100%" justify="space-around" gap={5} mb={20}>
           <Flex w="45%" direction="column" alignItems="center" flexGrow={1}>
-            <Box maxW={500}>
+            <Box w="var(--column-width)">
               <Heading size="md" alignSelf="flex-start">
                 Application data state
               </Heading>
@@ -275,11 +275,14 @@ function App() {
           </Flex>
           {/** EXPRESSION EDITOR COLUMN */}
           <Flex h={'100%'} minW="45%" direction="column" alignItems="center" flexGrow={1} mb={10}>
-            <Box maxW={500} w="100%">
+            <Box w="var(--column-width)">
               <Heading size="md" alignSelf="flex-start">
                 FigTree expression
               </Heading>
-              <Text>Edit the expression, and click Evaluate to see its result.</Text>
+              <Text>
+                Edit the expression, and click any operator "button" to evaluate at that node. Or
+                try one of the demo expressions from the menu at the bottom of the page.
+              </Text>
             </Box>
             <FigTreeEditor
               figTree={figTree}

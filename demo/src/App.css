@@ -2,6 +2,11 @@
   text-align: center;
 }
 
+/* The width of each column's editor, which its heading matches */
+:root {
+  --column-width: clamp(300px, 600px, 90vw);
+}
+
 .result-text {
   font-size: 1.5rem;
 }
@@ -23,7 +28,7 @@ pre {
   margin-top: 0.6em;
   box-shadow: 0 3px 8px #0000003d;
   min-width: unset !important;
-  width: clamp(300px, 600px, 90vw);
+  width: var(--column-width);
 }
 
 /* The FigTree editor's outer container holds its tree and messages, so it
@@ -36,7 +41,7 @@ pre {
   border-radius: 0.5em;
   box-shadow: 0 3px 8px #0000003d;
   min-width: unset !important;
-  width: clamp(300px, 600px, 90vw);
+  width: var(--column-width);
 }
 
 .ft-outer-container > .jer-editor-container {
