@@ -1449,7 +1449,8 @@ interface EditorTheme {
   refBinding: string // $element, $index and `as` names
   varsBlock: string // the vars block's tint and rule (topic 5)
   modifierKey: string // the `//`, fallback and noCache keys (topic 3); the vars key takes refVars
-  comment: string // comment notes (topic 5)
+  comment: string // a comment's text (topic 5)
+  commentBlock: string // a comment's stripe, tint and icon
   error: string // row tint and a node's badge (topic 7)
   warning: string // the same for a warning
   filledIn: string // the filled-in-on-load marker

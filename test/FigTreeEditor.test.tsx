@@ -429,7 +429,7 @@ describe('FigTreeEditor', () => {
       )
       expect(keyLabel('vars')).toHaveStyle({ color: 'rgb(1, 2, 3)' })
       expect(keyLabel('vars').closest('.jer-collection-component')).toHaveStyle({
-        borderLeft: '2px solid rgb(4, 5, 6)',
+        borderLeft: '3px solid rgb(4, 5, 6)',
       })
     })
   })

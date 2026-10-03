@@ -75,6 +75,21 @@ export const EvaluateIcon = ({
   return mark.status === 'value' ? runIcon('ran', colour, mark.status) : Icons.evaluate
 }
 
+// A comment's note icon, a speech bubble, as in the mockups (G1 and G2).
+// Hidden, it keeps its width, so a comment's later lines line up with its
+// first.
+export const NoteIcon = ({ colour, hidden }: { colour: string; hidden?: boolean }) => (
+  <svg
+    className="ft-note-icon"
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    style={{ color: colour, visibility: hidden ? 'hidden' : undefined }}
+  >
+    <path d="M5 3h14a2 2 0 012 2v10a2 2 0 01-2 2H9l-5 4v-4H5a2 2 0 01-2-2V5a2 2 0 012-2zm2 4v2h10V7H7zm0 4v2h7v-2H7z" />
+  </svg>
+)
+
 /**
  * Copied (and modified) from json-edit-react's Icons.tsx, so we can render the
  * theme icons in here

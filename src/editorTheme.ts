@@ -23,7 +23,8 @@ export interface EditorTheme {
   refBinding: string // `$element`, `$index` and `as` names
   varsBlock: string // the vars block's tint and rule
   modifierKey: string // the `//`, fallback and noCache keys
-  comment: string // comment notes
+  comment: string // a comment's text
+  commentBlock: string // a comment's stripe, tint and icon
   error: string // row tint, a node's badge, and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
   filledIn: string // the marker on a value the editor filled in, and its label
@@ -47,7 +48,8 @@ export const defaultEditorTheme: EditorTheme = {
   refBinding: '#8a5a00',
   varsBlock: '#0f7c7a',
   modifierKey: '#6b7280',
-  comment: '#6b7280',
+  comment: '#5f5a45',
+  commentBlock: '#a79f7e',
   error: '#c0392b',
   warning: '#d68910',
   filledIn: '#f2c200',
@@ -160,7 +162,8 @@ const editorThemeLayer = ({
         if (row?.payload === 'flattened') return { marginLeft: `${ROWS_PULL}em` }
         if (row?.kind?.kind === 'vars')
           return varsBlock(editorTheme.varsBlock, indent, nodeData.collapsed)
-        if (comment(nodeData) === 'lines') return noteBlock(editorTheme.comment)
+        if (comment(nodeData) === 'lines')
+          return noteBlock(editorTheme.commentBlock, linesShape(indent))
         const blockTint = tint(nodeData)
         const rowIndent = nodeData.path.length === 0 ? 0 : indent
         const own = blockTint && issueBlock(blockTint, rowIndent, nodeData.collapsed)
@@ -179,7 +182,7 @@ const editorThemeLayer = ({
       // TO-DO: drop the collapsed case once json-edit-react can keep a row
       // from collapsing (plan, 9.2).
       valueRow: (nodeData) => {
-        if (comment(nodeData) === 'note') return noteBlock(editorTheme.comment)
+        if (comment(nodeData) === 'note') return noteBlock(editorTheme.commentBlock, ROW_SHAPE)
         const rowTint = tint(nodeData)
         const own = rowTint && issueRow(rowTint)
         return filledIn ? highlight(nodeData, own, ROW_SHAPE) : own
@@ -245,24 +248,13 @@ const editorThemeLayer = ({
 // bracket ends the block as far above its bottom as the key starts below its
 // top; collapsed, the header row is the whole block, already as far.
 const varsBlock = (colour: string, indent: number, collapsed?: boolean) => ({
-  borderLeft: `${RULE_WIDTH} solid ${colour}`,
+  borderLeft: `${STRIPE_WIDTH} solid ${colour}`,
   background: `color-mix(in srgb, ${colour} 7%, transparent)`,
   marginTop: '0.4em',
-  marginLeft: `calc(${indent / 2}em - ${RULE_GAP} - ${RULE_WIDTH})`,
+  marginLeft: `calc(${indent / 2}em - ${RULE_GAP} - ${STRIPE_WIDTH})`,
   paddingLeft: RULE_GAP,
   paddingBottom: collapsed ? 0 : BRACKET_PAD,
   borderRadius: BLOCK_RADIUS,
-})
-
-// A comment's note: a rule and a tint from the comment colour, fainter than
-// its text
-const noteBlock = (colour: string) => ({
-  borderLeft: `${RULE_WIDTH} solid color-mix(in srgb, ${colour} 45%, transparent)`,
-  background: `color-mix(in srgb, ${colour} 6%, transparent)`,
-  borderRadius: '0 0.25em 0.25em 0',
-  marginTop: '0.1em',
-  marginBottom: '0.3em',
-  padding: '0.15em 0.4em 0.15em 0',
 })
 
 // An issue's tint, with a stripe of its colour down its left edge. A value
@@ -276,9 +268,6 @@ interface Tint {
 
 const ERROR_TINT = '9%'
 const WARNING_TINT = '10%'
-// As wide as a vars block's rule. An inset shadow, not a border, so it takes
-// no room, and a row's text stays put as its tint comes and goes.
-const STRIPE_WIDTH = '2px'
 const TINT_GAP = '0.4em'
 
 const tintStyle = ({ colour, strength }: Tint) => ({
@@ -293,6 +282,28 @@ const BLOCK_RADIUS = '0 0.5em 0.5em 0'
 const ROW_SHAPE = { marginLeft: `-${TINT_GAP}`, paddingLeft: TINT_GAP, borderRadius: BLOCK_RADIUS }
 
 const issueRow = (tint: Tint) => ({ ...tintStyle(tint), ...ROW_SHAPE })
+
+// A comment's note: a stripe and a tint from the comment's block colour,
+// mixed with transparent, so they suit a dark host too. A string comment's row
+// takes an issue row's shape, and a comment of lines' block starts as far left
+// of its own box, which json-edit-react sets half an indent left of a value
+// row's, so every note's stripe lines up with a tinted row's.
+const noteBlock = (colour: string, shape: CSSProperties) => ({
+  background: `color-mix(in srgb, ${colour} 8%, transparent)`,
+  boxShadow: `inset ${STRIPE_WIDTH} 0 0 color-mix(in srgb, ${colour} 60%, transparent)`,
+  ...shape,
+  marginTop: '0.1em',
+  marginBottom: '0.3em',
+  paddingTop: '0.15em',
+  paddingBottom: '0.15em',
+  paddingRight: TINT_GAP,
+})
+
+const linesShape = (indent: number) => ({
+  marginLeft: `calc(${indent / 2}em - ${TINT_GAP})`,
+  paddingLeft: TINT_GAP,
+  borderRadius: BLOCK_RADIUS,
+})
 
 // `indent` is json-edit-react's, whose margin for the row is half of it
 const blockShape = (indent: number) => ({
@@ -338,7 +349,11 @@ export const warningText = (warning: string) => `color-mix(in srgb, ${warning}, 
 // darkened almost to black
 export const filledInText = (filledIn: string) => `color-mix(in srgb, ${filledIn}, black 80%)`
 
-const RULE_WIDTH = '2px'
+// The width of every tinted block's stripe: a vars block's rule, an issue's
+// stripe and a note's. An issue's and a note's is an inset shadow, not a
+// border, so it takes no room, and a row's text stays put as its tint comes
+// and goes.
+const STRIPE_WIDTH = '3px'
 const RULE_GAP = '1.35em' // from the rule to the key
 // The space above a row's text: json-edit-react's rows are at least 1.7em,
 // with a 1em line centred in them. A closing bracket's line is only the 1em,

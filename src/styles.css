@@ -120,7 +120,7 @@ input.ft-select-input {
   min-height: 2.4em;
   padding: 0.5em;
   border: 1px solid #ccc !important;
-  border-radius: 4px !important;
+  border-radius: 0.3em !important;
   background-color: white;
   display: flex;
   justify-content: flex-start;
@@ -149,9 +149,9 @@ input.ft-select-input::placeholder {
   margin-top: 0.25em;
   overflow-y: auto;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 0.3em;
   background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.1);
   z-index: 50;
 }
 
@@ -319,7 +319,7 @@ input.ft-select-input::placeholder {
 
 .ft-severity {
   padding: 0.05em 0.45em;
-  border-radius: 4px;
+  border-radius: 0.37em;
   font-size: 0.8em;
   font-weight: bold;
   color: white;
@@ -339,7 +339,7 @@ input.ft-select-input::placeholder {
 .ft-fix {
   padding: 0.05em 0.5em;
   border: 1px solid #c8d7f2;
-  border-radius: 4px;
+  border-radius: 0.35em;
   background-color: #eef3fc;
   font: inherit;
   font-size: 0.85em;
@@ -401,8 +401,8 @@ input.ft-select-input::placeholder {
   font: inherit;
   cursor: pointer;
   box-shadow:
-    rgba(50, 50, 93, 0.25) 0 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0 1px 3px -1px;
+    rgba(50, 50, 93, 0.25) 0 0.125em 0.3125em -0.0625em,
+    rgba(0, 0, 0, 0.3) 0 0.0625em 0.1875em -0.0625em;
   transition: 0.3s;
 }
 
@@ -413,8 +413,8 @@ input.ft-select-input::placeholder {
 
 .ft-evaluate-button:active {
   box-shadow:
-    rgba(0, 0, 0, 0.1) 0 0 5px 0,
-    rgba(0, 0, 0, 0.1) 0 0 1px 0;
+    rgba(0, 0, 0, 0.1) 0 0 0.3125em 0,
+    rgba(0, 0, 0, 0.1) 0 0 0.0625em 0;
   transform: scale(0.97);
   transition-duration: 0.05s;
 }
@@ -539,7 +539,7 @@ input.ft-select-input::placeholder {
 .ft-to-get-button {
   padding: 0.2em 0.4em;
   border: 1px solid;
-  border-radius: 5px;
+  border-radius: 0.48em;
   background: none;
   font-family: sans-serif;
   font-size: 0.65em;
@@ -638,7 +638,7 @@ input.ft-select-input::placeholder {
 .ft-flag-severity {
   padding: 0 0.4em;
   border: 1px solid;
-  border-radius: 4px;
+  border-radius: 0.37em;
   font-size: 0.85em;
   font-weight: bold;
   text-transform: uppercase;
@@ -666,9 +666,9 @@ input.ft-select-input::placeholder {
   max-width: 22em;
   padding: 0.5em 0.75em;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 0.3em;
   background-color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.15em 0.3em rgba(0, 0, 0, 0.1);
   font-family: sans-serif;
   font-size: 0.8em;
   line-height: 1.25;
@@ -843,7 +843,7 @@ input.ft-select-input::placeholder {
   padding: 0.3em 0.5em;
   line-height: normal;
   border: none;
-  border-radius: 5px;
+  border-radius: 0.48em;
   font-family: sans-serif;
   font-size: 0.65em;
   font-weight: bold;
@@ -910,9 +910,29 @@ input.ft-select-input::placeholder {
   gap: 0.4em;
 }
 
+/* A comment: its icon, then its text. The margin takes back the space
+   json-edit-react leaves after a key, which a comment's row doesn't show, so
+   the icon starts where a key does. */
+.ft-comment {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  margin-left: -0.5em;
+}
+
+/* Centred on the text's first line, which is about 1.24em high */
+.ft-note-icon {
+  flex-shrink: 0;
+  width: 1em;
+  height: 1em;
+  margin-top: 0.12em;
+}
+
 /* A comment's text, as prose rather than data */
 .ft-comment .jer-value-string {
-  font-family: sans-serif;
+  min-width: 0;
+  font-family: system-ui, sans-serif;
+  font-size: 0.95em;
   font-style: italic;
 }
 

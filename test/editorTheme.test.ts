@@ -209,8 +209,8 @@ describe('editor theme', () => {
 
   describe('comments', () => {
     const note = {
-      borderLeft: `2px solid color-mix(in srgb, ${defaultEditorTheme.comment} 45%, transparent)`,
-      background: `color-mix(in srgb, ${defaultEditorTheme.comment} 6%, transparent)`,
+      boxShadow: `inset 3px 0 0 color-mix(in srgb, ${defaultEditorTheme.commentBlock} 60%, transparent)`,
+      background: `color-mix(in srgb, ${defaultEditorTheme.commentBlock} 8%, transparent)`,
     }
 
     it("draw a string comment's row as a note, wherever a comment can be", () => {
@@ -221,14 +221,25 @@ describe('editor theme', () => {
         { $plus: ['$vars.n'], vars: { '//': 'A note', n: 1 } },
       ]) {
         const at = '//' in holder ? ['//'] : ['vars', '//']
-        expect(style(holder, 'valueRow', at)).toMatchObject(note)
+        // In an issue row's shape, so its stripe lines up with a tinted row's
+        expect(style(holder, 'valueRow', at)).toMatchObject({
+          ...note,
+          marginLeft: '-0.4em',
+          paddingLeft: '0.4em',
+        })
       }
       expect(style({ '//': 'A note', title: 'x' }, 'valueRow', ['title'])).toBeNull()
     })
 
     it('draw a comment of lines as one block, its header row at the top right', () => {
       const node = { '//': ['One', 'Two'], $plus: [1] }
-      expect(style(node, 'collection', ['//'])).toMatchObject(note)
+      // Its stripe where a string comment's is: half an indent right of the
+      // box json-edit-react gives a collection
+      expect(style(node, 'collection', ['//'])).toMatchObject({
+        ...note,
+        marginLeft: 'calc(1em - 0.4em)',
+        paddingLeft: '0.4em',
+      })
       expect(style(node, 'collectionInner', ['//'])).toEqual({ marginLeft: '-1em' })
       expect(style(node, 'headerRow', ['//'])).toEqual({ float: 'right', minHeight: 0, zIndex: 1 })
       expect(style(node, 'iconCollection', ['//'])).toEqual({ display: 'none' })
@@ -257,7 +268,7 @@ describe('editor theme', () => {
 
   describe('vars blocks', () => {
     const block = {
-      borderLeft: `2px solid ${defaultEditorTheme.varsBlock}`,
+      borderLeft: `3px solid ${defaultEditorTheme.varsBlock}`,
       background: `color-mix(in srgb, ${defaultEditorTheme.varsBlock} 7%, transparent)`,
     }
 
@@ -282,7 +293,7 @@ describe('editor theme', () => {
       const at = (element: 'property' | 'collection') =>
         (styles[element] as (nodeData: NodeData) => unknown)({ path: ['vars'] } as NodeData)
       expect(at('property')).toEqual({ color: 'teal' })
-      expect(at('collection')).toMatchObject({ borderLeft: '2px solid navy' })
+      expect(at('collection')).toMatchObject({ borderLeft: '3px solid navy' })
     })
 
     it("leave a var's own key and a malformed block unstyled", () => {
@@ -303,7 +314,7 @@ describe('editor theme', () => {
   describe('issues', () => {
     const tint: unknown = expect.objectContaining({
       background: `color-mix(in srgb, ${defaultEditorTheme.error} 9%, transparent)`,
-      boxShadow: `inset 2px 0 0 ${defaultEditorTheme.error}`,
+      boxShadow: `inset 3px 0 0 ${defaultEditorTheme.error}`,
     })
 
     it('tints a value row with an error', () => {
@@ -331,7 +342,7 @@ describe('editor theme', () => {
           background: `color-mix(in srgb, ${defaultEditorTheme.warning} 10%, transparent)`,
         })
       )
-      expect(warning).toHaveProperty('boxShadow', `inset 2px 0 0 ${defaultEditorTheme.warning}`)
+      expect(warning).toHaveProperty('boxShadow', `inset 3px 0 0 ${defaultEditorTheme.warning}`)
     })
 
     it("doesn't tint a node, whose header carries its flag", () => {

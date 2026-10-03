@@ -497,13 +497,13 @@ describe("the editor's outer container", () => {
     expect(container.querySelector('#rules > .ft-message-container')).not.toBeNull()
   })
 
-  it("takes json-edit-react's own sizes where the host gives none", () => {
+  it("takes json-edit-react's own sizes where the host gives none, in ems", () => {
     const { container } = editor({ $plus: [1, 2] }, { baseFontSize: 14 })
     // Read from the element's own style, as jsdom computes no `min()`
     const { style } = outer(container)
     expect([style.minWidth, style.maxWidth, style.fontSize]).toEqual([
-      '250px',
-      'min(600px, 90vw)',
+      '15.625em',
+      'min(37.5em, 90vw)',
       '14px',
     ])
   })

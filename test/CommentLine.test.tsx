@@ -59,6 +59,26 @@ describe('a comment', () => {
     expect(screen.queryByText('//')).not.toBeInTheDocument()
   })
 
+  it("leads with the note icon, in the block colour, once for a comment's lines", () => {
+    const icons = (container: HTMLElement) => [
+      ...container.querySelectorAll<SVGElement>('.ft-comment .ft-note-icon'),
+    ]
+    const { container: note } = render(
+      <FigTreeEditor
+        figTree={figTree}
+        expression={{ '//': 'A note', $plus: [1] }}
+        setExpression={vi.fn()}
+        editorTheme={{ commentBlock: 'rgb(1, 2, 3)' }}
+      />
+    )
+    expect(icons(note)).toHaveLength(1)
+    expect(icons(note)[0]).toHaveStyle({ color: 'rgb(1, 2, 3)', visibility: 'visible' })
+    // Each line keeps its width, so the lines line up, but only the first
+    // shows it
+    const { container: lines } = host({ '//': ['One', 'Two', 'Three'], $plus: [1] })
+    expect(icons(lines).map((icon) => icon.style.visibility)).toEqual(['', 'hidden', 'hidden'])
+  })
+
   it('shows each line of a comment of lines as a note, quoted', () => {
     const { container } = host({ '//': ['One', '$data.x'], $plus: [1] })
     expect(noteTexts(container)).toEqual(['One', '$data.x'])

@@ -625,10 +625,11 @@ const editorDefaults = {
 const DEFAULT_COLLAPSE = 2
 const DEFAULT_MESSAGES_MAX_HEIGHT = '15em'
 
-// json-edit-react's own defaults for its container, which the outer container
-// takes in its place, so the editor's size is unchanged by it
-const DEFAULT_MIN_WIDTH = 250
-const DEFAULT_MAX_WIDTH = 'min(600px, 90vw)'
+// json-edit-react's own defaults for its container (250px and 600px), which
+// the outer container takes in its place, in ems of the default font size, so
+// the editor's size is unchanged by it and scales with `baseFontSize`
+const DEFAULT_MIN_WIDTH = '15.625em'
+const DEFAULT_MAX_WIDTH = 'min(37.5em, 90vw)'
 const DEFAULT_FONT_SIZE = '16px'
 
 // A comment never starts collapsed, since a multi-line comment is a level
