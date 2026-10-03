@@ -32,7 +32,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
 | F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
 | F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | —               |
-| F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | —               |
+| F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -295,6 +295,8 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Without it.** The hint shows in the messages area alone, beside the warnings it explains.
 
 **Issue.** Not filed: made directly in fig-tree-evaluator (3ee9be0).
+
+**Shipped** in fig-tree 3.0.0-preview.5.
 
 ---
 
