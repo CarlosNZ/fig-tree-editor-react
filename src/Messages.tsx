@@ -33,7 +33,6 @@ export const Messages = ({
   const pills: [Label, number, (count: number) => string][] = [
     ['error', counts.errors, strings.FT_COUNT_ERRORS],
     ['warning', counts.warnings, strings.FT_COUNT_WARNINGS],
-    ['hint', counts.hints, strings.FT_COUNT_HINTS],
     ['filledIn', counts.filledIn, strings.FT_COUNT_FILLED_IN],
   ]
   return (
@@ -113,7 +112,6 @@ const labelOf = (message: EditorMessage): Label =>
 const LABEL: Record<Label, string> = {
   error: strings.FT_SEVERITY_ERROR,
   warning: strings.FT_SEVERITY_WARNING,
-  hint: strings.FT_SEVERITY_HINT,
   filledIn: strings.FT_FILLED_IN,
 }
 

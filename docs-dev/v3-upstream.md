@@ -32,6 +32,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
 | F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
 | F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | —               |
+| F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | —               |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -284,6 +285,16 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Without it.** The drop is accepted for now, since a comment on a `get` is rare.
 
 **Issue.** Filed as [fig-tree-evaluator#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203).
+
+### F17 · No `hint` severity: the renumber hint folds into `unbound-token` — **Maybe**
+
+**The change.** `Severity` is `'error' | 'warning'`, and `token-renumber` is gone. An unbound template token's warning says how many substitutions there are (or that numbering starts at `%1`) and which are unused, and the separate `unused-substitution` warnings are left out while any token is unbound. `'Hi %1 %3'` with two substitutions is one warning: "'%3' binds to nothing and renders as its own text — there are only 2 substitutions, and substitution 2 is unused".
+
+**Why.** That slip was three messages on one row: two warnings and a hint guessing the fix, which was fig-tree's only hint (Carl). The hint was a fix for the warnings beside it rather than a third problem, and its guess could be wrong (`'%0 %1'` is counting from zero, not a skipped number). Stating the facts together shows the warnings are one slip without prescribing a fix. With no hints, the editor drops the hint pill, its label and colour (`editorTheme.hint`), and `counts.hints` from the status.
+
+**Without it.** The hint shows in the messages area alone, beside the warnings it explains.
+
+**Issue.** Not filed: made directly in fig-tree-evaluator (3ee9be0).
 
 ---
 

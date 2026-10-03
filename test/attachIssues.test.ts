@@ -56,12 +56,11 @@ describe("a row's flag", () => {
   const issue = (severity: string, code: string, path: (string | number)[]) =>
     ({ severity, code, message: code, path }) as never
 
-  it('shows errors, then warnings, each in order, and no hints', () => {
+  it('shows errors, then warnings, each in order', () => {
     const expression = { values: [1] }
     const index = attachIssues(
       [
         issue('warning', 'w1', ['values']),
-        issue('hint', 'h1', ['values']),
         issue('error', 'e1', ['values']),
         issue('warning', 'w2', ['values']),
         issue('error', 'e2', ['values']),
@@ -73,21 +72,6 @@ describe("a row's flag", () => {
       'e2',
       'w1',
       'w2',
-    ])
-  })
-
-  it("leaves out a hint beside fig-tree's warnings", () => {
-    const expression = { greeting: { $buildString: ['Hi %1 %3', '$data.first', '$data.last'] } }
-    const index = attachIssues(figTree.validate(expression).issues, classify(expression, registry))
-    const row = ['greeting', '$buildString', 0]
-    expect(issuesAt(index, row).map(({ severity }) => severity)).toEqual([
-      'warning',
-      'warning',
-      'hint',
-    ])
-    expect(flaggedIssues(index, row).map(({ code }) => code)).toEqual([
-      'unbound-token',
-      'unused-substitution',
     ])
   })
 })
@@ -109,8 +93,8 @@ describe('the roll-up a collapsed row carries', () => {
     expect(rolledUp(expression, ['age', 'else'])).toEqual({ errors: 0, warnings: 0 })
   })
 
-  it('counts warnings apart, and no hints', () => {
-    const expression = { greeting: { $buildString: ['Hi %1 %3', '$data.first', '$data.last'] } }
+  it('counts warnings apart', () => {
+    const expression = { greeting: { $buildString: ['Hi %1 %3 %4', '$data.first', '$data.last'] } }
     expect(rolledUp(expression, ['greeting'])).toEqual({ errors: 0, warnings: 2 })
   })
 

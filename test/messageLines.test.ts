@@ -60,7 +60,7 @@ describe('the messages in tree order', () => {
     const issue = (severity: string, code: string) =>
       ({ severity, code, message: code, path: ['values'] }) as never
     const lines = orderMessages(
-      [issue('hint', 'h'), issue('warning', 'w1'), issue('error', 'e'), issue('warning', 'w2')],
+      [issue('warning', 'w1'), issue('error', 'e'), issue('warning', 'w2')],
       [filledLine(['values'])],
       expression,
       classification
@@ -69,7 +69,6 @@ describe('the messages in tree order', () => {
       'e',
       'w1',
       'w2',
-      'h',
       'added',
     ])
   })
@@ -96,7 +95,7 @@ describe('the messages in tree order', () => {
 
   it('counts each severity, and the filled-in lines', () => {
     const expression = {
-      greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] },
+      greeting: { $buildString: ['Hi %1 %3 %4', 'Ada', 'Lovelace'] },
       x: { $upper: 5 },
     }
     const lines = orderMessages(
@@ -105,6 +104,6 @@ describe('the messages in tree order', () => {
       expression,
       classify(expression, registry)
     )
-    expect(countMessages(lines)).toEqual({ errors: 1, warnings: 2, hints: 1, filledIn: 1 })
+    expect(countMessages(lines)).toEqual({ errors: 1, warnings: 2, filledIn: 1 })
   })
 })

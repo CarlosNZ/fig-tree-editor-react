@@ -40,16 +40,6 @@ describe('the messages area', () => {
     expect(warning).toHaveTextContent('warning$plus[2]')
   })
 
-  it('lists hints, which no row shows', () => {
-    editor({ $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] })
-    expect(lines().map((line) => line.querySelector('.ft-severity')!.textContent)).toEqual([
-      'warning',
-      'warning',
-      'hint',
-    ])
-    expect(lines()[2]).toHaveTextContent('the tokens skip a number')
-  })
-
   it('lists in tree order', () => {
     editor({
       age: { $round: { value: { operator: 'upper', valeu: 'x' } } },
@@ -77,9 +67,9 @@ describe('the messages area', () => {
   })
 
   it('counts each severity in its header', () => {
-    editor({ greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] }, x: { $upper: 5 } })
+    editor({ greeting: { $buildString: ['Hi %1 %3 %4', 'Ada', 'Lovelace'] }, x: { $upper: 5 } })
     const counts = [...header().querySelectorAll('.ft-severity')].map((pill) => pill.textContent)
-    expect(counts).toEqual(['1 error', '2 warnings', '1 hint'])
+    expect(counts).toEqual(['1 error', '2 warnings'])
   })
 
   it('folds away from its header, and opens again', () => {
@@ -108,14 +98,12 @@ describe('the messages area', () => {
 
   it("colours each severity from the editor's theme", () => {
     editor(
-      { greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] } },
-      { editorTheme: { warning: 'rgb(1, 2, 3)', hint: 'rgb(4, 5, 6)' } }
+      { greeting: { $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] }, x: { $upper: 5 } },
+      { editorTheme: { error: 'rgb(1, 2, 3)', warning: 'rgb(4, 5, 6)' } }
     )
-    const [warning, , hint] = lines().map((line) =>
-      line.querySelector<HTMLElement>('.ft-severity')!
-    )
-    expect(warning).toHaveStyle({ backgroundColor: 'rgb(1, 2, 3)' })
-    expect(hint).toHaveStyle({ backgroundColor: 'rgb(4, 5, 6)' })
+    const [warning, error] = lines().map((line) => line.querySelector<HTMLElement>('.ft-severity')!)
+    expect(warning).toHaveStyle({ backgroundColor: 'rgb(4, 5, 6)' })
+    expect(error).toHaveStyle({ backgroundColor: 'rgb(1, 2, 3)' })
   })
 })
 
@@ -165,8 +153,8 @@ describe('revealing a row', () => {
   })
 
   it("scrolls to the nearest marked row above one the editor doesn't draw", async () => {
-    // Every row with an error or a warning is marked, and fig-tree's one hint
-    // shares its row with warnings, so an unmarked row is revealed directly
+    // Every row with an error or a warning is marked, so no message names an
+    // unmarked row, and one is revealed directly
     const { container } = editor({ $plus: [1, 2] })
     placeRows(2000)
     const scroll = scrolled()

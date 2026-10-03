@@ -4,7 +4,6 @@ const countOf = (one: string, many: string) => (count: number) =>
   count === 1 ? `1 ${one}` : `${count} ${many}`
 const errors = countOf('error', 'errors')
 const warnings = countOf('warning', 'warnings')
-const hints = countOf('hint', 'hints')
 
 // Every string the editor shows, in English. Each sits under the key it would
 // have among json-edit-react's `translations`, and one with a variable part is
@@ -22,11 +21,9 @@ export const strings = {
   FT_DISMISS_ALL: 'Dismiss all', // every filled-in line, from the header
   FT_COUNT_ERRORS: errors,
   FT_COUNT_WARNINGS: warnings,
-  FT_COUNT_HINTS: hints,
   FT_COUNT_FILLED_IN: (count: number) => `${count} added`,
   FT_SEVERITY_ERROR: 'error',
   FT_SEVERITY_WARNING: 'warning',
-  FT_SEVERITY_HINT: 'hint',
   FT_FILLED_IN: 'added', // a filled-in line's label, beside the severities
   // A filled-in line: a value the editor added to an expression it was given
   FT_FILLED_IN_OPERATOR: (parameter: string, operator: string) =>

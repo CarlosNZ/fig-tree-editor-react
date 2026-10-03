@@ -26,7 +26,6 @@ export interface EditorTheme {
   comment: string // comment notes
   error: string // row tint, a node's badge, and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
-  hint: string // a hint's label in the messages area
   filledIn: string // the marker on a value the editor filled in, and its label
   // How a node ran, after an evaluation: its border and its button's icon,
   // its card's text, and a collapsed node's summary
@@ -51,7 +50,6 @@ export const defaultEditorTheme: EditorTheme = {
   comment: '#6b7280',
   error: '#c0392b',
   warning: '#d68910',
-  hint: '#6b7a90',
   filledIn: '#f2c200',
   runValue: '#2f9e44',
   runFailed: '#c0392b',
@@ -126,7 +124,7 @@ const editorThemeLayer = ({
   const tint = (nodeData: NodeData) => {
     if (nodeForm(nodeData) !== undefined) return null
     const severity = flaggedIssues(issues, nodeData.path)[0]?.severity
-    if (severity === undefined || severity === 'hint') return null
+    if (severity === undefined) return null
     return severity === 'error'
       ? { colour: editorTheme.error, strength: ERROR_TINT }
       : { colour: editorTheme.warning, strength: WARNING_TINT }

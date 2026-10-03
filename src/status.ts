@@ -9,7 +9,7 @@ import { type Path } from './paths'
 // in place of the built-in area.
 
 export interface EditorStatus {
-  valid: boolean // no errors; warnings, hints and filled-in values don't count
+  valid: boolean // no errors; warnings and filled-in values don't count
   counts: MessageCounts
   editing: boolean // an edit session is open: a value, raw JSON or the toolbar
   messages: EditorMessage[] // what the messages area lists, in its order

@@ -10,8 +10,8 @@ import { type Path } from './paths'
 //
 // json-edit-react's rows carry no mark of their path, so the row is found by
 // the editor's own components, which mark theirs (`rowMark`). Every row with
-// an error or a warning has one, and any other, such as a plain value with a
-// hint, reveals the nearest ancestor that has one.
+// an error or a warning has one, and any other reveals the nearest ancestor
+// that has one.
 
 const ROW_PATH = 'data-ft-path'
 

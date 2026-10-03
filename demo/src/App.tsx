@@ -45,7 +45,6 @@ const describeStatus = ({ valid, counts, editing }: EditorStatus) =>
     valid ? 'valid' : 'invalid',
     `${counts.errors} errors`,
     `${counts.warnings} warnings`,
-    `${counts.hints} hints`,
     `${counts.filledIn} added`,
     editing ? 'editing' : 'not editing',
   ].join(' · ')

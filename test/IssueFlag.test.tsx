@@ -68,13 +68,13 @@ describe("a row's issues", () => {
 
   it('are listed, each with its severity', () => {
     const { container } = editor({
-      words: [{ $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] }],
+      words: [{ $buildString: ['Hi %1 %3 %4', 'Ada', 'Lovelace'] }],
       total: { operator: 'round', value: [1] },
     })
     expect(cards(container)).toEqual([
       [
-        "'%3' binds to nothing and renders as its own text",
-        'substitution 2 is never named by the template',
+        "'%3' binds to nothing and renders as its own text — there are only 2 substitutions, and substitution 2 is unused",
+        "'%4' binds to nothing and renders as its own text — there are only 2 substitutions, and substitution 2 is unused",
       ],
       ["'round.value': expected number | null, received array"],
     ])
@@ -85,11 +85,6 @@ describe("a row's issues", () => {
     expect(warning.style.backgroundColor).toBe('white')
     expect(error).toHaveTextContent('error')
     expect(error.style.color).toBe('white')
-  })
-
-  it('leave a hint off the row', () => {
-    const { container } = editor({ $buildString: ['Hi %1 %3', 'Ada', 'Lovelace'] })
-    expect(container.querySelector('.ft-editor')).not.toHaveTextContent('renumber')
   })
 
   it("are a broken node's stray key's own, beside the node's message", () => {

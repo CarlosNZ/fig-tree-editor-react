@@ -12,7 +12,7 @@ import { strings } from './strings'
 // while it is hovered, so they never change the tree's layout. A node's
 // issues, and its rows', are listed in its button's card, and a badge on the
 // button's corner shows the most severe. `issues` comes from `flaggedIssues`
-// or `attachToNodes`, most severe first, with no hints.
+// or `attachToNodes`, most severe first.
 
 // A row's card, listing its issues, which the stylesheet shows while the row
 // is hovered, as a hover card is shown
@@ -50,7 +50,6 @@ export const CardIssues = ({
 const SEVERITY = {
   error: strings.FT_SEVERITY_ERROR,
   warning: strings.FT_SEVERITY_WARNING,
-  hint: strings.FT_SEVERITY_HINT,
 }
 
 const flagStyle = (severity: Issue['severity'], { error, warning }: EditorTheme) =>

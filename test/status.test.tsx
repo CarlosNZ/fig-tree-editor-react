@@ -44,7 +44,7 @@ describe('the status', () => {
     const [status] = statuses
     expect(status).toMatchObject({
       valid: false,
-      counts: { errors: 1, warnings: 0, hints: 0, filledIn: 0 },
+      counts: { errors: 1, warnings: 0, filledIn: 0 },
       editing: false,
     })
     expect(summary(status)).toEqual([

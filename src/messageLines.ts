@@ -6,9 +6,9 @@ import { type FilledInLine } from './filledIn'
 import { type Path } from './paths'
 
 // The messages area's lines (design, topic 7, "The messages area"): every
-// issue `validate()` reports, hints included, each on the row it marks, which
-// is the issue's own row or its nearest drawn ancestor, as on the tree; and
-// each value the editor filled in that still stands (filledIn.ts).
+// issue `validate()` reports, each on the row it marks, which is the issue's
+// own row or its nearest drawn ancestor, as on the tree; and each value the
+// editor filled in that still stands (filledIn.ts).
 
 export type MessageLine =
   { kind: 'issue'; issue: Issue; row: Path } | ({ kind: 'filledIn' } & FilledInLine)
@@ -65,7 +65,6 @@ const treeOrder = (expression: unknown) => {
 export interface MessageCounts {
   errors: number
   warnings: number
-  hints: number
   filledIn: number
 }
 
@@ -78,7 +77,6 @@ export const countMessages = (
   return {
     errors: severity('error'),
     warnings: severity('warning'),
-    hints: severity('hint'),
     filledIn: lines.filter(({ kind }) => kind === 'filledIn').length,
   }
 }

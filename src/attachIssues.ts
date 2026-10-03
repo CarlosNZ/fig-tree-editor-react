@@ -29,13 +29,11 @@ const NONE: readonly Issue[] = []
 export const issuesAt = (index: IssueIndex, path: Path) => index.get(toPathString(path)) ?? NONE
 
 // What a row's flag shows: its errors, then its warnings, each in
-// `validate()`'s order. A hint shows in the messages area alone.
+// `validate()`'s order
 export const flaggedIssues = (index: IssueIndex, path: Path) =>
-  issuesAt(index, path)
-    .filter(({ severity }) => severity !== 'hint')
-    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
+  [...issuesAt(index, path)].sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity])
 
-export const SEVERITY_RANK: Record<Issue['severity'], number> = { error: 0, warning: 1, hint: 2 }
+export const SEVERITY_RANK: Record<Issue['severity'], number> = { error: 0, warning: 1 }
 
 // The errors and warnings on a row and every row beneath it, which a
 // collapsed row carries in its summary (topic 7), keyed as the index is
@@ -52,7 +50,6 @@ export const rollUpIssues = (
 ): IssueRollUp => {
   const rollUp = new Map<string, IssueCounts>()
   for (const { severity, path } of issues) {
-    if (severity === 'hint') continue
     const row = drawnRow(path, classification)
     for (let length = 0; length <= row.length; length++) {
       const key = toPathString(row.slice(0, length))
@@ -79,7 +76,6 @@ export const attachToNodes = (
 ): IssueIndex => {
   const index = new Map<string, { issue: Issue; own: boolean }[]>()
   for (const issue of issues) {
-    if (issue.severity === 'hint') continue
     const row = drawnRow(issue.path, classification)
     const node = nearestNode(row, classification)
     if (node === null) continue
