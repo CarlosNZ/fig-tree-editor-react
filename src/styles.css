@@ -831,7 +831,9 @@ input.ft-select-input::placeholder {
    full node it shows only while it is hovered itself, so it doesn't compete
    with the pencil. A shorthand node has no pencil, so its button shows while
    the header is hovered anywhere but the Evaluate button and its card: it is
-   the way back to the full form and its pencil. */
+   the way back to the full form and its pencil. "To reference" shows while
+   the header is hovered anywhere, as the pencil does: a `get` that can be a
+   reference is one the author will usually want shorter. */
 .ft-convert-area {
   position: absolute;
   top: 1em;
@@ -856,7 +858,8 @@ input.ft-select-input::placeholder {
 .ft-convert-button:hover,
 .ft-convert-button:focus-visible,
 .ft-shorthand:hover:not(:has(.ft-hover-card-anchor:hover, .ft-evaluate-button:hover))
-  .ft-convert-button {
+  .ft-convert-button,
+.ft-display-bar:hover .ft-convert-to-reference {
   opacity: 1;
 }
 

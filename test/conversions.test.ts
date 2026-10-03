@@ -62,10 +62,12 @@ describe('the conversion button', () => {
       expect(convert({ operator: 'get', path: 'user.name' })).toEqual({
         label: 'To reference',
         result: '$data.user.name',
+        toReference: true,
       })
       expect(convert({ $get: { path: 'user.name' } })).toEqual({
         label: 'To reference',
         result: '$data.user.name',
+        toReference: true,
       })
     })
 

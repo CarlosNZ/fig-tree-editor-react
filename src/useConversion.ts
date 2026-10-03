@@ -20,6 +20,10 @@ export const useConversion = (
     [value, enabled, figTree, referenceNames, classification]
   )
   return conversion
-    ? { label: conversion.label, onConvert: () => setValue(conversion.result) }
+    ? {
+        label: conversion.label,
+        toReference: conversion.toReference,
+        onConvert: () => setValue(conversion.result),
+      }
     : undefined
 }

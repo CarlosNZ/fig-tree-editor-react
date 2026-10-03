@@ -9,6 +9,7 @@ export type ReferenceNames = 'canonical' | 'alias'
 export interface Conversion {
   label: string
   result: unknown
+  toReference?: boolean // the node itself becomes a reference
 }
 
 type Form = 'full' | 'named' | 'positional' | 'reference'
@@ -20,7 +21,8 @@ type Form = 'full' | 'named' | 'positional' | 'reference'
 // the whole subtree, and spells its references by `referenceNames`.
 //
 // A `get` that can be a reference becomes one, as `toShorthand` has it by
-// default, and a button that turns the node itself into a reference says so.
+// default, and a button that turns the node itself into a reference says so,
+// and shows as readily as the pencil does, being the way to the shortest form.
 // There is no button where the conversion fails, since `./format` refuses a
 // node beneath, or where it gives the same form, as on a fragment call whose
 // arguments are a reference.
@@ -41,13 +43,15 @@ export const nodeConversion = (
       case 'full': {
         const result = shorthand('named')
         const form = formOf(result)
-        if (form === 'reference') return { label: strings.FT_TO_REFERENCE, result }
+        if (form === 'reference')
+          return { label: strings.FT_TO_REFERENCE, result, toReference: true }
         return form === 'full' ? null : { label: strings.FT_TO_SHORTHAND, result }
       }
       case 'named': {
         const result = shorthand('positional')
         const form = formOf(result)
-        if (form === 'reference') return { label: strings.FT_TO_REFERENCE, result }
+        if (form === 'reference')
+          return { label: strings.FT_TO_REFERENCE, result, toReference: true }
         return form === 'positional' ? { label: strings.FT_TO_POSITIONAL, result } : full()
       }
       case 'positional':
