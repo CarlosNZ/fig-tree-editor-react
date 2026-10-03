@@ -496,8 +496,10 @@ input.ft-select-input::placeholder {
   font-size: 0.8em;
 }
 
-/* A reference: its text, then the ▶ that evaluates it */
-.ft-reference {
+/* A reference: its text, then the ▶ that evaluates it, together the anchor
+   of its card */
+.ft-reference,
+.ft-reference-body {
   display: inline-flex;
   align-items: center;
   gap: 0.3em;
