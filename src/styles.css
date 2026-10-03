@@ -535,22 +535,24 @@ input.ft-select-input::placeholder {
   cursor: pointer;
 }
 
-/* A reference's "To get node", shown while its row is hovered */
+/* A reference's "To get node", an icon shown while the value and its edit
+   tools are hovered, where json-edit-react shows the tools, which is less
+   than the whole row. It is spaced as the first of them: 0.5em after the ▶,
+   with the reference's 0.3em gap, and 0.4em before the copy icon, whose
+   0.5em margin it takes back a little of. */
 .ft-to-get-button {
-  padding: 0.2em 0.4em;
-  border: 1px solid;
-  border-radius: 0.48em;
+  display: flex;
+  align-items: center;
+  height: 1em;
+  margin: 0 -0.1em 0 0.2em;
+  padding: 0;
+  border: none;
   background: none;
-  font-family: sans-serif;
-  font-size: 0.65em;
-  font-weight: bold;
-  white-space: nowrap;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 0.2s;
 }
 
-.jer-value-main-row:hover .ft-to-get-button,
+.jer-value-and-buttons:hover .ft-to-get-button,
 .ft-to-get-button:focus-visible {
   opacity: 1;
 }
