@@ -44,11 +44,10 @@ describe('the status', () => {
     const [status] = statuses
     expect(status).toMatchObject({
       valid: false,
-      counts: { errors: 2, warnings: 0, hints: 0, filledIn: 0 },
+      counts: { errors: 1, warnings: 0, hints: 0, filledIn: 0 },
       editing: false,
     })
     expect(summary(status)).toEqual([
-      ['issue', [], "'if' requires 'then'", []],
       [
         'issue',
         ['thn'],
@@ -56,7 +55,7 @@ describe('the status', () => {
         ['Rename to then', 'Remove'],
       ],
     ])
-    expect(status.messages[0]).toHaveProperty('issue.code', 'missing-required')
+    expect(status.messages[0]).toHaveProperty('issue.code', 'unknown-node-key')
   })
 
   it('is reported again only when its content changes', () => {
@@ -81,7 +80,7 @@ describe('the status', () => {
 
   it("gives fixes whose apply does what the area's button does", () => {
     const { latest, written } = host({ operator: 'if', condition: true, thn: 'Adult' })
-    const rename = latest().messages[1].fixes[0]
+    const rename = latest().messages[0].fixes[0]
     act(() => rename.apply())
     expect(written[written.length - 1]).toEqual({ operator: 'if', condition: true, then: 'Adult' })
     expect(latest()).toMatchObject({ valid: true, messages: [] })

@@ -141,9 +141,11 @@ describe("a node's issues", () => {
     [...anchor.querySelectorAll('.ft-flag-issue')].map((line) => line.lastChild!.textContent)
 
   it("are listed in its button's card, shown sooner, with a badge on the button", () => {
-    const { container } = editor({ operator: 'if', condition: true, thn: 'Adult' })
-    const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
-    expect(listed(anchor)).toEqual(["'if' requires 'then'"])
+    const { container } = editor({ $round: { value: { operator: 'upper', value: 'x' } } })
+    const anchor = buttonAnchor(container.querySelectorAll('.ft-display-bar')[1])
+    expect(listed(anchor)).toEqual([
+      "'upper' returns \"string\" — it can never satisfy 'round.value'",
+    ])
     expect(anchor).toHaveAttribute('data-urgent')
     expect(anchor.querySelector<HTMLElement>('.ft-issue-badge')!.style.backgroundColor).toBe(
       'rgb(192, 57, 43)'
@@ -151,14 +153,24 @@ describe("a node's issues", () => {
   })
 
   it('are listed most severe first, the badge in its colour', () => {
-    const { container } = editor({ $round: { value: { operator: 'upper', valeu: 'x' } } })
+    const { container } = editor({ $round: { value: { operator: 'map', input: [1], each: 'x' } } })
     const anchor = buttonAnchor(container.querySelectorAll('.ft-display-bar')[1])
     expect(listed(anchor)).toEqual([
-      "'upper' returns \"string\" — it can never satisfy 'round.value'",
-      "'upper' requires 'value'",
+      "'map' returns \"array\" — it can never satisfy 'round.value'",
+      "'map' binds $element / $index but its 'each' references neither",
     ])
     expect(anchor.querySelector<HTMLElement>('.ft-issue-badge')!.style.backgroundColor).toBe(
       'rgb(192, 57, 43)'
+    )
+  })
+
+  it('leave out a missing parameter held back for a misspelt key, which shows the mistake', () => {
+    const { container } = editor({ operator: 'if', condition: true, thn: 'Adult' })
+    const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
+    expect(cards(container)).toEqual([["'thn' is not a parameter of 'if' — did you mean 'then'?"]])
+    expect(anchor.querySelector('.ft-issue-badge')).toBeNull()
+    expect(anchor.querySelector('.ft-hover-card')).toHaveTextContent(
+      'Fix the error to evaluate this'
     )
   })
 
@@ -194,7 +206,7 @@ describe('a collapsed summary', () => {
   it('counts the issues on and beneath its row, where there is more than one', () => {
     const { container } = editor(
       {
-        age: { operator: 'if', condition: true, thn: 'Adult' },
+        age: { operator: 'if', condtion: true, thn: 'Adult' },
         rounded: { operator: 'round', value: [1] },
         words: [{ $upper: 5 }, { $colour: 'red' }],
       },

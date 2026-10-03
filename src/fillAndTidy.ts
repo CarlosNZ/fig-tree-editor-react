@@ -6,7 +6,7 @@ import {
   type ParameterInfo,
 } from 'fig-tree-evaluator'
 import { positionalLayout, singlePositionalTarget } from 'fig-tree-evaluator/format'
-import { classify, rowAt, type RowKind } from './classify'
+import { classify, rowAt, type Classification, type RowKind } from './classify'
 import { type DisplayData } from './displayData'
 import { getStartingValue } from './getStartingValue'
 import { type Path } from './paths'
@@ -60,16 +60,7 @@ export const fillAndTidy = (expression: unknown, context: FillContext): FillResu
   const classification = classify(expression, context)
   const filled: Path[] = []
 
-  // The keys an unknown key's issue suggests, by the path of the object that
-  // holds them
-  const suggested = new Map<string, Set<string>>()
-  for (const { code, path, suggestion } of context.issues)
-    if (code === 'unknown-node-key' && suggestion !== undefined) {
-      const holder = pathKey(path.slice(0, -1))
-      suggested.set(holder, (suggested.get(holder) ?? new Set()).add(suggestion))
-    }
-  const isSuggested = (holderPath: Path, parameter: string) =>
-    suggested.get(pathKey(holderPath))?.has(parameter) ?? false
+  const isSuggested = suggestedKeys(context.issues)
 
   const seedsOf = (name: string) => context.displayData.operators[name]?.seeds ?? {}
 
@@ -318,3 +309,40 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
   value !== null &&
   !Array.isArray(value) &&
   [Object.prototype, null].includes(Object.getPrototypeOf(value) as object | null)
+
+// ── The typo guard ──────────────────────────────────────────────────────
+
+// Whether an unknown key's issue suggests `parameter` for the object at
+// `holderPath`, which holds the node's parameters or arguments
+const suggestedKeys = (issues: readonly Issue[]) => {
+  const suggested = new Map<string, Set<string>>()
+  for (const { code, path, suggestion } of issues)
+    if (code === 'unknown-node-key' && suggestion !== undefined) {
+      const holder = pathKey(path.slice(0, -1))
+      suggested.set(holder, (suggested.get(holder) ?? new Set()).add(suggestion))
+    }
+  return (holderPath: Path, parameter: string) =>
+    suggested.get(pathKey(holderPath))?.has(parameter) ?? false
+}
+
+// The issues the editor shows: without a missing required parameter that
+// the typo guard holds back, which is the same mistake as the unknown key
+// suggesting it (`thn` for `then`), and is shown, counted and fixed there
+export const withoutHeldBack = (issues: readonly Issue[], classification: Classification) => {
+  const isSuggested = suggestedKeys(issues)
+  return issues.filter(
+    ({ code, path, parameter }) =>
+      code !== 'missing-required' ||
+      parameter === undefined ||
+      !isSuggested(parameterHolder(path, classification), parameter)
+  )
+}
+
+// The object holding a node's parameters or arguments: the node itself, its
+// named payload, or a fragment call's `parameters`
+const parameterHolder = (path: Path, classification: Classification): Path => {
+  const kind = rowAt(classification, path)?.kind
+  if (kind?.kind !== 'operator' && kind?.kind !== 'fragment') return path
+  if (kind.form === 'shorthand') return [...path, `$${kind.name}`]
+  return kind.kind === 'fragment' ? [...path, 'parameters'] : path
+}

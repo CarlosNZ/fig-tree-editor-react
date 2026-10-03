@@ -56,7 +56,7 @@ import {
   type Evaluation,
   type EvaluatorHandlers,
 } from './evaluation'
-import { fillAndTidy } from './fillAndTidy'
+import { fillAndTidy, withoutHeldBack } from './fillAndTidy'
 import {
   confirmFilledIn,
   dismissFilledIn,
@@ -209,8 +209,8 @@ export const FigTreeEditor = ({
   const changed = arrival.expression !== expression
   const stableFilled = useStableValue(arrival.expression)
   const shown = changed ? stableFilled : expression
-  const issues = changed ? validate(shown) : arrivalIssues
   const classification = useStableValue(classify(shown, { operators, fragments }))
+  const issues = withoutHeldBack(changed ? validate(shown) : arrivalIssues, classification)
 
   // The values those writes have added, which the messages area lists
   // (filledIn.ts), and the rows the latest one filled, marked for a few

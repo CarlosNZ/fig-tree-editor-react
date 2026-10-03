@@ -51,10 +51,13 @@ describe('the messages area', () => {
   })
 
   it('lists in tree order', () => {
-    editor({ age: { operator: 'if', condition: true, thn: 1 }, rounded: { $round: [[1]] } })
+    editor({
+      age: { $round: { value: { operator: 'upper', valeu: 'x' } } },
+      rounded: { $round: [[1]] },
+    })
     expect(lines().map((line) => line.querySelector('.ft-message-path')!.textContent)).toEqual([
-      'age',
-      'age.thn',
+      'age.$round.value',
+      'age.$round.value.valeu',
       'rounded.$round[0]',
     ])
   })

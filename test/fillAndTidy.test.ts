@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { classify } from '../src/classify'
 import { buildDisplayData } from '../src/displayData'
-import { fillAndTidy } from '../src/fillAndTidy'
+import { fillAndTidy, withoutHeldBack } from '../src/fillAndTidy'
 import { demoExpressions, figTree, registry } from './fixtures'
 
 const displayData = buildDisplayData(registry)
@@ -167,5 +168,36 @@ describe('fillAndTidy', () => {
       const once = tidied(expression)
       expect(tidied(once)).toBe(once)
     })
+  })
+})
+
+describe('withoutHeldBack', () => {
+  // Each issue shown, as its code and path, sorted
+  const shown = (expression: unknown) =>
+    withoutHeldBack(figTree.validate(expression).issues, classify(expression, registry))
+      .map(({ code, path }) => `${code} ${JSON.stringify(path)}`)
+      .sort()
+
+  it('leaves out a missing parameter an unknown key is a typo of, in every form', () => {
+    expect(shown({ operator: 'if', condition: true, thn: 'x' })).toEqual([
+      'unknown-node-key ["thn"]',
+    ])
+    expect(shown({ $if: { condition: true, thn: 'x' } })).toEqual([
+      'unknown-node-key ["$if","thn"]',
+    ])
+    expect(shown({ fragment: 'greet', parameters: { nmae: 'Ada' } })).toEqual([
+      'unknown-node-key ["parameters","nmae"]',
+    ])
+    expect(shown({ $greet: { nmae: 'Ada' } })).toEqual(['unknown-node-key ["$greet","nmae"]'])
+  })
+
+  it("keeps a node's missing parameter where the typo is a nested node's", () => {
+    expect(
+      shown({ operator: 'if', condition: true, else: { operator: 'if', condition: true, thn: 1 } })
+    ).toEqual(['missing-required []', 'unknown-node-key ["else","thn"]'])
+  })
+
+  it('keeps a missing parameter nothing is a typo of', () => {
+    expect(shown({ operator: 'if', condition: true })).toEqual(['missing-required []'])
   })
 })
