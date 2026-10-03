@@ -36,7 +36,7 @@ describe("a row's issues", () => {
       "'thn' is not a parameter of 'if' — did you mean 'then'?"
     )
     // Nothing on the row itself, so it lays out as it would without them
-    expect(valueRow('thn').querySelector('.ft-flag')).toBeNull()
+    expect(valueRow('thn').querySelector('.ft-issue-badge')).toBeNull()
     expect(valueRow('else').querySelector('.ft-issue-card')).toBeNull()
   })
 
@@ -98,7 +98,7 @@ describe("a row's issues", () => {
     expect(header.querySelector('.ft-broken-message')).toHaveTextContent(
       "'extra' may not sit beside the shorthand key '$plus'"
     )
-    expect(header.querySelector('.ft-flag')).toBeNull()
+    expect(header.querySelector('.ft-issue-badge')).toBeNull()
     expect(valueRow('extra').querySelector('.ft-issue-card')).toHaveTextContent(
       "'extra' may not sit beside the shorthand key '$plus'"
     )
@@ -107,7 +107,7 @@ describe("a row's issues", () => {
   it('leave a row without any drawn as json-edit-react draws it', () => {
     const { container } = editor({ operator: 'round', value: 3.14, decimals: 1 })
     expect(
-      container.querySelector('.ft-flagged, .ft-flag-line, .ft-issue-card, .ft-flag')
+      container.querySelector('.ft-flagged, .ft-flag-line, .ft-issue-card, .ft-issue-badge')
     ).toBeNull()
   })
 
@@ -133,28 +133,55 @@ describe("a row's issues", () => {
   })
 })
 
-describe("a node's flag", () => {
-  it("shows its own issue on its header's line", () => {
+describe("a node's issues", () => {
+  // The hover card on a node's button, around the button
+  const buttonAnchor = (header: Element) =>
+    header.querySelector('.ft-evaluate-button')!.closest('.ft-hover-card-anchor')!
+  const listed = (anchor: Element) =>
+    [...anchor.querySelectorAll('.ft-flag-issue')].map((line) => line.lastChild!.textContent)
+
+  it("are listed in its button's card, shown sooner, with a badge on the button", () => {
     const { container } = editor({ operator: 'if', condition: true, thn: 'Adult' })
-    const header = container.querySelector('.ft-display-bar')!
-    expect(header.querySelector('.ft-flag')).toHaveTextContent("'if' requires 'then'")
+    const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
+    expect(listed(anchor)).toEqual(["'if' requires 'then'"])
+    expect(anchor).toHaveAttribute('data-urgent')
+    expect(anchor.querySelector<HTMLElement>('.ft-issue-badge')!.style.backgroundColor).toBe(
+      'rgb(192, 57, 43)'
+    )
   })
 
-  it('shows the most severe first, counts the rest, and lists them all on hover', () => {
+  it('are listed most severe first, the badge in its colour', () => {
     const { container } = editor({ $round: { value: { operator: 'upper', valeu: 'x' } } })
-    const anchor = container
-      .querySelectorAll('.ft-display-bar')[1]
-      .querySelector('.ft-flag-anchor')!
-    expect(anchor.querySelector('.ft-flag')).toHaveTextContent(
-      "'upper' returns \"string\" — it can never satisfy 'round.value'"
-    )
-    expect(anchor.querySelector('.ft-flag-more')).toHaveTextContent('+1')
-    expect(
-      [...anchor.querySelectorAll('.ft-flag-issue')].map((line) => line.lastChild!.textContent)
-    ).toEqual([
+    const anchor = buttonAnchor(container.querySelectorAll('.ft-display-bar')[1])
+    expect(listed(anchor)).toEqual([
       "'upper' returns \"string\" — it can never satisfy 'round.value'",
       "'upper' requires 'value'",
     ])
+    expect(anchor.querySelector<HTMLElement>('.ft-issue-badge')!.style.backgroundColor).toBe(
+      'rgb(192, 57, 43)'
+    )
+  })
+
+  it("show a warning's badge in amber, before the card's usual lines", () => {
+    const { container } = editor({ operator: 'map', input: [1, 2, 3], each: 'x' })
+    const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
+    expect(listed(anchor)).toEqual([
+      "'map' binds $element / $index but its 'each' references neither",
+    ])
+    expect(anchor).toHaveAttribute('data-urgent')
+    expect(anchor.querySelector<HTMLElement>('.ft-issue-badge')!.style.backgroundColor).toBe(
+      'rgb(214, 137, 16)'
+    )
+    const lines = [...anchor.querySelectorAll('.ft-hover-card-line')]
+    expect(lines[0]).toHaveClass('ft-flag-issue')
+    expect(lines.length).toBeGreaterThan(1)
+  })
+
+  it('leave a card without any at the usual delay, and no badge', () => {
+    const { container } = editor({ operator: 'round', value: 3.14, decimals: 1 })
+    const anchor = buttonAnchor(container.querySelector('.ft-display-bar')!)
+    expect(anchor).not.toHaveAttribute('data-urgent')
+    expect(anchor.querySelector('.ft-issue-badge')).toBeNull()
   })
 })
 

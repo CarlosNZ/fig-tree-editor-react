@@ -24,7 +24,7 @@ export interface EditorTheme {
   varsBlock: string // the vars block's tint and rule
   modifierKey: string // the `//`, fallback and noCache keys
   comment: string // comment notes
-  error: string // row tint, flag and card
+  error: string // row tint, a node's badge, and card
   warning: string // the same for a warning, and a collapsed summary holding only warnings
   hint: string // a hint's label in the messages area
   filledIn: string // the marker on a value the editor filled in, and its label

@@ -54,7 +54,6 @@ export const strings = {
     [errorCount > 0 && errors(errorCount), warningCount > 0 && warnings(warningCount)]
       .filter(Boolean)
       .join(' · '),
-  FT_FLAG_MORE: (count: number) => `+${count}`, // a row's other issues, after its flag
   FT_FRAGMENT: 'Fragment', // a fragment call's header, without a display name
   FT_FRAGMENT_SUFFIX: ' · fragment', // after a fragment's display name
   FT_OPEN_TOOLBAR: 'Open toolbar', // the pencil, named apart from json-edit-react's ✎

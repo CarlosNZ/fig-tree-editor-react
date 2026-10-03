@@ -28,6 +28,7 @@ export const Container = ({
         <HoverCard
           hideOnClick
           showAgainOn={mark}
+          urgent={!mark && disabled}
           card={
             mark ? (
               <RunCard mark={mark} editorTheme={editorTheme} />

@@ -4,6 +4,9 @@
      shows, so cards don't flash up on the way to a click or as the pointer
      crosses the tree */
   --ft-hover-card-delay: 0.5s;
+  /* The same for a card holding an issue, or why something can't be
+     evaluated, which is shown sooner */
+  --ft-issue-card-delay: 0.2s;
   /* How far what never ran in the latest evaluation is dimmed */
   --ft-never-ran-opacity: 0.45;
 }
@@ -557,56 +560,33 @@ input.ft-select-input::placeholder {
   display: contents;
 }
 
-/* A node's flag: the issue's message, cut to the space left on the header's
-   line, then a count of the node's other issues. It starts from nothing and
-   grows to its message, so the controls before it keep their width and the
-   flag takes what is left. Where that is less than a few words, it goes onto
-   a line of its own. */
-.ft-flag-anchor {
-  display: inline-flex;
-  flex: 1 1 0;
-  min-width: 6em;
-  max-width: max-content;
-  margin-left: 0.5em;
-}
-
-.ft-flag-anchor > .ft-hover-card-anchor {
-  align-items: center;
-  gap: 0.3em;
-  min-width: 0;
-}
-
-.ft-display-bar-start:has(> .ft-flag-anchor) {
-  flex-wrap: wrap;
-  row-gap: 0.2em;
-}
-
-.ft-flag {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  padding: 0.05em 0.45em;
-  border: 1px solid;
-  border-radius: 4px;
+/* A node's badge: a "!" over its button's top-right corner, in the colour of
+   its most severe issue, which its button's card lists. A white ring sets it
+   off any button's colour. It sits outside the button, so a blocked button's
+   dimming leaves it at full strength, and floats, so the header lays out as
+   it would without it. */
+.ft-issue-badge {
+  position: absolute;
+  top: -0.3em;
+  right: -0.3em;
+  display: grid;
+  place-items: center;
+  width: 0.95em;
+  height: 0.95em;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px white;
   font-family: sans-serif;
-  font-size: 0.7em;
+  font-size: 0.78em;
   font-weight: bold;
-  line-height: 1.4;
-}
-
-.ft-flag-more {
-  flex-shrink: 0;
-  font-family: sans-serif;
-  font-size: 0.7em;
-  font-weight: bold;
-  color: #6b7280;
+  line-height: 0.95;
+  color: white;
+  pointer-events: none;
 }
 
 /* A row's issues float beneath its value, or at the top of a collection's
    rows, beneath its header line, so the tree lays out as it would without
    them. They show while the row is hovered, a collection's anywhere over its
-   block, after the hover cards' delay. Only the innermost card shows: not
+   block, after the issue cards' delay. Only the innermost card shows: not
    while the pointer is on something inside the row with a card of its own,
    such as a key, a node, or a row or block with issues of its own. */
 .ft-flagged,
@@ -617,6 +597,11 @@ input.ft-select-input::placeholder {
 .ft-flag-line {
   position: relative;
   height: 0;
+}
+
+.ft-issue-card,
+.ft-hover-card-anchor[data-urgent] > .ft-hover-card {
+  --ft-hover-card-delay: var(--ft-issue-card-delay);
 }
 
 .jer-value-main-row:hover .ft-issue-card,
@@ -657,6 +642,11 @@ input.ft-select-input::placeholder {
   font-size: 0.85em;
   font-weight: bold;
   text-transform: uppercase;
+}
+
+/* Set further apart from what the card describes, after its issues */
+.ft-flag-issue + .ft-hover-card-line:not(.ft-flag-issue) {
+  margin-top: 0.6em;
 }
 
 /* Hover card */

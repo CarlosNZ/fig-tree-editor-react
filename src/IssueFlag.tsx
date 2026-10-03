@@ -3,7 +3,6 @@ import { type Issue } from 'fig-tree-evaluator'
 import { flaggedIssues } from './attachIssues'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { warningText, type EditorTheme } from './editorTheme'
-import { HoverCard } from './HoverCard'
 import { PlainValue } from './PlainRun'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
@@ -11,35 +10,9 @@ import { strings } from './strings'
 // How issues show on rows (design, topic 7, "Where issues attach"). A row is
 // tinted by its most severe issue, and its issues float beneath it in a card
 // while it is hovered, so they never change the tree's layout. A node's own
-// issues are a flag on its header's line, which has room for one. `issues`
-// comes from `flaggedIssues`, most severe first, with no hints.
-
-// A node's flag: the most severe issue's message, cut to the space left on
-// the line, then "+1" and so on for the rest, with every one listed on hover.
-// An error's flag is solid and a warning's outlined, so a warning reads as
-// less urgent.
-export const IssueFlag = ({
-  issues,
-  editorTheme,
-}: {
-  issues: readonly Issue[]
-  editorTheme: EditorTheme
-}) => {
-  if (issues.length === 0) return null
-  const [first, ...rest] = issues
-  return (
-    <span className="ft-flag-anchor">
-      <HoverCard card={<CardIssues issues={issues} editorTheme={editorTheme} />}>
-        <span className="ft-flag" style={flagStyle(first.severity, editorTheme)}>
-          {first.message}
-        </span>
-        {rest.length > 0 && (
-          <span className="ft-flag-more">{strings.FT_FLAG_MORE(rest.length)}</span>
-        )}
-      </HoverCard>
-    </span>
-  )
-}
+// issues are listed in its button's card, and a badge on the button's corner
+// shows the most severe. `issues` comes from `flaggedIssues`, most severe
+// first, with no hints.
 
 // A row's card, listing its issues, which the stylesheet shows while the row
 // is hovered, as a hover card is shown
@@ -56,8 +29,9 @@ export const IssueCard = ({
     </span>
   )
 
-// Every issue, with its severity
-const CardIssues = ({
+// The issues listed in a card, each after its severity. An error's tag is
+// solid and a warning's outlined, so a warning reads as less urgent.
+export const CardIssues = ({
   issues,
   editorTheme,
 }: {

@@ -3,7 +3,7 @@ import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard, type CardLine } from './HoverCard'
 import { EvaluateIcon, Icon } from './Icons'
-import { IssueFlag } from './IssueFlag'
+import { CardIssues } from './IssueFlag'
 import { RunCard } from './RunCard'
 import { strings } from './strings'
 import { type EvaluateControl } from './useEvaluation'
@@ -20,13 +20,15 @@ import { type EvaluateControl } from './useEvaluation'
 // can sit on the button's line. The conversion button sits beneath the display
 // name, in the node's colours, shown while it is hovered on a full node, and
 // on a shorthand node while the header is, away from the Evaluate button. Any
-// other issue at the node's path flags the header's line, after the controls
-// (design, topic 7, "Where issues attach").
+// other issue at the node's path is listed at the top of the button's card,
+// which then shows sooner, and a "!" badge on the button's corner, in the
+// colour of the most severe, shows there is one without a hover (design,
+// topic 7, "Where issues attach").
 //
 // A click on the button evaluates the node, and a spinner takes the ▶'s place
 // while it runs, until a second click cancels it (topic 7, "Evaluating"), then
-// a ✓ or ✕ for how it ran, and its card says how in place of its usual lines
-// ("How it ran, in the tree").
+// a ✓ or ✕ for how it ran, and its card says how in place of its usual lines,
+// after any issues ("How it ran, in the tree").
 // Where the node can't be evaluated, the button is dimmed, a plain click does
 // nothing, and its card says why; it isn't `disabled`, so a modifier-click
 // still respells. After a click, its card stays hidden until the pointer
@@ -46,7 +48,7 @@ interface DisplayBarProps {
   card: CardLine[] // the hover card's lines
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
-  flagged?: readonly Issue[] // the node's other issues, most severe first
+  flagged?: readonly Issue[] // the node's other issues, most severe first, in its card
   editorTheme: EditorTheme
   shorthand?: boolean
   inline?: React.ReactNode // after the button, on its line
@@ -85,6 +87,7 @@ export const DisplayBar = ({
           card={card}
           cardNote={cardNote}
           broken={broken}
+          flagged={flagged}
           editorTheme={editorTheme}
           evaluation={evaluation}
           onClick={(e) => {
@@ -104,7 +107,6 @@ export const DisplayBar = ({
           </button>
         )}
         {inline && <div className="ft-display-bar-value">{inline}</div>}
-        {!broken && <IssueFlag issues={flagged} editorTheme={editorTheme} />}
       </span>
       {display && (
         <span className="ft-display-name">
@@ -140,6 +142,7 @@ const NameOrButton = ({
   card,
   cardNote,
   broken,
+  flagged,
   editorTheme,
   evaluation: { running, mark, blocked, disabled },
   onClick,
@@ -147,6 +150,7 @@ const NameOrButton = ({
   DisplayBarProps,
   'display' | 'card' | 'cardNote' | 'broken' | 'editorTheme' | 'evaluation'
 > & {
+  flagged: readonly Issue[]
   label: string
   onClick: (e: React.MouseEvent) => void
 }) =>
@@ -159,15 +163,20 @@ const NameOrButton = ({
     <HoverCard
       hideOnClick
       showAgainOn={mark}
+      urgent={flagged.length > 0 || (!mark && disabled)}
       card={
-        mark ? (
-          <RunCard mark={mark} editorTheme={editorTheme} />
-        ) : card.length > 0 || cardNote !== undefined || disabled ? (
-          <CardLines
-            lines={card}
-            note={cardNote}
-            alert={disabled ? { text: blocked!, colour: editorTheme.error } : undefined}
-          />
+        mark || card.length > 0 || cardNote !== undefined || disabled || flagged.length > 0 ? (
+          <>
+            {!mark && disabled && (
+              <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
+            )}
+            <CardIssues issues={flagged} editorTheme={editorTheme} />
+            {mark ? (
+              <RunCard mark={mark} editorTheme={editorTheme} />
+            ) : (
+              <CardLines lines={card} note={cardNote} />
+            )}
+          </>
         ) : undefined
       }
     >
@@ -184,6 +193,18 @@ const NameOrButton = ({
         </span>
         <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
       </button>
+      {flagged.length > 0 && (
+        <span
+          className="ft-issue-badge"
+          aria-hidden
+          style={{
+            backgroundColor:
+              flagged[0].severity === 'error' ? editorTheme.error : editorTheme.warning,
+          }}
+        >
+          !
+        </span>
+      )}
     </HoverCard>
   )
 

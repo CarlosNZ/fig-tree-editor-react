@@ -8,16 +8,20 @@ import { useEffect, useId, useState, type ReactNode } from 'react'
 // `hideOnClick`, a click on the anchor hides it until the pointer leaves, so
 // it doesn't cover what the click shows, or until `showAgainOn` changes, as
 // an Evaluate's does when its result arrives: with the pointer still there,
-// the card then shows, after the usual delay.
+// the card then shows, after the usual delay. An `urgent` card, holding an
+// issue or why something can't be evaluated, shows sooner
+// (`--ft-issue-card-delay`).
 export const HoverCard = ({
   card,
   hideOnClick = false,
   showAgainOn,
+  urgent = false,
   children,
 }: {
   card: ReactNode
   hideOnClick?: boolean
   showAgainOn?: unknown
+  urgent?: boolean
   children: ReactNode
 }) => {
   const id = useId()
@@ -29,6 +33,7 @@ export const HoverCard = ({
       className="ft-hover-card-anchor"
       aria-describedby={id}
       data-clicked={clicked || undefined}
+      data-urgent={urgent || undefined}
       {...(hideOnClick && {
         onClick: () => setClicked(true),
         onPointerLeave: () => setClicked(false),

@@ -487,12 +487,17 @@ describe('evaluating', () => {
         const uppers = screen
           .getAllByRole('button')
           .filter(({ textContent }) => textContent === '$upper')
-        // In the tree's order: then, inside else, fallback, the var
+        // In the tree's order: then, inside else, fallback, the var, whose
+        // warning comes first
         expect(uppers.map((button) => card(button))).toEqual([
           [expect.stringMatching(/^Ran/), '"YES"'],
           ['Never ran', "Inside else, which didn't run"],
           ['Never ran', 'Not needed: the node succeeded'],
-          ['Never ran', 'Never read'],
+          [
+            "warning'unused' is declared but never referenced in its scope",
+            'Never ran',
+            'Never read',
+          ],
         ])
         expect(card(nodeButton('$lower'))).toEqual(['Never ran', 'Evaluated only when needed'])
       })

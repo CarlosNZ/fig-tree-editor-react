@@ -79,6 +79,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
       <HoverCard
         hideOnClick
         showAgainOn={mark}
+        urgent={!mark && disabled}
         card={
           mark ? (
             <RunCard mark={mark} editorTheme={editorTheme} />
