@@ -38,7 +38,8 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // where it can't be evaluated, dimmed, with the reason in a card on hover.
 // After an evaluation it shows how the reference ran, as a ✓ or ✕, the
 // reference having no border to colour, and its card says how, with the
-// value it resolved to ("How it ran, in the tree").
+// value it resolved to ("How it ran, in the tree"). The card hangs on the
+// text and the ▶ together, so hovering either shows it.
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
   const { classification, issues, editorTheme, entry, referenceNames } = componentProps!
@@ -74,18 +75,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   const colour = namespaceColour(row?.kind as ReferenceKind, editorTheme)
   return (
-    <span className="ft-reference" {...rowMark(nodeData.path)}>
-      <StringDisplay
-        nodeData={nodeData}
-        styles={{ ...getStyles('string', nodeData), color: colour }}
-        pathString={toPathString(nodeData.path)}
-        showStringQuotes={false}
-        stringTruncateLength={props.stringTruncateLength}
-        canEdit={canEdit}
-        setIsEditing={props.setIsEditing}
-        translate={props.translate}
-        showIconTooltips={props.showIconTooltips}
-      />
+    <span className="ft-reference" {...rowMark(nodeData.path)} data-node-run={mark?.status}>
       <HoverCard
         hideOnClick
         showAgainOn={mark}
@@ -97,21 +87,34 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
           ) : undefined
         }
       >
-        <button
-          type="button"
-          className={
-            disabled ? 'ft-reference-evaluate ft-evaluate-blocked' : 'ft-reference-evaluate'
-          }
-          aria-label={running ? strings.FT_CANCEL_EVALUATION : strings.FT_EVALUATE}
-          aria-disabled={disabled || undefined}
-          aria-busy={running || undefined}
-          onClick={() => {
-            if (!disabled) onEvaluate()
-          }}
-          style={{ color: colour }}
-        >
-          <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
-        </button>
+        <span className="ft-reference-body">
+          <StringDisplay
+            nodeData={nodeData}
+            styles={{ ...getStyles('string', nodeData), color: colour }}
+            pathString={toPathString(nodeData.path)}
+            showStringQuotes={false}
+            stringTruncateLength={props.stringTruncateLength}
+            canEdit={canEdit}
+            setIsEditing={props.setIsEditing}
+            translate={props.translate}
+            showIconTooltips={props.showIconTooltips}
+          />
+          <button
+            type="button"
+            className={
+              disabled ? 'ft-reference-evaluate ft-evaluate-blocked' : 'ft-reference-evaluate'
+            }
+            aria-label={running ? strings.FT_CANCEL_EVALUATION : strings.FT_EVALUATE}
+            aria-disabled={disabled || undefined}
+            aria-busy={running || undefined}
+            onClick={() => {
+              if (!disabled) onEvaluate()
+            }}
+            style={{ color: colour }}
+          >
+            <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
+          </button>
+        </span>
       </HoverCard>
       {getNode && <ToGetNodeButton onClick={() => props.handleEdit(getNode)} colour={colour} />}
       <IssueCard issues={flaggedIssues(issues, nodeData.path)} editorTheme={editorTheme} />

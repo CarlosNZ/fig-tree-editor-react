@@ -48,6 +48,12 @@ const runIcon = (name: keyof typeof RUN_ICONS, colour: string, status: string) =
   </div>
 )
 
+// The ✓ on plain data that ran, after its value, or its key where it is a
+// collection, as a reference's ▶ becomes
+export const RanTick = ({ editorTheme }: { editorTheme: EditorTheme }) => (
+  <span className="ft-ran-tick">{runIcon('ran', runColour('value', editorTheme), 'value')}</span>
+)
+
 // An Evaluate's icon (design, topic 7, "How it ran, in the tree"): the ▶, a
 // spinner while its row runs, and after an evaluation, how the row ran: a ✓
 // where it ran, and a ✕ where it failed or its fallback caught a failure. A

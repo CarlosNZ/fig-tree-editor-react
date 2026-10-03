@@ -286,6 +286,69 @@ describe('evaluating', () => {
       expect(node(nodeButton('$plus'))).toHaveAttribute('data-node-run', 'value')
     })
 
+    it('marks plain data and references by how they ran, to dim what never did', async () => {
+      const { container, reports } = host(
+        {
+          a: { operator: 'if', condition: false, then: 'yes', else: { why: 'no' } },
+          b: { operator: 'if', condition: true, then: '$data.x', else: '$data.y' },
+        },
+        { evaluationData: { x: 1, y: 2 } }
+      )
+      fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+      await done(reports, 1)
+      const mark = (text: string) =>
+        screen.getByText(text).closest('[data-node-run]')?.getAttribute('data-node-run')
+      // A constant value, and a constant collection, wrapped whole
+      expect(mark('"yes"')).toBe('skipped')
+      expect(screen.getByText('"yes"').closest('.ft-plain-value')).not.toBeNull()
+      expect(mark('"no"')).toBe('value')
+      expect(screen.getByText('"no"').closest('.ft-plain-collection')).not.toBeNull()
+      // A reference
+      expect(mark('$data.x')).toBe('value')
+      expect(mark('$data.y')).toBe('skipped')
+    })
+
+    it('ticks every constant that ran, as one piece, and no container', async () => {
+      const { container, reports } = host(
+        {
+          a: { operator: 'if', condition: true, then: 'yes', else: 'no' },
+          b: { operator: 'if', condition: false, then: 'yes', else: { why: 'no' } },
+          c: { $upper: '$vars.used', fallback: 'unused', vars: { used: 'v' } },
+          d: { operator: 'if', condition: true, then: { n: 1, x: '$data.x' }, else: 'no' },
+        },
+        { evaluationData: { x: 'y' } }
+      )
+      fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+      await done(reports, 1)
+      // A value's ✓ follows it, and a collection's its key
+      const ticked = (element: Element) => element.querySelector('[data-run="value"]') !== null
+      const values = (text: string) =>
+        [...container.querySelectorAll('.ft-plain-value')].filter(
+          (element) => element.textContent === text
+        )
+      // As `keyLabel` finds one, past its hover card
+      const keys = (name: string) =>
+        [...container.querySelectorAll('.jer-key-text')].filter(
+          (element) =>
+            (element.querySelector('.ft-hover-card-anchor')?.firstChild ?? element.firstChild)
+              ?.textContent === name
+        )
+      const [aThen, bThen] = values('"yes"')
+      expect(ticked(aThen)).toBe(true)
+      expect(ticked(values('"v"')[0])).toBe(true)
+      expect(ticked(values('true')[0])).toBe(true)
+      const [aElse, bElse] = keys('else')
+      expect(ticked(aElse)).toBe(false)
+      expect(ticked(bElse)).toBe(true)
+      // A container's constants, but not the container
+      expect(ticked(values('1')[0])).toBe(true)
+      expect(ticked(keys('then')[2])).toBe(false)
+      // Not where it never ran
+      expect(ticked(bThen)).toBe(false)
+      expect(ticked(values('"no"')[0])).toBe(false)
+      expect(ticked(values('"unused"')[0])).toBe(false)
+    })
+
     it("colours a collapsed node's summary by how it ran", async () => {
       const editorRef = createRef<FigTreeEditorHandle>()
       const { container, reports } = host(

@@ -412,12 +412,12 @@ describe('editor theme', () => {
   })
 
   describe('how a run went', () => {
-    // Marks with each row's status, as an evaluation leaves them
+    // Marks with each node's status, as an evaluation leaves them
     const ran = (...rows: [(string | number)[], RowRun['status']][]): RunMarks =>
       new Map(
         rows.map(([path, status]) => [
           toPathString(path),
-          { path, status, runs: [], perElement: false, nulls: [] },
+          { path, part: 'node', status, runs: [], perElement: false, nulls: [] },
         ])
       )
     // The border's width and padding, which a run leaves as they are
