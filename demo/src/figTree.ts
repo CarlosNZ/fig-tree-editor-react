@@ -46,7 +46,7 @@ const cachingOperators = operators
   .filter(({ cache }) => cache)
   .map(({ name }) => name)
 
-type OperatorDefaults = NonNullable<DemoOptions['operatorDefaults']>
+export type OperatorDefaults = NonNullable<DemoOptions['operatorDefaults']>
 
 // Whether the options leave caching on: some operator that caches isn't
 // turned off
@@ -66,6 +66,17 @@ export const setCaching = (defaults: OperatorDefaults = {}, on: boolean): Operat
     else delete result[name]
   }
   return result
+}
+
+// What FigTree finds wrong with these operator defaults, if anything: an
+// operator or parameter it doesn't have, or a value of the wrong type
+export const checkOperatorDefaults = (operatorDefaults: OperatorDefaults) => {
+  try {
+    new FigTree({ operators, operatorDefaults })
+    return undefined
+  } catch (err) {
+    return err instanceof Error ? err.message : String(err)
+  }
 }
 
 // FigTree's own defaults, which the Configuration panel's empty fields mean

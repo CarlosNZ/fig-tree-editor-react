@@ -27,9 +27,42 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { filterObjectRecursive } from './helpers'
-import { cacheStore, figTree, setCaching, usesCache, type DemoOptions } from './figTree'
-import { JsonEditor } from 'json-edit-react'
+import {
+  cacheStore,
+  figTree,
+  setCaching,
+  usesCache,
+  type DemoOptions,
+  type OperatorDefaults,
+} from './figTree'
+import { fragmentsRestrictions } from './fragmentDefinitions'
+import { operatorDefaultsRestrictions } from './operatorDefaults'
+import { JsonEditor, type ThemeInput } from 'json-edit-react'
 import { type FragmentDefinition } from 'fig-tree-evaluator'
+
+// The JSON editors carry no box of their own, and show their root key as a
+// label
+const jsonEditorTheme = (
+  rootKey: React.CSSProperties,
+  container: React.CSSProperties
+): ThemeInput => ({
+  styles: {
+    container: { backgroundColor: 'transparent', boxShadow: 'none', padding: 0, ...container },
+    property: ({ level }) =>
+      level === 0
+        ? { fontFamily: 'Work Sans, sans-serif', marginRight: '0.5em', ...rootKey }
+        : undefined,
+  },
+})
+
+// Headers, indented under the fields above them
+const headersTheme = jsonEditorTheme({ fontSize: 12 }, { marginTop: 0, marginLeft: '1em' })
+
+// A section of its own, with its name as the heading
+const sectionTheme = jsonEditorTheme(
+  { fontSize: 14, fontWeight: 'bold' },
+  { marginBottom: '0.5em' }
+)
 
 const resetFormState = (options: DemoOptions) => {
   const headers = { ...options.http?.headers }
@@ -48,7 +81,7 @@ const resetFormState = (options: DemoOptions) => {
     runtimeTypeCheck: options.runtimeTypeCheck ?? true,
     strictDataPaths: options.strictDataPaths ?? false,
     fragments: options.fragments,
-    useCache: usesCache(options),
+    operatorDefaults: options.operatorDefaults ?? {},
     maxCacheSize: options.cache?.maxSize,
     maxCacheTime: options.cache?.maxTime,
   }
@@ -93,7 +126,7 @@ export const OptionsModal = ({
       runtimeTypeCheck,
       strictDataPaths,
       fragments,
-      useCache,
+      operatorDefaults,
       maxCacheSize,
       maxCacheTime,
     } = formState
@@ -104,10 +137,11 @@ export const OptionsModal = ({
         graphQL: { endpoint: gqlEndpoint, headers: { Authorization: gqlAuth, ...gqlHeaders } },
         runtimeTypeCheck,
         strictDataPaths,
-        operatorDefaults: setCaching(options.operatorDefaults, useCache),
         cache: { maxSize: maxCacheSize, maxTime: maxCacheTime },
       }),
       fragments,
+      // Unfiltered, since `fallback: null` is a default
+      operatorDefaults,
     }
 
     // FigTree checks the options, the fragment definitions included, as they're
@@ -178,26 +212,7 @@ export const OptionsModal = ({
                     rootName="Other HTTP headers"
                     baseFontSize={12}
                     maxWidth="80vw"
-                    theme={{
-                      styles: {
-                        container: {
-                          backgroundColor: 'transparent',
-                          boxShadow: 'none',
-                          padding: 0,
-                          marginTop: 0,
-                          marginLeft: '1em',
-                        },
-                        property: ({ level }) => {
-                          if (level === 0)
-                            return {
-                              fontSize: 12,
-                              fontFamily: 'Work Sans, sans-serif',
-                              marginRight: '0.5em',
-                              // fontWeight: 'bold',
-                            }
-                        },
-                      },
-                    }}
+                    theme={headersTheme}
                     showCollectionCount="when-collapsed"
                     jsonParse={JSON5.parse}
                   />
@@ -246,25 +261,7 @@ export const OptionsModal = ({
                             rootName="Other headers"
                             baseFontSize={12}
                             maxWidth="80vw"
-                            theme={{
-                              styles: {
-                                container: {
-                                  backgroundColor: 'transparent',
-                                  boxShadow: 'none',
-                                  padding: 0,
-                                  // marginTop: 0,
-                                  marginLeft: '1em',
-                                },
-                                property: ({ level }) => {
-                                  if (level === 0)
-                                    return {
-                                      fontSize: 12,
-                                      fontFamily: 'Work Sans, sans-serif',
-                                      marginRight: '0.5em',
-                                    }
-                                },
-                              },
-                            }}
+                            theme={headersTheme}
                             showCollectionCount="when-collapsed"
                             jsonParse={JSON5.parse}
                           />
@@ -284,27 +281,29 @@ export const OptionsModal = ({
                     }
                     collapse={0}
                     rootName="Fragments"
+                    {...fragmentsRestrictions}
                     baseFontSize={12}
                     maxWidth="80vw"
-                    theme={{
-                      styles: {
-                        container: {
-                          backgroundColor: 'transparent',
-                          boxShadow: 'none',
-                          padding: 0,
-                          marginBottom: '0.5em',
-                        },
-                        property: ({ level }) => {
-                          if (level === 0)
-                            return {
-                              fontSize: 14,
-                              fontFamily: 'Work Sans, sans-serif',
-                              marginRight: '0.5em',
-                              fontWeight: 'bold',
-                            }
-                        },
-                      },
-                    }}
+                    theme={sectionTheme}
+                    showCollectionCount="when-collapsed"
+                    jsonParse={JSON5.parse}
+                  />
+                </FormControl>
+                <FormControl id="operator-defaults">
+                  <JsonEditor
+                    data={formState.operatorDefaults}
+                    setData={(data) =>
+                      setFormState({
+                        ...formState,
+                        operatorDefaults: data as OperatorDefaults,
+                      })
+                    }
+                    collapse={0}
+                    rootName="Operator defaults"
+                    {...operatorDefaultsRestrictions}
+                    baseFontSize={12}
+                    maxWidth="80vw"
+                    theme={sectionTheme}
                     showCollectionCount="when-collapsed"
                     jsonParse={JSON5.parse}
                   />
@@ -316,12 +315,13 @@ export const OptionsModal = ({
                   </Text>
                   <HStack alignItems="flex-end" mt={-2}>
                     <FormControl id="cache-toggle" flexBasis="60%">
+                      {/* A shortcut for the operator defaults' `noCache` */}
                       <Checkbox
-                        isChecked={formState.useCache}
+                        isChecked={usesCache(formState)}
                         onChange={(_) =>
                           setFormState((curr) => ({
                             ...curr,
-                            useCache: !formState.useCache,
+                            operatorDefaults: setCaching(curr.operatorDefaults, !usesCache(curr)),
                           }))
                         }
                         colorScheme="green"
