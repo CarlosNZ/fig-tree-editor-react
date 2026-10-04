@@ -54,6 +54,7 @@ export interface Shared {
   // lifetime (evaluation.ts)
   evaluator: Evaluator
   run: RunMarks | null // how the rows ran in the latest evaluation
+  evaluationData: Record<string, unknown> | undefined // the host's `$data`
 }
 
 export interface CreatedNode {

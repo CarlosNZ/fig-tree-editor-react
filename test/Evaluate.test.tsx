@@ -72,7 +72,8 @@ const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEdit
 // A node's Evaluate button, by its name
 const nodeButton = (name: string) =>
   screen.getAllByRole('button').find((button) => button.textContent === name)!
-// A reference's ▶, the only one in the tree
+// A reference's text, and its ▶, the only reference in the tree
+const reference = () => document.querySelector<HTMLElement>('.ft-reference .jer-value-string')!
 const referenceButton = () => document.querySelector<HTMLElement>('.ft-reference-evaluate')!
 
 describe('evaluating', () => {
@@ -95,9 +96,14 @@ describe('evaluating', () => {
   })
 
   it('evaluates a reference from its ▶', async () => {
-    const { latest } = host({ a: '$data.name' }, { evaluationData: { name: 'Ada' } })
+    const { latest } = host({ vars: { name: 'Ada' }, value: '$vars.name' })
     fireEvent.click(referenceButton())
-    await waitFor(() => expect(latest()).toMatchObject({ path: ['a'], result: 'Ada' }))
+    await waitFor(() => expect(latest()).toMatchObject({ path: ['value'], result: 'Ada' }))
+  })
+
+  it('gives a `$data` reference no ▶', () => {
+    host({ a: '$data.name' }, { evaluationData: { name: 'Ada' } })
+    expect(document.querySelector('.ft-reference-evaluate')).toBeNull()
   })
 
   it('evaluates the whole of a plain root from its bar', async () => {
@@ -154,7 +160,7 @@ describe('evaluating', () => {
     })
 
     it("labels a reference's ▶ as cancelling", () => {
-      host({ a: { $plus: [{ operator: 'wait' }, 1] }, b: '$data.x' })
+      host({ vars: { x: { operator: 'wait' } }, value: '$vars.x' })
       fireEvent.click(referenceButton())
       expect(referenceButton()).toHaveAccessibleName('Cancel evaluation')
       expect(referenceButton()).toHaveAttribute('aria-busy', 'true')
@@ -215,7 +221,7 @@ describe('evaluating', () => {
   })
 
   describe('how it ran', () => {
-    // How a node's button, or a reference's ▶, shows its row ran, if it does
+    // How a node's button shows its row ran, if it does
     const ran = (button: HTMLElement) =>
       button.querySelector('[data-run]')?.getAttribute('data-run')
     const marks = () => document.querySelectorAll('[data-run]').length
@@ -239,7 +245,7 @@ describe('evaluating', () => {
       await done(reports, 1)
       expect(ran(x)).toBe('value')
       expect(ran(nodeButton('$multiply'))).toBe('value')
-      expect(ran(referenceButton())).toBe('value')
+      expect(reference().closest('.ft-reference')).toHaveAttribute('data-node-run', 'value')
       expect(ran(y)).toBeUndefined()
       expect(border(x).borderColor).toBe(toRgb(defaultEditorTheme.runValue))
       expect(border(y).borderColor).toBe(toRgb(defaultEditorTheme.shorthandBorder))
@@ -399,7 +405,7 @@ describe('evaluating', () => {
         await done(reports, 1)
         expect(status(nodeButton('$upper'))).toBe('Ran')
         expect(card(nodeButton('$upper')).slice(1)).toEqual(['"ADA"'])
-        expect(card(referenceButton())).toEqual([expect.stringMatching(/^Ran/), '"Ada"'])
+        expect(card(reference())).toEqual([expect.stringMatching(/^Ran/), '"Ada"'])
       })
 
       it('lists one value per element inside an iterator, up to ten', async () => {

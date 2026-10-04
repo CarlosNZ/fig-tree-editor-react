@@ -60,7 +60,7 @@ export const RunCard = ({ mark, editorTheme }: { mark: RowRun; editorTheme: Edit
 
 // Enough of a value to fill three lines, which the stylesheet cuts it to,
 // and of an element's, to fill one
-const VALUE_LIMIT = 300
+export const VALUE_LIMIT = 300
 const ELEMENT_LIMIT = 100
 const ELEMENT_LINES = 10
 

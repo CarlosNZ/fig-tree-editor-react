@@ -196,6 +196,7 @@ export const FigTreeEditor = ({
   )
   const mergedEditorTheme = useStableValue(mergeEditorTheme(editorTheme))
   const stableDefaultOperators = useStableValue(defaultOperators)
+  const stableEvaluationData = useStableValue(evaluationData)
   const created = useRef<CreatedNode | null>(null)
 
   const validate = (value: unknown) =>
@@ -296,6 +297,7 @@ export const FigTreeEditor = ({
         created,
         evaluator,
         run: runMarks,
+        evaluationData: stableEvaluationData,
       }),
     [
       figTree,
@@ -309,6 +311,7 @@ export const FigTreeEditor = ({
       referenceNames,
       evaluator,
       runMarks,
+      stableEvaluationData,
     ]
   )
 

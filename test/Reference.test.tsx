@@ -99,10 +99,30 @@ describe('a reference', () => {
     expect(shownAs(container, '$data.user')).toHaveStyle({ color: 'rgb(128, 0, 128)' })
   })
 
-  it('is followed by its ▶', () => {
-    const { container } = editor({ ref: '$data.user' })
-    const reference = container.querySelector<HTMLElement>('.ft-reference')!
-    expect(within(reference).getByRole('button', { name: 'Evaluate' })).toBeInTheDocument()
+  describe('its card', () => {
+    const evaluationData = { user: { name: 'Ada' } }
+    // The card's text, which the stylesheet shows on hover
+    const card = (container: HTMLElement, text: string) =>
+      shownAs(container, text).closest('.ft-hover-card-anchor')?.querySelector('.ft-hover-card')
+        ?.textContent
+
+    it('shows the value a `$data` reference reads, as compact JSON', () => {
+      const { container } = editor({ a: '$data.user.name', b: '$d.user' }, { evaluationData })
+      expect(card(container, '$data.user.name')).toBe('"Ada"')
+      expect(card(container, '$d.user')).toBe('{"name":"Ada"}')
+    })
+
+    it('shows null where the path finds nothing', () => {
+      const { container } = editor({ a: '$data.user.age' }, { evaluationData })
+      expect(card(container, '$data.user.age')).toBe('null')
+    })
+
+    it('has none without evaluation data, or in another namespace', () => {
+      const { container } = editor({ a: '$data.user' })
+      expect(card(container, '$data.user')).toBeUndefined()
+      const vars = editor({ vars: { x: 1 }, value: '$vars.x' }, { evaluationData })
+      expect(card(vars.container, '$vars.x')).toBeUndefined()
+    })
   })
 
   it("sits on a shorthand's line", () => {
