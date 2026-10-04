@@ -78,14 +78,19 @@ const resetFormState = (options: DemoOptions) => {
     gqlEndpoint: options.graphQL?.endpoint,
     gqlAuth,
     gqlHeaders,
-    runtimeTypeCheck: options.runtimeTypeCheck ?? true,
     strictDataPaths: options.strictDataPaths ?? false,
     fragments: options.fragments,
     operatorDefaults: options.operatorDefaults ?? {},
     maxCacheSize: options.cache?.maxSize,
     maxCacheTime: options.cache?.maxTime,
+    timeout: options.timeout,
+    maxDepth: options.maxDepth,
+    maxNodes: options.maxNodes,
   }
 }
+
+// An empty field is no limit
+const toLimit = (text: string) => (text.trim() === '' ? undefined : Number(text))
 
 export const OptionsModal = ({
   options,
@@ -123,21 +128,25 @@ export const OptionsModal = ({
       gqlEndpoint,
       gqlAuth,
       gqlHeaders,
-      runtimeTypeCheck,
       strictDataPaths,
       fragments,
       operatorDefaults,
       maxCacheSize,
       maxCacheTime,
+      timeout,
+      maxDepth,
+      maxNodes,
     } = formState
 
     const newOptions: DemoOptions = {
       ...filterObjectRecursive({
         http: { baseEndpoint, headers: { Authorization: authHeader, ...headers } },
         graphQL: { endpoint: gqlEndpoint, headers: { Authorization: gqlAuth, ...gqlHeaders } },
-        runtimeTypeCheck,
         strictDataPaths,
         cache: { maxSize: maxCacheSize, maxTime: maxCacheTime },
+        timeout,
+        maxDepth,
+        maxNodes,
       }),
       fragments,
       // Unfiltered, since `fallback: null` is a default
@@ -374,20 +383,6 @@ export const OptionsModal = ({
                 <Text fontSize="md">
                   <strong>Miscellaneous:</strong>
                 </Text>
-                <FormControl id="runtime-type-check">
-                  <Checkbox
-                    isChecked={formState.runtimeTypeCheck}
-                    onChange={(_) =>
-                      setFormState((curr) => ({
-                        ...curr,
-                        runtimeTypeCheck: !formState.runtimeTypeCheck,
-                      }))
-                    }
-                    colorScheme="green"
-                  >
-                    <Text fontSize="sm">Runtime type checking</Text>
-                  </Checkbox>
-                </FormControl>
                 <FormControl id="strict-data-paths">
                   <Checkbox
                     isChecked={formState.strictDataPaths}
@@ -402,6 +397,61 @@ export const OptionsModal = ({
                     <Text fontSize="sm">Strict data paths (a missing path is an error)</Text>
                   </Checkbox>
                 </FormControl>
+                <Accordion allowToggle mt={2}>
+                  <AccordionItem>
+                    <AccordionButton pl={0}>
+                      <Box flex="1" textAlign="left">
+                        <Text>
+                          <strong>Limits</strong> (none if empty)
+                        </Text>
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                    <AccordionPanel pt={0} px={0}>
+                      <HStack alignItems="flex-end">
+                        <FormControl id="timeout">
+                          <FormLabel {...labelStyles}>Timeout (ms)</FormLabel>
+                          <Input
+                            size="sm"
+                            value={formState.timeout ?? ''}
+                            onChange={(e) =>
+                              setFormState((curr) => ({
+                                ...curr,
+                                timeout: toLimit(e.target.value),
+                              }))
+                            }
+                          />
+                        </FormControl>
+                        <FormControl id="max-depth">
+                          <FormLabel {...labelStyles}>Max depth</FormLabel>
+                          <Input
+                            size="sm"
+                            value={formState.maxDepth ?? ''}
+                            onChange={(e) =>
+                              setFormState((curr) => ({
+                                ...curr,
+                                maxDepth: toLimit(e.target.value),
+                              }))
+                            }
+                          />
+                        </FormControl>
+                        <FormControl id="max-nodes">
+                          <FormLabel {...labelStyles}>Max nodes</FormLabel>
+                          <Input
+                            size="sm"
+                            value={formState.maxNodes ?? ''}
+                            onChange={(e) =>
+                              setFormState((curr) => ({
+                                ...curr,
+                                maxNodes: toLimit(e.target.value),
+                              }))
+                            }
+                          />
+                        </FormControl>
+                      </HStack>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
               </Stack>
             </ModalBody>
             <ModalFooter>

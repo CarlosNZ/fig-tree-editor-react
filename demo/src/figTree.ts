@@ -20,8 +20,10 @@ export type DemoOptions = Pick<
   | 'graphQL'
   | 'operatorDefaults'
   | 'cache'
-  | 'runtimeTypeCheck'
   | 'strictDataPaths'
+  | 'timeout'
+  | 'maxDepth'
+  | 'maxNodes'
 >
 
 export const defaultOptions: DemoOptions = {
@@ -164,8 +166,15 @@ const prepareOptions = (previous: DemoOptions, options: DemoOptions): FigTreeOpt
     maxSize: options.cache?.maxSize ?? DEFAULT_CACHE_SIZE,
     maxTime: options.cache?.maxTime ?? DEFAULT_CACHE_TIME,
   },
-  runtimeTypeCheck: options.runtimeTypeCheck ?? true,
   strictDataPaths: options.strictDataPaths ?? false,
+  // TO-DO: give `timeout` fig-tree's removal marker when `options` has none
+  // (fig-tree-evaluator#157). It takes only a positive number, so until then a
+  // cleared timeout stays until the page reloads.
+  timeout: options.timeout,
+  // `Infinity` is no limit, which a stored option can't hold, since JSON keeps
+  // it as null, and FigTree reads null as 0
+  maxDepth: options.maxDepth ?? Infinity,
+  maxNodes: options.maxNodes ?? Infinity,
 })
 
 let applied: DemoOptions = {}
