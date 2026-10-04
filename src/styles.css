@@ -535,26 +535,6 @@ input.ft-select-input::placeholder {
   cursor: pointer;
 }
 
-/* A reference's "To get node", shown while its row is hovered */
-.ft-to-get-button {
-  padding: 0.2em 0.4em;
-  border: 1px solid;
-  border-radius: 0.48em;
-  background: none;
-  font-family: sans-serif;
-  font-size: 0.65em;
-  font-weight: bold;
-  white-space: nowrap;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-
-.jer-value-main-row:hover .ft-to-get-button,
-.ft-to-get-button:focus-visible {
-  opacity: 1;
-}
-
 /* Holds json-edit-react's input while a reference is edited, adding no box */
 .ft-reference-input {
   display: contents;

@@ -45,7 +45,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
 | J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
 | J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
-| J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | —               |
+| J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | 2.0.4           |
 | J14 | json-edit-react    | A compact array view                                                       | Open     | Not filed                                                         | —               |
 | J15 | json-edit-react    | A definition that keeps its row from collapsing                            | Maybe    | [#419](https://github.com/CarlosNZ/json-edit-react/issues/419)    | —               |
 
@@ -445,6 +445,8 @@ Reading json-edit-react 2.0's custom-node machinery for the node model found not
 **Why.** "To get node" is a custom button on reference rows ("Kinds" under topic 3 in [v3-design.md](v3-design.md); plan, Phase 8). Written through the editor's own `setData`, it would skip the host's `onUpdate`, which every other write the editor makes goes through ("Commit semantics").
 
 **Without it.** The Reference component draws the control itself, after its ▶, and commits with `handleEdit(node)`, so it sits by the value rather than among the edit tools. That is the stand-in 8.3 builds, `ToGetNodeButton` in `src/upstream.tsx`.
+
+**Shipped** in json-edit-react 2.0.4, as `handleEdit` rather than `setValue`, with `canEdit`, passed to both `onClick` and `Element`. A labelled custom button whose `Element` returns `null` is hidden entirely, so it leaves no gap among the tools. "To get node" is `toGetNodeButton` in `src/ToGetNodeButton.tsx`, a custom button after json-edit-react's own tools and before the host's, and the stand-in is gone. `test/Reference.test.tsx` checks it commits through `onUpdate`, where it isn't offered, and that it sits among the edit tools before a host's own button.
 
 **Issue.** Filed as [#418](https://github.com/CarlosNZ/json-edit-react/issues/418).
 

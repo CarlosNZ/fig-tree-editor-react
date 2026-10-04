@@ -135,6 +135,16 @@ describe('a reference', () => {
       editor({ ok: '$data.ok' }, { allowEdit: false })
       expect(screen.queryByRole('button', { name: 'To get node' })).not.toBeInTheDocument()
     })
+
+    it("is among json-edit-react's edit tools, before the host's own buttons", () => {
+      const Host = () => <span>host</span>
+      editor({ ok: '$data.ok' }, { customButtons: [{ Element: Host, label: 'Host button' }] })
+      const toGet = screen.getByRole('button', { name: 'To get node' })
+      const tools = toGet.closest('.jer-edit-buttons')!
+      expect(tools).not.toBeNull()
+      const hostButton = within(tools as HTMLElement).getByRole('button', { name: 'Host button' })
+      expect(toGet.compareDocumentPosition(hostButton)).toBe(Node.DOCUMENT_POSITION_FOLLOWING)
+    })
   })
 
   describe('spelled by `referenceNames`', () => {

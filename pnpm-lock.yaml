@@ -10,7 +10,7 @@ importers:
     dependencies:
       '@json-edit-react/utils':
         specifier: ^1.0.0
-        version: 1.0.0(json-edit-react@2.0.3(react@18.3.1))(react@18.3.1)
+        version: 1.0.0(json-edit-react@2.0.4(react@18.3.1))(react@18.3.1)
     devDependencies:
       '@eslint/js':
         specifier: ^9.20.0
@@ -67,8 +67,8 @@ importers:
         specifier: ^30.1.1
         version: 30.1.1
       json-edit-react:
-        specifier: ^2.0.3
-        version: 2.0.3(react@18.3.1)
+        specifier: ^2.0.4
+        version: 2.0.4(react@18.3.1)
       prettier:
         specifier: ^3.9.9
         version: 3.9.9
@@ -119,7 +119,7 @@ importers:
         version: 11.14.1(@emotion/react@11.14.0(@types/react@18.3.27)(react@18.3.1))(@types/react@18.3.27)(react@18.3.1)
       '@json-edit-react/utils':
         specifier: ^1.0.0
-        version: 1.0.0(json-edit-react@2.0.3(react@18.3.1))(react@18.3.1)
+        version: 1.0.0(json-edit-react@2.0.4(react@18.3.1))(react@18.3.1)
       cors:
         specifier: ^2.8.5
         version: 2.8.5
@@ -133,8 +133,8 @@ importers:
         specifier: ^10.15.1
         version: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       json-edit-react:
-        specifier: ^2.0.3
-        version: 2.0.3(react@18.3.1)
+        specifier: ^2.0.4
+        version: 2.0.4(react@18.3.1)
       json5:
         specifier: ^2.2.3
         version: 2.2.3
@@ -2335,8 +2335,8 @@ packages:
   json-buffer@3.0.1:
     resolution: {integrity: sha512-4bV5BfR2mqfQTJm+V5tPPdf+ZpuhiIvTuAB5g8kcrXOZpTT/QwwVRWBywX1ozr6lEuPdbHxwaJlm9G6mI2sfSQ==}
 
-  json-edit-react@2.0.3:
-    resolution: {integrity: sha512-vxgY2OcMOxoCmhxb2FsnIAjkCUni2g+58nNoobGaW4lLIAZDrCFJwZ9WIxPOms8LLujDmD7w0KYnbf430JtBQw==}
+  json-edit-react@2.0.4:
+    resolution: {integrity: sha512-RqppTbjeV9+0o4UegI5mGTHhoC7P5KQJhDR2+8Dfg8IjK1AtLZhw4iTRaDM4RRZuL+/uIaeWFT3n1mf2ZiIXiQ==}
     peerDependencies:
       react: '>=18.0.0'
 
@@ -4093,9 +4093,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.6.0
 
-  '@json-edit-react/utils@1.0.0(json-edit-react@2.0.3(react@18.3.1))(react@18.3.1)':
+  '@json-edit-react/utils@1.0.0(json-edit-react@2.0.4(react@18.3.1))(react@18.3.1)':
     dependencies:
-      json-edit-react: 2.0.3(react@18.3.1)
+      json-edit-react: 2.0.4(react@18.3.1)
       react: 18.3.1
 
   '@napi-rs/lzma-linux-x64-gnu@1.5.1':
@@ -5689,7 +5689,7 @@ snapshots:
 
   json-buffer@3.0.1: {}
 
-  json-edit-react@2.0.3(react@18.3.1):
+  json-edit-react@2.0.4(react@18.3.1):
     dependencies:
       react: 18.3.1
 

@@ -90,6 +90,7 @@ import {
   type FigTreeEditorHandle,
 } from './status'
 import { strings } from './strings'
+import { toGetNodeButton } from './ToGetNodeButton'
 import { typeOptions } from './typeOptions'
 import { useStableValue } from './useStableValue'
 
@@ -175,6 +176,7 @@ export const FigTreeEditor = ({
   id,
   editorRef,
   onEditEvent,
+  customButtons: hostButtons,
   ...props
 }: FigTreeEditorProps) => {
   useInsertionEffect(() => {
@@ -308,6 +310,16 @@ export const FigTreeEditor = ({
       evaluator,
       runMarks,
     ]
+  )
+
+  // The editor's buttons come first, after json-edit-react's own tools, and
+  // then the host's
+  const customButtons = useMemo(
+    () => [
+      toGetNodeButton({ classification, editorTheme: mergedEditorTheme, referenceNames }),
+      ...(hostButtons ?? []),
+    ],
+    [classification, mergedEditorTheme, referenceNames, hostButtons]
   )
 
   // Memoised on what the definitions are: json-edit-react passes both to every
@@ -591,6 +603,7 @@ export const FigTreeEditor = ({
         collapse={collapseFilter}
         onCollapse={recordCollapse}
         customNodeDefinitions={definitions}
+        customButtons={customButtons}
         defaultValue={defaultValue}
         newKeyOptions={newKeyOptions}
         allowTypeSelection={allowTypeSelection}

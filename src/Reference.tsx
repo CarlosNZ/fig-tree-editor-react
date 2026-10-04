@@ -1,9 +1,8 @@
-import { useLayoutEffect, useMemo, useRef } from 'react'
+import { useLayoutEffect, useRef } from 'react'
 import { StringDisplay, toPathString, type CustomComponentProps } from 'json-edit-react'
 import { recognizeReference } from 'fig-tree-evaluator/format'
 import { flaggedIssues } from './attachIssues'
 import { bindings, rowAt, type Row, type RowKind } from './classify'
-import { getNodeFor } from './conversions'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard } from './HoverCard'
@@ -12,15 +11,14 @@ import { IssueCard } from './IssueFlag'
 import { RunCard } from './RunCard'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
-import { ToGetNodeButton } from './upstream'
 import { useEvaluation } from './useEvaluation'
 
 type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 
 // A reference (design, topic 3, "Kinds"; topic 5, "Editing references"): the
 // string in its namespace's colour, without the quotes a plain string has,
-// then the ▶ that evaluates it, and "To get node", on hover, where the
-// reference has a `get` form. Its issues float beneath it while its row is
+// then the ▶ that evaluates it. "To get node" is among its edit tools
+// (`./ToGetNodeButton`). Its issues float beneath it while its row is
 // hovered (topic 7, "Where issues attach"). It is shown by json-edit-react's
 // own string display, so double-click and Cmd-click open it for editing, and a
 // long one is cut short, as any string is.
@@ -41,18 +39,14 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // value it resolved to ("How it ran, in the tree"). The card hangs on the
 // text and the ▶ together, so hovering either shows it.
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
-  const { componentProps, nodeData, value, isEditing, originalNode, canEdit, getStyles } = props
-  const { classification, issues, editorTheme, entry, referenceNames } = componentProps!
+  const { componentProps, nodeData, isEditing, originalNode, canEdit, getStyles } = props
+  const { classification, issues, editorTheme, entry } = componentProps!
   const row = rowAt(classification, nodeData.path)
   const input = useRef<HTMLDivElement>(null)
   const { running, mark, blocked, disabled, onEvaluate } = useEvaluation(
     nodeData.path,
     nodeData.fullData,
     componentProps!
-  )
-  const getNode = useMemo(
-    () => (canEdit ? getNodeFor(value as string, referenceNames) : null),
-    [value, canEdit, referenceNames]
   )
 
   // As the input opens, or takes another entry's text, after json-edit-react's
@@ -117,14 +111,13 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
           </button>
         </span>
       </HoverCard>
-      {getNode && <ToGetNodeButton onClick={() => props.handleEdit(getNode)} colour={colour} />}
       <IssueCard issues={flaggedIssues(issues, nodeData.path)} editorTheme={editorTheme} />
     </span>
   )
 }
 
 // The bindings share one colour, the element and the index alike
-const namespaceColour = ({ namespace }: ReferenceKind, editorTheme: EditorTheme) =>
+export const namespaceColour = ({ namespace }: ReferenceKind, editorTheme: EditorTheme) =>
   ({
     data: editorTheme.refData,
     vars: editorTheme.refVars,
