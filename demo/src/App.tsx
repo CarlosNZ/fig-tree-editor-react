@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import JSON5 from 'json5'
 import './App.css'
 import {
@@ -20,8 +20,8 @@ import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
 import { FigTreeEditor, type EditorStatus, type Evaluation } from '@fig-tree-editor-react'
 import { version as figTreeVersion } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
-import { getInitOptions, getLocalStorage, setLocalStorage, truncate } from './helpers'
-import { buildFigTree, type DemoOptions } from './figTree'
+import { getLocalStorage, setLocalStorage, truncate } from './helpers'
+import { applyOptions, figTree, initialOptions, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
 import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
@@ -57,8 +57,7 @@ function App() {
   )
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
-  const [options, setOptions] = useState<DemoOptions>(getInitOptions)
-  const { figTree, cacheStore } = useMemo(() => buildFigTree(options), [options])
+  const [options, setOptions] = useState<DemoOptions>(initialOptions)
   const [status, setStatus] = useState<EditorStatus | null>(null)
 
   const {
@@ -86,7 +85,9 @@ function App() {
 
   const toast = useToast()
 
+  // Throws on invalid options, before anything changes
   const updateOptions = (newOptions: DemoOptions) => {
+    applyOptions(newOptions)
     setOptions(newOptions)
     setLocalStorage('options', newOptions)
   }
@@ -147,8 +148,6 @@ function App() {
         <OptionsModal
           options={options}
           onSave={updateOptions}
-          figTree={figTree}
-          cacheStore={cacheStore}
           modalState={{
             modalOpen,
             setModalOpen,

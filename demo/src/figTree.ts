@@ -9,6 +9,7 @@ import {
 // @ts-expect-error No declaration
 import { PostgresInterface } from './postgresInterface.js'
 import { evaluatorConfig } from './data/evaluatorConfig'
+import { getLocalStorage } from './helpers'
 
 // The options the demo lets you change, from its Configuration panel and per
 // demo. They're plain data, so they can be kept in local storage.
@@ -67,7 +68,9 @@ export const setCaching = (defaults: OperatorDefaults = {}, on: boolean): Operat
   return result
 }
 
+// FigTree's own defaults, which the Configuration panel's empty fields mean
 const DEFAULT_CACHE_SIZE = 50
+const DEFAULT_CACHE_TIME = 1800
 
 // The result cache's store, so the Configuration panel can show how many
 // entries it holds, which FigTree doesn't report. FigTree's `maxSize` bounds
@@ -77,10 +80,16 @@ const DEFAULT_CACHE_SIZE = 50
 export class CacheStore {
   private readonly entries = new Map<string, unknown>()
 
-  constructor(private readonly maxSize: number) {}
+  constructor(private maxSize: number) {}
 
   get size() {
     return this.entries.size
+  }
+
+  // Changes the bound, evicting the least recently used entries past a shrink
+  resize(maxSize: number) {
+    this.maxSize = maxSize
+    while (this.entries.size > this.maxSize) this.evictOldest()
   }
 
   get(key: string) {
@@ -94,7 +103,7 @@ export class CacheStore {
   set(key: string, value: unknown) {
     this.entries.delete(key)
     this.entries.set(key, value)
-    if (this.entries.size > this.maxSize) this.entries.delete(this.entries.keys().next().value!)
+    if (this.entries.size > this.maxSize) this.evictOldest()
   }
 
   delete(key: string) {
@@ -104,18 +113,72 @@ export class CacheStore {
   clear() {
     this.entries.clear()
   }
+
+  private evictOldest() {
+    this.entries.delete(this.entries.keys().next().value!)
+  }
 }
 
-// A new instance for each set of options, with its own cache store. The
-// operators can only be given at construction, and replacing the instance is
-// how a fragment is removed, since `updateOptions()` merges fragments. It
-// throws on invalid options, such as a malformed fragment definition.
-export const buildFigTree = (options: DemoOptions) => {
-  const cacheStore = new CacheStore(options.cache?.maxSize ?? DEFAULT_CACHE_SIZE)
-  const figTree = new FigTree({
-    ...options,
-    cache: { ...options.cache, store: cacheStore },
-    operators,
-  })
-  return { figTree, cacheStore }
+// The one instance, for as long as the page is open, so its result cache
+// outlives every change of options. The operators can only be given here;
+// everything else goes through `applyOptions`.
+export const cacheStore = new CacheStore(DEFAULT_CACHE_SIZE)
+export const figTree = new FigTree({ operators, cache: { store: cacheStore } })
+
+// The update that makes the instance's options `options`, given that they're
+// `previous`. `updateOptions()` merges what it's given into what the instance
+// has, and leaves out what's `undefined`, so each setting the demo can clear
+// is given its unset value: an empty endpoint, no headers, an operator's own
+// defaults, or FigTree's default.
+const prepareOptions = (previous: DemoOptions, options: DemoOptions): FigTreeOptions => ({
+  // TO-DO: give each fragment in `previous` but not in `options` fig-tree's
+  // removal marker once it has one (fig-tree-evaluator#157). Until then, a
+  // removed fragment stays registered until the page reloads.
+  fragments: options.fragments ?? {},
+  http: {
+    ...options.http,
+    baseEndpoint: options.http?.baseEndpoint ?? '',
+    headers: options.http?.headers ?? {},
+  },
+  graphQL: {
+    ...options.graphQL,
+    endpoint: options.graphQL?.endpoint ?? '',
+    headers: options.graphQL?.headers ?? {},
+  },
+  operatorDefaults: {
+    ...Object.fromEntries(Object.keys(previous.operatorDefaults ?? {}).map((name) => [name, {}])),
+    ...options.operatorDefaults,
+  },
+  cache: {
+    maxSize: options.cache?.maxSize ?? DEFAULT_CACHE_SIZE,
+    maxTime: options.cache?.maxTime ?? DEFAULT_CACHE_TIME,
+  },
+  runtimeTypeCheck: options.runtimeTypeCheck ?? true,
+  strictDataPaths: options.strictDataPaths ?? false,
+})
+
+let applied: DemoOptions = {}
+
+// Makes `options` the instance's options. It throws on invalid options, such
+// as a malformed fragment definition, leaving the instance as it was.
+export const applyOptions = (options: DemoOptions) => {
+  figTree.updateOptions(prepareOptions(applied, options))
+  // FigTree checks `maxSize`, but bounds only its built-in store
+  cacheStore.resize(options.cache?.maxSize ?? DEFAULT_CACHE_SIZE)
+  applied = options
 }
+
+// The saved options if FigTree accepts them, else the defaults, applied to the
+// instance
+export const initialOptions = ((): DemoOptions => {
+  const saved = getLocalStorage('options') as DemoOptions | null
+  if (saved)
+    try {
+      applyOptions(saved)
+      return saved
+    } catch {
+      // Not valid, so the defaults
+    }
+  applyOptions(defaultOptions)
+  return defaultOptions
+})()

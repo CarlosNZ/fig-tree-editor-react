@@ -1,5 +1,3 @@
-import { buildFigTree, defaultOptions, type DemoOptions } from './figTree'
-
 // Every key the demo stores is prefixed, so that what the v2 playground left
 // in the same origin's storage is never read as v3
 const STORAGE_PREFIX = 'v3:'
@@ -15,18 +13,6 @@ export const getLocalStorage = (key: string) => {
 
 export const setLocalStorage = (key: string, value: unknown) => {
   localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(value))
-}
-
-// The saved options, if FigTree accepts them, else the defaults
-export const getInitOptions = (): DemoOptions => {
-  const saved = getLocalStorage('options') as DemoOptions | null
-  if (!saved) return defaultOptions
-  try {
-    buildFigTree(saved)
-    return saved
-  } catch {
-    return defaultOptions
-  }
 }
 
 // Given an object, returns a new object with all keys removed whose values

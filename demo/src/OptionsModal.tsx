@@ -27,9 +27,9 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { filterObjectRecursive } from './helpers'
-import { buildFigTree, setCaching, usesCache, type CacheStore, type DemoOptions } from './figTree'
+import { cacheStore, figTree, setCaching, usesCache, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
-import { type FigTree, type FragmentDefinition } from 'fig-tree-evaluator'
+import { type FragmentDefinition } from 'fig-tree-evaluator'
 
 const resetFormState = (options: DemoOptions) => {
   const headers = { ...options.http?.headers }
@@ -57,16 +57,11 @@ const resetFormState = (options: DemoOptions) => {
 export const OptionsModal = ({
   options,
   onSave,
-  figTree,
-  cacheStore,
   modalState: { modalOpen, setModalOpen },
 }: {
   options: DemoOptions
+  // Throws on invalid options
   onSave: (options: DemoOptions) => void
-  // The current instance and its cache, which clearing empties at once,
-  // without waiting for Save
-  figTree: FigTree
-  cacheStore: CacheStore
   modalState: { modalOpen: boolean; setModalOpen: Dispatch<React.SetStateAction<boolean>> }
 }) => {
   const [formState, setFormState] = useState(resetFormState(options))
@@ -78,8 +73,9 @@ export const OptionsModal = ({
       setFormState(resetFormState(options))
       setCacheSize(cacheStore.size)
     }
-  }, [modalOpen, options, cacheStore])
+  }, [modalOpen, options])
 
+  // Empties the cache at once, without waiting for Save
   const clearCache = () => {
     figTree.clearCache()
     setCacheSize(cacheStore.size)
@@ -114,10 +110,10 @@ export const OptionsModal = ({
       fragments,
     }
 
-    // FigTree checks the options, the fragment definitions included, when it's
-    // constructed
+    // FigTree checks the options, the fragment definitions included, as they're
+    // applied
     try {
-      buildFigTree(newOptions)
+      onSave(newOptions)
     } catch (err) {
       toast({
         title: 'Invalid configuration',
@@ -129,7 +125,6 @@ export const OptionsModal = ({
       return
     }
 
-    onSave(newOptions)
     setModalOpen(false)
   }
 
