@@ -27,9 +27,9 @@ import {
   useToast,
 } from '@chakra-ui/react'
 import { filterObjectRecursive } from './helpers'
-import { buildFigTree, setCaching, usesCache, type DemoOptions } from './figTree'
+import { buildFigTree, setCaching, usesCache, type CacheStore, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
-import { type FragmentDefinition } from 'fig-tree-evaluator'
+import { type FigTree, type FragmentDefinition } from 'fig-tree-evaluator'
 
 const resetFormState = (options: DemoOptions) => {
   const headers = { ...options.http?.headers }
@@ -57,20 +57,33 @@ const resetFormState = (options: DemoOptions) => {
 export const OptionsModal = ({
   options,
   onSave,
+  figTree,
+  cacheStore,
   modalState: { modalOpen, setModalOpen },
 }: {
   options: DemoOptions
   onSave: (options: DemoOptions) => void
+  // The current instance and its cache, which clearing empties at once,
+  // without waiting for Save
+  figTree: FigTree
+  cacheStore: CacheStore
   modalState: { modalOpen: boolean; setModalOpen: Dispatch<React.SetStateAction<boolean>> }
 }) => {
   const [formState, setFormState] = useState(resetFormState(options))
+  const [cacheSize, setCacheSize] = useState(0)
   const toast = useToast()
 
   useEffect(() => {
     if (modalOpen) {
       setFormState(resetFormState(options))
+      setCacheSize(cacheStore.size)
     }
-  }, [modalOpen, options])
+  }, [modalOpen, options, cacheStore])
+
+  const clearCache = () => {
+    figTree.clearCache()
+    setCacheSize(cacheStore.size)
+  }
 
   const handleSubmit = (e: any) => {
     e.preventDefault()
@@ -347,6 +360,19 @@ export const OptionsModal = ({
                         }
                       />
                     </FormControl>
+                  </HStack>
+                  <HStack mt={2}>
+                    <Text {...labelStyles}>
+                      {cacheSize} {cacheSize === 1 ? 'entry' : 'entries'} cached
+                    </Text>
+                    <Button
+                      size="xs"
+                      colorScheme="green"
+                      onClick={clearCache}
+                      isDisabled={cacheSize === 0}
+                    >
+                      Clear cache
+                    </Button>
                   </HStack>
                 </VStack>
                 <hr />

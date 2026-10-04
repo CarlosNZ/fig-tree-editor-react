@@ -58,7 +58,7 @@ function App() {
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
   const [options, setOptions] = useState<DemoOptions>(getInitOptions)
-  const figTree = useMemo(() => buildFigTree(options), [options])
+  const { figTree, cacheStore } = useMemo(() => buildFigTree(options), [options])
   const [status, setStatus] = useState<EditorStatus | null>(null)
 
   const {
@@ -147,6 +147,8 @@ function App() {
         <OptionsModal
           options={options}
           onSave={updateOptions}
+          figTree={figTree}
+          cacheStore={cacheStore}
           modalState={{
             modalOpen,
             setModalOpen,
