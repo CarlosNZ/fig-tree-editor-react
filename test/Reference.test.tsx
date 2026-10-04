@@ -100,7 +100,7 @@ describe('a reference', () => {
   })
 
   describe('its card', () => {
-    const evaluationData = { user: { name: 'Ada' } }
+    const evaluationData = { user: { name: 'Ada', bio: 'x'.repeat(40) } }
     // The card's text, which the stylesheet shows on hover
     const card = (container: HTMLElement, text: string) =>
       shownAs(container, text).closest('.ft-hover-card-anchor')?.querySelector('.ft-hover-card')
@@ -109,12 +109,27 @@ describe('a reference', () => {
     it('shows the value a `$data` reference reads, as compact JSON', () => {
       const { container } = editor({ a: '$data.user.name', b: '$d.user' }, { evaluationData })
       expect(card(container, '$data.user.name')).toBe('"Ada"')
-      expect(card(container, '$d.user')).toBe('{"name":"Ada"}')
+      expect(card(container, '$d.user')).toBe(`{"name":"Ada","bio":"${'x'.repeat(40)}"}`)
     })
 
-    it('shows null where the path finds nothing', () => {
+    it('shows a short value larger, and as soon as an issue would', () => {
+      const { container } = editor(
+        { a: '$data.user.name', b: '$data.user.bio' },
+        { evaluationData }
+      )
+      const value = (text: string) =>
+        shownAs(container, text).closest('.ft-hover-card-anchor')!.querySelector('.ft-run-value')
+      expect(value('$data.user.name')).toHaveAttribute('data-short')
+      expect(value('$data.user.bio')).not.toHaveAttribute('data-short')
+      expect(
+        shownAs(container, '$data.user.name').closest('.ft-hover-card-anchor')
+      ).toHaveAttribute('data-urgent')
+    })
+
+    it('has none where the reference has issues, whose card shows instead', () => {
       const { container } = editor({ a: '$data.user.age' }, { evaluationData })
-      expect(card(container, '$data.user.age')).toBe('null')
+      expect(card(container, '$data.user.age')).toBeUndefined()
+      expect(container.querySelector('.ft-reference .ft-issue-card')).not.toBeNull()
     })
 
     it('has none without evaluation data, or in another namespace', () => {

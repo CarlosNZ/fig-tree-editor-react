@@ -34,7 +34,9 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // the component does, and selects the new path.
 //
 // A `$data` reference's card shows the value it reads from the evaluation
-// data, compact JSON, null where the path finds nothing. A reference in
+// data, compact JSON, null where the path finds nothing, larger where it is
+// short. It shows as soon as an issue's card does, and not at all where the
+// reference has issues of its own, so that their card shows. A reference in
 // another namespace has no value until an evaluation, so it is followed by a
 // ▶ that evaluates it, as a node's button does (topic 7, "Evaluating"): a
 // spinner while it runs, a second click cancelling it, and where it can't be
@@ -75,17 +77,20 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   const colour = namespaceColour(kind, editorTheme)
   const data = kind?.namespace === 'data'
+  const flagged = flaggedIssues(issues, nodeData.path)
+  const sample =
+    data && flagged.length === 0 ? sampleValue(nodeData.value, row, evaluationData) : undefined
   return (
     <span className="ft-reference" {...rowMark(nodeData.path)} data-node-run={mark?.status}>
       <HoverCard
         hideOnClick={!data}
         showAgainOn={mark}
-        urgent={!mark && !data && disabled}
+        urgent={!mark && (data || disabled)}
         card={
           mark ? (
             <RunCard mark={mark} editorTheme={editorTheme} />
           ) : data ? (
-            sampleValue(nodeData.value, row, evaluationData)
+            sample
           ) : disabled ? (
             <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
           ) : undefined
@@ -122,7 +127,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
           )}
         </span>
       </HoverCard>
-      <IssueCard issues={flaggedIssues(issues, nodeData.path)} editorTheme={editorTheme} />
+      <IssueCard issues={flagged} editorTheme={editorTheme} />
     </span>
   )
 }
@@ -144,12 +149,19 @@ const sampleValue = (text: unknown, row: Row | undefined, data: unknown) => {
   const recognition = recognizeReference(text, { bindings: bindings(row?.scope ?? []) })
   if (recognition.kind !== 'reference') return undefined
   const { found, value } = resolvePath(data, recognition.drill)
+  const json = compactJson(found ? value : null, VALUE_LIMIT)
   return (
-    <span className="ft-hover-card-line ft-run-value">
-      {compactJson(found ? value : null, VALUE_LIMIT)}
+    <span
+      className="ft-hover-card-line ft-run-value"
+      data-short={json.length <= SHORT_VALUE || undefined}
+    >
+      {json}
     </span>
   )
 }
+
+// The most characters of a value shown larger
+const SHORT_VALUE = 30
 
 // Where a reference's path starts and ends in its text: everything after the
 // namespace and its dot. Where nothing follows the namespace, or the text

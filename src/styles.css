@@ -758,6 +758,11 @@ input.ft-select-input::placeholder {
   font-family: monospace;
 }
 
+/* A reference's short sample value, larger, to read at a glance */
+.ft-hover-card-line.ft-run-value[data-short] {
+  font-size: 1.4em;
+}
+
 .ft-hover-card-line.ft-run-elements {
   display: grid;
   grid-template-columns: max-content minmax(0, 1fr);
