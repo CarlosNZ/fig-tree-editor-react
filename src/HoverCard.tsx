@@ -1,4 +1,6 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { Fragment, useEffect, useId, useState, type ReactNode } from 'react'
+import { type ExpectedType } from 'fig-tree-evaluator'
+import { strings } from './strings'
 
 // A card shown once its anchor has been hovered, or focused from the
 // keyboard, for a moment (the stylesheet's `--ft-hover-card-delay`), and
@@ -53,17 +55,20 @@ export const HoverCard = ({
 export type CardLine = string | { detail: string }
 
 // A card's lines, one to a line, with the names in backticks shown as code.
-// A parameter's card starts with a title line, and a node's can end with a
-// note, a tip about the control set smaller than what the card describes. An
-// alert, such as why the control is disabled, comes first, in its colour.
+// A parameter's card starts with a title line, and an operator's ends with
+// the types its result can be. A node's can end with a note, a tip about the
+// control set smaller than what the card describes. An alert, such as why the
+// control is disabled, comes first, in its colour.
 export const CardLines = ({
   lines,
   titled = false,
+  returns,
   note,
   alert,
 }: {
   lines: CardLine[]
   titled?: boolean
+  returns?: ExpectedType
   note?: string
   alert?: { text: string; colour: string }
 }) => (
@@ -89,11 +94,39 @@ export const CardLines = ({
         </span>
       )
     )}
+    {returns !== undefined && (
+      <span className="ft-hover-card-line ft-hover-card-returns">
+        {strings.FT_CARD_RETURNS} <TypeUnion type={returns} />
+      </span>
+    )}
     {note !== undefined && (
       <span className="ft-hover-card-line ft-hover-card-note">{withCode(note)}</span>
     )}
   </>
 )
+
+// A type as it would be declared, "string | null", each member coloured as
+// json-edit-react colours a value of that type, and a literal union's values
+// as written, "'test' | 'match'"
+const TypeUnion = ({ type }: { type: ExpectedType }) => {
+  const members =
+    typeof type === 'string'
+      ? [{ text: type, type }]
+      : 'literal' in type
+        ? type.literal.map((value) => ({
+            text: typeof value === 'string' ? `'${value}'` : String(value),
+            type: typeof value,
+          }))
+        : type.map((member) => ({ text: member, type: member }))
+  return members.map(({ text, type }, index) => (
+    <Fragment key={index}>
+      {index > 0 && <span className="ft-type-separator"> | </span>}
+      <code className="ft-type" data-type={type}>
+        {text}
+      </code>
+    </Fragment>
+  ))
+}
 
 export const withCode = (line: string) =>
   line

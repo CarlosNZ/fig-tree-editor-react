@@ -135,6 +135,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           name={written}
           display={display}
           card={operatorCard()}
+          returns={operator?.returns}
           cardNote={
             respell &&
             strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), spelling!)

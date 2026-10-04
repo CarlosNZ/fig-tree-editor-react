@@ -216,4 +216,5 @@ export const strings = {
     `This application sets ${settings} on every ${operator} node that doesn't set its own`,
   FT_CARD_CACHE_ACTIVE: 'Cache: active',
   FT_CARD_CACHE_DISABLED: 'Cache: disabled',
+  FT_CARD_RETURNS: 'Returns:', // an operator's card, before its result's types
 }

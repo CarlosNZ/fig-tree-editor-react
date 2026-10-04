@@ -88,6 +88,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
         name={key}
         display={display}
         card={card}
+        returns={operator?.returns}
         cardNote={
           respell &&
           strings.FT_CARD_RESPELL(modifierNames(keyboardControls.clipboardModifier), `$${spelling}`)

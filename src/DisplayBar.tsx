@@ -1,4 +1,4 @@
-import { type Issue } from 'fig-tree-evaluator'
+import { type ExpectedType, type Issue } from 'fig-tree-evaluator'
 import { type OperatorDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
 import { CardLines, HoverCard, type CardLine } from './HoverCard'
@@ -47,6 +47,7 @@ interface DisplayBarProps {
   name: string | null // as written; null when it isn't a string
   display: HeaderDisplay | undefined // undefined when nothing is registered
   card: CardLine[] // the hover card's lines
+  returns?: ExpectedType // an operator's result, at the foot of its card
   cardNote?: string // a tip about the button, at the card's foot
   broken: Issue | undefined
   flagged?: readonly Issue[] // the node's other issues and its rows', for its card
@@ -66,6 +67,7 @@ export const DisplayBar = ({
   name,
   display,
   card,
+  returns,
   cardNote,
   broken,
   flagged = [],
@@ -86,6 +88,7 @@ export const DisplayBar = ({
           label={label}
           display={display}
           card={card}
+          returns={returns}
           cardNote={cardNote}
           broken={broken}
           flagged={flagged}
@@ -145,6 +148,7 @@ const NameOrButton = ({
   label,
   display,
   card,
+  returns,
   cardNote,
   broken,
   flagged,
@@ -153,7 +157,7 @@ const NameOrButton = ({
   onClick,
 }: Pick<
   DisplayBarProps,
-  'display' | 'card' | 'cardNote' | 'broken' | 'editorTheme' | 'evaluation'
+  'display' | 'card' | 'returns' | 'cardNote' | 'broken' | 'editorTheme' | 'evaluation'
 > & {
   flagged: readonly Issue[]
   label: string
@@ -170,7 +174,12 @@ const NameOrButton = ({
       showAgainOn={mark}
       urgent={flagged.length > 0 || (!mark && disabled)}
       card={
-        mark || card.length > 0 || cardNote !== undefined || disabled || flagged.length > 0 ? (
+        mark ||
+        card.length > 0 ||
+        returns !== undefined ||
+        cardNote !== undefined ||
+        disabled ||
+        flagged.length > 0 ? (
           <>
             {!mark && disabled && (
               <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
@@ -179,7 +188,7 @@ const NameOrButton = ({
             {mark ? (
               <RunCard mark={mark} editorTheme={editorTheme} />
             ) : (
-              <CardLines lines={card} note={cardNote} />
+              <CardLines lines={card} returns={returns} note={cardNote} />
             )}
           </>
         ) : undefined

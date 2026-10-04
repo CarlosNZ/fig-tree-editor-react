@@ -702,6 +702,41 @@ input.ft-select-input::placeholder {
   font-size: 0.95em;
 }
 
+/* An operator's result, set apart at the card's foot under a muted label,
+   each type in the colour json-edit-react gives a value of that type by
+   default, and `any` muted, since it says nothing about the result */
+.ft-hover-card-line.ft-hover-card-returns {
+  margin-top: 0.6em;
+  color: #6b7280;
+}
+
+.ft-type {
+  font-weight: 600;
+  color: #333;
+}
+
+.ft-type[data-type='string'] {
+  color: #cb4b16;
+}
+
+.ft-type:is([data-type='number'], [data-type='integer']) {
+  color: #268bd2;
+}
+
+.ft-type[data-type='boolean'] {
+  color: green;
+}
+
+.ft-type[data-type='null'] {
+  color: #dc322f;
+}
+
+.ft-type[data-type='any'] {
+  font-weight: normal;
+  font-style: italic;
+  color: #6b7280;
+}
+
 /* A row's card after an evaluation: how it ran, in its colour, with the time
    muted, then its value, cut to three lines, or a line per element inside an
    iterator, each cut to one */
