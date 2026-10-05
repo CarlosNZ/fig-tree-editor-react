@@ -1,4 +1,6 @@
-/* Settings a host can override on its own `.ft-editor` rule */
+/* Settings a host can override on its own `.ft-editor` rule. A hover card
+   the host draws outside the editor reads the defaults, given again where
+   the delays are used. */
 .ft-editor {
   /* How long the pointer or focus rests on something before its hover card
      shows, so cards don't flash up on the way to a click or as the pointer
@@ -581,7 +583,7 @@ input.ft-select-input::placeholder {
 
 .ft-issue-card,
 .ft-hover-card-anchor[data-urgent] > .ft-hover-card {
-  --ft-hover-card-delay: var(--ft-issue-card-delay);
+  --ft-hover-card-delay: var(--ft-issue-card-delay, 0.2s);
 }
 
 .jer-value-main-row:hover .ft-issue-card,
@@ -589,8 +591,8 @@ input.ft-select-input::placeholder {
   visibility: visible;
   opacity: 1;
   transition:
-    visibility 0s var(--ft-hover-card-delay),
-    opacity 0.1s var(--ft-hover-card-delay);
+    visibility 0s var(--ft-hover-card-delay, 0.5s),
+    opacity 0.1s var(--ft-hover-card-delay, 0.5s);
 }
 
 .jer-value-main-row:has(.ft-hover-card-anchor:hover) .ft-issue-card,
@@ -657,6 +659,13 @@ input.ft-select-input::placeholder {
   font-style: normal;
   white-space: normal;
   pointer-events: none;
+}
+
+/* Hung from the anchor's right edge, for an anchor at the right of its
+   space */
+.ft-hover-card-anchor[data-align='end'] > .ft-hover-card {
+  left: auto;
+  right: 0;
 }
 
 /* One paragraph each, set a little apart, under a parameter's title line */
@@ -797,8 +806,8 @@ input.ft-select-input::placeholder {
   visibility: visible;
   opacity: 1;
   transition:
-    visibility 0s var(--ft-hover-card-delay),
-    opacity 0.1s var(--ft-hover-card-delay);
+    visibility 0s var(--ft-hover-card-delay, 0.5s),
+    opacity 0.1s var(--ft-hover-card-delay, 0.5s);
 }
 
 /* The DisplayBar's pencil, shown while the header is hovered */

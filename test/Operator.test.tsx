@@ -584,7 +584,7 @@ describe('the operator node', () => {
       editor({ operator: 'round', value: 1 })
       const styles = document.head.querySelector('style[data-fig-tree-editor-styles]')!.textContent
       expect(styles).toMatch(/--ft-hover-card-delay:\s*\.?0?\.5s/)
-      expect(styles).toMatch(/transition:[^;}]*var\(--ft-hover-card-delay\)/)
+      expect(styles).toMatch(/transition:[^;}]*var\(--ft-hover-card-delay, 0\.5s\)/)
     })
   })
 })

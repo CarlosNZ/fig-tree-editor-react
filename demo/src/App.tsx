@@ -27,6 +27,7 @@ import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
+import { ShieldedBadge } from './ShieldedBadge'
 import { SourceIndicator } from './SourceIndicator'
 import { figTreeEditorReactVersion, timestamp } from './version'
 
@@ -39,16 +40,6 @@ console.log('Site built:', timestamp)
 const describePath = (path: (string | number)[]) =>
   path.length === 0 ? 'Full expression' : path.join('.')
 
-// The editor's status in a line, for watching it by hand
-const describeStatus = ({ valid, counts, editing }: EditorStatus) =>
-  [
-    valid ? 'valid' : 'invalid',
-    `${counts.errors} errors`,
-    `${counts.warnings} warnings`,
-    `${counts.filledIn} added`,
-    editing ? 'editing' : 'not editing',
-  ].join(' · ')
-
 function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [isMobile] = useMediaQuery('(max-width: 635px)')
@@ -58,7 +49,7 @@ function App() {
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
   const [options, setOptions] = useState<DemoOptions>(initialOptions)
-  const [status, setStatus] = useState<EditorStatus | null>(null)
+  const [uncovered, setUncovered] = useState<EditorStatus['uncovered']>(null)
 
   const {
     data: objectData,
@@ -277,45 +268,44 @@ function App() {
                 try one of the demo expressions from the menu at the bottom of the page.
               </Text>
             </Box>
-            <FigTreeEditor
-              figTree={figTree}
-              expression={expression}
-              // Saved here rather than in `onUpdate`, which doesn't see the
-              // editor's own writes
-              setExpression={(newExpression, options) => {
-                setExpression(newExpression, options)
-                setLocalStorage('expression', newExpression)
-              }}
-              rootName="expression"
-              evaluationData={objectData as Record<string, unknown>}
-              onCopy={({ stringValue, type }) =>
-                toast({
-                  title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
-                  description: truncate(String(stringValue)),
-                  status: 'info',
-                  duration: 5000,
-                  isClosable: true,
-                })
-              }
-              minWidth="90%"
-              stringTruncateLength={500}
-              jsonParse={JSON5.parse}
-              collapse={expressionCollapse}
-              onStatusChange={(newStatus) => {
-                console.log('onStatusChange', newStatus)
-                setStatus(newStatus)
-              }}
-              onEvaluateStart={(start) => console.log('onEvaluateStart', start)}
-              onEvaluate={(evaluation) => {
-                console.log('onEvaluate', evaluation)
-                showEvaluation(evaluation)
-              }}
-            />
-            {status && (
-              <Text w="100%" maxW={600} fontSize="sm" mt={1} pr={1} color="gray.600">
-                Status: {describeStatus(status)}
-              </Text>
-            )}
+            {/* Fitted to the editor, so the badge sits in its corner */}
+            <Box position="relative" mt="0.6em">
+              <FigTreeEditor
+                figTree={figTree}
+                expression={expression}
+                // Saved here rather than in `onUpdate`, which doesn't see the
+                // editor's own writes
+                setExpression={(newExpression, options) => {
+                  setExpression(newExpression, options)
+                  setLocalStorage('expression', newExpression)
+                }}
+                rootName="expression"
+                evaluationData={objectData as Record<string, unknown>}
+                onCopy={({ stringValue, type }) =>
+                  toast({
+                    title: `${type === 'value' ? 'Value' : 'Path'} copied to clipboard:`,
+                    description: truncate(String(stringValue)),
+                    status: 'info',
+                    duration: 5000,
+                    isClosable: true,
+                  })
+                }
+                minWidth="90%"
+                stringTruncateLength={500}
+                jsonParse={JSON5.parse}
+                collapse={expressionCollapse}
+                onStatusChange={(newStatus) => {
+                  console.log('onStatusChange', newStatus)
+                  setUncovered(newStatus.uncovered)
+                }}
+                onEvaluateStart={(start) => console.log('onEvaluateStart', start)}
+                onEvaluate={(evaluation) => {
+                  console.log('onEvaluate', evaluation)
+                  showEvaluation(evaluation)
+                }}
+              />
+              <ShieldedBadge uncovered={uncovered} />
+            </Box>
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}
               <Link href="https://github.com/CarlosNZ/fig-tree-editor-react/" isExternal>

@@ -12,18 +12,25 @@ import { strings } from './strings'
 // an Evaluate's does when its result arrives: with the pointer still there,
 // the card then shows, after the usual delay. An `urgent` card, holding an
 // issue or why something can't be evaluated, shows sooner
-// (`--ft-issue-card-delay`).
+// (`--ft-issue-card-delay`). The card hangs from the anchor's left edge, or,
+// with `align: 'end'`, its right, for an anchor at the right of its space.
+//
+// A host can use it, with `CardLines`, for cards of its own beside the
+// editor's. Its rules are in the editor's stylesheet, which a mounted editor
+// injects, or which the host adds itself (`style.css`).
 export const HoverCard = ({
   card,
   hideOnClick = false,
   showAgainOn,
   urgent = false,
+  align = 'start',
   children,
 }: {
   card: ReactNode
   hideOnClick?: boolean
   showAgainOn?: unknown
   urgent?: boolean
+  align?: 'start' | 'end'
   children: ReactNode
 }) => {
   const id = useId()
@@ -36,6 +43,7 @@ export const HoverCard = ({
       aria-describedby={id}
       data-clicked={clicked || undefined}
       data-urgent={urgent || undefined}
+      data-align={align === 'end' ? align : undefined}
       {...(hideOnClick && {
         onClick: () => setClicked(true),
         onPointerLeave: () => setClicked(false),

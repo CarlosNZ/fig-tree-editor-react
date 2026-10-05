@@ -35,9 +35,9 @@ pre {
    takes the width and the shadow, and the tree fills it. The two make one
    box: while there are messages, the tree's lower corners are square, and the
    messages area's are rounded, with a line between them. It isn't clipped to
-   its corners, since pickers and hover cards float outside it. */
+   its corners, since pickers and hover cards float outside it. Its wrapper,
+   which holds the Shielded badge, sets it apart from the text above. */
 .ft-outer-container {
-  margin-top: 0.6em;
   border-radius: 0.5em;
   box-shadow: 0 3px 8px #0000003d;
   min-width: unset !important;
@@ -45,6 +45,7 @@ pre {
 }
 
 .ft-outer-container > .jer-editor-container {
+  padding-top: 0.5em;
   margin-top: 0;
   box-shadow: none;
   width: auto;

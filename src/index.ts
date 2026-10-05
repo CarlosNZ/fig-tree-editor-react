@@ -3,13 +3,17 @@ import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } fro
 import { defaultEditorTheme, type EditorTheme } from './editorTheme'
 import { type Evaluation, type EvaluationFailure } from './evaluation'
 import { type DefaultOperators, type OperatorDefault, type SlotType } from './getStartingNode'
+import { CardLines, HoverCard, type CardLine } from './HoverCard'
 import { Select } from './Select'
 import { type EditorMessage, type EditorStatus, type FigTreeEditorHandle } from './status'
 
 export {
+  CardLines,
   FigTreeEditor,
+  HoverCard,
   Select,
   defaultEditorTheme,
+  type CardLine,
   type DefaultOperators,
   type EditorMessage,
   type EditorStatus,
