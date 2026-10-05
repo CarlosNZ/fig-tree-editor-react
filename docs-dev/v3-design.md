@@ -1260,6 +1260,7 @@ type EditorStatus = {
   counts: { errors: number; warnings: number; filledIn: number }
   editing: boolean // an edit session is open: a value, raw JSON or the toolbar
   messages: EditorMessage[] // what the messages area lists, in its order
+  uncovered: Path[] | null // top-level values with no fallback; null while there are errors
 }
 
 type EditorMessage = {
@@ -1273,6 +1274,7 @@ type EditorMessage = {
 
 - **It is called when the status changes,** compared by content (counts, `editing`, a line added, removed or changed), not on every render, and once as the editor mounts.
 - **`editing` covers every session, the toolbar's included.** Toolbar changes are committed as they are made, but Cancel can still revert them, so a host saving mid-session would save an intermediate state. The toolbar's reopening after each commit happens in the same event handler, so `editing` does not flicker. Closing a session before saving is the handle's ("The handle and edit sessions").
+- **`uncovered` is fig-tree's `fallbackCoverage`** (3.0.0-preview.6, [#209](https://github.com/CarlosNZ/fig-tree-evaluator/issues/209)), under the instance's options: the top-level values a failure could get out of, each a place a `fallback` belongs. The check takes every operator and fragment call to be able to fail, so it flags values that can't, and the editor draws nothing for it: the host decides whether and how to show it. It means something only for a valid expression, so it is null while there are errors. A host that passes its own `timeout` to `evaluate()` calls `fallbackCoverage` itself, with that timeout.
 - **Each fix carries an `apply` function,** running the same code as the built-in button, so a host needs no logic of its own to offer it. The status is therefore not serialisable, which a callback does not need.
 - **Revealing a row** from a host's own line is a method on the handle, not a field on each message.
 - **`messagesMaxHeight`** sets the built-in area's maximum height, beyond which it scrolls, and **the number `0` hides the area entirely,** its header of counts included, for a host that renders its own. Only the number counts: a CSS string (`'0px'`, a `calc()`) is used as a height, since the editor cannot reliably tell whether one comes to zero. The default is settled when built. The name follows json-edit-react's `minWidth` and `maxWidth`.

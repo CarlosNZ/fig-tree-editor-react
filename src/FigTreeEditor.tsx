@@ -23,6 +23,7 @@ import {
   toPathString,
 } from 'json-edit-react'
 import { type FigTree } from 'fig-tree-evaluator'
+import { fallbackCoverage } from 'fig-tree-evaluator/authoring'
 import {
   attachIssues,
   attachToNodes,
@@ -555,15 +556,19 @@ export const FigTreeEditor = ({
   statusListener.current = onStatusChange
   const latestMessages = useRef(messages)
   latestMessages.current = messages
+  const latestShown = useRef(shown)
+  latestShown.current = shown
   const reported = useRef<EditorStatus | null>(null)
   const report = () => {
     if (!statusListener.current) return
     const counts = countMessages(latestMessages.current)
+    const valid = counts.errors === 0
     const status: EditorStatus = {
-      valid: counts.errors === 0,
+      valid,
       counts,
       editing: editOpen.current,
       messages: latestMessages.current,
+      uncovered: valid ? fallbackCoverage(figTree, latestShown.current).uncovered : null,
     }
     if (reported.current && sameStatus(reported.current, status)) return
     reported.current = status

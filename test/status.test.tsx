@@ -93,6 +93,34 @@ describe('the status', () => {
     expect(screen.queryByRole('listitem')).toBeNull()
   })
 
+  describe('uncovered', () => {
+    it('lists the top-level values with no fallback', () => {
+      const { latest } = host({ a: { $plus: [1, 2] }, b: { $plus: [1, 2], fallback: 0 }, c: 'x' })
+      expect(latest().uncovered).toEqual([['a']])
+    })
+
+    it('is the root, for a root node with no fallback', () => {
+      const { latest } = host({ $plus: [1, 2] })
+      expect(latest().uncovered).toEqual([[]])
+    })
+
+    it('is null while there are errors', () => {
+      const { latest } = host({ a: { $plus: [1, true] } })
+      expect(latest()).toMatchObject({ valid: false, uncovered: null })
+    })
+
+    it('is reported again when it alone changes', () => {
+      const onStatusChange = vi.fn()
+      const props = { figTree, setExpression: vi.fn(), onStatusChange }
+      const { rerender } = render(<FigTreeEditor {...props} expression={{ $plus: [1, 2] }} />)
+      rerender(<FigTreeEditor {...props} expression={{ $plus: [1, 2], fallback: 0 }} />)
+      expect(onStatusChange).toHaveBeenCalledTimes(2)
+      expect(onStatusChange).toHaveBeenLastCalledWith(
+        expect.objectContaining({ valid: true, messages: [], uncovered: [] })
+      )
+    })
+  })
+
   it('goes to a host that hides the messages area', () => {
     const { container, latest } = host({ operator: 'plsu' }, { messagesMaxHeight: 0 })
     expect(container.querySelector('.ft-message-container')).toBeNull()

@@ -13,6 +13,13 @@ export interface EditorStatus {
   counts: MessageCounts
   editing: boolean // an edit session is open: a value, raw JSON or the toolbar
   messages: EditorMessage[] // what the messages area lists, in its order
+  // The top-level values a failure could get out of, with no fallback to
+  // catch it (fig-tree's `fallbackCoverage`), under the instance's options:
+  // each is a place a `fallback` belongs. The check takes every operator and
+  // fragment call to be able to fail, so it flags some that can't. Empty
+  // when every value is covered, and null while there are errors, when it
+  // means nothing.
+  uncovered: Path[] | null
 }
 
 // A line of the messages area: an issue `validate()` reports, or a value the
