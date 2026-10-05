@@ -48,12 +48,11 @@ const evaluate = (
     classification: classify(expression, registry),
     operators: registry.operators,
   })!
-  return evaluateSubTree(figTree, path, subTree, { mode: 'report', ...options })
+  return evaluateSubTree(figTree, path, subTree, options)
 }
 
-// A failure as [its path in the tree, its hole's, its message's start]
-const failures = ({ failures: list }: Evaluation) =>
-  list.map(({ path, holePath, message }) => [path, holePath, message.split(' ')[0]])
+// The failure as [its path in the tree, its message's start]
+const failed = ({ failure }: Evaluation) => failure && [failure.path, failure.message.split(' ')[0]]
 
 describe('evaluating a row', () => {
   it("is done with the row's value, read out of its wrappers", async () => {
@@ -66,81 +65,56 @@ describe('evaluating a row', () => {
     const evaluation = await evaluate(expression, ['each'], { data: { list: [1, 2] } })
     expect(evaluation).toMatchObject({
       path: ['each'],
-      mode: 'report',
       status: 'done',
       result: [2, 4],
-      failures: [],
       fallbacks: [],
     })
+    expect(evaluation).not.toHaveProperty('failure')
     expect(evaluation.trace).toBeDefined()
     expect(evaluation.toTreePath(['value', 'input'])).toEqual(['input'])
   })
 
-  describe('in report mode', () => {
-    it('is done with a partial result, listing what failed, in the tree', async () => {
-      const expression = { x: { a: FAILING, b: 2 } }
-      const evaluation = await evaluate(expression, ['x'])
-      expect(evaluation).toMatchObject({ status: 'done', result: { a: null, b: 2 } })
-      expect(failures(evaluation)).toEqual([[['x', 'a'], ['x', 'a'], 'divide']])
-    })
-
-    it('fails where the row itself failed', async () => {
-      const evaluation = await evaluate({ x: { $plus: [1, FAILING] } }, ['x', '$plus', 1])
-      expect(evaluation.status).toBe('failed')
-      expect(evaluation).not.toHaveProperty('result')
-      expect(failures(evaluation)).toEqual([[['x', '$plus', 1], ['x', '$plus', 1], 'divide']])
-    })
-
-    it('fails where what holds the row failed, as an iterator does for one element', async () => {
-      const expression = { operator: 'map', input: [1, 0], each: { $divide: [1, '$element'] } }
-      const evaluation = await evaluate(expression, ['each'])
-      expect(evaluation.status).toBe('failed')
-      expect(failures(evaluation)).toEqual([[['each'], [], 'divide']])
-    })
-
-    it('fails where a failure has no hole, failing the whole evaluation, as a timeout does', async () => {
-      const slow = new FigTree({ operators: [coreOperators, [wait]], timeout: 50 })
-      const expression = { x: { operator: 'wait' } }
-      const subTree = buildSubTree(expression, ['x'], {
-        classification: classify(expression, registry),
-        operators: registry.operators,
-      })!
-      const evaluation = await evaluateSubTree(slow, ['x'], subTree, { mode: 'report' })
-      expect(evaluation.status).toBe('failed')
-      expect(failures(evaluation)).toEqual([[['x'], undefined, 'evaluation']])
-    })
-
-    it('fails, with no trace, where fig-tree refuses it', async () => {
-      const evaluation = await evaluate({ operator: 'plsu' }, [])
-      expect(evaluation.status).toBe('failed')
-      expect(evaluation).not.toHaveProperty('trace')
-      expect(failures(evaluation)).toEqual([[[], undefined, "'plsu'"]])
-    })
+  it('fails with the error thrown, in the tree, and its trace', async () => {
+    const evaluation = await evaluate({ x: { a: FAILING, b: 2 } }, ['x'])
+    expect(evaluation.status).toBe('failed')
+    expect(evaluation).not.toHaveProperty('result')
+    expect(failed(evaluation)).toEqual([['x', 'a'], 'divide'])
+    expect(evaluation.trace).toBeDefined()
   })
 
-  describe('in throw mode', () => {
-    it('is done as in report mode', async () => {
-      expect(await evaluate({ $plus: [1, 2] }, [], { mode: 'throw' })).toMatchObject({
-        mode: 'throw',
-        status: 'done',
-        result: 3,
-      })
-    })
+  it('fails where an iterator around the row failed for one element', async () => {
+    const expression = { operator: 'map', input: [1, 0], each: { $divide: [1, '$element'] } }
+    const evaluation = await evaluate(expression, ['each'])
+    expect(evaluation.status).toBe('failed')
+    expect(failed(evaluation)).toEqual([['each'], 'divide'])
+  })
 
-    it('fails with the one error thrown, and its trace', async () => {
-      const evaluation = await evaluate({ x: { a: FAILING, b: 2 } }, ['x'], { mode: 'throw' })
-      expect(evaluation.status).toBe('failed')
-      // Nothing degrades in throw mode, so there is no hole
-      expect(failures(evaluation)).toEqual([[['x', 'a'], undefined, 'divide']])
-      expect(evaluation.trace).toBeDefined()
-    })
+  it('fails where the evaluation times out', async () => {
+    const slow = new FigTree({ operators: [coreOperators, [wait]], timeout: 50 })
+    const expression = { x: { operator: 'wait' } }
+    const subTree = buildSubTree(expression, ['x'], {
+      classification: classify(expression, registry),
+      operators: registry.operators,
+    })!
+    const evaluation = await evaluateSubTree(slow, ['x'], subTree, {})
+    expect(evaluation.status).toBe('failed')
+    expect(failed(evaluation)).toEqual([['x'], 'evaluation'])
+  })
+
+  it('fails, with no trace, where fig-tree refuses it', async () => {
+    const evaluation = await evaluate({ operator: 'plsu' }, [])
+    expect(evaluation.status).toBe('failed')
+    expect(evaluation).not.toHaveProperty('trace')
+    expect(failed(evaluation)).toEqual([[], "'plsu'"])
   })
 
   it('is cancelled where its signal aborts, and never rejects', async () => {
     const abort = new AbortController()
     const pending = evaluate({ $plus: [{ operator: 'wait' }, '!'] }, [], { signal: abort.signal })
     abort.abort()
-    expect(await pending).toMatchObject({ status: 'cancelled', failures: [], fallbacks: [] })
+    const evaluation = await pending
+    expect(evaluation).toMatchObject({ status: 'cancelled', fallbacks: [] })
+    expect(evaluation).not.toHaveProperty('failure')
   })
 
   describe('fallbacks', () => {
@@ -170,8 +144,8 @@ describe('evaluating a row', () => {
   it("keeps a failure's fragment, and where in its body it failed", async () => {
     const evaluation = await evaluate({ x: { fragment: 'broken' } }, ['x'])
     expect(evaluation.status).toBe('failed')
-    expect(evaluation.failures[0]).toMatchObject({ path: ['x'], fragment: 'broken' })
-    expect(evaluation.failures[0].fragmentPath).toBeDefined()
+    expect(evaluation.failure).toMatchObject({ path: ['x'], fragment: 'broken' })
+    expect(evaluation.failure?.fragmentPath).toBeDefined()
   })
 })
 
@@ -185,8 +159,6 @@ describe('the evaluator', () => {
       ({
         path,
         status,
-        mode: 'report',
-        failures: [],
         fallbacks: [],
         toTreePath: (p) => p,
       }) as Evaluation

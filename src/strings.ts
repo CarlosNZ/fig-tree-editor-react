@@ -69,7 +69,11 @@ export const strings = {
   FT_RUN_CACHED: (ran: string) => `${ran}, cached result`,
   FT_RUN_FAILED: 'Failed',
   FT_RUN_FALLBACK: 'Fallback used',
-  FT_RUN_FALLBACK_PER_ELEMENT: 'Fallback used once per element',
+  // Inside an iterator: for how many of its elements the fallback was used
+  FT_RUN_FALLBACK_PER_ELEMENT: (used: number, elements: number) =>
+    used === elements
+      ? 'Fallback used for every element'
+      : `Fallback used for ${used} of ${elements} elements`,
   FT_RUN_CANCELLED: 'Cancelled',
   FT_RUN_SKIPPED: 'Never ran',
   FT_RUN_TIME: (ms: number) =>
@@ -83,7 +87,6 @@ export const strings = {
   FT_RUN_FALLBACK_FAILED: (message: string) => `The fallback also failed: ${message}`,
   FT_RUN_ALSO_FAILED: (message: string) => `Also failed: ${message}`,
   FT_RUN_CAUGHT: (message: string) => `Caught: ${message}`,
-  FT_RUN_NULL: (path: string, message: string) => `\`${path}\` is null: ${message}`,
   // An element's line, inside an iterator
   FT_RUN_ELEMENT_FAILED: (message: string) => `Failed: ${message}`,
   FT_RUN_ELEMENT_CAUGHT: (message: string) => `, caught: ${message}`, // after its value

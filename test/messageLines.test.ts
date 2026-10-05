@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { classify } from '../src/classify'
 import { type FilledInLine } from '../src/filledIn'
 import { countMessages, orderMessages } from '../src/messageLines'
@@ -43,6 +44,19 @@ describe('the messages in tree order', () => {
       ['name', 'missing-data-path'],
       ['rounded.value', 'type-check'],
     ])
+  })
+
+  it("puts a fallback that can't fit its position on its row, or a default one on the node", () => {
+    const own = { total: { $round: { value: { $divide: [1, 0], fallback: 'n/a' } } } }
+    expect(ordered(own)).toEqual([['total.$round.value.fallback', 'fallback-mismatch']])
+    const withDefault = new FigTree({
+      operators: [coreOperators],
+      operatorDefaults: { divide: { fallback: 'n/a' } },
+    })
+    const expression = { total: { $round: { value: { $divide: [1, 0] } } } }
+    const { issues } = withDefault.validate(expression)
+    const lines = orderMessages(issues, [], expression, classify(expression, registry))
+    expect(lines.map(({ row }) => displayPath(row))).toEqual(['total.$round.value'])
   })
 
   it('follows the keys and elements as they are held', () => {

@@ -94,10 +94,17 @@ export const fieldSlot = (
 export const argumentsSlot = (path: Path, ownerPath: Path) =>
   slot(path, ownerPath, 'arguments', 'object', { parameter: 'parameters' })
 
-// `noCache` takes only `true`, since it can only turn caching off
-export const modifierSlot = (path: Path, ownerPath: Path, modifier: 'fallback' | 'noCache') =>
+// A `fallback` stands in for its node's value, so it admits what the node's
+// own position does, as `validate()`'s `fallback-mismatch` checks. `noCache`
+// takes only `true`, since it can only turn caching off.
+export const modifierSlot = (
+  path: Path,
+  ownerPath: Path,
+  modifier: 'fallback' | 'noCache',
+  nodeAdmits: ExpectedType
+) =>
   modifier === 'fallback'
-    ? slot(path, ownerPath, 'modifier', 'any', { parameter: modifier })
+    ? slot(path, ownerPath, 'modifier', nodeAdmits, { parameter: modifier })
     : slot(
         path,
         ownerPath,

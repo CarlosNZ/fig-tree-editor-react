@@ -428,7 +428,7 @@ describe('editor theme', () => {
       new Map(
         rows.map(([path, status]) => [
           toPathString(path),
-          { path, part: 'node', status, runs: [], perElement: false, nulls: [] },
+          { path, part: 'node', status, runs: [], perElement: false },
         ])
       )
     // The border's width and padding, which a run leaves as they are

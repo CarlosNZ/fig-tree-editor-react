@@ -4,12 +4,13 @@ Ideas for showing more of what fig-tree knows about an expression than the edito
 
 ## 1. Whether the expression always returns a value
 
+_fig-tree 3.0.0-preview.6 replaced `timeoutShielded` with `fallbackCoverage`, in the `./authoring` subpath ([#209](https://github.com/CarlosNZ/fig-tree-evaluator/issues/209)), which lists the top-level values a failure can get out of. This topic is next, and is to be rewritten for it; what follows is as it was written against `timeoutShielded`._
+
 fig-tree calls an expression _timeout-shielded_ when every top-level part has a constant `fallback`: its own, one the host sets in `operatorDefaults`, or, for a fragment call with no `fallback`, its body's. `validate()` reports it as `timeoutShielded`.
 
 The name comes from the whole-evaluation `timeout`, but the property is broader. A runtime failure anywhere in a top-level part is caught by that part's fallback at the latest, and a constant can't fail, so nothing gets out. For a valid expression, shielded means:
 
-- in throw mode, it always returns a value, timeout or not, and only a cancel (`signal`) makes it reject;
-- in report mode, it comes back with no errors, apart from the timeout's own if one fires.
+- it always returns a value, timeout or not, and only a cancel (`signal`) makes it reject.
 
 So it's worth showing whether or not the host sets a `timeout`, and worded as what it means ("Always returns a value") rather than as "timeout-shielded".
 
@@ -41,7 +42,7 @@ The question is where. A reference's ▶ already evaluates it and shows the resu
 
 ### Where a failure would land
 
-For any node, statically: which `fallback` would catch a failure there (its own, an ancestor's, or one from `operatorDefaults`), or, where none would, which top-level part of the result becomes null in report mode, or that the whole evaluation fails in throw mode. The run marks show this after a run; this would show it before one. It pairs with 1: together they'd say, for any node, what catches its failure and whether anything gets out of the expression. The editor could work most of it out from its classification and the operators' defaults.
+For any node, statically: which `fallback` would catch a failure there (its own, an ancestor's, or one from `operatorDefaults`), or, where none would, that the whole evaluation fails. The run marks show this after a run; this would show it before one. It pairs with 1: together they'd say, for any node, what catches its failure and whether anything gets out of the expression. The editor could work most of it out from its classification and the operators' defaults.
 
 ## Set aside
 

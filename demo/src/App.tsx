@@ -96,17 +96,11 @@ function App() {
   //
   // TO-DO: say where a result has one value per element, from a row inside
   // an iterator (plan, 10.7)
-  const showEvaluation = ({ path, status, result, failures }: Evaluation) => {
+  const showEvaluation = ({ path, status, result, failure }: Evaluation) => {
     const where = describePath(path)
     if (status === 'done')
       toast({
-        render: ({ onClose }) => (
-          <ResultToast
-            title={failures.length > 0 ? `${where}, with failures` : where}
-            value={result}
-            close={onClose}
-          />
-        ),
+        render: ({ onClose }) => <ResultToast title={where} value={result} close={onClose} />,
         position: 'top',
         status: 'success',
         duration: 5000,
@@ -115,9 +109,7 @@ function App() {
     else
       toast({
         title: `${where}: ${status}`,
-        description: failures
-          .map((failure) => `${describePath(failure.path)}: ${failure.message}`)
-          .join('; '),
+        description: failure && `${describePath(failure.path)}: ${failure.message}`,
         position: 'top',
         status: status === 'failed' ? 'error' : 'info',
         duration: status === 'failed' ? 15000 : 3000,

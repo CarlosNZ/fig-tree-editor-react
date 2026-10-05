@@ -22,8 +22,8 @@ export interface SubTree {
   expression: unknown
   row: Path // where the row is in `expression`
   // The row's value, out of the wrappers: one per element inside an
-  // iterator, an array for each. A wrapper's failed value, which report mode
-  // gives as null, reads as null.
+  // iterator, an array for each. A wrapper whose value isn't the object or
+  // array it builds reads as null.
   readResult: (result: unknown) => unknown
   // A path in `expression`, such as a failure's, as the tree's
   toTreePath: (path: Path) => Path

@@ -1,7 +1,7 @@
 import { type FigTreeError, type TraceNode, type TraceStatus } from 'fig-tree-evaluator'
 import { toPathString } from 'json-edit-react'
 import { rowAt, type Classification, type Row } from './classify'
-import { type Evaluation, type EvaluationFailure } from './evaluation'
+import { type Evaluation } from './evaluation'
 import { isWithin, type Path } from './paths'
 
 // How an evaluation ran, row by row (design, topic 7, "How it ran, in the
@@ -35,8 +35,6 @@ export interface RowRun {
   runs: readonly RunInstance[]
   perElement: boolean // inside an iterator, so it runs once per element
   reason?: NotRunReason // where it was skipped or cancelled
-  // On the evaluated row, the failures that left nulls in its value
-  nulls: readonly EvaluationFailure[]
 }
 
 export interface RunInstance {
@@ -104,7 +102,6 @@ export const markRun = (
       perElement: inIterator(row),
       ...(status === 'skipped' && { reason: skippedReason(row) }),
       ...(status === 'cancelled' && { reason: cancelledReason(row, evaluation) }),
-      nulls: [],
     })
   }
   for (const [key, { path, row, part }] of marked) {
@@ -119,11 +116,8 @@ export const markRun = (
       runs: [],
       perElement: inIterator(row),
       ...(!reached && { reason }),
-      nulls: [],
     })
   }
-
-  takeNulls(evaluation, marks)
   return marks
 }
 
@@ -290,8 +284,8 @@ const skippedReason = (row: Row | undefined): NotRunReason => {
     : { kind: 'notEvaluated' }
 }
 
-const cancelledReason = (row: Row | undefined, { failures }: Evaluation): NotRunReason => {
-  if (failures.some(({ error }) => error.code === 'timeout')) return { kind: 'timeout' }
+const cancelledReason = (row: Row | undefined, { failure }: Evaluation): NotRunReason => {
+  if (failure?.error.code === 'timeout') return { kind: 'timeout' }
   return evaluationOf(row?.slot?.declaration) === 'race' ? { kind: 'race' } : { kind: 'stopped' }
 }
 
@@ -320,23 +314,9 @@ const unrunReason = (
   return { kind: 'notReached' }
 }
 
-// The failures that left nulls in the evaluated row's value. A failure fails
-// every node above it, whatever the parameter's null policy, so only plain
-// data outside any node keeps a null, and the evaluated row is what holds it.
-const takeNulls = ({ path, failures }: Evaluation, marks: Map<string, RowRun>) => {
-  const key = toPathString(path)
-  const mark = marks.get(key)!
-  if (mark.status === 'failed') return
-  const nulls = failures.filter(
-    ({ holePath }) =>
-      holePath !== undefined && holePath.length > path.length && isWithin(holePath, path)
-  )
-  if (nulls.length > 0) marks.set(key, { ...mark, nulls })
-}
-
 // An evaluation with no trace, which fig-tree refused, or which failed other
 // than through fig-tree: the evaluated row failed, with why
-const failedWithoutTrace = ({ path, failures }: Evaluation, part: RunPart): RunMarks =>
+const failedWithoutTrace = ({ path, failure }: Evaluation, part: RunPart): RunMarks =>
   new Map([
     [
       toPathString(path),
@@ -345,8 +325,7 @@ const failedWithoutTrace = ({ path, failures }: Evaluation, part: RunPart): RunM
         part,
         status: 'failed',
         perElement: false,
-        runs: failures.slice(0, 1).map(({ error }) => ({ status: 'failed', error, cached: false })),
-        nulls: [],
+        runs: failure ? [{ status: 'failed', error: failure.error, cached: false }] : [],
       },
     ],
   ])

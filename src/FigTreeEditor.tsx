@@ -138,10 +138,6 @@ export interface FigTreeEditorProps extends Omit<
   // The editor's state, each time it changes: whether there are errors, the
   // counts, whether an edit is open, and the messages area's lines
   onStatusChange?: (status: EditorStatus) => void
-  // What an evaluation does with a failure no `fallback` caught: `report`
-  // completes the rest and lists every failure, `throw` fails the row at the
-  // first, as a host evaluating in throw mode would see it
-  evaluationMode?: 'report' | 'throw'
   onEvaluateStart?: (start: { path: Path }) => void
   // Each evaluation as it ends, done, failed or cancelled: one per start
   onEvaluate?: (evaluation: Evaluation) => void
@@ -158,7 +154,6 @@ export const FigTreeEditor = ({
   evaluationData,
   messagesMaxHeight = DEFAULT_MESSAGES_MAX_HEIGHT,
   onStatusChange,
-  evaluationMode = 'report',
   onEvaluateStart,
   onEvaluate,
   operatorHints,
@@ -391,10 +386,10 @@ export const FigTreeEditor = ({
         classification: context.classification,
         row: subTree.row,
       }
-      const options = { mode: evaluationMode, data: evaluationData }
       return {
-        start: (signal) => evaluateSubTree(figTree, path, subTree, { ...options, signal }),
-        cancelled: () => cancelledEvaluation(path, subTree, evaluationMode),
+        start: (signal) =>
+          evaluateSubTree(figTree, path, subTree, { data: evaluationData, signal }),
+        cancelled: () => cancelledEvaluation(path, subTree),
       }
     },
     onStart: (path) => {

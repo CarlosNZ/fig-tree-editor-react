@@ -54,7 +54,7 @@ const evaluate = async (
     classification,
     operators: registry.operators,
   })!
-  const evaluation = await evaluateSubTree(instance, path, subTree, { mode: 'report', ...options })
+  const evaluation = await evaluateSubTree(instance, path, subTree, options)
   return { evaluation, marks: markRun(evaluation, classification, subTree.row)! }
 }
 
@@ -167,9 +167,7 @@ describe('marking how a run went', () => {
       const expression = { $plus: [{ $plus: [1, 1] }, 1] }
       const evaluation: Evaluation = {
         path: [],
-        mode: 'throw',
         status: 'failed',
-        failures: [],
         fallbacks: [],
         trace: { path: [], kind: 'operator', operator: 'plus', status: 'failed' },
         toTreePath: (path) => path,
@@ -186,11 +184,10 @@ describe('marking how a run went', () => {
       })
     })
 
-    it('marks what throw mode passed over at its first failure', async () => {
+    it('marks what the run passed over at its failure', async () => {
       const { marks } = await evaluate(
         { operator: 'if', condition: FAILING, then: { $plus: [{ $plus: [1, 1] }, 1] }, else: 0 },
-        [],
-        { mode: 'throw' }
+        []
       )
       expect(statuses(marks)).toEqual({
         '(root)': 'failed',
@@ -383,23 +380,9 @@ describe('marking how a run went', () => {
     })
   })
 
-  describe('nulls a failure left', () => {
-    it('go to the evaluated row, where it is plain data holding the failed node', async () => {
-      const { marks } = await evaluate({ title: { $upper: 'ada' }, total: FAILING }, [])
-      expect(statuses(marks)).toEqual({ '(root)': 'value', title: 'value', total: 'failed' })
-      expect(at(marks, []).runs[0].value).toEqual({ title: 'ADA', total: null })
-      expect(at(marks, []).nulls).toMatchObject([{ path: ['total'], holePath: ['total'] }])
-      expect(at(marks, ['total']).nulls).toEqual([])
-    })
-
-    it('leave none in a node, which a failure beneath fails, whatever its null policy', async () => {
-      const { marks } = await evaluate(
-        { a: { operator: 'if', condition: FAILING, then: 1, else: 2 } },
-        []
-      )
-      expect(statuses(marks)).toEqual({ '(root)': 'value', a: 'failed', 'a.condition': 'failed' })
-      expect(at(marks, []).nulls).toMatchObject([{ holePath: ['a'] }])
-    })
+  it('fails plain data holding a failed node, with what ran beside it', async () => {
+    const { marks } = await evaluate({ title: { $upper: 'ada' }, total: FAILING }, [])
+    expect(statuses(marks)).toEqual({ '(root)': 'failed', title: 'value', total: 'failed' })
   })
 
   it('gives where a failure came from, in the tree', async () => {
@@ -490,7 +473,7 @@ describe('marking how a run went', () => {
       operators: figTree.getOperators(),
     })!
     const abort = new AbortController()
-    const pending = evaluateSubTree(figTree, [], subTree, { mode: 'report', signal: abort.signal })
+    const pending = evaluateSubTree(figTree, [], subTree, { signal: abort.signal })
     abort.abort()
     expect(markRun(await pending, classification, subTree.row)).toBeNull()
   })

@@ -81,7 +81,7 @@ describe('evaluating', () => {
     const { reports, latest } = host({ x: { $plus: ['$data.a', 1] } }, { evaluationData: { a: 2 } })
     fireEvent.click(nodeButton('$plus'))
     await waitFor(() => expect(reports).toEqual(['start x', 'done x']))
-    expect(latest()).toMatchObject({ path: ['x'], mode: 'report', result: 3 })
+    expect(latest()).toMatchObject({ path: ['x'], status: 'done', result: 3 })
   })
 
   it('evaluates a node in the scope around it, one value per element', async () => {
@@ -114,10 +114,12 @@ describe('evaluating', () => {
     )
   })
 
-  it('evaluates in throw mode where the host asks', async () => {
-    const { latest } = host({ x: { $divide: [1, 0] } }, { evaluationMode: 'throw' })
+  it('fails at a failure no fallback caught, giving the failure', async () => {
+    const { latest } = host({ x: { $divide: [1, 0] } })
     fireEvent.click(nodeButton('$divide'))
-    await waitFor(() => expect(latest()).toMatchObject({ mode: 'throw', status: 'failed' }))
+    await waitFor(() =>
+      expect(latest()).toMatchObject({ status: 'failed', failure: { path: ['x'] } })
+    )
   })
 
   describe('while it runs', () => {
@@ -266,9 +268,9 @@ describe('evaluating', () => {
       expect(ran(inner)).toBe('failed')
       expect(ran(nodeButton('$plus'))).toBe('failed')
       expect(border(inner).borderColor).toBe(toRgb(defaultEditorTheme.runFailed))
-      // Done, holding the failure's null
+      // Failed, by the failure beneath
       expect(ran(within(container.querySelector('.ft-root-bar')!).getByRole('button'))).toBe(
-        'value'
+        'failed'
       )
     })
 
@@ -425,6 +427,19 @@ describe('evaluating', () => {
         expect(card(button).at(-1)).toBe('+2 more')
       })
 
+      it('counts the elements a fallback was used for inside an iterator', async () => {
+        const each = { $divide: [1, '$element'], fallback: 0 }
+        const some = host({ operator: 'map', input: [1, 0, 2], each })
+        fireEvent.click(nodeButton('$divide'))
+        await done(some.reports, 1)
+        expect(status(nodeButton('$divide'))).toBe('Fallback used for 1 of 3 elements')
+        some.unmount()
+        const every = host({ operator: 'map', input: [0, 0], each })
+        fireEvent.click(nodeButton('$divide'))
+        await done(every.reports, 1)
+        expect(status(nodeButton('$divide'))).toBe('Fallback used for every element')
+      })
+
       it('says where a failure came from, where it is a row beneath', async () => {
         const { container, reports } = host({ total: { $plus: [{ $divide: [1, 0] }, 1] } })
         fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
@@ -433,9 +448,8 @@ describe('evaluating', () => {
         expect(status(nodeButton('$divide'))).toBe('Failed')
         expect(card(nodeButton('$divide')).slice(1)).toEqual([message])
         expect(card(nodeButton('$plus')).slice(1)).toEqual([`At total.$plus[0]: ${message}`])
-        // The root holds the null the failure left
         const root = within(container.querySelector('.ft-root-bar')!).getByRole('button')
-        expect(card(root).slice(1)).toEqual(['{"total":null}', `total is null: ${message}`])
+        expect(card(root).slice(1)).toEqual([`At total.$plus[0]: ${message}`])
       })
 
       it('says what a fallback caught, and where the fallback failed too', async () => {

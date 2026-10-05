@@ -11,12 +11,11 @@ import { strings } from './strings'
 // tree"), in place of its usual lines until the marks go: how the row ran, in
 // its colour, with the time; then its value, or inside an iterator a line per
 // element; its failure, where that came from, and a failed fallback's; what a
-// fallback caught; why it didn't run; and on the evaluated row, the nulls
-// failures left in its value. A value is compact JSON, strings quoted, cut
-// short where it runs past three lines, since a card can't scroll and the
-// host has it whole.
+// fallback caught; and why it didn't run. A value is compact JSON, strings
+// quoted, cut short where it runs past three lines, since a card can't scroll
+// and the host has it whole.
 export const RunCard = ({ mark, editorTheme }: { mark: RowRun; editorTheme: EditorTheme }) => {
-  const { path, status, runs, perElement, reason, nulls } = mark
+  const { path, status, runs, perElement, reason } = mark
   const time = runs.reduce<number | undefined>(
     (total, { elapsed }) => (elapsed === undefined ? total : (total ?? 0) + elapsed),
     undefined
@@ -45,15 +44,6 @@ export const RunCard = ({ mark, editorTheme }: { mark: RowRun; editorTheme: Edit
       {!elements && only?.status === 'fallback' && only.error && (
         <Line text={strings.FT_RUN_CAUGHT(only.error.message)} />
       )}
-      {nulls.map((failure, index) => (
-        <Line
-          key={index}
-          text={strings.FT_RUN_NULL(
-            displayPath(failure.holePath!.slice(path.length)),
-            failure.message
-          )}
-        />
-      ))}
     </>
   )
 }
@@ -75,8 +65,12 @@ const headline = ({ status, runs, perElement }: RowRun) => {
       const values = runs.filter((run) => run.status === 'value')
       return values.every(({ cached }) => cached) ? strings.FT_RUN_CACHED(ran) : ran
     }
-    case 'fallback':
-      return perElement ? strings.FT_RUN_FALLBACK_PER_ELEMENT : strings.FT_RUN_FALLBACK
+    case 'fallback': {
+      const used = runs.filter((run) => run.status === 'fallback').length
+      return perElement
+        ? strings.FT_RUN_FALLBACK_PER_ELEMENT(used, runs.length)
+        : strings.FT_RUN_FALLBACK
+    }
     case 'failed':
       return strings.FT_RUN_FAILED
     case 'cancelled':

@@ -13,17 +13,14 @@ const contextFor = (expression: unknown, operators = registry.operators) => ({
 const build = (expression: unknown, path: Path) =>
   buildSubTree(expression, path, contextFor(expression))
 
-// A row evaluated as 10.6 will: its sub-tree in report mode, then its value
-// read out of the wrappers and its failures' paths mapped to the tree
+// A row evaluated as 10.6 will: its sub-tree, then its value read out of the
+// wrappers, or the path of the failure it threw mapped to the tree
 const evaluateRow = async (expression: unknown, path: Path, data?: Record<string, unknown>) => {
   const subTree = build(expression, path)!
-  const { result, errors } = (await figTree.evaluate(subTree.expression, {
-    data,
-    mode: 'report',
-  })) as { result: unknown; errors: FigTreeError[] }
-  return {
-    value: subTree.readResult(result),
-    failures: errors.map(({ path: at }) => subTree.toTreePath(at)),
+  try {
+    return { value: subTree.readResult(await figTree.evaluate(subTree.expression, { data })) }
+  } catch (error) {
+    return { failure: subTree.toTreePath((error as FigTreeError).path) }
   }
 }
 
@@ -214,10 +211,7 @@ describe('a sub-tree', () => {
 
     it("doesn't apply an ancestor's, so the row's failure shows", async () => {
       const expression = { operator: 'plus', values: [1, FAILING], fallback: 0 }
-      expect(await evaluateRow(expression, ['values', 1])).toEqual({
-        value: null,
-        failures: [['values', 1]],
-      })
+      expect(await evaluateRow(expression, ['values', 1])).toEqual({ failure: ['values', 1] })
       expect((await evaluateRow(expression, [])).value).toBe(0)
     })
 
@@ -228,21 +222,25 @@ describe('a sub-tree', () => {
   })
 
   describe('failures', () => {
-    it('read back as null where what a wrapper held failed', async () => {
-      // fig-tree degrades the whole iterator where one element fails
-      const perElement = { operator: 'map', input: [1, 0], each: { $divide: [1, '$element'] } }
-      expect(await evaluateRow(perElement, ['each'])).toEqual({ value: null, failures: [['each']] })
-      const input = { operator: 'map', input: FAILING, each: '$element' }
-      expect((await evaluateRow(input, ['each'])).value).toBeNull()
-    })
-
     it('map to the rows that failed: in the row, a wrapped var, a wrapped input', async () => {
       const inRow = { vars: { x: 0 }, value: { $plus: [1, { $divide: [1, '$vars.x'] }] } }
-      expect((await evaluateRow(inRow, ['value'])).failures).toEqual([['value', '$plus', 1]])
+      expect(await evaluateRow(inRow, ['value'])).toEqual({ failure: ['value', '$plus', 1] })
       const inVar = { vars: { bad: FAILING }, value: { $plus: ['$vars.bad', 1] } }
-      expect((await evaluateRow(inVar, ['value'])).failures).toEqual([['vars', 'bad']])
+      expect(await evaluateRow(inVar, ['value'])).toEqual({ failure: ['vars', 'bad'] })
       const inInput = { operator: 'map', input: FAILING, each: '$element' }
-      expect((await evaluateRow(inInput, ['each'])).failures).toEqual([['input']])
+      expect(await evaluateRow(inInput, ['each'])).toEqual({ failure: ['input'] })
+    })
+
+    it('map to the row where one element of an iterator around it fails', async () => {
+      const perElement = { operator: 'map', input: [1, 0], each: { $divide: [1, '$element'] } }
+      expect(await evaluateRow(perElement, ['each'])).toEqual({ failure: ['each'] })
+    })
+
+    it("read a wrapper's value that isn't what it builds as null", () => {
+      const expression = { operator: 'map', input: [1, 2], each: '$element' }
+      expect(build(expression, ['each'])!.readResult('n/a')).toBeNull()
+      const scoped = { vars: { x: 1 }, value: '$vars.x' }
+      expect(build(scoped, ['value'])!.readResult(5)).toBeNull()
     })
   })
 

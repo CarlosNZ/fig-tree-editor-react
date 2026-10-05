@@ -137,7 +137,7 @@ The editor reads the `unrecognized-identifier` suggestion for a third feature: a
 
 - A failed `homogeneous` check names the first two types that differ (`received string beside number`) or the one type that isn't allowed (`received array of boolean`), for every operator.
 - `expect` doesn't conflict: `{ values: ['a', 'b'], expect: 'number' }` passes the constraint, and the body reports it.
-- With `runtimeTypeCheck: false` the body's own check still runs.
+- With `runtimeTypeCheck: false` the body's own check still runs. (The option went in 3.0.0-preview.6, and the checks always run.)
 
 So `validate()` reports `{ $plus: [1, 'a'] }` as `type-check`, and `plus`'s elements admit the four types.
 

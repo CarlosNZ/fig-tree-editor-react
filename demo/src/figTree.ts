@@ -5,6 +5,7 @@ import {
   httpOperators,
   sqlOperators,
   type FigTreeOptions,
+  type OptionsUpdate,
 } from 'fig-tree-evaluator'
 // @ts-expect-error No declaration
 import { PostgresInterface } from './postgresInterface.js'
@@ -140,41 +141,29 @@ export const figTree = new FigTree({ operators, cache: { store: cacheStore } })
 
 // The update that makes the instance's options `options`, given that they're
 // `previous`. `updateOptions()` merges what it's given into what the instance
-// has, and leaves out what's `undefined`, so each setting the demo can clear
-// is given its unset value: an empty endpoint, no headers, an operator's own
-// defaults, or FigTree's default.
-const prepareOptions = (previous: DemoOptions, options: DemoOptions): FigTreeOptions => ({
-  // TO-DO: give each fragment in `previous` but not in `options` fig-tree's
-  // removal marker once it has one (fig-tree-evaluator#157). Until then, a
-  // removed fragment stays registered until the page reloads.
-  fragments: options.fragments ?? {},
-  http: {
-    ...options.http,
-    baseEndpoint: options.http?.baseEndpoint ?? '',
-    headers: options.http?.headers ?? {},
-  },
-  graphQL: {
-    ...options.graphQL,
-    endpoint: options.graphQL?.endpoint ?? '',
-    headers: options.graphQL?.headers ?? {},
-  },
-  operatorDefaults: {
-    ...Object.fromEntries(Object.keys(previous.operatorDefaults ?? {}).map((name) => [name, {}])),
-    ...options.operatorDefaults,
-  },
+// has, and removes what's `null`, so each setting `options` leaves out is
+// given as null, and FigTree's default applies. The cache keeps the demo's
+// own defaults, and its store.
+const prepareOptions = (previous: DemoOptions, options: DemoOptions): OptionsUpdate => ({
+  fragments: replacing(previous.fragments, options.fragments),
+  http: replacing(previous.http, options.http),
+  graphQL: replacing(previous.graphQL, options.graphQL),
+  operatorDefaults: replacing(previous.operatorDefaults, options.operatorDefaults),
   cache: {
     maxSize: options.cache?.maxSize ?? DEFAULT_CACHE_SIZE,
     maxTime: options.cache?.maxTime ?? DEFAULT_CACHE_TIME,
   },
-  strictDataPaths: options.strictDataPaths ?? false,
-  // TO-DO: give `timeout` fig-tree's removal marker when `options` has none
-  // (fig-tree-evaluator#157). It takes only a positive number, so until then a
-  // cleared timeout stays until the page reloads.
-  timeout: options.timeout,
-  // `Infinity` is no limit, which a stored option can't hold, since JSON keeps
-  // it as null, and FigTree reads null as 0
-  maxDepth: options.maxDepth ?? Infinity,
-  maxNodes: options.maxNodes ?? Infinity,
+  strictDataPaths: options.strictDataPaths ?? null,
+  timeout: options.timeout ?? null,
+  maxDepth: options.maxDepth ?? null,
+  maxNodes: options.maxNodes ?? null,
+})
+
+// A block of options as an update over `previous`: each key `previous` has
+// and `next` doesn't is null, which removes it
+const replacing = <Block extends object>(previous?: Block, next?: Block) => ({
+  ...Object.fromEntries(Object.keys(previous ?? {}).map((key) => [key, null])),
+  ...next,
 })
 
 let applied: DemoOptions = {}

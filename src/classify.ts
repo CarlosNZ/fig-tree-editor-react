@@ -277,7 +277,7 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
   // `fallback`, `noCache` and `vars`, on any node. False for any other key.
   const modifier = (key: string, value: unknown, path: Path, nodePath: Path, inner: Context) => {
     if (key === 'fallback' || key === 'noCache')
-      visit(value, path, modifierSlot(path, nodePath, key), inner)
+      visit(value, path, modifierSlot(path, nodePath, key, row(nodePath).slot!.admits), inner)
     else if (key === 'vars') varsBlock(value, path, nodePath, inner)
     else return false
     return true

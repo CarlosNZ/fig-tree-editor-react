@@ -471,7 +471,7 @@ type Slot = {
 | `branches: '$data.map'`                                       | parameter `match.branches`: `object`                                                                                          |
 | `parameters: { name: X }` (static fragment call)              | parameter, from the fragment's declaration, which has the same shape as an operator's                                         |
 | `parameters: X` (dynamic)                                     | arguments: `object`                                                                                                           |
-| `fallback: X`                                                 | modifier: `any`                                                                                                               |
+| `fallback: X`                                                 | modifier: what its node's own position admits, since it stands in for the node's value                                        |
 | `noCache: X`                                                  | modifier: `true`, literal only                                                                                                |
 | `vars: { price: X }`                                          | var: `any`. A separate role from `modifier`, since vars are names that make a scope (topic 5)                                 |
 | `as: X`                                                       | parameter, structural: `string`, literal only                                                                                 |
@@ -560,7 +560,7 @@ A slot finds its default by its type: an `any` slot the `any` entry; a basic typ
 
 | Slot                                              | admits                           | Options                                                                        |
 | ------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `if.condition`, `fallback`, a var, plain data     | `any`                            | string · number · boolean · null · object · array · Data · Operator · Fragment |
+| `if.condition`, a var, plain data                 | `any`                            | string · number · boolean · null · object · array · Data · Operator · Fragment |
 | `round.value`                                     | `['number', 'null']`             | number · null · Data · Operator · Fragment                                     |
 | `round.decimals` (optional)                       | `integer`                        | number · Data · Operator · Fragment                                            |
 | `regex.mode` (optional)                           | `'test' \| 'extract' \| 'match'` | Option · Data · Operator · Fragment                                            |
@@ -939,8 +939,8 @@ Checked against the installed package:
 
 - **`validate()` issues carry paths in the authored coordinates,** shorthand included (`['items', '$map', 'each']`), so they name json-edit-react rows directly. An issue points at a node (`missing-required`, `unknown-operator`, `malformed-node`, and `returns-mismatch` at the node doing the returning), at a key's row (`unknown-node-key` at `['age', 'thn']`, `useless-modifier` at `['x', 'fallback']`, a shorthand's `unrecognized-identifier` at `['condition', '$graeterThan']`), or at a string holding a reference token (`unresolved-var` at a `buildString` template). Severities are `error` and `warning`. Where fig-tree has a did-you-mean, the issue carries it as `suggestion` (F3 in [v3-upstream.md](v3-upstream.md)).
 - **The sample-data warnings point at the reading rows.** Given `data`, `validate()` warns about each statically known `$data` path the data lacks (`missing-data-path`), once per reading node, at its path (F12 in [v3-upstream.md](v3-upstream.md)). A read inside a fragment body is reported at the call, naming the fragment.
-- **A static error anywhere refuses the whole evaluation:** `{ result: null, errors: [...] }` with the static issues and no trace. A sub-tree evaluation compiles only its synthesised expression, so it is refused only by errors inside the sub-tree or in the ancestor `vars` blocks wrapped around it.
-- **`{ mode: 'report', trace: true }` never throws.** `errors` holds each failure no `fallback` caught, with the failing node's `path` and the `holePath` that degraded to `null`; a failure inside a fragment body carries the call's `path` with `fragment` and `fragmentPath`, a location in a body the editor never receives. A failure a `fallback` caught is not in `errors`: the trace shows it as `status: 'fallback'` with the error it caught.
+- **A static error anywhere refuses the whole evaluation:** it rejects with the static issues and no trace. A sub-tree evaluation compiles only its synthesised expression, so it is refused only by errors inside the sub-tree or in the ancestor `vars` blocks wrapped around it.
+- **A failure no `fallback` caught rejects the evaluation,** with the failing node's `path`; a failure inside a fragment body carries the call's `path` with `fragment` and `fragmentPath`, a location in a body the editor never receives. A failure a `fallback` caught is not thrown: the trace shows it as `status: 'fallback'` with the error it caught. (Superseded: 3.0.0-preview.2 also had a `mode: 'report'`, which degraded each failure's hole to `null` and returned the failures as `errors`. fig-tree removed it in 3.0.0-preview.6, [#208](https://github.com/CarlosNZ/fig-tree-evaluator/issues/208).)
 - **The trace is an instance tree in authored paths:** one entry per node instance with its status (`value`, `failed`, `fallback`, `cancelled`, `skipped`), one entry per iterator element at the same path, reference entries with their resolved values, a fragment call's body nodes marked `source: { fragment }`, the compile warnings on the root, and events for cache hits, requests (header names only), renders and SQL queries. Values are held by reference.
 - **`getDependencies()`** lists the `$data` paths read (with a `dynamic` flag where reads cannot all be listed), the operators and the fragments, transitively through fragment calls.
 
@@ -1093,31 +1093,23 @@ which, with `{ orders: [{ total: 100 }, { total: 20 }] }`, evaluates to `{ value
 
 **A standalone function.** Building the expression is a distinct, self-contained operation, and its logic is intricate, so it is one pure function in a module of its own, with no React and nothing from the components mixed in (Carl). It takes the tree, the row's path and the scope chain the walk recorded for it, and returns the expression with the two ways back: reading the row's result out of the wrappers, and translating a path in the synthesised expression to the tree's. It is tested on its own, as the classification walk is (plan, working rule 4), including evaluation against fig-tree for each kind of scope.
 
-**Evaluation mode — Agreed: report by default, with a host prop for throw** (`evaluationMode`, topic 8). The two fig-tree options are independent. `mode` decides what happens to a failure no `fallback` caught: `'throw'` rejects with the first and discards the rest, while `'report'` never rejects, degrades the failed hole to `null`, completes everything else and returns `{ result, errors }` with every failure. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, errors, trace }` in either mode, and in throw mode a failure's thrown error carries the partial trace as `error.trace` (checked against 3.0.0-preview.1).
+**Evaluation mode — Agreed: fig-tree's one mode.** A failure no `fallback` caught rejects the evaluation, so one failure fails the whole row: the failed node is marked, the rows the run didn't reach are marked as never run, and the fallbacks used still show, from the partial trace the thrown error carries (`error.trace`). Resilience is fallbacks, in the expression or in the host's `operatorDefaults`. `trace` only records what happened at each node instance and never changes the result; with it on, a success returns `{ result, trace }`. `trace` is on for every evaluation.
 
-- **Report is the default:** it gives the partial results and every failure ("How it ran, in the tree"), and it is the combination fig-tree's spec intends for editors.
-- **Throw, through the prop,** shows a run as a host's production evaluation would have it, for a host that evaluates in throw mode: one failure fails the whole row. The failed node is marked, the rows the run didn't reach are marked as never run, and the fallbacks used still show, from the partial trace the thrown error carries (`error.trace`).
-- **`trace` is on in both modes.**
-- Rejected: following the host instance's own `mode` by default (`getOptions().mode`, `undefined` meaning throw unless the host set it). It matches production with no prop set, but most hosts set nothing, so most would get the poorer display without choosing it.
+- Superseded: report mode by default, with an `evaluationMode` prop for throw. fig-tree's `mode: 'report'` degraded a failed hole to `null`, completed everything else and returned every failure, which the editor showed as partial results and a card line for each null a failure left. Carl asked for report mode to be removed from fig-tree, since the two modes differ only for a row holding several holes ([#208](https://github.com/CarlosNZ/fig-tree-evaluator/issues/208)), and it went in 3.0.0-preview.6, taking `evaluationMode`, `Evaluation.mode` and a failure's `holePath` with it.
 
-**The callback — sketched here, settled in topic 8 ("Evaluation").** The host's callback receives each evaluation as data. It returns nothing, and the editor never lets fig-tree's rejection escape to the host: in throw mode it catches the thrown error and passes it on, so the host never wraps the editor in a `try`.
+**The callback — sketched here, settled in topic 8 ("Evaluation").** The host's callback receives each evaluation as data. It returns nothing, and the editor never lets fig-tree's rejection escape to the host: it catches the thrown error and passes it on, so the host never wraps the editor in a `try`.
 
 ```ts
 onEvaluate(evaluation: {
   path: Path                  // the row evaluated, in the tree
-  mode: 'report' | 'throw'
-  // report mode, and throw mode when it succeeds:
-  result?: unknown
-  errors?: FigTreeError[]     // report mode: every uncaught failure (empty on success)
-  // throw mode, when it fails:
-  error?: FigTreeError        // the one failure fig-tree threw
-  // both:
+  result?: unknown            // when it succeeds
+  error?: FigTreeError        // when it fails: the one failure fig-tree threw
   fallbacks: { path: Path, error: FigTreeError }[]   // the fallbacks that fired
   trace: TraceNode            // the raw trace, for a host that wants more
 })
 ```
 
-Every path it carries is in the tree's coordinates, the errors' included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Topic 8 settles it: a `status`, one `failures` list in place of `error` and `errors`, the trace's own paths left in the synthesised coordinates with `toTreePath` to map them, `onEvaluateStart`, and a `cancelled` status.
+Every path it carries is in the tree's coordinates, the error's included, so fig-tree's error objects are wrapped or copied rather than passed through with their synthesised paths. Topic 8 settles it: a `status`, a `failure` in place of `error`, the trace's own paths left in the synthesised coordinates with `toTreePath` to map them, `onEvaluateStart`, and a `cancelled` status.
 
 ### How it ran, in the tree — **Agreed** (Carl, plan 10.7)
 
@@ -1152,8 +1144,7 @@ What an evaluation leaves in the tree, from its trace, which every editor evalua
 - **The value,** as compact JSON, strings quoted, so `'42'` and `42` differ, cut with "…" where it runs past three lines, since a card can't scroll and closes as the pointer leaves; the host has it whole. For a row inside an iterator, a line per element, each cut to one line, up to ten, then "+4 more", the failed ones marked.
 - **A failure's message,** and where it came from a row beneath, which row, since every node above a failure fails with it. A failed fallback's `cause` ("the fallback also failed: …"), an `and` or `or`'s `related` failures as "+1 more", and for a failure inside a fragment body, "in fragment `ratio` at `expression.$plus[1]`", with `fragmentPath` in display form, since the body is not in the tree: a path in the registered definition, as fig-tree gives it, its body under `expression`. The host receives `fragment` and `fragmentPath` with the result, so a host that edits fragment definitions (Conforma) can open the body there.
 - **A fallback's catch:** the failure it caught.
-- **Why a row didn't run,** in general terms, from what the editor knows already, since the trace gives no reason: "evaluated only when needed" for a lazy parameter, element or entry; "not needed: the node succeeded" for a `fallback`; "never read" for a var; "stopped once the answer was known" or "stopped by the timeout" for a cancelled node; "inside `else`, which didn't run" for a row inside one; and "not reached" for a row the run stopped short of, as throw mode does at its first failure.
-- **A null a failure left:** "`total` was null: `divide` failed", on the evaluated row. A failure fails every node above it, whatever the parameter's null policy, up to plain data outside any node, which keeps the null, so only an evaluated row that is plain data holds one, as the root's does (checked against 3.0.0-preview.3, plan 10.7a).
+- **Why a row didn't run,** in general terms, from what the editor knows already, since the trace gives no reason: "evaluated only when needed" for a lazy parameter, element or entry; "not needed: the node succeeded" for a `fallback`; "never read" for a var; "stopped once the answer was known" or "stopped by the timeout" for a cancelled node; "inside `else`, which didn't run" for a row inside one; and "not reached" for a row the run stopped short of, as it does at a failure.
 - **The time,** on every card of a row that ran, "<1ms" under a millisecond. fig-tree records none for a cancelled node or one that never ran (checked, plan 10.7c).
 - **The evaluated node's card shows again as the result arrives.** The click hides it until the pointer leaves (plan 10.6b), so with the pointer still on the button, the result shows at once.
 
@@ -1319,16 +1310,14 @@ The props for topic 7's evaluation design:
 
 ```ts
 evaluationData?: Record<string, unknown> // what `$data` is in the editor's evaluations and validate()'s sample-data check
-evaluationMode?: 'report' | 'throw' // default 'report'
 onEvaluateStart?: (start: { path: Path }) => void
 onEvaluate?: (evaluation: Evaluation) => void
 
 type Evaluation = {
   path: Path // the row evaluated, in the tree
-  mode: 'report' | 'throw'
   status: 'done' | 'failed' | 'cancelled'
-  result?: unknown // on 'done'; in report mode it may hold nulls where holes failed
-  failures: EvaluationFailure[] // report: every uncaught failure; throw: the one thrown; [] when clean or cancelled
+  result?: unknown // on 'done'
+  failure?: EvaluationFailure // on 'failed': the failure fig-tree threw
   fallbacks: { path: Path; error: FigTreeError }[] // the fallbacks that fired
   trace?: TraceNode // fig-tree's own; absent when cancelled
   toTreePath: (path: Path) => Path // maps a path in `trace` into the tree
@@ -1337,7 +1326,6 @@ type Evaluation = {
 type EvaluationFailure = {
   message: string
   path: Path // the failed row, in the tree
-  holePath?: Path
   fragment?: string // for a failure inside a fragment body
   fragmentPath?: Path
   error: FigTreeError // fig-tree's original, in the synthesised expression's coordinates
@@ -1345,12 +1333,11 @@ type EvaluationFailure = {
 ```
 
 - **`evaluationData`,** given, is passed per call to `evaluate()` and `validate()`; absent, the instance's own `data` applies to both (topic 7, "What an evaluation uses"). It cannot be `data`, which is json-edit-react's ("How the props relate to json-edit-react's"). It takes fig-tree's own type for `data`, `Record<string, unknown>` (plan, 10.1). Rejected: v1's `objectData`, fig-tree v2's wording; and `sampleData`, topic 7's wording, which misdescribes a host such as Conforma that passes the application's real context.
-- **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure in throw mode, or in report mode a failure whose hole holds the row, or one with no hole, which fails the evaluation as a whole, as a timeout does (plan 10.7). A partial result in report mode is `'done'` with its failures listed.
-- **One `failures` list in both modes,** in place of the sketch's separate `error` and `errors`.
+- **`status`** tells the outcomes apart without inspecting the other fields. `'failed'` means the row produced no value: a failure no `fallback` caught, which fails the evaluation as a whole, as a timeout does, or an evaluation fig-tree refused.
+- **One `failure`,** in place of the sketch's `error`, wrapped so its path is the tree's.
 - **Every path is in the tree's coordinates except the trace's.** Translating a whole trace for a host that rarely reads it is wasted work, so the host gets `toTreePath`, built from the mapping sub-tree evaluation already records (topic 7). At a row with no enclosing scope it is the identity.
 - **Every `onEvaluateStart` is followed by exactly one `onEvaluate`,** with `'done'`, `'failed'` or `'cancelled'`. A cancel is clicking the running affordance again, or starting another evaluation, in which case the host sees the running one's `'cancelled'` before the new one's start. So a host drawing results can clear a stale one and show that one is running, and a spinner it shows is always stopped. Nothing in the v1 demo or Conforma uses v1's `onEvaluateStart`, but v1 had no built-in display, so no host yet drew results itself in the way topic 7 allows. v1's `onEvaluateError` is covered by `status: 'failed'`.
 - **`onEvaluate` returns nothing** and the editor never lets fig-tree's rejection escape to the host (topic 7).
-- **`evaluationMode`** is named after fig-tree's `mode` option, qualified because `mode` alone says little among the props.
 - Rejected: dropping `onEvaluateStart` and not reporting cancelled evaluations. It leaves a host's result display unable to tell a stale result, or that one is running.
 
 ### Defaults and what the pickers offer — **Agreed**
@@ -1525,7 +1512,6 @@ interface FigTreeEditorProps extends Omit<
   messagesMaxHeight?: number | string // 0 hides the messages area
   editorRef?: React.Ref<FigTreeEditorHandle> // json-edit-react's handle, plus reveal({ path })
   evaluationData?: Record<string, unknown>
-  evaluationMode?: 'report' | 'throw'
   onEvaluateStart?: (start: { path: Path }) => void
   onEvaluate?: (evaluation: Evaluation) => void
   defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>

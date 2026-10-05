@@ -158,6 +158,23 @@ describe('slots', () => {
     expect(slotAt(node, ['vars', 'price'])).toMatchObject({ role: 'var', admits: 'any' })
   })
 
+  it("resolve a fallback to what its node's position admits, in any form", () => {
+    const shorthand = { $round: { value: { $divide: [1, 0], fallback: 0 } } }
+    expect(slotAt(shorthand, ['$round', 'value', 'fallback'])).toMatchObject({
+      role: 'modifier',
+      ownerPath: ['$round', 'value'],
+      admits: ['number', 'null'],
+    })
+    const full = { operator: 'round', value: { operator: 'divide', value: 1, by: 0, fallback: 0 } }
+    expect(slotAt(full, ['value', 'fallback'])).toMatchObject({ admits: ['number', 'null'] })
+    // A fallback's own fallback stands in for the same value
+    const chained = {
+      $round: { value: { $divide: [1, 0], fallback: { $divide: [1, 0], fallback: 0 } } },
+    }
+    const inner = ['$round', 'value', 'fallback', 'fallback']
+    expect(slotAt(chained, inner)).toMatchObject({ admits: ['number', 'null'] })
+  })
+
   it('resolve `as` as a literal-only name', () => {
     expect(slotAt({ $map: { input: [], as: 'x', each: 1 } }, ['$map', 'as'])).toMatchObject({
       role: 'parameter',
