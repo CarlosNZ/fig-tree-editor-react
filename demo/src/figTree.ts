@@ -17,7 +17,7 @@ import { getLocalStorage } from './helpers'
 // demo: the instance's, and the editor's coverage analysis's, which aren't the
 // instance's. They're plain data, so they can be kept in local storage.
 export type DemoOptions = {
-  coverage?: Pick<FallbackCoverageOptions, 'numbers'>
+  coverage?: Pick<FallbackCoverageOptions, 'strictNumbers'>
 } & Pick<
   FigTreeOptions,
   | 'fragments'

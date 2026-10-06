@@ -86,7 +86,7 @@ const resetFormState = (options: DemoOptions) => {
     timeout: options.timeout,
     maxDepth: options.maxDepth,
     maxNodes: options.maxNodes,
-    strictNumbers: options.coverage?.numbers === 'strict',
+    strictNumbers: options.coverage?.strictNumbers === true,
   }
 }
 
@@ -153,7 +153,7 @@ export const OptionsModal = ({
       fragments,
       // Unfiltered, since `fallback: null` is a default
       operatorDefaults,
-      ...(strictNumbers && { coverage: { numbers: 'strict' } }),
+      ...(strictNumbers && { coverage: { strictNumbers: true } }),
     }
 
     // FigTree checks the options, the fragment definitions included, as they're

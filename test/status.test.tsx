@@ -163,7 +163,7 @@ describe('the status', () => {
         )
       const ordinary = host(product)
       expect(overflows(await settled(ordinary.latest))).toBe(false)
-      const strict = host(product, { coverageOptions: { numbers: 'strict' } })
+      const strict = host(product, { coverageOptions: { strictNumbers: true } })
       expect(overflows(await settled(strict.latest))).toBe(true)
     })
 

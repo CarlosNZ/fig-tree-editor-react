@@ -144,7 +144,7 @@ export interface FigTreeEditorProps extends Omit<
   // counts, whether an edit is open, and the messages area's lines
   onStatusChange?: (status: EditorStatus) => void
   // What the status's coverage analysis takes beside the instance and the
-  // expression: a per-call `timeout`, and how strictly it treats numbers
+  // expression: how strictly it treats numbers
   coverageOptions?: FallbackCoverageOptions
   onEvaluateStart?: (start: { path: Path }) => void
   // Each evaluation as it ends, done, failed or cancelled: one per start
