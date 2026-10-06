@@ -567,10 +567,11 @@ input.ft-select-input::placeholder {
 
 /* A row's issues float beneath its value, or at the top of a collection's
    rows, beneath its header line, so the tree lays out as it would without
-   them. They show while the row is hovered, a collection's anywhere over its
-   block, after the issue cards' delay. Only the innermost card shows: not
-   while the pointer is on something inside the row with a card of its own,
-   such as a key, a node, or a row or block with issues of its own. */
+   them. They show while the row is hovered, a collection's while its header
+   line is, after the issue cards' delay, so the card never stays over the
+   rows it covers while they are being worked on. They don't show while the
+   pointer is on something in the row with a card of its own, such as a key
+   or a node. */
 .ft-flagged,
 .ft-reference {
   position: relative;
@@ -587,7 +588,10 @@ input.ft-select-input::placeholder {
 }
 
 .jer-value-main-row:hover .ft-issue-card,
-.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line > .ft-issue-card {
+.jer-collection-component:has(> .jer-collection-header-row:hover)
+  > .jer-collection-inner
+  > .ft-flag-line
+  > .ft-issue-card {
   visibility: visible;
   opacity: 1;
   transition:
@@ -596,11 +600,7 @@ input.ft-select-input::placeholder {
 }
 
 .jer-value-main-row:has(.ft-hover-card-anchor:hover) .ft-issue-card,
-.jer-collection-component:is(
-    :has(.ft-hover-card-anchor:hover),
-    :has(.jer-value-main-row:hover .ft-issue-card),
-    :has(.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line)
-  )
+.jer-collection-component:has(> .jer-collection-header-row .ft-hover-card-anchor:hover)
   > .jer-collection-inner
   > .ft-flag-line
   > .ft-issue-card {

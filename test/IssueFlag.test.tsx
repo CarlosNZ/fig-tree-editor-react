@@ -114,15 +114,13 @@ describe("a row's issues", () => {
       [...document.querySelectorAll('style')].map(({ textContent }) => textContent).join('')
     )
     for (const rule of [
-      // A value row's card, and a collection's, anywhere over its block
+      // A value row's card, and a collection's, over its header line only, so
+      // it never covers the rows beneath while they are hovered
       '.jer-value-main-row:hover .ft-issue-card',
-      '.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line > .ft-issue-card',
-      // Hidden under a card inside: a key's or a node's, a value row's, or a
-      // block's
+      '.jer-collection-component:has(> .jer-collection-header-row:hover) > .jer-collection-inner > .ft-flag-line > .ft-issue-card',
+      // Hidden under a card in the row: a key's or a node's
       '.jer-value-main-row:has(.ft-hover-card-anchor:hover) .ft-issue-card',
-      ':has(.ft-hover-card-anchor:hover)',
-      ':has(.jer-value-main-row:hover .ft-issue-card)',
-      ':has(.jer-collection-component:hover > .jer-collection-inner > .ft-flag-line)',
+      '.jer-collection-component:has(> .jer-collection-header-row .ft-hover-card-anchor:hover) > .jer-collection-inner > .ft-flag-line > .ft-issue-card',
     ])
       expect(stylesheet).toContain(compact(rule))
   })
