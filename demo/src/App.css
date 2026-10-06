@@ -36,7 +36,7 @@ pre {
    box: while there are messages, the tree's lower corners are square, and the
    messages area's are rounded, with a line between them. It isn't clipped to
    its corners, since pickers and hover cards float outside it. Its wrapper,
-   which holds the Shielded badge, sets it apart from the text above. */
+   which holds the Safe badge, sets it apart from the text above. */
 .ft-outer-container {
   border-radius: 0.5em;
   box-shadow: 0 3px 8px #0000003d;

@@ -5,13 +5,13 @@ import { type CoverageFinding } from 'fig-tree-evaluator'
 // Whether nothing in the expression can fail without a fallback to catch it,
 // from the status's `coverage`, with a card listing each failure nothing
 // catches. It shows nothing while there are errors, when `coverage` is null.
-export const ShieldedBadge = ({ coverage }: { coverage: EditorStatus['coverage'] }) => {
+export const SafeBadge = ({ coverage }: { coverage: EditorStatus['coverage'] }) => {
   if (coverage === null) return null
   const { uncovered } = coverage
-  const shielded = uncovered.length === 0
+  const safe = uncovered.length === 0
   return (
     // The editor's base font size, so the card is the size of the editor's
-    <Box position="absolute" top={1.5} right={4} zIndex={1} fontSize="16px">
+    <Box position="absolute" top={1.5} right={8} zIndex={1} fontSize="16px">
       <HoverCard
         align="end"
         card={
@@ -22,9 +22,9 @@ export const ShieldedBadge = ({ coverage }: { coverage: EditorStatus['coverage']
         }
       >
         <Box as="span" fontSize="sm" color="gray.600">
-          Shielded:&nbsp;
-          <Box as="span" fontWeight="bold" color={shielded ? 'green.600' : 'orange.500'}>
-            {shielded ? '✓' : '✗'}
+          Safe:&nbsp;
+          <Box as="span" fontWeight="bold" color={safe ? 'green.600' : 'orange.500'}>
+            {safe ? '✓' : '✗'}
           </Box>
         </Box>
       </HoverCard>

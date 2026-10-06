@@ -27,7 +27,7 @@ import { demoData, defaultBlurb } from './data'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
-import { ShieldedBadge } from './ShieldedBadge'
+import { SafeBadge } from './SafeBadge'
 import { SourceIndicator } from './SourceIndicator'
 import { figTreeEditorReactVersion, timestamp } from './version'
 
@@ -306,7 +306,7 @@ function App() {
                   showEvaluation(evaluation)
                 }}
               />
-              <ShieldedBadge coverage={coverage} />
+              <SafeBadge coverage={coverage} />
             </Box>
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}
