@@ -1,18 +1,26 @@
 import { Box } from '@chakra-ui/react'
-import { CardLines, HoverCard, type EditorStatus } from '@fig-tree-editor-react'
+import { CardLines, HoverCard, type CardLine, type EditorStatus } from '@fig-tree-editor-react'
+import { type CoverageFinding } from 'fig-tree-evaluator'
 
-// Whether every top-level value of the expression has a fallback, from the
-// status's `uncovered`, with a card saying what that means. The check only
-// looks for a missing fallback, so a cross can mark an expression that never
-// fails, and the badge stays quiet rather than alarming. It shows nothing
-// while there are errors, when `uncovered` is null.
-export const ShieldedBadge = ({ uncovered }: { uncovered: EditorStatus['uncovered'] }) => {
-  if (uncovered === null) return null
+// Whether nothing in the expression can fail without a fallback to catch it,
+// from the status's `coverage`, with a card listing each failure nothing
+// catches. It shows nothing while there are errors, when `coverage` is null.
+export const ShieldedBadge = ({ coverage }: { coverage: EditorStatus['coverage'] }) => {
+  if (coverage === null) return null
+  const { uncovered } = coverage
   const shielded = uncovered.length === 0
   return (
     // The editor's base font size, so the card is the size of the editor's
     <Box position="absolute" top={1.5} right={4} zIndex={1} fontSize="16px">
-      <HoverCard align="end" card={<CardLines titled {...describeCoverage(uncovered)} />}>
+      <HoverCard
+        align="end"
+        card={
+          <>
+            <CardLines titled lines={summarise(uncovered.length)} />
+            <FindingSection title="Uncaught" findings={uncovered} />
+          </>
+        }
+      >
         <Box as="span" fontSize="sm" color="gray.600">
           Shielded:&nbsp;
           <Box as="span" fontWeight="bold" color={shielded ? 'green.600' : 'orange.500'}>
@@ -24,25 +32,47 @@ export const ShieldedBadge = ({ uncovered }: { uncovered: EditorStatus['uncovere
   )
 }
 
-const describeCoverage = (uncovered: (string | number)[][]) => {
-  if (uncovered.length === 0)
-    return {
-      lines: [
-        'Always returns a value',
-        'Root-level fallback ensures the expression will never throw',
-      ],
-    }
-  if (uncovered.some((path) => path.length === 0))
-    return {
-      lines: ['No fallback at the root'],
-      note: 'Only a missing fallback is checked, so the expression may never fail',
-    }
-  const count = uncovered.length === 1 ? '1 value' : `${uncovered.length} values`
-  return {
-    lines: [
-      `No fallback on ${count}`,
-      ...uncovered.map((path) => ({ detail: `\`${path.join('.')}\`` })),
-    ],
-    note: 'Only a missing fallback is checked, so these may never fail',
-  }
+const summarise = (uncovered: number) =>
+  uncovered > 0
+    ? [
+        'May throw',
+        `${plural(uncovered, 'failure')} with no fallback to catch ${uncovered === 1 ? 'it' : 'them'}`,
+      ]
+    : ['Always returns a value', 'Nothing can fail without a fallback to catch it']
+
+const FindingSection = ({ title, findings }: { title: string; findings: CoverageFinding[] }) =>
+  findings.length > 0 && (
+    <Box as="span" display="block" mt="0.8em">
+      <CardLines titled lines={[`${title} (${findings.length})`, ...findings.flatMap(describe)]} />
+    </Box>
+  )
+
+// A finding's headline, where it starts and its code, with its other fields
+// as details under it
+const describe = ({
+  path,
+  code,
+  message,
+  certainty,
+  operator,
+  parameter,
+  fragment,
+  fragmentPath,
+}: CoverageFinding): CardLine[] => {
+  const details: CardLine[] = [{ detail: `${message} (${certainty})` }]
+  if (operator !== undefined || parameter !== undefined)
+    details.push({
+      detail: [operator && `operator \`${operator}\``, parameter && `parameter \`${parameter}\``]
+        .filter(Boolean)
+        .join(', '),
+    })
+  if (fragment !== undefined)
+    details.push({
+      detail: `in fragment \`${fragment}\`${fragmentPath ? ` at \`${showPath(fragmentPath)}\`` : ''}`,
+    })
+  return [`\`${showPath(path)}\` · \`${code}\``, ...details]
 }
+
+const showPath = (path: (string | number)[]) => (path.length === 0 ? 'root' : path.join('.'))
+
+const plural = (count: number, noun: string) => `${count} ${noun}${count === 1 ? '' : 's'}`

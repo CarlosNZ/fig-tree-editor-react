@@ -49,7 +49,7 @@ function App() {
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
   const [options, setOptions] = useState<DemoOptions>(initialOptions)
-  const [uncovered, setUncovered] = useState<EditorStatus['uncovered']>(null)
+  const [coverage, setCoverage] = useState<EditorStatus['coverage']>(null)
 
   const {
     data: objectData,
@@ -294,9 +294,11 @@ function App() {
                 stringTruncateLength={500}
                 jsonParse={JSON5.parse}
                 collapse={expressionCollapse}
+                coverageOptions={options.coverage}
                 onStatusChange={(newStatus) => {
                   console.log('onStatusChange', newStatus)
-                  setUncovered(newStatus.uncovered)
+                  console.log('fallbackCoverage', newStatus.coverage)
+                  setCoverage(newStatus.coverage)
                 }}
                 onEvaluateStart={(start) => console.log('onEvaluateStart', start)}
                 onEvaluate={(evaluation) => {
@@ -304,7 +306,7 @@ function App() {
                   showEvaluation(evaluation)
                 }}
               />
-              <ShieldedBadge uncovered={uncovered} />
+              <ShieldedBadge coverage={coverage} />
             </Box>
             <Text align="end" w="100%" maxW={600} fontSize="sm" mt={1} pr={1}>
               Powered by{' '}

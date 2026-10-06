@@ -86,6 +86,7 @@ const resetFormState = (options: DemoOptions) => {
     timeout: options.timeout,
     maxDepth: options.maxDepth,
     maxNodes: options.maxNodes,
+    strictNumbers: options.coverage?.numbers === 'strict',
   }
 }
 
@@ -136,6 +137,7 @@ export const OptionsModal = ({
       timeout,
       maxDepth,
       maxNodes,
+      strictNumbers,
     } = formState
 
     const newOptions: DemoOptions = {
@@ -151,6 +153,7 @@ export const OptionsModal = ({
       fragments,
       // Unfiltered, since `fallback: null` is a default
       operatorDefaults,
+      ...(strictNumbers && { coverage: { numbers: 'strict' } }),
     }
 
     // FigTree checks the options, the fragment definitions included, as they're
@@ -397,7 +400,7 @@ export const OptionsModal = ({
                     <Text fontSize="sm">Strict data paths (a missing path is an error)</Text>
                   </Checkbox>
                 </FormControl>
-                <Accordion allowToggle mt={2}>
+                <Accordion allowToggle allowMultiple mt={2}>
                   <AccordionItem>
                     <AccordionButton pl={0}>
                       <Box flex="1" textAlign="left">
@@ -449,6 +452,32 @@ export const OptionsModal = ({
                           />
                         </FormControl>
                       </HStack>
+                    </AccordionPanel>
+                  </AccordionItem>
+                  <AccordionItem>
+                    <AccordionButton pl={0}>
+                      <Box flex="1" textAlign="left">
+                        <Text>
+                          <strong>Analysis</strong>
+                        </Text>
+                      </Box>
+                      <AccordionIcon />
+                    </AccordionButton>
+                    <AccordionPanel pt={0} px={0}>
+                      <FormControl id="strict-numbers">
+                        <Checkbox
+                          isChecked={formState.strictNumbers}
+                          onChange={(_) =>
+                            setFormState((curr) => ({
+                              ...curr,
+                              strictNumbers: !curr.strictNumbers,
+                            }))
+                          }
+                          colorScheme="green"
+                        >
+                          <Text fontSize="sm">Strict numbers</Text>
+                        </Checkbox>
+                      </FormControl>
                     </AccordionPanel>
                   </AccordionItem>
                 </Accordion>

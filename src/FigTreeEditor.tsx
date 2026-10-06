@@ -22,7 +22,11 @@ import {
   type TypeFilterFunction,
   toPathString,
 } from 'json-edit-react'
-import { type FigTree } from 'fig-tree-evaluator'
+import {
+  type FallbackCoverage,
+  type FallbackCoverageOptions,
+  type FigTree,
+} from 'fig-tree-evaluator'
 import { fallbackCoverage } from 'fig-tree-evaluator/authoring'
 import {
   attachIssues,
@@ -139,6 +143,9 @@ export interface FigTreeEditorProps extends Omit<
   // The editor's state, each time it changes: whether there are errors, the
   // counts, whether an edit is open, and the messages area's lines
   onStatusChange?: (status: EditorStatus) => void
+  // What the status's coverage analysis takes beside the instance and the
+  // expression: a per-call `timeout`, and how strictly it treats numbers
+  coverageOptions?: FallbackCoverageOptions
   onEvaluateStart?: (start: { path: Path }) => void
   // Each evaluation as it ends, done, failed or cancelled: one per start
   onEvaluate?: (evaluation: Evaluation) => void
@@ -155,6 +162,7 @@ export const FigTreeEditor = ({
   evaluationData,
   messagesMaxHeight = DEFAULT_MESSAGES_MAX_HEIGHT,
   onStatusChange,
+  coverageOptions,
   onEvaluateStart,
   onEvaluate,
   operatorHints,
@@ -556,24 +564,46 @@ export const FigTreeEditor = ({
   statusListener.current = onStatusChange
   const latestMessages = useRef(messages)
   latestMessages.current = messages
-  const latestShown = useRef(shown)
-  latestShown.current = shown
+  const coverage = useRef<FallbackCoverage | null>(null)
   const reported = useRef<EditorStatus | null>(null)
   const report = () => {
     if (!statusListener.current) return
     const counts = countMessages(latestMessages.current)
-    const valid = counts.errors === 0
     const status: EditorStatus = {
-      valid,
+      valid: counts.errors === 0,
       counts,
       editing: editOpen.current,
       messages: latestMessages.current,
-      uncovered: valid ? fallbackCoverage(figTree, latestShown.current).uncovered : null,
+      coverage: coverage.current,
     }
     if (reported.current && sameStatus(reported.current, status)) return
     reported.current = status
     statusListener.current(status)
   }
+
+  // The coverage analysis is async, so its result goes in a report of its
+  // own when it settles, and only if it is still the shown expression's.
+  // Until then the status keeps the previous result. A failed analysis
+  // reports none. It runs only for a listening host.
+  const listening = onStatusChange !== undefined
+  const valid = countMessages(messages).errors === 0
+  const analysisOptions = useStableValue(coverageOptions)
+  useEffect(() => {
+    if (!listening || !valid) {
+      coverage.current = null
+      return
+    }
+    let current = true
+    const settle = (result: FallbackCoverage | null) => {
+      if (!current) return
+      coverage.current = result
+      report()
+    }
+    fallbackCoverage(figTree, shown, analysisOptions).then(settle, () => settle(null))
+    return () => {
+      current = false
+    }
+  }, [listening, valid, figTree, shown, analysisOptions])
   useEffect(report)
 
   const combinedText = useMemo(

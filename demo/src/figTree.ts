@@ -4,6 +4,7 @@ import {
   coreOperators,
   httpOperators,
   sqlOperators,
+  type FallbackCoverageOptions,
   type FigTreeOptions,
   type OptionsUpdate,
 } from 'fig-tree-evaluator'
@@ -13,8 +14,11 @@ import { evaluatorConfig } from './data/evaluatorConfig'
 import { getLocalStorage } from './helpers'
 
 // The options the demo lets you change, from its Configuration panel and per
-// demo. They're plain data, so they can be kept in local storage.
-export type DemoOptions = Pick<
+// demo: the instance's, and the editor's coverage analysis's, which aren't the
+// instance's. They're plain data, so they can be kept in local storage.
+export type DemoOptions = {
+  coverage?: Pick<FallbackCoverageOptions, 'numbers'>
+} & Pick<
   FigTreeOptions,
   | 'fragments'
   | 'http'
