@@ -170,7 +170,7 @@ describe('parameterCard', () => {
     ])
   })
 
-  it("names the instance's default beside FigTree's", () => {
+  it("names the host's default beside FigTree's", () => {
     const from = instance({ operatorDefaults: { round: { decimals: 2 }, http: { timeout: 5000 } } })
     expect(linesAt({ operator: 'round', value: 1, decimals: 3 }, ['decimals'], from)).toContain(
       "Default here: 2 (set by this application; FigTree's is 0)"

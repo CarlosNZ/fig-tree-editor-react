@@ -34,7 +34,7 @@ describe('getStartingValue', () => {
   it('moves a boolean off its effective default, instance defaults included', () => {
     const declaration = { type: 'boolean' as const, required: false, default: true }
     expect(getStartingValue('flag', declaration, {})).toBe(false)
-    expect(getStartingValue('flag', { ...declaration, instanceDefault: false }, {})).toBe(true)
+    expect(getStartingValue('flag', { ...declaration, hostDefault: false }, {})).toBe(true)
   })
 
   it('never shares a seed object with the display data', () => {

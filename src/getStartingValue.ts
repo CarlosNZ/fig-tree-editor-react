@@ -198,8 +198,8 @@ const typeValue = (type: ExpectedType): unknown => {
 
 const awayFromDefault = (value: unknown, declaration: ParameterInfo | FragmentParameter) => {
   const effective =
-    'instanceDefault' in declaration && declaration.instanceDefault !== undefined
-      ? declaration.instanceDefault
+    'hostDefault' in declaration && declaration.hostDefault !== undefined
+      ? declaration.hostDefault
       : declaration.default
   if (effective === undefined || value !== effective) return value
   const { type } = declaration

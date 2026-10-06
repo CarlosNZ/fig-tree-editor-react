@@ -31,7 +31,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
 | F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
-| F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | —               |
+| F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | Unreleased      |
 | F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
@@ -285,6 +285,8 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Without it.** The drop is accepted for now, since a comment on a `get` is rare.
 
 **Issue.** Filed as [fig-tree-evaluator#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203).
+
+**Landed** on fig-tree's main after 3.0.0-preview.7 (1f0f827), as asked, and not yet released. The editor needs no change: a commented `get` steps through the forms like any other node, and `test/conversions.test.ts` checks that it keeps its comment, beneath the clicked node too.
 
 ### F17 · No `hint` severity: the renumber hint folds into `unbound-token` — **Maybe**
 

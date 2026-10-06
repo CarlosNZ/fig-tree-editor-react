@@ -90,13 +90,13 @@ const elementsLine = ({ constraints }: Declaration) => {
   return parts.length === 0 ? undefined : strings.FT_CARD_ELEMENTS(parts.join(', '))
 }
 
-// The effective default, and FigTree's own where the instance overrides it
+// The effective default, and FigTree's own where the host overrides it
 const defaultLine = (declaration: Declaration) => {
   const own = declaration.default
-  const instance = 'instanceDefault' in declaration ? declaration.instanceDefault : undefined
-  if (instance !== undefined)
+  const host = 'hostDefault' in declaration ? declaration.hostDefault : undefined
+  if (host !== undefined)
     return strings.FT_CARD_DEFAULT_HERE(
-      formatValue(instance),
+      formatValue(host),
       own === undefined ? undefined : formatValue(own)
     )
   return own === undefined ? undefined : strings.FT_CARD_DEFAULT(formatValue(own))
@@ -196,19 +196,19 @@ const replacementLine = (declaration: Declaration) => {
 
 // ── The operator's own card ─────────────────────────────────────────────────
 
-// What the instance sets on every node of this operator that doesn't set its
+// What the host sets on every node of this operator that doesn't set its
 // own (topic 4): a fallback, that it never caches, and parameters' defaults
 export const operatorDefaultsLine = (operator: OperatorInfo, node: Record<string, unknown>) => {
   const set: string[] = []
   const add = (key: string, value: unknown) => {
     if (value !== undefined && !(key in node)) set.push(code(`${key}: ${formatValue(value)}`))
   }
-  add('fallback', operator.instanceFallback)
-  add('noCache', operator.instanceNoCache)
+  add('fallback', operator.hostFallback)
+  add('noCache', operator.hostNoCache)
   for (const [key, parameter] of Object.entries(operator.parameters))
-    add(key, parameter.instanceDefault)
+    add(key, parameter.hostDefault)
   if (set.length === 0) return undefined
-  return strings.FT_CARD_INSTANCE_SETS(andList(set), code(operator.name))
+  return strings.FT_CARD_HOST_SETS(andList(set), code(operator.name))
 }
 
 // On a node that caches, whether its cache is in force, since a `noCache`
@@ -225,7 +225,7 @@ export const cacheLine = (path: Path, kind: RowKind | undefined, context: CacheC
 
 const hasDefault = (declaration: Declaration) =>
   declaration.default !== undefined ||
-  ('instanceDefault' in declaration && declaration.instanceDefault !== undefined)
+  ('hostDefault' in declaration && declaration.hostDefault !== undefined)
 
 const takesNull = (type: ExpectedType) =>
   type === 'any' ||

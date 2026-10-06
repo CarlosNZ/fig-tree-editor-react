@@ -27,7 +27,7 @@ export const cacheStatus = (
   if (kind?.kind === 'operator') {
     const operator = operators.find(({ name }) => name === kind.operator)
     if (operator?.cache !== true) return undefined
-    if (operator.instanceNoCache === true) return 'disabled'
+    if (operator.hostNoCache === true) return 'disabled'
   } else if (kind?.kind === 'fragment') {
     if (fragments.find(({ name }) => name === kind.name)?.caches !== true) return undefined
   } else return undefined
@@ -63,7 +63,7 @@ const mayCache = (kind: RowKind | undefined, { operators, fragments }: Registry)
   if (kind?.kind === 'operator') {
     const operator = operators.find(({ name }) => name === kind.operator)
     if (operator === undefined || kind.malformed !== undefined) return true
-    return operator.cache && operator.instanceNoCache !== true
+    return operator.cache && operator.hostNoCache !== true
   }
   if (kind?.kind === 'fragment') {
     const fragment = fragments.find(({ name }) => name === kind.name)

@@ -215,7 +215,7 @@ export const strings = {
   FT_CARD_REPLACES: (targets: string) => `Used in place of a null in ${targets}`,
   FT_CARD_RESPELL: (keys: string, spelling: string) =>
     `${keys}-click to write it as \`${spelling}\``,
-  FT_CARD_INSTANCE_SETS: (settings: string, operator: string) =>
+  FT_CARD_HOST_SETS: (settings: string, operator: string) =>
     `This application sets ${settings} on every ${operator} node that doesn't set its own`,
   FT_CARD_CACHE_ACTIVE: 'Cache: active',
   FT_CARD_CACHE_DISABLED: 'Cache: disabled',

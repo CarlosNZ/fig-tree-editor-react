@@ -84,6 +84,20 @@ describe('the conversion button', () => {
         result: { $plus: { values: ['$data.x', 1] } },
       })
     })
+
+    it('keeps a commented `get` as a node, with its comment', () => {
+      const full = { '//': 'why', operator: 'get', path: 'x' }
+      const named = { '//': 'why', $get: { path: 'x' } }
+      const positional = { '//': 'why', $get: 'x' }
+      expect(convert(full)).toEqual({ label: 'To shorthand', result: named })
+      expect(convert(named)).toEqual({ label: 'To positional', result: positional })
+      expect(
+        convert({ operator: 'plus', values: [{ '//': 'why', operator: 'get', path: 'x' }, 1] })
+      ).toEqual({
+        label: 'To shorthand',
+        result: { $plus: { values: [{ '//': 'why', $get: { path: 'x' } }, 1] } },
+      })
+    })
   })
 
   it("spells every reference in the subtree by `referenceNames`, the author's own included", () => {
