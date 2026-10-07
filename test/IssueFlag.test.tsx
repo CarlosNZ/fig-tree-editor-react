@@ -220,7 +220,7 @@ describe('a collapsed summary', () => {
       {
         age: { operator: 'if', condtion: true, thn: 'Adult' },
         rounded: { operator: 'round', value: [1] },
-        words: [{ $upper: 5 }, { $colour: 'red' }],
+        words: [{ $upper: 5 }, '$colour'],
       },
       { collapse: 1 }
     )

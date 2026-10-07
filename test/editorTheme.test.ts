@@ -336,7 +336,7 @@ describe('editor theme', () => {
     })
 
     it('tints a row with only a warning fainter, in amber, with an amber stripe', () => {
-      const warning = style({ style: { $colour: 'red' } }, 'valueRow', ['style', '$colour'])
+      const warning = style({ style: { colour: '$colour' } }, 'valueRow', ['style', 'colour'])
       expect(warning).toEqual(
         expect.objectContaining({
           background: `color-mix(in srgb, ${defaultEditorTheme.warning} 10%, transparent)`,
@@ -351,7 +351,7 @@ describe('editor theme', () => {
     })
 
     it("colours a collapsed row's summary by the most severe issue beneath it", () => {
-      const both = { a: { operator: 'round', value: [1] }, b: { $colour: 'red' } }
+      const both = { a: { operator: 'round', value: [1] }, b: { colour: '$colour' } }
       expect(style(both, 'itemCount', [], true)).toEqual({
         color: defaultEditorTheme.error,
         fontWeight: 600,

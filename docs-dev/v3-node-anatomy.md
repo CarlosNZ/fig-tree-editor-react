@@ -374,7 +374,7 @@ It applies to arrays the same way (`['$data.a', { $plus: [1, 2] }]`). Only the r
 
 ## 10. Plain data
 
-Anything that is not a node, not a reference and holds none: `{ a: 1 }`, `[1, 2]`, `'hello'`, and `{ $typo: 1 }` (an unrecognised `$` key, which carries a warning but is data). No definition matches, so it is plain JER throughout. Everything quoted is plain data too, whatever it looks like.
+Anything that is not a node, not a reference and holds none: `{ a: 1 }`, `[1, 2]`, `'hello'`, and `{ $typo: 1 }` (an unrecognised `$` key, which carries an error but is data). No definition matches, so it is plain JER throughout. Everything quoted is plain data too, whatever it looks like.
 
 ---
 

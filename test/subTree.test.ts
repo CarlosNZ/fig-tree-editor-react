@@ -280,7 +280,7 @@ describe('the errors that block an evaluation', () => {
   })
 
   it("don't include warnings", () => {
-    const expression = { a: { style: { $colour: 'red' } } }
+    const expression = { a: { style: { colour: '$colour' } } }
     expect(figTree.validate(expression).issues).toHaveLength(1)
     expect(blocking(expression, ['a'])).toEqual([])
   })

@@ -52,7 +52,7 @@ Topics, in the order they are worked through:
 
 **Quoted subtrees are plain data.** Everything inside a `literal` payload or a `//` value renders as plain data: no node headers, no Evaluate affordances on reference-shaped strings, no conversions. So plain data has two sources: values that are not expressions, and values that are quoted.
 
-**`{ $typo: … }` is plain data,** matching the grammar, which treats an unrecognised `$` key as inert data with a warning. Only a recognised `$name` key makes a shorthand node.
+**`{ $typo: … }` is plain data with an error,** matching the grammar: an unrecognised `$` key is an `unrecognized-identifier` error, so `evaluate()` refuses the expression, and data with a `$` key goes inside `literal` (fig-tree 3.0.0-preview.8). Only a recognised `$name` key makes a shorthand node.
 
 ### Classification — **Agreed**
 
@@ -229,15 +229,15 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 
 #### Plain data and modifier rows
 
-| Shape                                                              | Rows → definition                                             | Renders                                           | Behaviour                                                           |
-| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- |
-| `{ title: '$data.name', total: { $plus: […] } }`, `['$data.a', 1]` | Node (Container)                                              | A bare Evaluate button above the rows             | Evaluate only, at the root only (topic 3)                           |
-| `{ a: 1 }`, `{ $typo: 1 }`                                         | None                                                          | Plain json-edit-react (`$typo` carries a warning) | —                                                                   |
-| `'//': 'note'`                                                     | Leaf (Comment line), with `showKey: false`                    | A note belonging to its node                      | Edits as a string                                                   |
-| `'//': ['line 1', 'line 2']`                                       | a plain array with `showKey: false`; each line a Comment line | A multi-line note, styled as one block            | Each line edits as a string; ＋ adds a line (topic 5)               |
-| `vars: { country: {…}, n: 5 }`                                     | None, with theme styling on the block (topic 5)               | A tinted block; each row's key is a var name      | Values classified as usual; names follow the name-legality rule     |
-| `fallback: …`, `noCache: true`                                     | None, with a modifier style on the key                        | The row, marked as a modifier                     | `fallback`'s value is classified as usual; `noCache` is `true` only |
-| Inside a `literal` payload or a `//` value                         | None throughout                                               | Plain data                                        | No Evaluate, conversion or reference styling                        |
+| Shape                                                              | Rows → definition                                             | Renders                                          | Behaviour                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------------------- |
+| `{ title: '$data.name', total: { $plus: […] } }`, `['$data.a', 1]` | Node (Container)                                              | A bare Evaluate button above the rows            | Evaluate only, at the root only (topic 3)                           |
+| `{ a: 1 }`, `{ $typo: 1 }`                                         | None                                                          | Plain json-edit-react (`$typo` carries an error) | —                                                                   |
+| `'//': 'note'`                                                     | Leaf (Comment line), with `showKey: false`                    | A note belonging to its node                     | Edits as a string                                                   |
+| `'//': ['line 1', 'line 2']`                                       | a plain array with `showKey: false`; each line a Comment line | A multi-line note, styled as one block           | Each line edits as a string; ＋ adds a line (topic 5)               |
+| `vars: { country: {…}, n: 5 }`                                     | None, with theme styling on the block (topic 5)               | A tinted block; each row's key is a var name     | Values classified as usual; names follow the name-legality rule     |
+| `fallback: …`, `noCache: true`                                     | None, with a modifier style on the key                        | The row, marked as a modifier                    | `fallback`'s value is classified as usual; `noCache` is `true` only |
+| Inside a `literal` payload or a `//` value                         | None throughout                                               | Plain data                                       | No Evaluate, conversion or reference styling                        |
 
 ### Conversions — **Agreed**
 

@@ -4,7 +4,7 @@ Expressions for trying the editor by hand. Each one is written against the demo'
 
 ## Layout check
 
-Every block, node and display style the editor draws, in one expression, for checking layout and spacing after a styling change. Paste the data into the demo's data editor first, or its references raise sample-data warnings of their own. In the editor it has five errors, four warnings and a hint, each deliberate and all under `issues`, so the messages area has a line of every severity and every quick fix. The errors disable the root's Evaluate, but every node outside `issues` evaluates.
+Every block, node and display style the editor draws, in one expression, for checking layout and spacing after a styling change. Paste the data into the demo's data editor first, or its references raise sample-data warnings of their own. In the editor it has six errors and two warnings, each deliberate and all under `issues`, so the messages area has a line of each severity and every quick fix. The errors disable the root's Evaluate, but every node outside `issues` evaluates.
 
 `issues.incomplete` is an `if` missing its `then`. Pasting it fills the `then` in without a word, since pasting is an edit. The "added" line and the highlight that fades show only when an expression arrives from outside the editor, as when a host loads it.
 
@@ -111,7 +111,7 @@ The expression:
     "unknownKey": { "operator": "if", "condition": true, "then": "yes", "els": "no" },
     "wrongType": { "$upper": 5 },
     "bareVars": { "$lower": "$vars" },
-    "passThrough": { "$plsu": [1, 2] },
+    "unknownShorthand": { "$plsu": [1, 2] },
     "unreadVar": { "$upper": "shout", "vars": { "unused": 1 } },
     "skippedNumber": { "$buildString": ["%2 and %3", "a", "b"] },
     "incomplete": { "operator": "if", "condition": true }
@@ -135,17 +135,17 @@ The expression:
 | Collapsed summaries, with issue counts                                        | the demo's default collapse, and `issues` collapsed                                    |
 | How each node ran                                                             | after Evaluate on `fullNode` (its `else` never runs), `namedPayload` and `runMarks`    |
 
-| Under `issues`    | In the messages area                                                     |
-| ----------------- | ------------------------------------------------------------------------ |
-| `unknownOperator` | an error, with Change to plus                                            |
-| `strayKey`        | an error, with Remove                                                    |
-| `unknownKey`      | an error, with Rename to else and Remove                                 |
-| `wrongType`       | an error, from the type check                                            |
-| `bareVars`        | an error, on a reference                                                 |
-| `passThrough`     | a warning, with Rename to $plus                                          |
-| `unreadVar`       | a warning                                                                |
-| `skippedNumber`   | two warnings and a hint, on one row                                      |
-| `incomplete`      | the "added" line, with Dismiss, when the expression arrives from outside |
+| Under `issues`     | In the messages area                                                     |
+| ------------------ | ------------------------------------------------------------------------ |
+| `unknownOperator`  | an error, with Change to plus                                            |
+| `strayKey`         | an error, with Remove                                                    |
+| `unknownKey`       | an error, with Rename to else and Remove                                 |
+| `wrongType`        | an error, from the type check                                            |
+| `bareVars`         | an error, on a reference                                                 |
+| `unknownShorthand` | an error, with Rename to $plus                                           |
+| `unreadVar`        | a warning                                                                |
+| `skippedNumber`    | a warning, naming the unused substitution too                            |
+| `incomplete`       | the "added" line, with Dismiss, when the expression arrives from outside |
 
 `runMarks` shows the colours a failure leaves: amber on the first `$divide`, whose fallback catches it, red on the second, and amber on the `$plus`, whose fallback catches the failure the second passes up. A cancelled node needs a race between requests, as in "Every operator, at work".
 
