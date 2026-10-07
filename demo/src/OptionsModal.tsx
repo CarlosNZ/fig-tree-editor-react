@@ -29,6 +29,7 @@ import {
 import { filterObjectRecursive } from './helpers'
 import {
   cacheStore,
+  defaultOptions,
   figTree,
   setCaching,
   usesCache,
@@ -113,6 +114,10 @@ export const OptionsModal = ({
       setCacheSize(cacheStore.size)
     }
   }, [modalOpen, options])
+
+  // Plain JSON, so its serialisation is enough to compare it
+  const fragmentsChanged =
+    JSON.stringify(formState.fragments ?? {}) !== JSON.stringify(defaultOptions.fragments)
 
   // Empties the cache at once, without waiting for Save
   const clearCache = () => {
@@ -300,6 +305,17 @@ export const OptionsModal = ({
                     showCollectionCount="when-collapsed"
                     jsonParse={JSON5.parse}
                   />
+                  {fragmentsChanged && (
+                    <Button
+                      size="xs"
+                      colorScheme="green"
+                      onClick={() =>
+                        setFormState((curr) => ({ ...curr, fragments: defaultOptions.fragments }))
+                      }
+                    >
+                      Reset Fragments
+                    </Button>
+                  )}
                 </FormControl>
                 <FormControl id="operator-defaults">
                   <JsonEditor
