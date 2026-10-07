@@ -33,6 +33,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
 | F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | 3.0.0-preview.8 |
 | F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
+| F18 | fig-tree-evaluator | `get`'s `from` as a bare namespace, and one `toGet` shape                  | Wanted   | [#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237) | 3.0.0-preview.9 |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -299,6 +300,18 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Issue.** Not filed: made directly in fig-tree-evaluator (3ee9be0).
 
 **Shipped** in fig-tree 3.0.0-preview.5.
+
+### F18 · `get`'s `from` as a bare namespace, and one `toGet` shape — **Wanted**
+
+**The change.** In `get`, `from` can be a bare namespace (`$data`, `$vars`, `$params`, `$element`), and `path` is read from it. For `$vars` and `$params` the path's first key names the var or parameter, which the compiler moves into the source. `toGet` writes the bare namespace into `from` and the whole drill into `path`, for every namespace: `'$vars.row.a'` gives `{ operator: 'get', path: 'row.a', from: '$vars' }`, and `toReference` reads it back.
+
+**Why.** "To get node" on `'$d.a'` gave `{ path: 'a' }`, and on `'$vars.row'` gave `{ path: '', from: '$vars.row' }`: the var's name in `from` and an empty path, because a bare `$vars` was an error. The reason was how scopes work inside fig-tree, which an author can't see, so to them it read as an inconsistency (Carl).
+
+**Without it.** "To get node" gives the two shapes.
+
+**Issue.** Filed as [fig-tree-evaluator#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237).
+
+**Shipped** in fig-tree 3.0.0-preview.9 (565b448), as asked. The editor follows it (plan, 8.3): a bare `$vars` in `from` has no ▶, since it reads nothing on its own, and `get.from`'s card gives its default as `'$data'`.
 
 ---
 

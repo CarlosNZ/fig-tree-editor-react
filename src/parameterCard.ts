@@ -233,9 +233,9 @@ const takesNull = (type: ExpectedType) =>
   (Array.isArray(type) && type.some((t) => t === 'any' || t === 'null'))
 
 // A value as it would be written. The one symbol a default can be is
-// `get.from`'s, which stands for the evaluation data.
-const formatValue = (value: unknown) => {
-  if (typeof value === 'symbol') return strings.FT_CARD_EVALUATION_DATA
+// `get.from`'s, the evaluation data, which `from: '$data'` writes.
+const formatValue = (value: unknown): string => {
+  if (typeof value === 'symbol') return formatValue('$data')
   if (typeof value === 'string') return `'${value}'`
   return JSON.stringify(value) ?? String(value)
 }

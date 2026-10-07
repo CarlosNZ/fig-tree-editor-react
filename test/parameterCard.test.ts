@@ -135,7 +135,7 @@ describe('parameterCard', () => {
       '`get.from`',
       { operator: 'get', path: 'a', from: {} },
       ['from'],
-      ['`from` · optional · takes anything', 'Default: the evaluation data'],
+      ['`from` · optional · takes anything', "Default: '$data'"],
     ],
     [
       "`convert.value`'s conditional policy",

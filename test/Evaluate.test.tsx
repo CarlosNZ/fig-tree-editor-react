@@ -106,6 +106,13 @@ describe('evaluating', () => {
     expect(document.querySelector('.ft-reference-evaluate')).toBeNull()
   })
 
+  it("gives a bare `$vars` no ▶, valid as a get's source", () => {
+    host({ vars: { row: { a: 5 } }, value: { operator: 'get', path: 'row.a', from: '$vars' } })
+    expect(reference()).toHaveTextContent('$vars')
+    expect(document.querySelector('.ft-reference-evaluate')).toBeNull()
+    expect(document.querySelector('.ft-issue-card')).toBeNull()
+  })
+
   it('evaluates the whole of a plain root from its bar', async () => {
     const { container, latest } = host({ title: 'Sum', n: { $plus: [1, 2] } })
     fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))

@@ -188,7 +188,6 @@ export const strings = {
     own === undefined
       ? `Default here: ${value} (set by this application)`
       : `Default here: ${value} (set by this application; FigTree's is ${own})`,
-  FT_CARD_EVALUATION_DATA: 'the evaluation data', // `get.from`'s default
   FT_CARD_EVALUATED: (when: string) => `Evaluated: ${when}`,
   FT_CARD_PER_ELEMENT: (over: string, element: string, index: string) =>
     `once for each element of ${over}, with ${element} and ${index} available`,

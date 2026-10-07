@@ -119,25 +119,31 @@ describe('the conversion button', () => {
 })
 
 describe("a reference's `get` node", () => {
-  it('reads the path, and the source where the reference names one', () => {
+  it('reads the whole drill as the path, from the bare namespace', () => {
     expect(getNodeFor('$data.user.name', 'canonical')).toEqual({
       operator: 'get',
       path: 'user.name',
     })
     expect(getNodeFor('$v.row.a', 'canonical')).toEqual({
       operator: 'get',
-      path: 'a',
-      from: '$vars.row',
+      path: 'row.a',
+      from: '$vars',
     })
     expect(getNodeFor('$vars.row.a', 'alias')).toEqual({
       operator: 'get',
-      path: 'a',
-      from: '$v.row',
+      path: 'row.a',
+      from: '$v',
+    })
+    expect(getNodeFor('$params.x', 'canonical')).toEqual({
+      operator: 'get',
+      path: 'x',
+      from: '$params',
     })
   })
 
-  it('is none for `$index`, or a name an `as` gives', () => {
+  it('is none for `$index`, a name an `as` gives, or a var named by an index', () => {
     expect(getNodeFor('$index', 'canonical')).toBeNull()
     expect(getNodeFor('$item.price', 'canonical')).toBeNull()
+    expect(getNodeFor('$vars[0]', 'canonical')).toBeNull()
   })
 })

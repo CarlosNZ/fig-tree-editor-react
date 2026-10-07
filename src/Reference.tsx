@@ -40,10 +40,12 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // another namespace has no value until an evaluation, so it is followed by a
 // ▶ that evaluates it, as a node's button does (topic 7, "Evaluating"): a
 // spinner while it runs, a second click cancelling it, and where it can't be
-// evaluated, dimmed, with the reason in its card. After an evaluation the ▶
-// shows how the reference ran, as a ✓ or ✕, the reference having no border
-// to colour. After an evaluation that reached it, either kind's card says how
-// it ran, with the value it resolved to ("How it ran, in the tree"). The card
+// evaluated, dimmed, with the reason in its card. One the grammar rejects,
+// such as a bare `$vars`, reads nothing on its own, so it has no ▶: as
+// `get`'s `from` it is valid, the path naming the var. After an evaluation the
+// ▶ shows how the reference ran, as a ✓ or ✕, the reference having no border to
+// colour. After an evaluation that reached it, either kind's card says how it
+// ran, with the value it resolved to ("How it ran, in the tree"). The card
 // hangs on the text and any ▶ together, so hovering either shows it.
 export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   const { componentProps, nodeData, isEditing, originalNode, canEdit, getStyles } = props
@@ -77,6 +79,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   const colour = namespaceColour(kind, editorTheme)
   const data = kind?.namespace === 'data'
+  const evaluable = !data && !kind?.invalid
   const flagged = flaggedIssues(issues, nodeData.path)
   const sample =
     data && flagged.length === 0 ? sampleValue(nodeData.value, row, evaluationData) : undefined
@@ -108,7 +111,7 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
             translate={props.translate}
             showIconTooltips={props.showIconTooltips}
           />
-          {!data && (
+          {evaluable && (
             <button
               type="button"
               className={

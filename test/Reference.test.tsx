@@ -199,7 +199,7 @@ describe('a reference', () => {
       expect(latest(written)).toMatchObject({ x: { $not: { value: '$d.ok' } } })
       const toGet = screen.getAllByRole('button', { name: 'To get node' }).at(-1)!
       fireEvent.click(toGet)
-      expect(latest(written)).toMatchObject({ y: { operator: 'get', path: 'a', from: '$v.row' } })
+      expect(latest(written)).toMatchObject({ y: { operator: 'get', path: 'row.a', from: '$v' } })
     })
   })
 
