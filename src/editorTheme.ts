@@ -20,7 +20,7 @@ export interface EditorTheme {
   refData: string // `$data` references
   refVars: string // `$vars` references, and the vars key
   refParams: string // `$params` references
-  refBinding: string // `$element`, `$index` and `as` names
+  refBinding: string // `$element`, `$index`, `as` names and `$error`
   varsBlock: string // the vars block's tint and rule
   modifierKey: string // the `//`, fallback and noCache keys
   comment: string // a comment's text

@@ -31,7 +31,7 @@
     "@json-edit-react/utils": "^1.0.0",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "fig-tree-evaluator": "^3.0.0-preview.9",
+    "fig-tree-evaluator": "^3.0.0-preview.10",
     "framer-motion": "^10.15.1",
     "json-edit-react": "^2.0.4",
     "json5": "^2.2.3",

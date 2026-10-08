@@ -61,6 +61,7 @@ export const strings = {
     count === 1 ? 'Fix the error to evaluate this' : `Fix ${count} errors to evaluate this`,
   FT_EVALUATE_NO_INPUT: "It's inside an iterator with no input to go over",
   FT_EVALUATE_NO_MAP: 'Evaluating inside an iterator needs the `map` operator',
+  FT_EVALUATE_READS_ERROR: 'It reads `$error`, which has a value only when its node fails',
 
   // A row's card after an evaluation, saying how it ran. Paths arrive in
   // backticks, shown as code.
@@ -132,6 +133,7 @@ export const strings = {
   FT_TYPE_VARIABLE: 'Variable',
   FT_TYPE_ELEMENT: 'Element',
   FT_TYPE_PARAMETER: 'Parameter',
+  FT_TYPE_ERROR: 'Error',
   FT_TYPE_OPERATOR: 'Operator',
   FT_TYPE_FRAGMENT: 'Fragment',
 
@@ -147,7 +149,8 @@ export const strings = {
   FT_STATIC_ARGUMENTS_DESCRIPTION: 'Enter the arguments one by one, in place of this',
   FT_MODIFIER_COMMENT: 'A note, never evaluated',
   FT_MODIFIER_COMMENT_LINE: 'Another line for the note', // `//` offered again
-  FT_MODIFIER_FALLBACK: 'The value to use if this node fails',
+  FT_MODIFIER_FALLBACK:
+    'The value to use if this node fails, which can read the failure as `$error`',
   FT_MODIFIER_NO_CACHE: "Don't cache this node or anything inside it",
   FT_MODIFIER_VARS: 'Named values for this node and everything inside it',
   FT_NEW_COMMENT: 'Comment...', // a new `//`

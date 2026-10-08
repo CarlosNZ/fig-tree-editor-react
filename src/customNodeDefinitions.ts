@@ -196,6 +196,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   // entry as its type (topic 4, "The type dropdown"). Choosing an entry keeps
   // the input open for the path (`editOnTypeSwitch`). Parameter, for
   // `$params`, is never offered while fragment-definition mode is parked.
+  // TO-DO: offer Error, for `$error`, inside a fallback, once its starting
+  // value is settled.
   const referenceEntry = (
     namespaces: ReferenceNamespace[],
     start: 'data' | 'vars' | 'element' | undefined
@@ -279,6 +281,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ...referenceEntry(['vars'], 'vars'),
     ...referenceEntry(['element', 'index'], 'element'),
     ...referenceEntry(['params'], undefined),
+    ...referenceEntry(['error'], undefined),
     // Only the root's gets the bare Evaluate button, for now (topic 3)
     definition(
       'container',

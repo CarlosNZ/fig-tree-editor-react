@@ -193,7 +193,7 @@ describe('parameterCard', () => {
     const node = { operator: 'round', value: 1, fallback: 0, noCache: true, vars: {} }
     expect(cardAt(node, ['fallback'])).toEqual([
       '`fallback` · optional · takes anything',
-      'The value to use if this node fails',
+      'The value to use if this node fails, which can read the failure as `$error`',
     ])
     expect(cardAt(node, ['noCache'])).toEqual([
       '`noCache` · optional · takes true',

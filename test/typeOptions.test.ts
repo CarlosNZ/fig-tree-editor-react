@@ -90,6 +90,15 @@ describe('typeOptions', () => {
       'Fragment',
       'Variable',
     ])
+    const caught = { $divide: [1, 0], fallback: { $round: '$error.code' } }
+    expect(optionsAt(caught, ['fallback', '$round'])).toEqual([
+      'number',
+      'null',
+      'Data',
+      'Operator',
+      'Fragment',
+      'Error',
+    ])
   })
 
   it('lists a reference that is offered once', () => {

@@ -105,18 +105,37 @@ export const buildSubTree = (
 // an iterator's input or `as`, refuses it. At the root, that is every error.
 // Warnings never block.
 export const blockingErrors = (path: Path, issues: readonly Issue[], context: SubTreeContext) => {
-  const carried = [
-    path,
-    ...(wrappersFor(path, context) ?? []).flatMap((wrapper) =>
-      wrapper.kind === 'vars'
-        ? [wrapper.block]
-        : [wrapper.input, ...(wrapper.as ? [wrapper.as] : [])]
-    ),
-  ]
+  const carried = carriedParts(path, context)
   return issues.filter(
     ({ severity, path: at }) => severity === 'error' && carried.some((part) => isWithin(at, part))
   )
 }
+
+// Whether the row, or what its wrappers carry, reads `$error` from a fallback
+// the sub-tree leaves out: one around the row, or around a block or input it
+// carries. That `$error` holds a failure only while its fallback runs, so
+// fig-tree would refuse the sub-tree. A read in a template string, such as
+// `buildString`'s `{{$error.code}}`, isn't a row, so isn't seen.
+export const readsCaughtError = (path: Path, context: SubTreeContext) => {
+  const carried = carriedParts(path, context)
+  for (const { kind, slot, scope = [] } of context.classification.values()) {
+    if (kind?.kind !== 'reference' || kind.namespace !== 'error' || slot === undefined) continue
+    const part = carried.find((part) => isWithin(slot.path, part))
+    if (part === undefined) continue
+    const fallback = [...scope].reverse().find(({ kind }) => kind === 'fallback')
+    if (fallback === undefined || !isWithin(fallback.path, part)) return true
+  }
+  return false
+}
+
+// The row, then what its wrappers carry: each `vars` block, and each
+// iterator's input and `as`
+const carriedParts = (path: Path, context: SubTreeContext) => [
+  path,
+  ...(wrappersFor(path, context) ?? []).flatMap((wrapper) =>
+    wrapper.kind === 'vars' ? [wrapper.block] : [wrapper.input, ...(wrapper.as ? [wrapper.as] : [])]
+  ),
+]
 
 // The walk's scope chain for the row, with each iterator's input and `as`
 // found in whatever form its node is written
@@ -126,6 +145,7 @@ const wrappersFor = (path: Path, context: SubTreeContext): Wrapper[] | null => {
   if (iterates && !context.operators.some(({ name }) => name === 'map')) return null
   const wrappers: Wrapper[] = []
   for (const entry of scope) {
+    if (entry.kind === 'fallback') continue
     if (entry.kind === 'vars') {
       wrappers.push({ kind: 'vars', block: entry.path, holder: entry.path.slice(0, -1) })
       continue

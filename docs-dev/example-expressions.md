@@ -254,6 +254,35 @@ One of each way a node can be broken (design, topic 7, "Where issues attach"). E
 }
 ```
 
+## Fallbacks reading `$error`
+
+A fallback reads the failure it caught as `$error`, or `$err` (fig-tree 3.0.0-preview.10). Every `$divide` here fails with `non-finite-result`. It validates with no issues.
+
+```json
+{
+  "message": { "$divide": [1, 0], "fallback": "$error.message" },
+  "whole": { "$divide": [1, 0], "fallback": "$err" },
+  "worded": {
+    "$divide": [1, 0],
+    "fallback": { "$upper": { "$plus": ["failed: ", "$error.code"] } }
+  },
+  "innerReads": {
+    "$divide": [1, 0],
+    "fallback": {
+      "$plus": ["$error.code", " / ", { "$divide": [2, 0], "fallback": "$error.message" }]
+    }
+  },
+  "givesNull": {
+    "$divide": [1, 0],
+    "fallback": {
+      "$if": [{ "$equal": ["$error.code", "non-finite-result"] }, { "$divide": [2, 0] }, 0]
+    }
+  }
+}
+```
+
+Each `$error` and `$err` is a reference in the binding colour, typed "Error", with no "To get node" and no ▶, and "It reads `$error`, which has a value only when its node fails" on hover. After an evaluation that ran its fallback, a ✓ shows where the ▶ would be. The ▶ of every node in a fallback that reads its fallback's `$error` (`worded`'s `$upper`, `innerReads`' `$plus`) is dimmed, with the same reason. `innerReads`' inner `$divide` reads its own fallback's `$error`, so its ▶ runs, giving the message. Each `$divide` at the top runs, its fallback giving the failure: the message, the whole failure as an object, `FAILED: NON-FINITE-RESULT`, `non-finite-result / divide – produced a non-finite number (Infinity)`. `givesNull`'s fallback reads `$error` and fails too, so its node gives null: amber, with its `$if` red.
+
 ## Every operator, at work
 
 One expression that evaluates in full, using every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments, and most of FigTree's grammar. Paste the data into the demo's data editor first. It validates with four warnings, each deliberate: an unread var, two contact fields for `firstOf` to pass over, and a passport number that's absent, so `get` gives its default. Evaluating the root takes about a second, making HTTP and GraphQL requests to httpbin.org, countriesnow.space and countries.trevorblades.com; a second run comes from the cache, all but `echo`, which has `noCache`.

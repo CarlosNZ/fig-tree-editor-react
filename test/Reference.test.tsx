@@ -73,6 +73,7 @@ describe('a reference', () => {
       i: '$index',
       bare: '$vars',
       items: { $map: { input: '$data.list', as: 'item', each: '$item.price' } },
+      caught: { $divide: [1, 0], fallback: { $plus: ['$error.code', '$err.message'] } },
     })
     const colours = {
       '$data.user': 'rgb(123, 63, 196)',
@@ -83,6 +84,8 @@ describe('a reference', () => {
       $index: 'rgb(138, 90, 0)',
       $vars: 'rgb(15, 124, 122)',
       '$item.price': 'rgb(138, 90, 0)',
+      '$error.code': 'rgb(138, 90, 0)',
+      '$err.message': 'rgb(138, 90, 0)',
     }
     for (const [text, colour] of Object.entries(colours))
       expect(shownAs(container, text)).toHaveStyle({ color: colour })
@@ -164,7 +167,12 @@ describe('a reference', () => {
     })
 
     it('is offered only where there is a `get` form and the row can be edited', () => {
-      const { container } = editor({ i: '$index', item: '$item.price', ok: '$data.ok' })
+      const { container } = editor({
+        i: '$index',
+        item: '$item.price',
+        caught: { $divide: [1, 0], fallback: '$error.code' },
+        ok: '$data.ok',
+      })
       expect(screen.getAllByRole('button', { name: 'To get node' })).toHaveLength(1)
       container.remove()
       editor({ ok: '$data.ok' }, { allowEdit: false })

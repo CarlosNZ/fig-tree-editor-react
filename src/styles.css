@@ -537,6 +537,11 @@ input.ft-select-input::placeholder {
   cursor: pointer;
 }
 
+/* A `$error` reference's ▶ place: never a button, holding only a ✓ or ✕ */
+.ft-reference-mark {
+  cursor: default;
+}
+
 /* Holds json-edit-react's input while a reference is edited, adding no box */
 .ft-reference-input {
   display: contents;

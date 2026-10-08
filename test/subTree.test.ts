@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { FigTree, coreOperators, type FigTreeError } from 'fig-tree-evaluator'
 import { classify } from '../src/classify'
 import { type Path } from '../src/paths'
-import { blockingErrors, buildSubTree } from '../src/subTree'
+import { blockingErrors, buildSubTree, readsCaughtError } from '../src/subTree'
 import { figTree, registry } from './fixtures'
 
 const contextFor = (expression: unknown, operators = registry.operators) => ({
@@ -219,6 +219,11 @@ describe('a sub-tree', () => {
       const expression = { vars: { x: 5 }, ...FAILING, fallback: '$vars.x' }
       expect((await evaluateRow(expression, ['fallback'])).value).toBe(5)
     })
+
+    it('gives a fallback the failure it caught as `$error`', async () => {
+      const expression = { ...FAILING, fallback: '$error.code' }
+      expect((await evaluateRow(expression, [])).value).toBe('non-finite-result')
+    })
   })
 
   describe('failures', () => {
@@ -304,5 +309,42 @@ describe('the errors that block an evaluation', () => {
   it('are every error, at the root', () => {
     const expression = { a: { $upper: 5 }, b: { $upper: 6 } }
     expect(blocking(expression, [])).toHaveLength(2)
+  })
+})
+
+describe('reading `$error` from a fallback the sub-tree leaves out', () => {
+  const reads = (expression: unknown, path: Path) => readsCaughtError(path, contextFor(expression))
+
+  it("is the fallback and what's in it, and not the node it belongs to", () => {
+    const expression = {
+      ...FAILING,
+      fallback: { $buildString: ['Failed: %1', '$err.message'] },
+    }
+    expect(reads(expression, [])).toBe(false)
+    expect(reads(expression, ['fallback'])).toBe(true)
+    expect(reads(expression, ['fallback', '$buildString', 1])).toBe(true)
+    expect(reads(expression, ['fallback', '$buildString', 0])).toBe(false)
+  })
+
+  it("isn't a node inside a fallback that reads its own fallback's", () => {
+    const inner = { ...FAILING, fallback: '$error.code' }
+    const expression = { ...FAILING, fallback: { $upper: inner } }
+    expect(reads(expression, ['fallback', '$upper'])).toBe(false)
+    expect(reads(expression, ['fallback'])).toBe(false)
+    expect(reads(expression, ['fallback', '$upper', 'fallback'])).toBe(true)
+  })
+
+  it('includes a read in a block the row is wrapped in', () => {
+    const expression = {
+      ...FAILING,
+      fallback: { vars: { code: '$error.code' }, value: { $upper: '$vars.code' } },
+    }
+    expect(reads(expression, ['fallback', 'value'])).toBe(true)
+    expect(reads(expression, [])).toBe(false)
+  })
+
+  it('is no row where nothing reads `$error`', () => {
+    const expression = { ...FAILING, fallback: { $upper: 'x' } }
+    expect(reads(expression, ['fallback'])).toBe(false)
   })
 })

@@ -12,6 +12,7 @@ import { EvaluateIcon } from './Icons'
 import { IssueCard } from './IssueFlag'
 import { RunCard, VALUE_LIMIT } from './RunCard'
 import { rowMark } from './revealRow'
+import { type RowRun } from './runMarks'
 import { strings } from './strings'
 import { useEvaluation } from './useEvaluation'
 
@@ -42,7 +43,10 @@ type ReferenceKind = Extract<RowKind, { kind: 'reference' }>
 // spinner while it runs, a second click cancelling it, and where it can't be
 // evaluated, dimmed, with the reason in its card. One the grammar rejects,
 // such as a bare `$vars`, reads nothing on its own, so it has no ▶: as
-// `get`'s `from` it is valid, the path naming the var. After an evaluation the
+// `get`'s `from` it is valid, the path naming the var. Nor has `$error`,
+// which has a value only when its node fails, so is never evaluated alone:
+// its card says so, where it has no issues of its own, and the ▶'s place is
+// kept, empty, for the ✓ or ✕ an evaluation leaves. After an evaluation the
 // ▶ shows how the reference ran, as a ✓ or ✕, the reference having no border to
 // colour. After an evaluation that reached it, either kind's card says how it
 // ran, with the value it resolved to ("How it ran, in the tree"). The card
@@ -79,23 +83,30 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
 
   const colour = namespaceColour(kind, editorTheme)
   const data = kind?.namespace === 'data'
-  const evaluable = !data && !kind?.invalid
+  const caught = kind?.namespace === 'error'
+  const evaluable = !data && !caught && !kind?.invalid
   const flagged = flaggedIssues(issues, nodeData.path)
   const sample =
     data && flagged.length === 0 ? sampleValue(nodeData.value, row, evaluationData) : undefined
+  const reason =
+    evaluable && disabled
+      ? blocked
+      : caught && flagged.length === 0
+        ? strings.FT_EVALUATE_READS_ERROR
+        : undefined
   return (
     <span className="ft-reference" {...rowMark(nodeData.path)} data-node-run={mark?.status}>
       <HoverCard
         hideOnClick={!data}
         showAgainOn={mark}
-        urgent={!mark && (data || disabled)}
+        urgent={!mark && (data || reason !== undefined)}
         card={
           mark ? (
             <RunCard mark={mark} editorTheme={editorTheme} />
           ) : data ? (
             sample
-          ) : disabled ? (
-            <CardLines lines={[]} alert={{ text: blocked!, colour: editorTheme.error }} />
+          ) : reason !== undefined ? (
+            <CardLines lines={[]} alert={{ text: reason, colour: editorTheme.error }} />
           ) : undefined
         }
       >
@@ -128,6 +139,15 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
               <EvaluateIcon running={running} mark={mark} editorTheme={editorTheme} />
             </button>
           )}
+          {caught && (
+            <span
+              className="ft-reference-evaluate ft-reference-mark"
+              aria-hidden
+              style={{ color: colour, visibility: ranIcon(mark) ? undefined : 'hidden' }}
+            >
+              <EvaluateIcon running={false} mark={mark} editorTheme={editorTheme} />
+            </span>
+          )}
         </span>
       </HoverCard>
       <IssueCard issues={flagged} editorTheme={editorTheme} />
@@ -135,7 +155,8 @@ export const Reference = (props: CustomComponentProps<ComponentConfig>) => {
   )
 }
 
-// The bindings share one colour, the element and the index alike
+// The bindings a node makes share one colour: an iterator's element and
+// index, and the failure a fallback caught
 export const namespaceColour = ({ namespace }: ReferenceKind, editorTheme: EditorTheme) =>
   ({
     data: editorTheme.refData,
@@ -143,7 +164,12 @@ export const namespaceColour = ({ namespace }: ReferenceKind, editorTheme: Edito
     params: editorTheme.refParams,
     element: editorTheme.refBinding,
     index: editorTheme.refBinding,
+    error: editorTheme.refBinding,
   })[namespace]
+
+// Whether `EvaluateIcon` shows how the row ran, a ✓ or ✕, rather than a ▶
+const ranIcon = (mark: RowRun | undefined) =>
+  mark?.status === 'value' || mark?.status === 'failed' || mark?.status === 'fallback'
 
 // The value a `$data` reference reads from the evaluation data, as a card
 // line, or nothing where there's no data

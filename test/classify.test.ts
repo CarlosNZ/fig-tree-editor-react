@@ -237,7 +237,29 @@ describe('the classification walk', () => {
       expect(scopeAt(node, [])).toEqual([])
       expect(scopeAt(node, ['$plus', 0])).toEqual(scope)
       expect(scopeAt(node, ['vars', 'y'])).toEqual(scope)
-      expect(scopeAt(node, ['fallback'])).toEqual(scope)
+      expect(scopeAt(node, ['fallback'])).toEqual([...scope, { kind: 'fallback', path: [] }])
+    })
+
+    it("covers a fallback's own rows with its node, and not the node's other rows", () => {
+      const node = {
+        $plus: ['$error'],
+        vars: { x: '$error' },
+        fallback: { $upper: '$error.message', fallback: '$error.code' },
+      }
+      const outer = { kind: 'fallback', path: [] }
+      const inner = { kind: 'fallback', path: ['fallback'] }
+      expect(scopeAt(node, ['$plus', 0])).toEqual([{ kind: 'vars', path: ['vars'] }])
+      expect(scopeAt(node, ['vars', 'x'])).toEqual([{ kind: 'vars', path: ['vars'] }])
+      expect(scopeAt(node, ['fallback', '$upper'])).toEqual([
+        { kind: 'vars', path: ['vars'] },
+        outer,
+      ])
+      expect(scopeAt(node, ['fallback', 'fallback'])).toEqual([
+        { kind: 'vars', path: ['vars'] },
+        outer,
+        inner,
+      ])
+      expect(kind(node, ['fallback', '$upper'])).toEqual({ kind: 'reference', namespace: 'error' })
     })
 
     it('chains enclosing blocks outermost first', () => {

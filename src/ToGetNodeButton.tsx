@@ -11,8 +11,8 @@ import { strings } from './strings'
 // its namespace's colour. json-edit-react shows it on hover with the other
 // tools, and its `handleEdit` commits the node, so the host's `onUpdate` sees
 // it as it sees every other edit. There is nothing to show on a row that
-// isn't a reference, on a reference with no `get` form (`$index`, and a name
-// an `as` gives), or where the row can't be edited.
+// isn't a reference, on a reference with no `get` form (`$index`, `$error`,
+// and a name an `as` gives), or where the row can't be edited.
 export const toGetNodeButton = ({
   classification,
   editorTheme,

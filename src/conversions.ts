@@ -65,7 +65,8 @@ export const nodeConversion = (
 }
 
 // A reference's full `get` node, for its "To get node" button, or null where
-// it has none: `$index`, and a name an `as` gives, which `toGet` can't see
+// it has none: `$index`, `$error`, and a name an `as` gives, which `toGet`
+// can't see
 export const getNodeFor = (reference: string, referenceNames: ReferenceNames) =>
   toGet(reference, { referenceNames })
 

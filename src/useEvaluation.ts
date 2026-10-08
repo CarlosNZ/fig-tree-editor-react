@@ -5,7 +5,7 @@ import { type Shared } from './customNodeDefinitions'
 import { type Path } from './paths'
 import { type RowRun } from './runMarks'
 import { strings } from './strings'
-import { blockingErrors, buildSubTree } from './subTree'
+import { blockingErrors, buildSubTree, readsCaughtError } from './subTree'
 
 // What an Evaluate affordance needs (design, topic 7, "Evaluating"): whether
 // its row is the one running, why it can't be evaluated where it can't, and
@@ -35,7 +35,8 @@ export const useEvaluation = (path: Path, expression: unknown, shared: Shared): 
 }
 
 // Why a row can't be evaluated, or undefined where it can: the errors that
-// would refuse its evaluation, then a sub-tree that can't be built
+// would refuse its evaluation, a `$error` only its fallback's node gives, then
+// a sub-tree that can't be built
 export const whyBlocked = (
   path: Path,
   expression: unknown,
@@ -44,6 +45,7 @@ export const whyBlocked = (
   const context = { classification, operators: figTree.getOperators() }
   const errors = blockingErrors(path, [...issues.values()].flat(), context)
   if (errors.length > 0) return strings.FT_EVALUATE_BLOCKED(errors.length)
+  if (readsCaughtError(path, context)) return strings.FT_EVALUATE_READS_ERROR
   if (buildSubTree(expression, path, context) !== null) return undefined
   const iterates = rowAt(classification, path)?.scope?.some(({ kind }) => kind === 'iterator')
   const map = context.operators.some(({ name }) => name === 'map')

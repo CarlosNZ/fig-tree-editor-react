@@ -179,6 +179,7 @@ describe('evaluating', () => {
   describe("where it can't run", () => {
     const card = (button: HTMLElement) =>
       button.closest('.ft-hover-card-anchor')!.querySelector('.ft-hover-card-alert')
+    const READS_ERROR = 'It reads $error, which has a value only when its node fails'
 
     it('is dimmed, ignores a plain click, and says why on hover', () => {
       const { reports } = host({ x: { $plus: [1, { $upper: 5 }] } })
@@ -217,6 +218,28 @@ describe('evaluating', () => {
       const button = referenceButton()
       expect(button).toHaveAttribute('aria-disabled', 'true')
       expect(card(button)).toHaveTextContent('Fix the error to evaluate this')
+    })
+
+    it('says so where the row reads `$error`, which only its fallback has', () => {
+      host({ $divide: [1, 0], fallback: { $upper: '$error.message' } })
+      expect(card(nodeButton('$upper'))).toHaveTextContent(READS_ERROR)
+      expect(nodeButton('$divide')).not.toHaveAttribute('aria-disabled')
+    })
+
+    it('gives `$error` no ▶, keeping its place empty, and its card saying why', () => {
+      host({ $divide: [1, 0], fallback: '$error.message' })
+      expect(reference().closest('.ft-reference')!.querySelector('button')).toBeNull()
+      expect(referenceButton()).toHaveStyle({ visibility: 'hidden' })
+      expect(card(reference())).toHaveTextContent(READS_ERROR)
+    })
+
+    it("gives `$error` only its issue's card, outside a fallback", () => {
+      host({ x: { $plus: [1, '$error.code'] } })
+      expect(reference().closest('.ft-reference')!.querySelector('button')).toBeNull()
+      expect(reference().closest('.ft-hover-card-anchor')).toBeNull()
+      expect(reference().closest('.ft-reference')).toHaveTextContent(
+        'only available inside the fallback'
+      )
     })
   })
 
@@ -258,6 +281,19 @@ describe('evaluating', () => {
       expect(ran(y)).toBeUndefined()
       expect(border(x).borderColor).toBe(toRgb(defaultEditorTheme.runValue))
       expect(border(y).borderColor).toBe(toRgb(defaultEditorTheme.shorthandBorder))
+    })
+
+    it("shows a `$error` reference's ✓ in the ▶'s place, where its fallback ran", async () => {
+      const { container, reports } = host({
+        caught: { $divide: [1, 0], fallback: '$error.message' },
+        unused: { $divide: [1, 1], fallback: '$error.code' },
+      })
+      fireEvent.click(within(container.querySelector('.ft-root-bar')!).getByRole('button'))
+      await done(reports, 1)
+      const [caught, unused] = container.querySelectorAll<HTMLElement>('.ft-reference-mark')
+      expect(ran(caught)).toBe('value')
+      expect(caught).not.toHaveStyle({ visibility: 'hidden' })
+      expect(unused).toHaveStyle({ visibility: 'hidden' })
     })
 
     it('marks a failure, every node it failed, and a node whose fallback caught one', async () => {

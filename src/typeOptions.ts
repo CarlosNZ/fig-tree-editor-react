@@ -34,6 +34,7 @@ export const REFERENCE_ENTRIES: Record<ReferenceNamespace, string> = {
   element: strings.FT_TYPE_ELEMENT,
   index: strings.FT_TYPE_ELEMENT,
   params: strings.FT_TYPE_PARAMETER,
+  error: strings.FT_TYPE_ERROR,
 }
 
 const STANDARD = ['string', 'number', 'boolean', 'null', 'object', 'array']

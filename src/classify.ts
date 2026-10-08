@@ -76,10 +76,13 @@ export type RowKind =
   | { kind: 'vars' }
 
 // The scopes enclosing a row, outermost first: each `vars` block (by the
-// block's path) and each iterator whose per-element parameter the row is in
-// (by the node's path)
+// block's path), each iterator whose per-element parameter the row is in (by
+// the node's path), and each node whose `fallback` the row is in (by the
+// node's path), the innermost giving the `$error` the row reads
 export type ScopeEntry =
-  { kind: 'vars'; path: Path } | { kind: 'iterator'; path: Path; as?: string }
+  | { kind: 'vars'; path: Path }
+  | { kind: 'iterator'; path: Path; as?: string }
+  | { kind: 'fallback'; path: Path }
 
 export interface Row {
   kind?: RowKind
@@ -275,10 +278,16 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
     withVars(value, path, { ...context, owner: path })
 
   // `fallback`, `noCache` and `vars`, on any node. False for any other key.
+  // A fallback's own rows are in its scope, where `$error` is the failure it
+  // caught; the node's other rows, its `vars` block's included, are not.
   const modifier = (key: string, value: unknown, path: Path, nodePath: Path, inner: Context) => {
-    if (key === 'fallback' || key === 'noCache')
-      visit(value, path, modifierSlot(path, nodePath, key, row(nodePath).slot!.admits), inner)
-    else if (key === 'vars') varsBlock(value, path, nodePath, inner)
+    if (key === 'fallback' || key === 'noCache') {
+      const context =
+        key === 'fallback'
+          ? { ...inner, scope: [...inner.scope, { kind: 'fallback' as const, path: nodePath }] }
+          : inner
+      visit(value, path, modifierSlot(path, nodePath, key, row(nodePath).slot!.admits), context)
+    } else if (key === 'vars') varsBlock(value, path, nodePath, inner)
     else return false
     return true
   }
