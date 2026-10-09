@@ -58,8 +58,8 @@ importers:
         specifier: ^5
         version: 5.2.0(eslint@9.39.4)
       fig-tree-evaluator:
-        specifier: ^3.0.0-preview.11
-        version: 3.0.0-preview.11
+        specifier: ^3.0.0-preview.12
+        version: 3.0.0-preview.12
       globals:
         specifier: ^17.7.0
         version: 17.7.0
@@ -127,8 +127,8 @@ importers:
         specifier: ^4.17.1
         version: 4.22.1
       fig-tree-evaluator:
-        specifier: ^3.0.0-preview.11
-        version: 3.0.0-preview.11
+        specifier: ^3.0.0-preview.12
+        version: 3.0.0-preview.12
       framer-motion:
         specifier: ^10.15.1
         version: 10.18.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -1956,8 +1956,8 @@ packages:
       picomatch:
         optional: true
 
-  fig-tree-evaluator@3.0.0-preview.11:
-    resolution: {integrity: sha512-ZwL5s/AHZ+1ST1IsCAl5s9JAsi0WWPZW1U4S0ib/oTJnFQgm0zMWEmB185IQ1uaQGGEn24bWk3834mH463osMQ==}
+  fig-tree-evaluator@3.0.0-preview.12:
+    resolution: {integrity: sha512-xLC3eBOsmHgjUuVZCyA3xJGOshvNSfS+FCo2/ADLF5lPxNzJVWbWExa4SlqsAXXD4nRF9w+ZML9yPX4wulFWHg==}
     engines: {node: '>=22.12'}
 
   file-entry-cache@8.0.0:
@@ -5275,7 +5275,7 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.7
 
-  fig-tree-evaluator@3.0.0-preview.11: {}
+  fig-tree-evaluator@3.0.0-preview.12: {}
 
   file-entry-cache@8.0.0:
     dependencies:
