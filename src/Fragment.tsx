@@ -130,8 +130,8 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   )
 }
 
-// A fragment's header (topic 3, "Kinds"): its `FragmentListing`, where it has
-// one. The button's name already shows the fragment's name, so a fragment
+// A fragment's header (topic 3, "Kinds"): its `FragmentMetadata`, where it
+// has one. The button's name already shows the fragment's name, so a fragment
 // with no display name shows "Fragment" alone, and one with no colours takes
 // the editor's fragment colours, as does a call to no registered fragment.
 export const fragmentHeader = (

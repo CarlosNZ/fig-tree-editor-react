@@ -1,6 +1,10 @@
 import { type ReferenceNames } from './conversions'
 import { FigTreeEditor, type FigTreeEditorProps, type SetExpressionOptions } from './FigTreeEditor'
 import { defaultEditorTheme, type EditorTheme } from './editorTheme'
+import {
+  FragmentDefinitionEditor,
+  type FragmentDefinitionEditorProps,
+} from './FragmentDefinitionEditor'
 import { type Evaluation, type EvaluationFailure } from './evaluation'
 import { type DefaultOperators, type OperatorDefault, type SlotType } from './getStartingNode'
 import { CardLines, HoverCard, type CardLine } from './HoverCard'
@@ -10,6 +14,7 @@ import { type EditorMessage, type EditorStatus, type FigTreeEditorHandle } from 
 export {
   CardLines,
   FigTreeEditor,
+  FragmentDefinitionEditor,
   HoverCard,
   Select,
   defaultEditorTheme,
@@ -22,6 +27,7 @@ export {
   type EvaluationFailure,
   type FigTreeEditorHandle,
   type FigTreeEditorProps,
+  type FragmentDefinitionEditorProps,
   type OperatorDefault,
   type ReferenceNames,
   type SetExpressionOptions,

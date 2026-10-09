@@ -20,6 +20,7 @@ import {
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
 import {
   FigTreeEditor,
+  FragmentDefinitionEditor,
   type EditorStatus,
   type Evaluation,
   type SetExpressionOptions,
@@ -99,19 +100,21 @@ function App() {
   } = useUndo(getLocalStorage('fragmentDefinition') ?? initialFragmentDefinition)
 
   // Saved here rather than in `onUpdate`, which doesn't see the editor's own
-  // writes
+  // writes. Both fragment editors write the whole definition.
+  const saveFragmentDefinition = (
+    newDefinition: FragmentDefinition,
+    options?: SetExpressionOptions
+  ) => {
+    setFragmentDefinition(newDefinition, options)
+    setLocalStorage('fragmentDefinition', newDefinition)
+  }
+
   const editorSource =
     editorMode === 'fragment'
       ? {
           fragmentDefinition: fragmentDefinition as FragmentDefinition,
           fragmentName: initialFragmentName,
-          setFragmentDefinition: (
-            newDefinition: FragmentDefinition,
-            options?: SetExpressionOptions
-          ) => {
-            setFragmentDefinition(newDefinition, options)
-            setLocalStorage('fragmentDefinition', newDefinition)
-          },
+          setFragmentDefinition: saveFragmentDefinition,
         }
       : {
           expression,
@@ -378,6 +381,25 @@ function App() {
                 fig-tree-editor-react
               </Link>
             </Text>
+            {editorMode === 'fragment' && (
+              <>
+                <Box w="var(--column-width)" mt={6}>
+                  <Heading size="md" alignSelf="flex-start">
+                    Parameters and metadata
+                  </Heading>
+                  <Text>
+                    The fragment's parameter declarations, sample values to evaluate it with,
+                    description and display metadata.
+                  </Text>
+                </Box>
+                <FragmentDefinitionEditor
+                  definition={fragmentDefinition as FragmentDefinition}
+                  setDefinition={saveFragmentDefinition}
+                  minWidth="90%"
+                  jsonParse={JSON5.parse}
+                />
+              </>
+            )}
             {editorMode === 'fragment' ? FragmentUndoRedo : ExpressionUndoRedo}
           </Flex>
         </Flex>

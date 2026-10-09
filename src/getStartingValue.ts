@@ -189,7 +189,9 @@ const hasType: Record<BasicType, (value: unknown) => boolean> = {
   null: (value) => value === null,
 }
 
-const typeValue = (type: ExpectedType): unknown => {
+// A value of a declared type: a literal union's first member, otherwise the
+// type seed of the type, or of a union's first non-null member
+export const typeValue = (type: ExpectedType): unknown => {
   if (isLiteralUnion(type)) return type.literal[0]
   if (typeof type === 'string') return typeSeeds[type]
   const members: readonly BasicType[] = type

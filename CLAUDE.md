@@ -36,7 +36,8 @@ The repo is a pnpm workspace: the library at the root, plus `demo/`. One `pnpm i
 - **Release.** `pnpm release [--dry-run]` (`scripts/release.mjs`) bumps the version, runs the checks, commits, tags and publishes. It refuses while `package.json` has `"private": true`, which guards the unpublishable `3.0.0-dev`.
 - **Style.** Prettier owns formatting (`.prettierrc.js`, 100 columns). ESLint holds comments to 80 characters: `//` comments through `comment-length`, which `--fix` reflows, and block comments through `max-len`.
 - **Run the demo** (the primary way to see changes live):
-  - `pnpm dev` / `pnpm demo:local` → demo against the **raw `src/` TypeScript**, with HMR.
+  - `pnpm demo:local` → demo against the **raw `src/` TypeScript**, with HMR.
+  - `pnpm dev` → the same as `pnpm demo:local-evaluator` (below) while the fragment editor is built, since it depends on unpublished fig-tree changes. The demo's `tsconfig.json` reads fig-tree's types from the sibling checkout too, falling back to npm where there is none. Both go back to npm once fig-tree publishes (`docs-dev/fragment-editor-design.md`, build plan).
   - `pnpm demo:local-evaluator` → the same, with fig-tree-evaluator also taken from the source of a sibling checkout (`../fig-tree-evaluator`).
   - `pnpm demo:local-jer` → the same, with json-edit-react and `@json-edit-react/utils` taken from the source of a sibling checkout (`../json-edit-react`), to try a JER change before publishing it.
   - `pnpm demo` → demo against the **published npm package**. No published editor runs on fig-tree v3 yet, so until the first v3 pre-release this mode stops with a message and the demo doesn't depend on the npm package.

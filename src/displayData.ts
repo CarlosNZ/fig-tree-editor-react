@@ -3,7 +3,7 @@ import {
   type CatalogOperator,
   type CategoryListing,
   type FragmentInfo,
-  type FragmentListing,
+  type FragmentMetadata,
   type OperatorCategory,
   type OperatorInfo,
   type OperatorListing,
@@ -44,12 +44,12 @@ export interface CategoryDisplay extends CategoryListing {
   category: OperatorCategory
 }
 
-// A fragment's display is the `FragmentListing` in its own `metadata`, a
-// convention fig-tree never checks, so every field may be missing. Its
+// A fragment's display is its definition's `metadata`, a `FragmentMetadata`
+// by a convention fig-tree never checks, so every field may be missing. Its
 // fallbacks (the "Fragment" label, `editorTheme`'s fragment colours) apply
 // where it is drawn, which is why the editor reads it itself rather than
 // through `getCatalog`, whose display name falls back to the name.
-export interface FragmentDisplay extends Omit<FragmentListing, 'seeds'> {
+export interface FragmentDisplay extends Omit<FragmentMetadata, 'seeds'> {
   description?: string // the definition's own
   seeds: Record<string, unknown>
 }
@@ -169,7 +169,7 @@ const LISTING_FIELDS = ['displayName', 'docUrl', 'backgroundColor', 'textColor']
 // `metadata` is the definition's own record, so only fields of the right type
 // are read from it
 const readListing = (metadata: Record<string, unknown> | undefined) => {
-  const listing: FragmentListing = {}
+  const listing: FragmentMetadata = {}
   if (!metadata) return listing
   for (const field of LISTING_FIELDS) {
     const value = metadata[field]

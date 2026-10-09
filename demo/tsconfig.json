@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
 
@@ -19,9 +19,18 @@
        it to the library's source so the demo is checked against the in-repo API
        (what `local` mode runs). react/react-dom are pinned to the demo's own
        @types copies: ../src resolves react from the repo-root copy otherwise,
-       and two copies clash on React's `unique symbol` ref types. */
+       and two copies clash on React's `unique symbol` ref types.
+       fig-tree-evaluator is read from the source of a sibling checkout where
+       there is one (what `pnpm dev` runs), otherwise from npm.
+       TO-DO: npm only, once fig-tree publishes the changes the fragment
+       editor needs (docs-dev/fragment-editor-design.md, build plan). */
     "paths": {
       "@fig-tree-editor-react": ["../src"],
+      "fig-tree-evaluator": ["../../fig-tree-evaluator/src", "./node_modules/fig-tree-evaluator"],
+      "fig-tree-evaluator/*": [
+        "../../fig-tree-evaluator/src/*",
+        "./node_modules/fig-tree-evaluator/*"
+      ],
       "react": ["./node_modules/@types/react"],
       "react/*": ["./node_modules/@types/react/*"],
       "react-dom": ["./node_modules/@types/react-dom"],

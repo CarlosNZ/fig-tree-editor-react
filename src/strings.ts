@@ -14,6 +14,12 @@ export const strings = {
   // The root's name in fragment mode, in place of the host's `rootName`
   FT_FRAGMENT_ROOT: (name?: string) => (name === undefined ? 'Fragment' : `Fragment: ${name}`),
   FT_MESSAGES: 'Messages', // the messages area's header
+  // The fragment definition editor: its root's name, and the changes it
+  // refuses, which would leave the definition out of shape
+  FT_DEFINITION_ROOT: 'definition',
+  FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
+  FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
+  FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
   FT_REVEAL_ROW: 'Show in the tree', // a message's path, which reveals its row
   // The messages area's quick fixes
   FT_FIX_REMOVE: 'Remove',

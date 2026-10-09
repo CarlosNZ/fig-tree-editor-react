@@ -18,5 +18,6 @@ export const initialFragmentDefinition: FragmentDefinition = {
     formal: { type: 'boolean', default: false, description: 'Whether the greeting is formal' },
   },
   description: 'Greets someone by name, formally or not',
+  samples: { name: 'Ada' },
   metadata: { displayName: 'Greeting', backgroundColor: '#e8e0f8', textColor: '#4b2a8a' },
 }

@@ -111,7 +111,9 @@ Both changes are fig-tree's: the rename, and `samples` among the wrapper's allow
 
 ## Parameters — **Agreed**
 
-**A reference creates its declaration.** When an edit in the expression editor commits `$params.country` and `country` is not declared, the editor adds `country: { type: 'any' }`. With no default, it is required. The same applies to a template token (`{{$params.country}}`). A drill (`$params.country.code`) declares its first key. A `get` with a computed path declares nothing.
+**A reference creates its declaration.** When an edit in the expression editor commits `$params.country` and `country` is not declared, the editor adds a declaration for `country`. With no default, it is required. The same applies to a template token (`{{$params.country}}`). A drill (`$params.country.code`) declares its first key. A `get` with a computed path declares nothing. The names come from `getDependencies()`' `params` entry (Upstream changes).
+
+**Its type is what the reference's position admits** (the slot's `admits`), so `$params.country` typed into `plus.values` is declared `['number', 'string']`, and one typed into `if.condition` what `condition` admits. Where the position says nothing about the parameter's own value, the type is `any`: a drill, whose position admits the drilled value; a template token, whose value is turned into text; a `get`, unless its path is the parameter alone; and plain data. Where one edit adds the same new name at several positions (a pasted body), they must all agree on a type, otherwise it is `any`. A parameter added by hand in the definition editor also starts as `any`. An existing declaration's type is never changed.
 
 **Nothing removes a declaration on its own.** When the last reference to a parameter goes, its declaration stays, flagged as unused, with a quick fix to remove it. fig-tree has no such warning, so the editor works it out from its own walk of the references.
 
@@ -184,10 +186,11 @@ Each step ends with one or two expressions or definitions to try by hand in the 
 1. **The definition's shape in fig-tree.** Rename `FragmentListing` to `FragmentMetadata`, and allow `samples` on the wrapper ("Upstream changes"). Until that ships, a stand-in type lives in `src/upstream.tsx`.
 2. **The props, and fragment mode as a pass-through.** The props type becomes the union in "The props". In fragment mode, `fragmentDefinition.expression` is the editor's expression, and each edit is written back with the rest of the definition kept: `{ ...fragmentDefinition, expression }`. Nothing else changes yet, so `$params` rows carry `unresolved-param` errors.
 3. **The demo.** A starting `FragmentDefinition` in state, and a switch between expression mode and fragment mode for the main editor.
-4. **`FragmentDefinitionEditor`.** The component ("The definition editor"), with declarations added by hand. Beside it, a pure function with its own tests that takes a body and its declarations and returns the declarations with any missing ones added, built on a walk that finds the body's `$params` references (plain, drills and template tokens). The details, colour pickers among them, are settled as it is built.
+4. **`FragmentDefinitionEditor`.** The component ("The definition editor"), with declarations added by hand. The details, colour pickers among them, are settled as it is built. Then, beside it, a pure function with its own tests that takes a body, its classification and its declarations, and returns the declarations with any missing ones added: the names from `getDependencies()`' `params` entry, each typed by the position it was typed at ("Parameters").
 5. **Evaluation and validation.** Settle "Evaluation" and "Validation", and build them, in fig-tree too if needed. Log the fig-tree changes in [v3-upstream.md](v3-upstream.md), and settle F9 and F10 there.
 6. **Fragment mode in the expression editor.** The Parameter entry, autocomplete and every reference path for `$params` ("Parameters"); adding declarations through step 4's function, in the editor's update path; the fragment picker leaving out cycles (`fragmentName`); the unused-declaration warning.
 7. **Finishing.** Export the component and its types from `src/index.ts`, its styles on the `editorTheme` tokens, the bundle budget in `scripts/entries.mjs`, and a "Register" button in the demo beside "Reset fragments", so a fragment authored in fragment mode can be called from expression mode.
+8. **Back to the published fig-tree.** fig-tree publishes no preview until this is built, since the two are changed together. Meanwhile `pnpm dev` runs the demo on the sibling checkout's fig-tree (`demo:local-evaluator`), and the demo's `tsconfig.json` reads its types from there, and the library is checked with `typecheck:local-evaluator` and `test:local-evaluator`. Once fig-tree publishes, both `package.json` files take the new version, `pnpm dev` goes back to `demo:local`, and the demo's `tsconfig.json` drops its fig-tree paths.
 
 ---
 
@@ -197,5 +200,6 @@ To be logged in [v3-upstream.md](v3-upstream.md) once agreed:
 
 - **Rename `FragmentListing` to `FragmentMetadata`** (fig-tree, `catalogTypes.ts`).
 - **Allow `samples` on the definition wrapper** (fig-tree, `DEFINITION_KEYS` in `fragments.ts`), and add it to `FragmentDefinition`. The engine ignores it, unless registration checks it (Open above).
+- **A `params` entry on `getDependencies()`** (fig-tree): the parameter names an expression reads, in every form a reference takes, not following calls into called fragments' bodies.
 - **A way to evaluate and validate a draft fragment** (fig-tree), depending on how "Evaluation" is settled. It would replace F9 and F10.
 - **F8, the scope-aware rename helper** (fig-tree, already logged), for renaming a parameter.

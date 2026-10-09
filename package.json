@@ -40,7 +40,7 @@
     "build": "rimraf ./build && rollup -c && rimraf ./build/dts",
     "size": "node scripts/bundleSize.mjs",
     "check:package": "node scripts/checkPackage.mjs",
-    "dev": "pnpm demo:local",
+    "dev": "pnpm demo:local-evaluator",
     "release": "node scripts/release.mjs",
     "prepublishOnly": "pnpm build",
     "demo": "pnpm -C demo start",

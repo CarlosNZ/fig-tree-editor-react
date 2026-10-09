@@ -21,7 +21,7 @@ const FIELD = 2
 const PARAMETER = 3
 const PARAMETER_FIELD = 4
 
-const FRAGMENT_FIELDS = ['expression', 'parameters', 'description', 'metadata']
+const FRAGMENT_FIELDS = ['expression', 'parameters', 'description', 'samples', 'metadata']
 const PARAMETER_FIELDS = ['type', 'required', 'default', 'description', 'metadata', 'constraints']
 
 // One parameter, used in the expression, with a default so the fragment runs
@@ -37,6 +37,7 @@ const NEW_FIELDS: Record<string, unknown> = {
   expression: null,
   parameters: {},
   description: '',
+  samples: {},
   metadata: {},
 }
 
