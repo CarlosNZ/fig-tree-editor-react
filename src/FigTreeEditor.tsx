@@ -26,6 +26,7 @@ import {
   type FallbackCoverage,
   type FallbackCoverageOptions,
   type FigTree,
+  type FragmentDefinition,
 } from 'fig-tree-evaluator'
 import { fallbackCoverage } from 'fig-tree-evaluator/authoring'
 import {
@@ -112,7 +113,30 @@ export interface SetExpressionOptions {
   autoUpdate?: boolean
 }
 
-export interface FigTreeEditorProps extends Omit<
+// The editor edits an expression, or the body of a fragment definition
+// (docs-dev/fragment-editor-design.md, "The props"): never both. In fragment
+// mode, every change reaches `setFragmentDefinition` as the whole definition,
+// complete, its body being the editor's expression. `fragmentName` is the
+// name the fragment is registered under, where it is.
+interface ExpressionSource {
+  expression: unknown
+  setExpression: (expression: unknown, options?: SetExpressionOptions) => void
+  fragmentDefinition?: never
+  setFragmentDefinition?: never
+  fragmentName?: never
+}
+
+interface FragmentSource {
+  fragmentDefinition: FragmentDefinition
+  setFragmentDefinition: (definition: FragmentDefinition, options?: SetExpressionOptions) => void
+  fragmentName?: string
+  expression?: never
+  setExpression?: never
+}
+
+export type FigTreeEditorProps = FigTreeEditorBaseProps & (ExpressionSource | FragmentSource)
+
+interface FigTreeEditorBaseProps extends Omit<
   JsonEditorProps,
   | 'data'
   | 'setData'
@@ -126,8 +150,6 @@ export interface FigTreeEditorProps extends Omit<
   | 'editorRef'
 > {
   figTree: FigTree
-  expression: unknown
-  setExpression: (expression: unknown, options?: SetExpressionOptions) => void
   operatorListings?: OperatorListingsProp
   categoryListings?: CategoryListingsProp
   editorTheme?: Partial<EditorTheme>
@@ -154,8 +176,13 @@ export interface FigTreeEditorProps extends Omit<
 
 export const FigTreeEditor = ({
   figTree,
-  expression,
-  setExpression,
+  expression: hostExpression,
+  setExpression: setHostExpression,
+  fragmentDefinition,
+  setFragmentDefinition,
+  // TO-DO: the fragment picker leaves out the fragments whose use would close
+  // a cycle through this one (fragment-editor-design.md, build plan, step 6)
+  fragmentName,
   defaultOperators,
   defaultFragment,
   referenceNames = 'canonical',
@@ -186,6 +213,16 @@ export const FigTreeEditor = ({
   useInsertionEffect(() => {
     injectStyles()
   }, [])
+
+  // A fragment's body is the expression the editor shows, and a change to it
+  // is written back with the rest of the definition kept. The options reach
+  // the host only where the editor gives them.
+  const expression = fragmentDefinition ? fragmentDefinition.expression : hostExpression
+  const setExpression = (value: unknown, ...options: [SetExpressionOptions?]) => {
+    if (fragmentDefinition)
+      setFragmentDefinition?.({ ...fragmentDefinition, expression: value }, ...options)
+    else setHostExpression?.(value, ...options)
+  }
 
   // Everything below is worked out on every render rather than memoised on
   // the expression: it also depends on the instance's registry, which
@@ -626,6 +663,7 @@ export const FigTreeEditor = ({
       <JsonEditor
         {...editorDefaults}
         {...props}
+        rootName={fragmentDefinition ? strings.FT_FRAGMENT_ROOT(fragmentName) : props.rootName}
         minWidth={0}
         maxWidth="100%"
         editorRef={handle}

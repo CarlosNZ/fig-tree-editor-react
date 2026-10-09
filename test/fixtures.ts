@@ -1,3 +1,5 @@
+import { type ComponentProps } from 'react'
+import { type FigTreeEditor } from '../src/FigTreeEditor'
 import {
   FigTree,
   coreOperators,
@@ -303,3 +305,8 @@ export const demoExpressions: { name: string; expression: unknown }[] = [
     },
   },
 ]
+
+// The props a test passes beside its expression, in expression mode
+export type EditorProps = Partial<
+  Extract<ComponentProps<typeof FigTreeEditor>, { setExpression: unknown }>
+>

@@ -1,15 +1,16 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { StrictMode, createRef, useState, type ComponentProps } from 'react'
+import { StrictMode, createRef, useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { FigTreeEditor, type FigTreeEditorHandle } from '../src'
 import { revealRow } from '../src/revealRow'
 import { keyLabel } from './queries'
+import { type EditorProps } from './fixtures'
 
 const figTree = new FigTree({ operators: [coreOperators] })
 
-const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
+const editor = (expression: unknown, props: EditorProps = {}) =>
   render(
     <FigTreeEditor
       figTree={figTree}
@@ -209,7 +210,7 @@ describe('revealing a row', () => {
 describe('quick fixes', () => {
   // A host holding the expression, so each write comes back as the editor's
   // next expression, in StrictMode
-  const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+  const host = (initial: unknown, props: EditorProps = {}) => {
     const written: unknown[] = []
     const onUpdate = vi.fn()
     const Host = () => {

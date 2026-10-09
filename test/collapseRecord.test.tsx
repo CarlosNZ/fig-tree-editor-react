@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { useState, type ComponentProps } from 'react'
+import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
 import { classify } from '../src/classify'
@@ -9,7 +9,7 @@ import {
   recordToggle,
   recordedState,
 } from '../src/collapseRecord'
-import { figTree, registry } from './fixtures'
+import { figTree, registry, type EditorProps } from './fixtures'
 
 describe('the collapse record', () => {
   it("gives a row's own toggle, the latest winning", () => {
@@ -52,7 +52,7 @@ describe('collapse state through a conversion', () => {
   const initial = { sum: { operator: 'round', value: { operator: 'abs', value: -1 } } }
 
   // A host holding the expression, so each conversion comes back
-  const Host = (props: Partial<ComponentProps<typeof FigTreeEditor>>) => {
+  const Host = (props: EditorProps) => {
     const [expression, setExpression] = useState<unknown>(initial)
     return (
       <FigTreeEditor

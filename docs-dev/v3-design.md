@@ -861,6 +861,8 @@ Topics 1, 3 and 4 settled its display (its display name and colours from `./cata
 
 ### Fragment-definition mode — **Parked**
 
+_Picked up in [fragment-editor-design.md](fragment-editor-design.md), which supersedes this section._
+
 The editor is also used to author fragment definitions (Conforma does). Agreed in principle: a host prop, working name `isFragmentDefinition`, puts the editor in that mode, so the rules that apply only inside a fragment body (`$params` above all) are switched on explicitly rather than inferred. Authoring a fragment is a distinct task, and the host always knows when it is doing it.
 
 The rest is set aside, to be revisited further into the work (Carl, September 2026). It needs deciding what belongs in this editor and what the host handles around it, and designing it inside the editor risks bending decisions already made for expressions.

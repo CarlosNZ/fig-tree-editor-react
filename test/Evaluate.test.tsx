@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
-import { StrictMode, createRef, useState, type ComponentProps } from 'react'
+import { StrictMode, createRef, useState } from 'react'
 import { describe, expect, it } from 'vitest'
 import { FigTree, coreOperators, defineOperator } from 'fig-tree-evaluator'
 import {
@@ -8,6 +8,7 @@ import {
   type Evaluation,
   type FigTreeEditorHandle,
 } from '../src'
+import { type EditorProps } from './fixtures'
 
 // A host operator that waits until it is aborted, or 200ms
 const wait = defineOperator({
@@ -38,7 +39,7 @@ const figTree = new FigTree({ operators: [coreOperators, [wait]] })
 // A host holding the expression, in StrictMode, recording each start and
 // each evaluation, as `start x` and `done x` by the row's first key. It can
 // change the expression itself.
-const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+const host = (initial: unknown, props: EditorProps = {}) => {
   const reports: string[] = []
   const evaluations: Evaluation[] = []
   const name = (path: (string | number)[]) => (path.length === 0 ? '(root)' : String(path[0]))

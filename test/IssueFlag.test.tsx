@@ -1,13 +1,13 @@
 import { render, within } from '@testing-library/react'
-import { type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
 import { keyLabel } from './queries'
+import { type EditorProps } from './fixtures'
 
 const figTree = new FigTree({ operators: [coreOperators] })
 
-const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
+const editor = (expression: unknown, props: EditorProps = {}) =>
   render(
     <FigTreeEditor
       figTree={figTree}

@@ -1,15 +1,16 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { StrictMode, useState, type ComponentProps } from 'react'
+import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { FigTreeEditor, type EditorStatus } from '../src'
+import { type EditorProps } from './fixtures'
 
 const figTree = new FigTree({ operators: [coreOperators] })
 
 // A host holding the expression, in StrictMode, keeping every status it is
 // given
-const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+const host = (initial: unknown, props: EditorProps = {}) => {
   const statuses: EditorStatus[] = []
   const written: unknown[] = []
   const Host = () => {

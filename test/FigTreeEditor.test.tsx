@@ -433,4 +433,80 @@ describe('FigTreeEditor', () => {
       })
     })
   })
+
+  describe('fragment mode', () => {
+    const definition = {
+      expression: { a: 1 },
+      parameters: { name: { type: 'string' as const } },
+      description: 'A test fragment',
+    }
+
+    it("shows the definition's body, and writes an edit back with the rest kept", () => {
+      const setFragmentDefinition = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={definition}
+          setFragmentDefinition={setFragmentDefinition}
+        />
+      )
+      expect(screen.getByText('a')).toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: 'Add' }))
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: 'b' } })
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+      expect(setFragmentDefinition).toHaveBeenCalledExactlyOnceWith({
+        ...definition,
+        expression: { a: 1, b: 'Replace me' },
+      })
+    })
+
+    it("names the root by the fragment's name, in place of the host's", () => {
+      const { rerender } = render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={definition}
+          setFragmentDefinition={vi.fn()}
+          fragmentName="greeting"
+          rootName="expression"
+        />
+      )
+      expect(keyLabel('Fragment: greeting')).toBeInTheDocument()
+      rerender(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={definition}
+          setFragmentDefinition={vi.fn()}
+          rootName="expression"
+        />
+      )
+      expect(keyLabel('Fragment')).toBeInTheDocument()
+      rerender(
+        <FigTreeEditor
+          figTree={figTree}
+          expression={definition.expression}
+          setExpression={vi.fn()}
+          rootName="expression"
+        />
+      )
+      expect(keyLabel('expression')).toBeInTheDocument()
+    })
+
+    it('fills in a body that arrives incomplete, and marks the write', () => {
+      const setFragmentDefinition = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={{ ...definition, expression: { operator: 'if', condition: true } }}
+          setFragmentDefinition={setFragmentDefinition}
+        />
+      )
+      expect(setFragmentDefinition).toHaveBeenCalledExactlyOnceWith(
+        {
+          ...definition,
+          expression: { operator: 'if', condition: true, then: 'The condition is true' },
+        },
+        { autoUpdate: true }
+      )
+    })
+  })
 })

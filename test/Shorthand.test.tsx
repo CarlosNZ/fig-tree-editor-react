@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { StrictMode, useState, type ComponentProps } from 'react'
+import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators, httpOperators } from 'fig-tree-evaluator'
 import { operatorListings } from 'fig-tree-evaluator/catalog'
 import { FigTreeEditor } from '../src'
 import { keyLabel } from './queries'
+import { type EditorProps } from './fixtures'
 
 // The core and HTTP operators, with one fragment carrying `FragmentHints` and
 // one without
@@ -22,7 +23,7 @@ const fragments = {
 }
 const figTree = new FigTree({ operators: [coreOperators, httpOperators()], fragments })
 
-const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
+const editor = (expression: unknown, props: EditorProps = {}) =>
   render(
     <FigTreeEditor
       figTree={figTree}
@@ -35,7 +36,7 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
 
 // A host holding the expression, so each commit comes back as the editor's
 // next expression, in StrictMode
-const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+const host = (initial: unknown, props: EditorProps = {}) => {
   const written: unknown[] = []
   const Host = () => {
     const [expression, setExpression] = useState(initial)

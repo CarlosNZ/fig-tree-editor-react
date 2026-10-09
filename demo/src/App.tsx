@@ -7,6 +7,7 @@ import {
   Heading,
   Text,
   Button,
+  ButtonGroup,
   Select,
   Icon,
   HStack,
@@ -17,13 +18,18 @@ import {
   useMediaQuery,
 } from '@chakra-ui/react'
 import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
-import { FigTreeEditor, type EditorStatus, type Evaluation } from '@fig-tree-editor-react'
-import { version as figTreeVersion } from 'fig-tree-evaluator'
+import {
+  FigTreeEditor,
+  type EditorStatus,
+  type Evaluation,
+  type SetExpressionOptions,
+} from '@fig-tree-editor-react'
+import { version as figTreeVersion, type FragmentDefinition } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
 import { getLocalStorage, setLocalStorage, truncate } from './helpers'
 import { applyOptions, figTree, initialOptions, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
-import { demoData, defaultBlurb } from './data'
+import { demoData, defaultBlurb, initialFragmentDefinition, initialFragmentName } from './data'
 import { evaluatorConfig } from './data/evaluatorConfig'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
@@ -36,6 +42,9 @@ const initData = demoData[0]
 
 console.log(`fig-tree-editor-react v${figTreeEditorReactVersion}`)
 console.log('Site built:', timestamp)
+
+// What the main editor edits: an expression, or a fragment definition's body
+type EditorMode = 'expression' | 'fragment'
 
 // A row's path, as the toasts name it
 const describePath = (path: (string | number)[]) =>
@@ -74,6 +83,43 @@ function App() {
     setData: setExpression,
     UndoRedo: ExpressionUndoRedo,
   } = useUndo(getLocalStorage('expression') ?? initData.expression)
+
+  const [editorMode, setEditorMode] = useState<EditorMode>(
+    getLocalStorage('editorMode') ?? 'expression'
+  )
+  const changeEditorMode = (mode: EditorMode) => {
+    setEditorMode(mode)
+    setLocalStorage('editorMode', mode)
+  }
+
+  const {
+    data: fragmentDefinition,
+    setData: setFragmentDefinition,
+    UndoRedo: FragmentUndoRedo,
+  } = useUndo(getLocalStorage('fragmentDefinition') ?? initialFragmentDefinition)
+
+  // Saved here rather than in `onUpdate`, which doesn't see the editor's own
+  // writes
+  const editorSource =
+    editorMode === 'fragment'
+      ? {
+          fragmentDefinition: fragmentDefinition as FragmentDefinition,
+          fragmentName: initialFragmentName,
+          setFragmentDefinition: (
+            newDefinition: FragmentDefinition,
+            options?: SetExpressionOptions
+          ) => {
+            setFragmentDefinition(newDefinition, options)
+            setLocalStorage('fragmentDefinition', newDefinition)
+          },
+        }
+      : {
+          expression,
+          setExpression: (newExpression: unknown, options?: SetExpressionOptions) => {
+            setExpression(newExpression, options)
+            setLocalStorage('expression', newExpression)
+          },
+        }
 
   const toast = useToast()
 
@@ -115,6 +161,7 @@ function App() {
     if (!visited?.[demoData?.[selected]?.name]) setShowInfo(true)
 
     const { objectData, expression, figTreeOptions = {} } = demoData[selected]
+    changeEditorMode('expression')
     setExpression(expression)
     setLocalStorage('expression', expression)
     if (objectData) {
@@ -261,26 +308,41 @@ function App() {
           {/** EXPRESSION EDITOR COLUMN */}
           <Flex h={'100%'} minW="45%" direction="column" alignItems="center" flexGrow={1} mb={10}>
             <Box w="var(--column-width)">
-              <Heading size="md" alignSelf="flex-start">
-                FigTree expression
-              </Heading>
-              <Text>
-                Edit the expression, and click any operator "button" to evaluate at that node. Or
-                try one of the demo expressions from the menu at the bottom of the page.
-              </Text>
+              <HStack justify="space-between" align="center">
+                <Heading size="md">
+                  {editorMode === 'fragment' ? 'Fragment definition' : 'FigTree expression'}
+                </Heading>
+                <ButtonGroup size="sm" isAttached colorScheme="green">
+                  {(['expression', 'fragment'] as const).map((mode) => (
+                    <Button
+                      key={mode}
+                      variant={editorMode === mode ? 'solid' : 'outline'}
+                      onClick={() => changeEditorMode(mode)}
+                    >
+                      {mode === 'fragment' ? 'Fragment' : 'Expression'}
+                    </Button>
+                  ))}
+                </ButtonGroup>
+              </HStack>
+              {editorMode === 'fragment' ? (
+                <Text>
+                  Edit the body of a fragment, which reads its arguments with <code>$params</code>{' '}
+                  references, such as <code>"$params.name"</code>.
+                </Text>
+              ) : (
+                <Text>
+                  Edit the expression, and click any operator "button" to evaluate at that node. Or
+                  try one of the demo expressions from the menu at the bottom of the page.
+                </Text>
+              )}
             </Box>
             {/* Fitted to the editor, so the badge sits in its corner */}
             <Box position="relative" mt="0.6em">
               <FigTreeEditor
+                key={editorMode}
                 figTree={figTree}
-                expression={expression}
+                {...editorSource}
                 operatorListings={evaluatorConfig.operatorListings}
-                // Saved here rather than in `onUpdate`, which doesn't see the
-                // editor's own writes
-                setExpression={(newExpression, options) => {
-                  setExpression(newExpression, options)
-                  setLocalStorage('expression', newExpression)
-                }}
                 rootName="expression"
                 evaluationData={objectData as Record<string, unknown>}
                 onCopy={({ stringValue, type }) =>
@@ -316,7 +378,7 @@ function App() {
                 fig-tree-editor-react
               </Link>
             </Text>
-            {ExpressionUndoRedo}
+            {editorMode === 'fragment' ? FragmentUndoRedo : ExpressionUndoRedo}
           </Flex>
         </Flex>
       </VStack>

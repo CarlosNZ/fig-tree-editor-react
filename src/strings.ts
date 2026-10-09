@@ -11,6 +11,8 @@ const warnings = countOf('warning', 'warnings')
 // (displayData.ts), not wording.
 export const strings = {
   FT_ROOT_PATH: '(root)',
+  // The root's name in fragment mode, in place of the host's `rootName`
+  FT_FRAGMENT_ROOT: (name?: string) => (name === undefined ? 'Fragment' : `Fragment: ${name}`),
   FT_MESSAGES: 'Messages', // the messages area's header
   FT_REVEAL_ROW: 'Show in the tree', // a message's path, which reveals its row
   // The messages area's quick fixes

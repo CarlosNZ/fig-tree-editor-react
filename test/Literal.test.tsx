@@ -1,13 +1,13 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { StrictMode, useState, type ComponentProps } from 'react'
+import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
 import { strings } from '../src/strings'
-import { figTree } from './fixtures'
+import { figTree, type EditorProps } from './fixtures'
 import { keyLabel } from './queries'
 
-const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
+const editor = (expression: unknown, props: EditorProps = {}) =>
   render(
     <FigTreeEditor
       figTree={figTree}

@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { StrictMode, useState, type ComponentProps } from 'react'
+import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTreeEditor } from '../src'
-import { figTree } from './fixtures'
+import { figTree, type EditorProps } from './fixtures'
 import { keyLabel } from './queries'
 
-const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) =>
+const editor = (expression: unknown, props: EditorProps = {}) =>
   render(
     <FigTreeEditor
       figTree={figTree}
@@ -19,7 +19,7 @@ const editor = (expression: unknown, props: Partial<ComponentProps<typeof FigTre
 
 // A host holding the expression, so each commit comes back as the editor's
 // next expression, in StrictMode
-const host = (initial: unknown, props: Partial<ComponentProps<typeof FigTreeEditor>> = {}) => {
+const host = (initial: unknown, props: EditorProps = {}) => {
   const written: unknown[] = []
   const Host = () => {
     const [expression, setExpression] = useState(initial)
