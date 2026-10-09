@@ -101,7 +101,7 @@ describe('the operator node', () => {
   it("takes the host's display overrides", () => {
     const { container } = editor(
       { operator: 'plus', values: [1, 2] },
-      { operatorHints: { plus: { displayName: 'Add', docUrl: 'https://example.com/add' } } }
+      { operatorListings: { plus: { displayName: 'Add', docUrl: 'https://example.com/add' } } }
     )
     expect(within(displayBar(container)).getByRole('link', { name: 'Add' })).toHaveAttribute(
       'href',

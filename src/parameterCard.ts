@@ -7,16 +7,18 @@ import {
 import { cacheStatus, type CacheContext } from './caching'
 import { type Row, type RowKind } from './classify'
 import { describeType } from './describeType'
+import { type OperatorDisplay } from './displayData'
 import { type Path } from './paths'
 import { strings } from './strings'
 
 // What a parameter's hover card says (design, topic 4, "Parameter metadata"),
 // worded by the editor from the metadata, so a host's operators get the same
 // cards: a first line with the name, whether it's required and what it
-// takes, the declaration's description, then a line for each of these that
-// applies: its elements' constraints, its default, when it's evaluated, what
-// null does there, and what it stands in for. Modifiers and the vars block
-// get their own description.
+// takes, its description, then a line for each of these that applies: its
+// elements' constraints, its default, when it's evaluated, what null does
+// there, and what it stands in for. Modifiers and the vars block get their
+// own description. An operator's parameter takes its description from the
+// operator's display data, and a fragment's argument from its declaration.
 //
 // Names in a line are in backticks, which the card shows as code.
 
@@ -38,7 +40,8 @@ export const hasCard = (row: Row | undefined) => {
 // Null where the row has no card
 export const parameterCard = (
   row: Row | undefined,
-  operator: OperatorInfo | undefined // the owner's, for what replaces a null
+  operator: OperatorInfo | undefined, // the owner's, for what replaces a null
+  display?: OperatorDisplay // the owner's, for its parameters' descriptions
 ): string[] | null => {
   if (row?.kind?.kind === 'vars') return [title('vars'), strings.FT_MODIFIER_VARS]
   const slot = row?.slot
@@ -55,7 +58,9 @@ export const parameterCard = (
   const as = iterator?.kind === 'iterator' ? iterator.as : undefined
   return [
     title(name, declaration.required, slot.admits),
-    declaration.description,
+    operator === undefined
+      ? (declaration as FragmentParameter).description
+      : display?.parameterDescriptions[name],
     elementsLine(declaration),
     defaultLine(declaration),
     evaluatedLine(declaration, as),

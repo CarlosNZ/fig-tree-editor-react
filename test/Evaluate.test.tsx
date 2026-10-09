@@ -13,7 +13,6 @@ import {
 const wait = defineOperator({
   name: 'wait',
   category: 'other',
-  description: 'Waits',
   parameters: {},
   evaluate: (_, { signal }) =>
     new Promise((resolve, reject) => {
@@ -29,7 +28,6 @@ const wait = defineOperator({
 const once = defineOperator({
   name: 'once',
   category: 'other',
-  description: 'Cached',
   parameters: {},
   cache: true,
   evaluate: (_, { cache }) => cache.memo('once', () => Promise.resolve(42)),

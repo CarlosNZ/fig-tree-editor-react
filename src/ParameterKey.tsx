@@ -17,7 +17,7 @@ export const ParameterKey = ({
   styles,
   componentProps,
 }: CustomKeyProps<Shared>) => {
-  const { classification, figTree } = componentProps!
+  const { classification, figTree, displayData } = componentProps!
   const row = rowAt(classification, nodeData.path)
   // A shorthand's `$name` row, whose name the node's header already shows.
   // Its definition leaves the key out too, but a type switch takes its
@@ -28,7 +28,11 @@ export const ParameterKey = ({
     owner?.kind === 'operator'
       ? figTree.getOperators().find(({ name }) => name === owner.operator)
       : undefined
-  const card = parameterCard(row, operator)
+  const card = parameterCard(
+    row,
+    operator,
+    operator === undefined ? undefined : displayData.operators[operator.name]
+  )
 
   // The card sits inside the key span, which stays the row's flex item with
   // json-edit-react's own sizing, so a long value beside it can't squeeze it

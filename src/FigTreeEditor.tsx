@@ -49,9 +49,9 @@ import { commentPart, settleCommentLines } from './comments'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import {
   buildDisplayData,
-  type CategoryHintsProp,
+  type CategoryListingsProp,
   type DisplayData,
-  type OperatorHintsProp,
+  type OperatorListingsProp,
 } from './displayData'
 import {
   FILLED_IN_FADE_MS,
@@ -128,8 +128,8 @@ export interface FigTreeEditorProps extends Omit<
   figTree: FigTree
   expression: unknown
   setExpression: (expression: unknown, options?: SetExpressionOptions) => void
-  operatorHints?: OperatorHintsProp
-  categoryHints?: CategoryHintsProp
+  operatorListings?: OperatorListingsProp
+  categoryListings?: CategoryListingsProp
   editorTheme?: Partial<EditorTheme>
   defaultOperators?: DefaultOperators
   defaultFragment?: string
@@ -165,8 +165,8 @@ export const FigTreeEditor = ({
   coverageOptions,
   onEvaluateStart,
   onEvaluate,
-  operatorHints,
-  categoryHints,
+  operatorListings,
+  categoryListings,
   editorTheme,
   className,
   theme,
@@ -196,7 +196,7 @@ export const FigTreeEditor = ({
   const operators = figTree.getOperators()
   const fragments = figTree.getFragments()
   const displayData = useStableValue(
-    buildDisplayData({ operators, fragments, operatorHints, categoryHints })
+    buildDisplayData({ operators, fragments, operatorListings, categoryListings })
   )
   const mergedEditorTheme = useStableValue(mergeEditorTheme(editorTheme))
   const stableDefaultOperators = useStableValue(defaultOperators)

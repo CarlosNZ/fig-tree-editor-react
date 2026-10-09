@@ -6,7 +6,7 @@ import {
   type ParameterInfo,
   type TypeDeclaration,
 } from 'fig-tree-evaluator'
-import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
+import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { positionalLayout } from 'fig-tree-evaluator/format'
 import { rowAt, type Classification } from './classify'
 import { type DisplayData } from './displayData'

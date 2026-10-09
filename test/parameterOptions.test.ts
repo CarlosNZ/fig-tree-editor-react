@@ -1,4 +1,5 @@
 import { FigTree, coreOperators, httpOperators, type FragmentInfo } from 'fig-tree-evaluator'
+import { operatorListings } from 'fig-tree-evaluator/catalog'
 import { describe, expect, it } from 'vitest'
 import { classify, rowAt } from '../src/classify'
 import { buildDisplayData } from '../src/displayData'
@@ -103,12 +104,11 @@ describe('addableKeys', () => {
     ])
   })
 
-  it("lists the rest in fill-in's key order, with each declaration's description", () => {
+  it("lists the rest in fill-in's key order, with each parameter's description", () => {
     const node = { operator: 'map', input: [1], each: '$element' }
     const keys = addableKeys(node, [], kindAt(node), contextFor(node))!
     expect(keys.parameters.map(({ key }) => key)).toEqual(['as', 'nullInputDefault'])
-    const map = registry.operators.find(({ name }) => name === 'map')!
-    expect(keys.parameters[0].description).toBe(map.parameters.as.description)
+    expect(keys.parameters[0].description).toBe(operatorListings.map.parameterDescriptions!.as)
   })
 
   it('offers a shorthand node its modifiers only', () => {

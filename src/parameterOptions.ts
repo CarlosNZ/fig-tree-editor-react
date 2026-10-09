@@ -1,8 +1,8 @@
 import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
-import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
+import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { takesNoCache } from './caching'
 import { type Classification, type RowKind } from './classify'
-import { type DisplayData } from './displayData'
+import { type DisplayData, type OperatorDisplay } from './displayData'
 import { parameterOrder } from './fillAndTidy'
 import { getStartingValue } from './getStartingValue'
 import { type Path } from './paths'
@@ -70,12 +70,14 @@ const COMMENT_LINE: AddableKey = {
 }
 const takesLine = (comment: unknown) => typeof comment === 'string' || Array.isArray(comment)
 
-// Null where the key is free-typed
+// Null where the key is free-typed. An operator's parameters take their
+// descriptions from `displayData`, which only a listing of them needs.
 export const addableKeys = (
   node: Record<string, unknown>,
   path: Path,
   kind: RowKind | undefined,
-  context: Pick<AddContext, 'classification' | 'operators' | 'fragments'>
+  context: Pick<AddContext, 'classification' | 'operators' | 'fragments'> &
+    Partial<Pick<AddContext, 'displayData'>>
 ): AddableKeys | null => {
   const absent = (entries: AddableKey[]) =>
     entries.flatMap((entry) => {
@@ -100,7 +102,9 @@ export const addableKeys = (
       const declared =
         kind.form === 'full' && kind.malformed === undefined && operator !== undefined
       return {
-        parameters: declared ? absent(parametersOf(operator)) : [],
+        parameters: declared
+          ? absent(parametersOf(operator, context.displayData?.operators[operator.name]))
+          : [],
         modifiers: modifiers(),
       }
     }
@@ -147,11 +151,12 @@ const STATIC_ARGUMENTS: AddableKey = {
 }
 
 // Required first, each in fill-in's key order
-const parametersOf = (operator: OperatorInfo): AddableKey[] => {
-  const entries = parameterOrder(operator).map((key) => {
-    const { required, description } = operator.parameters[key]
-    return { key, required, description }
-  })
+const parametersOf = (operator: OperatorInfo, display?: OperatorDisplay): AddableKey[] => {
+  const entries = parameterOrder(operator).map((key) => ({
+    key,
+    required: operator.parameters[key].required,
+    description: display?.parameterDescriptions[key],
+  }))
   return [...entries.filter(({ required }) => required), ...entries.filter((e) => !e.required)]
 }
 

@@ -61,10 +61,12 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
     })
   const header = () => {
     if (kind.kind === 'fragment') {
-      const hints = displayData.fragments[kind.name!]
+      const fragment = displayData.fragments[kind.name!]
       return {
-        display: fragmentHeader(hints, editorTheme),
-        card: [hints?.description, cache()].filter((line): line is CardLine => line !== undefined),
+        display: fragmentHeader(fragment, editorTheme),
+        card: [fragment?.description, cache()].filter(
+          (line): line is CardLine => line !== undefined
+        ),
       }
     }
     const operatorName = kind.kind === 'literal' ? 'literal' : kind.operator

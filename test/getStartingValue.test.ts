@@ -1,5 +1,5 @@
 import { FigTree, coreOperators, defineOperator } from 'fig-tree-evaluator'
-import { typeSeeds } from 'fig-tree-evaluator/editor-hints'
+import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { describe, expect, it } from 'vitest'
 import { classify } from '../src/classify'
 import { buildDisplayData } from '../src/displayData'
@@ -51,11 +51,9 @@ const hostFigTree = new FigTree({
     defineOperator({
       name: 'weigh',
       category: 'other',
-      description: 'Weighs named items',
       parameters: {
         items: {
           type: 'array',
-          description: 'The items',
           constraints: {
             elementShape: {
               name: { type: 'string' },
@@ -67,7 +65,6 @@ const hostFigTree = new FigTree({
         tags: {
           type: 'array',
           required: false,
-          description: 'Strings or whole numbers',
           constraints: { homogeneous: ['string', 'integer'] },
         },
       },

@@ -14,8 +14,7 @@ const customOperators = [
   defineOperator({
     name: 'reverse',
     category: 'other',
-    description: 'Reverses a string, or an array',
-    parameters: { value: { type: ['string', 'array'], description: 'The string or array' } },
+    parameters: { value: { type: ['string', 'array'] } },
     positionalParams: ['value'],
     evaluate: ({ value }) =>
       Array.isArray(value) ? [...value].reverse() : String(value).split('').reverse().join(''),
@@ -23,10 +22,9 @@ const customOperators = [
   defineOperator({
     name: 'changeCase',
     category: 'string',
-    description: 'Converts a string to upper or lower case',
     parameters: {
-      string: { type: 'string', description: 'The string to convert' },
-      toCase: { type: { literal: ['upper', 'lower'] }, description: 'The case to convert to' },
+      string: { type: 'string' },
+      toCase: { type: { literal: ['upper', 'lower'] } },
     },
     positionalParams: ['string', 'toCase'],
     evaluate: ({ string, toCase }) =>
@@ -35,7 +33,6 @@ const customOperators = [
   defineOperator({
     name: 'currentDate',
     category: 'other',
-    description: "Returns today's date in the local format",
     parameters: {},
     evaluate: () => new Date().toLocaleDateString(),
   }),

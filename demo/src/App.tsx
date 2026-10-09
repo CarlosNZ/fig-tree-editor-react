@@ -24,6 +24,7 @@ import { getLocalStorage, setLocalStorage, truncate } from './helpers'
 import { applyOptions, figTree, initialOptions, type DemoOptions } from './figTree'
 import { JsonEditor } from 'json-edit-react'
 import { demoData, defaultBlurb } from './data'
+import { evaluatorConfig } from './data/evaluatorConfig'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
 import { InfoModal } from './InfoModal'
@@ -273,6 +274,7 @@ function App() {
               <FigTreeEditor
                 figTree={figTree}
                 expression={expression}
+                operatorListings={evaluatorConfig.operatorListings}
                 // Saved here rather than in `onUpdate`, which doesn't see the
                 // editor's own writes
                 setExpression={(newExpression, options) => {

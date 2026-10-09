@@ -15,7 +15,6 @@ import { buildSubTree } from '../src/subTree'
 const wait = defineOperator({
   name: 'wait',
   category: 'other',
-  description: 'Waits',
   parameters: {},
   evaluate: (_, { signal }) =>
     new Promise((resolve, reject) => {

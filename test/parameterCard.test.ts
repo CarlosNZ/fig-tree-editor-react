@@ -1,6 +1,8 @@
 import { FigTree, coreOperators, httpOperators, type OperatorInfo } from 'fig-tree-evaluator'
+import { operatorListings } from 'fig-tree-evaluator/catalog'
 import { describe, expect, it } from 'vitest'
 import { classify, rowAt } from '../src/classify'
+import { buildDisplayData } from '../src/displayData'
 import { operatorDefaultsLine, parameterCard } from '../src/parameterCard'
 import { type Path } from '../src/paths'
 import { parameterSlot } from '../src/slots'
@@ -16,10 +18,11 @@ const cardAt = (expression: unknown, path: Path, from: Registry = registry) => {
     owner?.kind === 'operator'
       ? from.operators.find(({ name }) => name === owner.operator)
       : undefined
-  return parameterCard(row, operator)
+  const display = operator && buildDisplayData(from).operators[operator.name]
+  return parameterCard(row, operator, display)
 }
 
-// The card less its description, which is the declaration's own
+// The card less its description, which is the operator's listing's
 const linesAt = (expression: unknown, path: Path, from?: Registry) => {
   const card = cardAt(expression, path, from)
   return card && [card[0], ...card.slice(2)]
@@ -33,10 +36,9 @@ const instance = (options: ConstructorParameters<typeof FigTree>[0]) => {
 describe('parameterCard', () => {
   it('starts with the name, whether it is required, what it takes, and the description', () => {
     const card = cardAt({ operator: 'round', value: 1, decimals: 2 }, ['decimals'])!
-    const round = registry.operators.find(({ name }) => name === 'round')!
     expect(card.slice(0, 2)).toEqual([
       '`decimals` · optional · takes an integer',
-      round.parameters.decimals.description,
+      operatorListings.round.parameterDescriptions!.decimals,
     ])
   })
 

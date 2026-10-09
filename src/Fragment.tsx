@@ -51,7 +51,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const row = rowAt(classification, path)
   const kind = row?.kind as FragmentKind
   // An unregistered name is looked up nowhere, since it may be anything
-  const hints = kind.registered ? displayData.fragments[kind.name!] : undefined
+  const display = kind.registered ? displayData.fragments[kind.name!] : undefined
   const node = value as Record<string, unknown>
   const broken = brokenIssue(issues, classification, path, node)
   const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
@@ -108,9 +108,9 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
       ) : (
         <DisplayBar
           name={kind.name}
-          display={fragmentHeader(hints, editorTheme)}
+          display={fragmentHeader(display, editorTheme)}
           card={[
-            hints?.description,
+            display?.description,
             cacheLine(path, kind, {
               classification,
               operators: figTree.getOperators(),
@@ -130,17 +130,17 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   )
 }
 
-// A fragment's header (topic 3, "Kinds"): its `FragmentHints`, where it has
-// them. The button's name already shows the fragment's name, so a fragment
+// A fragment's header (topic 3, "Kinds"): its `FragmentListing`, where it has
+// one. The button's name already shows the fragment's name, so a fragment
 // with no display name shows "Fragment" alone, and one with no colours takes
 // the editor's fragment colours, as does a call to no registered fragment.
 export const fragmentHeader = (
-  hints: FragmentDisplay | undefined,
+  display: FragmentDisplay | undefined,
   editorTheme: EditorTheme
 ): HeaderDisplay => ({
-  displayName: hints?.displayName ?? strings.FT_FRAGMENT,
-  suffix: hints?.displayName === undefined ? undefined : strings.FT_FRAGMENT_SUFFIX,
-  docUrl: hints?.docUrl,
-  backgroundColor: hints?.backgroundColor ?? editorTheme.fragmentBackground,
-  textColor: hints?.textColor ?? editorTheme.fragmentText,
+  displayName: display?.displayName ?? strings.FT_FRAGMENT,
+  suffix: display?.displayName === undefined ? undefined : strings.FT_FRAGMENT_SUFFIX,
+  docUrl: display?.docUrl,
+  backgroundColor: display?.backgroundColor ?? editorTheme.fragmentBackground,
+  textColor: display?.textColor ?? editorTheme.fragmentText,
 })

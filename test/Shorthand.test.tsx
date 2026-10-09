@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { StrictMode, useState, type ComponentProps } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators, httpOperators } from 'fig-tree-evaluator'
+import { operatorListings } from 'fig-tree-evaluator/catalog'
 import { FigTreeEditor } from '../src'
 import { keyLabel } from './queries'
 
@@ -62,8 +63,7 @@ const displayBar = (container: HTMLElement, index = 0) =>
 const onLine = (container: HTMLElement) =>
   displayBar(container).querySelector<HTMLElement>('.ft-display-bar-value')
 
-const description = (name: string) =>
-  figTree.getOperators().find((operator) => operator.name === name)!.description
+const description = (name: string) => operatorListings[name].description!
 
 describe('the shorthand node', () => {
   it("shows the name as written, with its `$`, and the operator's display name and card", () => {

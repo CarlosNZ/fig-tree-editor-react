@@ -106,7 +106,7 @@ While either editor is open, JER hides the node's own edit tools, which is the k
 
 - **`['greeting']`, the node itself.** A collection row with the **Fragment** component, and the same two editors as an operator.
   - JER draws the header row.
-  - Inside the inner block, the Fragment component draws the DisplayBar, then its child rows minus the `fragment` row. Its colours and display name come from the `FragmentHints` in the fragment's `metadata`.
+  - Inside the inner block, the Fragment component draws the DisplayBar, then its child rows minus the `fragment` row. Its colours and display name come from the `FragmentListing` in the fragment's `metadata`.
 - **`['greeting', 'fragment']`.** Filtered.
 - **`['greeting', 'parameters']`.** A flattened payload. It has no header, brackets or edit tools of its own, so the arguments appear directly beneath the DisplayBar, where an operator's parameters would be.
   - `['greeting', 'parameters', 'name']`: a **Reference**.
@@ -177,7 +177,7 @@ Nothing is filtered here: the `$if` row is flattened rather than removed, becaus
 
 The structure is exactly that of kind 3, with the **Shorthand** component on `['greeting']` and a flattened payload on `['greeting', '$greet']`. The differences:
 
-- **Display data** comes from the fragment's `FragmentHints`.
+- **Display data** comes from the fragment's `FragmentListing`.
 - **There is no positional/named toggle,** since fragments are named only.
 - **Argument rows' type dropdowns** are filtered by the fragment's parameter declarations.
 
@@ -260,7 +260,7 @@ The `$name` row holds one value rather than a list, so it is **unlabelled**: it 
 
 ## 6. Literal, full
 
-`literal` is grammar rather than an operator, so it has no `getOperators()` entry. Its display name and colours come from its entry in `./editor-hints`, and the editor supplies its description.
+`literal` is grammar rather than an operator, so it has no `getOperators()` entry. Its display name and colours come from its entry in `./catalog`, and the editor supplies its description.
 
 ```js
 { template: { operator: 'literal', value: { $plus: [1, 2] } } }

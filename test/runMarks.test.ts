@@ -11,7 +11,6 @@ import { buildSubTree } from '../src/subTree'
 const wait = defineOperator({
   name: 'wait',
   category: 'other',
-  description: 'Waits',
   parameters: { ms: { type: 'number', required: true }, give: { type: 'any', required: false } },
   evaluate: ({ ms, give }, { signal }) =>
     new Promise((resolve, reject) => {
@@ -27,7 +26,6 @@ const wait = defineOperator({
 const once = defineOperator({
   name: 'once',
   category: 'other',
-  description: 'Cached',
   parameters: {},
   cache: true,
   evaluate: (_, { cache }) => cache.memo('once', () => Promise.resolve(42)),
@@ -418,7 +416,6 @@ describe('marking how a run went', () => {
     const echo = defineOperator({
       name: 'echo',
       category: 'other',
-      description: 'Gives its value, cached by it',
       parameters: { value: { type: 'any' } },
       cache: true,
       evaluate: ({ value }, { cache }) =>
