@@ -9,6 +9,7 @@ import {
   updateDefinition,
   type DefinitionFields,
 } from './definitionShape'
+import { definitionNodes } from './definitionNodes'
 import { strings } from './strings'
 
 // The rest of a fragment definition beside its body: the parameter
@@ -16,7 +17,7 @@ import { strings } from './strings'
 // "The definition editor"). The body is the expression editor's, so it isn't
 // shown here, and every change reaches `setDefinition` with it kept, as a
 // complete definition. The rest are json-edit-react's props, less those the
-// editor sets to hold the definition to its shape.
+// editor sets to hold the definition to its shape and draw its fields.
 export interface FragmentDefinitionEditorProps extends Omit<
   JsonEditorProps,
   | 'data'
@@ -26,6 +27,7 @@ export interface FragmentDefinitionEditorProps extends Omit<
   | 'allowTypeSelection'
   | 'allowAdd'
   | 'onUpdate'
+  | 'customNodeDefinitions'
 > {
   definition: FragmentDefinition
   setDefinition: (definition: FragmentDefinition) => void
@@ -51,6 +53,7 @@ export const FragmentDefinitionEditor = ({
       allowTypeSelection={allowTypeSelection}
       allowAdd={allowAdd}
       onUpdate={updateDefinition}
+      customNodeDefinitions={definitionNodes}
     />
   )
 }

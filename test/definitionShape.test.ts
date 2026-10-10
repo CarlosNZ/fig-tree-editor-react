@@ -6,6 +6,7 @@ import {
   allowTypeSelection,
   defaultValue,
   newKeyOptions,
+  SINGLE_TYPE,
   updateDefinition,
 } from '../src/definitionShape'
 
@@ -91,9 +92,9 @@ describe('definitionShape', () => {
     it("holds each field to its type, and leaves values' contents free", () => {
       expect(allowTypeSelection(node(['description']))).toEqual(['string'])
       expect(allowTypeSelection(node(['parameters', 'name', 'type']))).toEqual([
-        'string',
-        'array',
-        'object',
+        SINGLE_TYPE,
+        'Multiple',
+        'Literal',
       ])
       expect(allowTypeSelection(node(['parameters', 'name']))).toBe(false)
       expect(allowTypeSelection(node(['metadata', 'displayName']))).toEqual(['string'])

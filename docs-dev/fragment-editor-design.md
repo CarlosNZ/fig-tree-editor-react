@@ -169,7 +169,9 @@ Errors in the declarations show in the definition editor, at their paths (`['fra
 - A json-edit-react editor held to the definition's shape: the keys it allows, at each level, are the shape's, and `expression` is not shown.
 - It edits the parameter declarations, `description`, `samples`, and `metadata` (display name, documentation link, colours as a pair, seeds), since these are how the fragment appears where it is called.
 - The sample values are keyed by the declared parameters only. An optional parameter left without one is unset.
-- **A minimal first build:** plain JSON values held to the shape. A proper picker for `type` (unions, nullable types, literal unions) and for `constraints` comes later.
+- **Its own components,** from `@json-edit-react/components`: a colour picker for `backgroundColor` and `textColor`, without opacity, and chips for `type`.
+- **A declaration's `type` has three entries in the type selector,** one for each form it takes: **Single**, a basic type picked from a list (an enum); **Multiple**, a union shown as chips picked from the basic types, `any` left out since a union with it is `any`; and **Literal**, a literal union of strings shown as chips typed freely. Switching from Single to Multiple keeps the type as the union's one member. A switch to Single takes the list's first type (`any`), since json-edit-react's switch to an enum reads the value before the definition's `toStandardType`; with that changed, it would keep the union's first member, or `string` from a literal union.
+- **Everything else is plain JSON** held to the shape. A picker for `constraints` comes later.
 
 ---
 

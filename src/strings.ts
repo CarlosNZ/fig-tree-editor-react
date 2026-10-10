@@ -20,6 +20,10 @@ export const strings = {
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
+  // The type selector's entries for a declaration's `type`
+  FT_TYPE_SINGLE: 'Single',
+  FT_TYPE_MULTIPLE: 'Multiple',
+  FT_TYPE_LITERAL: 'Literal',
   FT_REVEAL_ROW: 'Show in the tree', // a message's path, which reveals its row
   // The messages area's quick fixes
   FT_FIX_REMOVE: 'Remove',

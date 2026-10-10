@@ -5,12 +5,14 @@ import {
 } from 'fig-tree-evaluator'
 import {
   type DefaultValueFunction,
+  type EnumDefinition,
   type FilterFunction,
   type NewKeyOptionsFunction,
   type TypeFilterFunction,
   type TypeOptions,
   type UpdateFunction,
 } from 'json-edit-react'
+import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { getStartingValue, typeValue } from './getStartingValue'
 import { strings } from './strings'
 
@@ -61,6 +63,33 @@ const placeOf = (path: readonly Key[]): Place => {
   if (field === 'description' && depth === 1) return 'description'
   return 'within'
 }
+
+// The rows the definition editor draws with components of its own
+// (definitionNodes.tsx): a declaration's `type`, and the two colours
+export const isTypeField = ({ path }: { path: readonly Key[] }) =>
+  placeOf(path) === 'declarationField' && path[2] === 'type'
+
+export const isColourField = ({ path }: { path: readonly Key[] }) =>
+  placeOf(path) === 'metadataField' && (path[1] === 'backgroundColor' || path[1] === 'textColor')
+
+// A declaration's `type` takes one of three forms, each its own entry in the
+// type selector: a single basic type, picked from a list; several, as a
+// union, which `any` has no place in; or a closed set of literal strings
+export const BASIC_TYPES = Object.keys(typeSeeds)
+export const UNION_TYPES = BASIC_TYPES.filter((type) => type !== 'any')
+
+export const SINGLE_TYPE: EnumDefinition = {
+  enum: strings.FT_TYPE_SINGLE,
+  values: BASIC_TYPES,
+  // So a declared type shows as this entry, not as a plain string
+  matchPriority: 1,
+}
+
+export const isLiteralUnion = (value: unknown): value is { literal: string[] } =>
+  isRecord(value) &&
+  Object.keys(value).length === 1 &&
+  Array.isArray(value.literal) &&
+  value.literal.every((member) => typeof member === 'string')
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -188,7 +217,7 @@ const newMetadataField = (key: string) => {
 }
 
 const DECLARATION_TYPES: Record<string, boolean | TypeOptions> = {
-  type: ['string', 'array', 'object'], // a name, a union, or `{ literal: [...] }`
+  type: [SINGLE_TYPE, strings.FT_TYPE_MULTIPLE, strings.FT_TYPE_LITERAL],
   required: ['boolean'],
   default: true,
   description: ['string'],
