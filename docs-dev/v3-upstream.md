@@ -25,7 +25,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F7  | fig-tree-evaluator | A description on every parameter                                           | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
 | F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                                  | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
 | F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                     | Open     | Not filed                                                         | —               |
-| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                 | Open     | Not filed                                                         | —               |
+| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                 | Dropped  | Not filed                                                         | —               |
 | F11 | fig-tree-evaluator | Infer and report a fragment's result type                                  | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
@@ -34,6 +34,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | 3.0.0-preview.8 |
 | F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
 | F18 | fig-tree-evaluator | `get`'s `from` as a bare namespace, and one `toGet` shape                  | Wanted   | [#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237) | 3.0.0-preview.9 |
+| F19 | fig-tree-evaluator | `with(update)`: a derived instance with an options update                  | Required | Not filed                                                         | —               |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -184,17 +185,17 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 ### F9 · A fragment-body option on `validate()` — **Open**
 
-**The change, to be decided.** A `validate()` option that checks an expression as the body of a fragment, for example `validate(body, { fragment: { name, parameters } })`. With the declared parameters, `$params` references resolve against them as at registration: the static checker already takes the names (`runStaticChecks(artifact, { fragmentParams })` in `src/compile/staticChecks.ts`), which only `registerFragments` passes today. With the fragment's name, a call that would close a cycle through the fragment being defined can be reported, which a nameless body cannot be. It may also need to check the declarations themselves (shape, defaults against their types, `required` with a `default`), which are otherwise checked only by `new FigTree()` and `updateOptions()`.
+**The change, to be decided.** A `validate()` option that checks an expression as the body of a fragment, for example `validate(body, { params: ['x', 'y'] })`. The declared names are all it needs: registration and `validate()` run the same static checks, and registration differs only in passing the names (`runStaticChecks(artifact, { fragmentParams })` in `src/compile/staticChecks.ts`), against which `$params` references resolve. The checks don't read the declared types. The option is `validate()`'s alone, since `CallOptions` is shared with `evaluate()`. The declarations themselves and cycles are left to registration, which F19 lets the editor run.
 
-**Why.** In fragment-definition mode, `validate()` reports every `$params` reference as `unresolved-param`, declared or not, and the editor cannot run registration's checks itself: it cannot build a scratch instance, since an instance never returns its operator definitions, and `updateOptions()` on the host's instance would change it ("Fragment-definition mode" in [v3-design.md](v3-design.md), parked).
+**Why.** In fragment mode, `validate()` reports every `$params` reference as `unresolved-param`, declared or not. Registering the draft through F19 reports a body's errors, but only as a throw, and keeps its warnings for `getFragments()`; it has no sample data, so it gives no `missing-data-path` warnings; and it checks the whole registry again each time ("Validation" in [fragment-editor-design.md](fragment-editor-design.md)).
 
-**Without it.** A body edited in the editor shows an error on every `$params` reference, and its other registration errors appear only when the host registers it.
+**Without it.** The editor validates a body by registering it through F19 on each edit, with the warnings read from `getFragments()`, and without sample-data warnings.
 
-**Open because** fragment-definition mode is parked, including what belongs in the editor and what the host handles around it.
+**Open because** "Validation" in [fragment-editor-design.md](fragment-editor-design.md) is still open.
 
 **Issue.** Not filed.
 
-### F10 · Supplying `$params` values to `evaluate()` — **Open**
+### F10 · Supplying `$params` values to `evaluate()` — **Dropped**
 
 **The change, to be decided.** A way to evaluate an expression as a fragment body with given arguments, for example an `evaluate()` option carrying the declared parameters and test values for them, applying declared defaults and null-means-unset as a real call does.
 
@@ -202,7 +203,7 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Without it.** Evaluating a body means registering it: on a separate instance the host builds with its own operator definitions, which the host can do and the editor cannot.
 
-**Open because** fragment-definition mode is parked.
+**Dropped because** F19 lets the editor register the draft on an instance derived from the host's and evaluate it as a call, which applies a call's defaults and argument checks with no second implementation of them ("Evaluation" in [fragment-editor-design.md](fragment-editor-design.md)).
 
 **Issue.** Not filed.
 
@@ -312,6 +313,16 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Issue.** Filed as [fig-tree-evaluator#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237).
 
 **Shipped** in fig-tree 3.0.0-preview.9 (565b448), as asked. The editor follows it (plan, 8.3): a bare `$vars` in `from` has no ▶, since it reads nothing on its own, and `get.from`'s card gives its default as `'$data'`.
+
+### F19 · `with(update)`: a derived instance with an options update — **Required**
+
+**The change.** A `FigTree` method, `with(update)`, that returns a new instance built as if `updateOptions(update)` had been applied to a copy; the instance it's called on is untouched. It reuses `buildState(this.state, update)`, so it merges, checks and throws exactly as `updateOptions()` does. The two instances share the result store, as `CompiledExpression` handles do, which is safe because a result key carries the definition's fingerprint. An update that names `cache` gives the new instance a store of its own, so the original's configuration is never changed.
+
+**Why.** The fragment editor evaluates a draft, or a sub-tree of one, as a call to it ("Evaluation" in [fragment-editor-design.md](fragment-editor-design.md)), so the draft has to be registered. `updateOptions()` on the host's instance changes the host's state. The editor can't build a second instance itself, since `getOptions()`, `getOperators()` and `getFragments()` never return operator implementations or fragment bodies, and that withholding is deliberate. With `with()`, the editor registers the draft under a temporary name, `figTree.with({ fragments: { [name]: draft } })`, and evaluates `{ fragment: name, parameters: samples }` there.
+
+**Without it.** The host passes in its operators and fragments, or a factory for a second instance, as well as the instance; or fragment mode has no ▶.
+
+**Issue.** Not filed.
 
 ---
 
