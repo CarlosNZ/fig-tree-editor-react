@@ -70,6 +70,62 @@ describe('FragmentDefinitionEditor', () => {
     })
   })
 
+  describe('a whole definition pasted over the root', () => {
+    const pasted: FragmentDefinition = {
+      expression: { $plus: ['$params.a', '$params.b'] },
+      parameters: { a: { type: 'number' }, b: { type: 'number', default: 1 } },
+      samples: { a: 2 },
+    }
+    const paste = (value: unknown) => {
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      fireEvent.change(screen.getByRole('textbox'), { target: { value: JSON.stringify(value) } })
+      fireEvent.click(screen.getByRole('button', { name: 'OK' }))
+    }
+
+    it('replaces the definition, its body included', () => {
+      const setDefinition = vi.fn()
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={definition}
+          setDefinition={setDefinition}
+        />
+      )
+      paste(pasted)
+      expect(setDefinition).toHaveBeenLastCalledWith(pasted)
+    })
+
+    it('keeps the body where the fields alone are pasted', () => {
+      const setDefinition = vi.fn()
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={definition}
+          setDefinition={setDefinition}
+        />
+      )
+      const { expression: _body, ...fields } = pasted
+      paste(fields)
+      expect(setDefinition).toHaveBeenLastCalledWith({
+        ...fields,
+        expression: definition.expression,
+      })
+    })
+
+    it('refuses one out of shape, writing nothing', () => {
+      const setDefinition = vi.fn()
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={definition}
+          setDefinition={setDefinition}
+        />
+      )
+      paste({ ...pasted, nmae: 'typo' })
+      expect(setDefinition).not.toHaveBeenCalled()
+    })
+  })
+
   describe("the definition's issues", () => {
     const declared: FragmentDefinition = {
       expression: { $plus: ['$params.x', '$params.undeclared'] },

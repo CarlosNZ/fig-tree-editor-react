@@ -7,7 +7,7 @@ import {
   defaultValue,
   newKeyOptions,
   SINGLE_TYPE,
-  updateDefinition,
+  checkDefinition,
 } from '../src/definitionShape'
 
 const fields = {
@@ -26,10 +26,7 @@ const node = (path: (string | number)[], fullData: unknown = fields) =>
   ({ path, key: path.at(-1), value: valueAt(fullData, path), fullData }) as unknown as NodeData
 
 const update = (change: Record<string, unknown>) =>
-  updateDefinition(
-    { fullData: fields, ...change } as unknown as UpdateFunctionProps,
-    {} as Parameters<typeof updateDefinition>[1]
-  )
+  checkDefinition({ fullData: fields, ...change } as unknown as UpdateFunctionProps)
 
 describe('definitionShape', () => {
   describe('new keys', () => {

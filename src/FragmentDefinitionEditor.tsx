@@ -1,13 +1,18 @@
-import { useInsertionEffect, useMemo } from 'react'
+import { useInsertionEffect, useMemo, useRef } from 'react'
 import { type FigTree, type FragmentDefinition, type Issue } from 'fig-tree-evaluator'
-import { JsonEditor, toPathString, type JsonEditorProps } from 'json-edit-react'
+import {
+  JsonEditor,
+  toPathString,
+  type JsonEditorProps,
+  type UpdateFunction,
+} from 'json-edit-react'
 import { SEVERITY_RANK } from './attachIssues'
 import {
   allowAdd,
   allowTypeSelection,
   defaultValue,
   newKeyOptions,
-  updateDefinition,
+  checkDefinition,
   type DefinitionFields,
 } from './definitionShape'
 import { definitionNodes } from './definitionNodes'
@@ -35,6 +40,10 @@ import { strings } from './strings'
 // The definition is checked as registration on `figTree` would check it
 // ("Validation"), and each issue outside the body is shown on its row and
 // listed beneath the tree, as the expression editor shows its issues.
+//
+// A whole definition pasted over the root, its body included, replaces the
+// definition: the body goes to the expression editor, and the rest is held
+// to the shape as any other change is.
 export interface FragmentDefinitionEditorProps extends Omit<
   JsonEditorProps,
   | 'data'
@@ -68,6 +77,25 @@ export const FragmentDefinitionEditor = ({
 
   const { expression } = definition
   const fields = useMemo(() => withoutBody(definition), [definition])
+
+  // The body of a definition pasted over the root, from the change's check
+  // to its write
+  const pastedBody = useRef<{ expression: unknown } | null>(null)
+  const onUpdate: UpdateFunction = (update) => {
+    pastedBody.current = null
+    if (update.path.length > 0 || !isPastedDefinition(update.newData))
+      return checkDefinition(update)
+    const { expression: body, ...rest } = update.newData
+    const result = checkDefinition({ ...update, newData: rest })
+    if (result !== undefined && 'error' in result) return result
+    pastedBody.current = { expression: body }
+    return result ?? { data: rest }
+  }
+  const setData = (next: unknown) =>
+    setDefinition({
+      ...withoutBody(next as FragmentDefinition),
+      expression: pastedBody.current ? pastedBody.current.expression : expression,
+    })
 
   // Worked out on every render, as the expression editor's issues are, since
   // `updateOptions()` changes the registry without changing the instance
@@ -111,12 +139,12 @@ export const FragmentDefinitionEditor = ({
         maxWidth="100%"
         theme={layeredTheme}
         data={fields}
-        setData={(next) => setDefinition({ expression, ...(next as DefinitionFields) })}
+        setData={setData}
         newKeyOptions={newKeyOptions}
         defaultValue={defaultValue}
         allowTypeSelection={allowTypeSelection}
         allowAdd={allowAdd}
-        onUpdate={updateDefinition}
+        onUpdate={onUpdate}
         customNodeDefinitions={definitionNodes}
       />
       <Messages
@@ -136,6 +164,9 @@ const JSON_EDIT_REACT_INDENT = 2
 
 const withoutBody = ({ expression: _body, ...fields }: FragmentDefinition): DefinitionFields =>
   fields
+
+const isPastedDefinition = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value) && 'expression' in value
 
 // The row an issue marks: the one at its path, or where that isn't in the
 // definition, such as a key registration requires, the nearest above it

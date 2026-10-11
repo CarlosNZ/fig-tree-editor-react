@@ -254,8 +254,10 @@ export const allowTypeSelection: TypeFilterFunction = ({ path, key }) => {
 }
 
 // Each change: a parameter's entries follow it, then the result is held to
-// the shape
-export const updateDefinition: UpdateFunction = (update) => {
+// the shape. Undefined where the change stands as it is.
+export const checkDefinition = (
+  update: Parameters<UpdateFunction>[0]
+): { error: string } | { data: unknown } | undefined => {
   const next = followParameters(update.fullData, update.newData, update)
   const problem = findShapeProblem(next)
   if (problem !== undefined) return { error: problem }
