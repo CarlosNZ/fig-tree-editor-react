@@ -240,9 +240,15 @@ export const FigTreeEditor = ({
   const stableEvaluationData = useStableValue(evaluationData)
   const created = useRef<CreatedNode | null>(null)
 
+  // A fragment's body is checked as registration checks it, its `$params`
+  // references resolving against the declared names (fragment-editor-design.md,
+  // "Validation")
+  const params = fragmentDefinition && Object.keys(fragmentDefinition.parameters ?? {})
   const validate = (value: unknown) =>
-    figTree.validate(value, evaluationData === undefined ? undefined : { data: evaluationData })
-      .issues
+    figTree.validate(value, {
+      ...(params && { params }),
+      ...(evaluationData !== undefined && { data: evaluationData }),
+    }).issues
 
   // An expression, filled in and tidied (the fill-in step), with the rows it
   // filled. The issues are the ones `fillAndTidy`'s typo guard reads.
@@ -708,14 +714,14 @@ const editorDefaults = {
 } satisfies Partial<JsonEditorProps>
 
 const DEFAULT_COLLAPSE = 2
-const DEFAULT_MESSAGES_MAX_HEIGHT = '15em'
+export const DEFAULT_MESSAGES_MAX_HEIGHT = '15em'
 
 // json-edit-react's own defaults for its container (250px and 600px), which
 // the outer container takes in its place, in ems of the default font size, so
 // the editor's size is unchanged by it and scales with `baseFontSize`
-const DEFAULT_MIN_WIDTH = '15.625em'
-const DEFAULT_MAX_WIDTH = 'min(37.5em, 90vw)'
-const DEFAULT_FONT_SIZE = '16px'
+export const DEFAULT_MIN_WIDTH = '15.625em'
+export const DEFAULT_MAX_WIDTH = 'min(37.5em, 90vw)'
+export const DEFAULT_FONT_SIZE = '16px'
 
 // A comment never starts collapsed, since a multi-line comment is a level
 // deeper than its node's parameters, and would otherwise open as a count

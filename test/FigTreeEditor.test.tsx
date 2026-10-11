@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import { FigTree } from 'fig-tree-evaluator'
 import { type CustomTextDefinitions } from 'json-edit-react'
 import { describe, expect, it, vi } from 'vitest'
-import { FigTreeEditor } from '../src'
+import { FigTreeEditor, type EditorStatus } from '../src'
 import { figTree as demoFigTree } from './fixtures'
 import { keyLabel } from './queries'
 
@@ -489,6 +489,25 @@ describe('FigTreeEditor', () => {
         />
       )
       expect(keyLabel('expression')).toBeInTheDocument()
+    })
+
+    it('resolves references to the declared parameters, and reports any other', () => {
+      const onStatusChange = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={{
+            ...definition,
+            expression: { $plus: ['$params.name', '$params.undeclared'] },
+          }}
+          setFragmentDefinition={vi.fn()}
+          onStatusChange={onStatusChange}
+        />
+      )
+      const { messages } = onStatusChange.mock.lastCall![0] as EditorStatus
+      expect(messages.map(({ row, message }) => ({ row, message }))).toEqual([
+        { row: ['$plus', 1], message: expect.stringContaining("'undeclared'") as string },
+      ])
     })
 
     it('fills in a body that arrives incomplete, and marks the write', () => {

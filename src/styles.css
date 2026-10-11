@@ -355,7 +355,8 @@ input.ft-select-input::placeholder {
   background-color: #dde7fa;
 }
 
-/* A message's path, a link to the row it marks */
+/* A message's path, a link to the row it marks, or plain text where the
+   area can't reveal rows */
 .ft-message-path {
   overflow-wrap: anywhere;
   padding: 0;
@@ -363,12 +364,15 @@ input.ft-select-input::placeholder {
   background: none;
   font-family: monospace;
   font-size: 0.95em;
-  color: #1d4f91;
   text-align: left;
+}
+
+button.ft-message-path {
+  color: #1d4f91;
   cursor: pointer;
 }
 
-.ft-message-path:hover {
+button.ft-message-path:hover {
   text-decoration: underline;
 }
 

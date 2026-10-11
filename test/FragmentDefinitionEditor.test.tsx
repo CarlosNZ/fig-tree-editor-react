@@ -3,6 +3,7 @@ import { type FragmentDefinition } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { describe, expect, it, vi } from 'vitest'
 import { FragmentDefinitionEditor } from '../src'
+import { figTree } from './fixtures'
 import { keyLabel } from './queries'
 
 const definition: FragmentDefinition = {
@@ -13,7 +14,9 @@ const definition: FragmentDefinition = {
 
 describe('FragmentDefinitionEditor', () => {
   it('shows the definition without its body', () => {
-    render(<FragmentDefinitionEditor definition={definition} setDefinition={vi.fn()} />)
+    render(
+      <FragmentDefinitionEditor figTree={figTree} definition={definition} setDefinition={vi.fn()} />
+    )
     expect(screen.getByText('parameters')).toBeInTheDocument()
     expect(screen.getByText('"Greets someone by name"')).toBeInTheDocument()
     expect(screen.queryByText('expression')).not.toBeInTheDocument()
@@ -21,7 +24,13 @@ describe('FragmentDefinitionEditor', () => {
 
   it("offers the root the fields it doesn't have, and writes a new one with the body kept", () => {
     const setDefinition = vi.fn()
-    render(<FragmentDefinitionEditor definition={definition} setDefinition={setDefinition} />)
+    render(
+      <FragmentDefinitionEditor
+        figTree={figTree}
+        definition={definition}
+        setDefinition={setDefinition}
+      />
+    )
     fireEvent.click(screen.getAllByRole('button', { name: 'Add' })[0])
     const select = screen.getByRole('combobox')
     const options = [...select.querySelectorAll('option')].map(({ value }) => value)
@@ -40,7 +49,13 @@ describe('FragmentDefinitionEditor', () => {
       samples: { name: 'Ada' },
       metadata: { seeds: { name: 'World' } },
     }
-    render(<FragmentDefinitionEditor definition={withEntries} setDefinition={setDefinition} />)
+    render(
+      <FragmentDefinitionEditor
+        figTree={figTree}
+        definition={withEntries}
+        setDefinition={setDefinition}
+      />
+    )
     fireEvent.doubleClick(keyLabel('name'))
     const input = screen.getByDisplayValue('name')
     fireEvent.change(input, { target: { value: 'who' } })
@@ -52,6 +67,46 @@ describe('FragmentDefinitionEditor', () => {
       parameters: { who: { type: 'string' } },
       samples: { who: 'Ada' },
       metadata: { seeds: { who: 'World' } },
+    })
+  })
+
+  describe("the definition's issues", () => {
+    const declared: FragmentDefinition = {
+      expression: { $plus: ['$params.x', '$params.undeclared'] },
+      parameters: { x: { type: 'number', required: true, default: 1 } },
+    }
+
+    it('lists each issue outside the body beneath the tree, at its path', () => {
+      render(
+        <FragmentDefinitionEditor figTree={figTree} definition={declared} setDefinition={vi.fn()} />
+      )
+      const list = screen.getByRole('list')
+      expect(within(list).getAllByRole('listitem')).toHaveLength(1)
+      expect(within(list).getByText('parameters.x.default')).toBeInTheDocument()
+      expect(
+        within(list).getByText(/declared required and also declares a default/)
+      ).toBeInTheDocument()
+    })
+
+    it('tints the row an issue marks', () => {
+      render(
+        <FragmentDefinitionEditor figTree={figTree} definition={declared} setDefinition={vi.fn()} />
+      )
+      const row = keyLabel('default').closest<HTMLElement>('.jer-value-main-row')
+      expect(row?.style.boxShadow).toContain('inset')
+      const other = keyLabel('type').closest<HTMLElement>('.jer-value-main-row')
+      expect(other?.style.boxShadow).toBe('')
+    })
+
+    it('shows no messages area for a definition that registers', () => {
+      const { container } = render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={definition}
+          setDefinition={vi.fn()}
+        />
+      )
+      expect(container.querySelector('.ft-message-container')).toBeNull()
     })
   })
 
@@ -71,7 +126,7 @@ describe('FragmentDefinitionEditor', () => {
 
     it('draws a union and a literal union as chips, and a colour with its swatch', () => {
       const { container } = render(
-        <FragmentDefinitionEditor definition={typed} setDefinition={vi.fn()} />
+        <FragmentDefinitionEditor figTree={figTree} definition={typed} setDefinition={vi.fn()} />
       )
       expect(chipTexts()).toEqual(['string', 'null', 'happy', 'sad'])
       expect(screen.getByText('"string"')).toBeInTheDocument()
@@ -83,7 +138,13 @@ describe('FragmentDefinitionEditor', () => {
 
     it('writes a chip removed from a union', () => {
       const setDefinition = vi.fn()
-      render(<FragmentDefinitionEditor definition={typed} setDefinition={setDefinition} />)
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={typed}
+          setDefinition={setDefinition}
+        />
+      )
       // Shown on hover, so hidden by Chips' stylesheet until then
       fireEvent.click(screen.getByLabelText('Remove null'))
       expect(setDefinition).toHaveBeenLastCalledWith({
@@ -94,7 +155,13 @@ describe('FragmentDefinitionEditor', () => {
 
     it('switches a union to a literal union, through the type selector', () => {
       const setDefinition = vi.fn()
-      render(<FragmentDefinitionEditor definition={typed} setDefinition={setDefinition} />)
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={typed}
+          setDefinition={setDefinition}
+        />
+      )
       const row = document.querySelector('.jer-chips')?.closest('.jer-value-main-row')
       fireEvent.click(
         within(row as HTMLElement).getByRole('button', { name: 'Edit', hidden: true })
@@ -111,7 +178,13 @@ describe('FragmentDefinitionEditor', () => {
 
     it('writes a chip added to a literal union inside it', () => {
       const setDefinition = vi.fn()
-      render(<FragmentDefinitionEditor definition={typed} setDefinition={setDefinition} />)
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={typed}
+          setDefinition={setDefinition}
+        />
+      )
       fireEvent.click(screen.getAllByRole('button', { name: 'Add chip' })[1])
       const input = screen.getByPlaceholderText('Add…')
       fireEvent.change(input, { target: { value: 'calm' } })

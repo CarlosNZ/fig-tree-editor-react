@@ -191,7 +191,9 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Without it.** The editor validates a body by registering it through F19 on each edit, with the warnings read from `getFragments()`, and without sample-data warnings.
 
-**Issue.** Not filed.
+**Made** in fig-tree-evaluator (91e3394), as asked, not yet published. `validate(body, { params })` takes the declared names, and the body's `$params` references resolve against them as at registration; its errors match registration's, and its warnings `getFragments()`' (parity tests in `test/validate-params.test.ts`). `ValidateOptions` is `CallOptions` plus `params`, exported from the root as a type. `evaluate()` and `compile()` refuse `params` as `invalid-options`, as they do a `params` that isn't an array of strings. In fragment mode, the expression editor passes the declared names beside `data`.
+
+**Issue.** Not filed: made directly in fig-tree-evaluator (91e3394).
 
 ### F10 · Supplying `$params` values to `evaluate()` — **Dropped**
 
@@ -320,7 +322,9 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 
 **Without it.** The host passes in its operators and fragments, or a factory for a second instance, as well as the instance; or fragment mode has no ▶.
 
-**Issue.** Not filed.
+**Made** in fig-tree-evaluator (d12a616), as asked, not yet published. `with(update)` builds through `buildState`, so it merges, checks and throws as `updateOptions()` does, and carries the registry and compile cache across when the update leaves the registry alone. The derived instance's result store is its own, built from the merged `cache` block. A bad draft throws one `invalid-options` error whose `issues` hold every problem at its full path (`['fragments', name, 'parameters', 'x', 'default']`), the body's among them under `['fragments', name, 'expression']`. `FragmentDefinitionEditor` registers the draft through it on each render, under a temporary name (`src/draft.ts`), and shows the issues outside `expression`.
+
+**Issue.** Not filed: made directly in fig-tree-evaluator (d12a616).
 
 ---
 

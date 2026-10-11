@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
-import { type FragmentDefinition } from 'fig-tree-evaluator'
-import { JsonEditor, type JsonEditorProps } from 'json-edit-react'
+import { useInsertionEffect, useMemo } from 'react'
+import { type FigTree, type FragmentDefinition, type Issue } from 'fig-tree-evaluator'
+import { JsonEditor, toPathString, type JsonEditorProps } from 'json-edit-react'
+import { SEVERITY_RANK } from './attachIssues'
 import {
   allowAdd,
   allowTypeSelection,
@@ -10,6 +11,18 @@ import {
   type DefinitionFields,
 } from './definitionShape'
 import { definitionNodes } from './definitionNodes'
+import { declarationIssues } from './draft'
+import { definitionTheme, mergeEditorTheme } from './editorTheme'
+import {
+  DEFAULT_FONT_SIZE,
+  DEFAULT_MAX_WIDTH,
+  DEFAULT_MESSAGES_MAX_HEIGHT,
+  DEFAULT_MIN_WIDTH,
+} from './FigTreeEditor'
+import { injectStyles } from './injectStyles'
+import { Messages } from './Messages'
+import { valueAt, type Path } from './paths'
+import { type EditorMessage } from './status'
 import { strings } from './strings'
 
 // The rest of a fragment definition beside its body: the parameter
@@ -18,6 +31,10 @@ import { strings } from './strings'
 // shown here, and every change reaches `setDefinition` with it kept, as a
 // complete definition. The rest are json-edit-react's props, less those the
 // editor sets to hold the definition to its shape and draw its fields.
+//
+// The definition is checked as registration on `figTree` would check it
+// ("Validation"), and each issue outside the body is shown on its row and
+// listed beneath the tree, as the expression editor shows its issues.
 export interface FragmentDefinitionEditorProps extends Omit<
   JsonEditorProps,
   | 'data'
@@ -29,34 +46,101 @@ export interface FragmentDefinitionEditorProps extends Omit<
   | 'onUpdate'
   | 'customNodeDefinitions'
 > {
+  figTree: FigTree
   definition: FragmentDefinition
   setDefinition: (definition: FragmentDefinition) => void
 }
 
 export const FragmentDefinitionEditor = ({
+  figTree,
   definition,
   setDefinition,
   rootName = strings.FT_DEFINITION_ROOT,
+  theme,
+  id,
+  minWidth = DEFAULT_MIN_WIDTH,
+  maxWidth = DEFAULT_MAX_WIDTH,
   ...props
 }: FragmentDefinitionEditorProps) => {
+  useInsertionEffect(() => {
+    injectStyles()
+  }, [])
+
   const { expression } = definition
   const fields = useMemo(() => withoutBody(definition), [definition])
 
+  // Worked out on every render, as the expression editor's issues are, since
+  // `updateOptions()` changes the registry without changing the instance
+  const issues = declarationIssues(figTree, definition).map((issue) => ({
+    issue,
+    row: drawnRow(fields, issue.path),
+  }))
+  const severities = new Map<string, Issue['severity']>()
+  for (const { issue, row } of issues) {
+    const key = toPathString(row)
+    const current = severities.get(key)
+    if (current === undefined || SEVERITY_RANK[issue.severity] < SEVERITY_RANK[current])
+      severities.set(key, issue.severity)
+  }
+  const messages: EditorMessage[] = issues.map(({ issue, row }) => ({
+    kind: 'issue',
+    issue,
+    row,
+    message: issue.message,
+    fixes: [],
+  }))
+
+  const layeredTheme = definitionTheme(theme, {
+    severities,
+    editorTheme: EDITOR_THEME,
+    indent: props.indent ?? JSON_EDIT_REACT_INDENT,
+  })
+
+  // The tree and its messages share an outer container, as the expression
+  // editor's do, which takes the width the host gives the editor
   return (
-    <JsonEditor
-      rootName={rootName}
-      {...props}
-      data={fields}
-      setData={(next) => setDefinition({ expression, ...(next as DefinitionFields) })}
-      newKeyOptions={newKeyOptions}
-      defaultValue={defaultValue}
-      allowTypeSelection={allowTypeSelection}
-      allowAdd={allowAdd}
-      onUpdate={updateDefinition}
-      customNodeDefinitions={definitionNodes}
-    />
+    <div
+      id={id}
+      className="ft-outer-container"
+      style={{ minWidth, maxWidth, fontSize: props.baseFontSize ?? DEFAULT_FONT_SIZE }}
+    >
+      <JsonEditor
+        rootName={rootName}
+        {...props}
+        minWidth={0}
+        maxWidth="100%"
+        theme={layeredTheme}
+        data={fields}
+        setData={(next) => setDefinition({ expression, ...(next as DefinitionFields) })}
+        newKeyOptions={newKeyOptions}
+        defaultValue={defaultValue}
+        allowTypeSelection={allowTypeSelection}
+        allowAdd={allowAdd}
+        onUpdate={updateDefinition}
+        customNodeDefinitions={definitionNodes}
+      />
+      <Messages
+        messages={messages}
+        maxHeight={DEFAULT_MESSAGES_MAX_HEIGHT}
+        editorTheme={EDITOR_THEME}
+      />
+    </div>
   )
 }
 
+// TO-DO: an `editorTheme` prop, as the expression editor has
+// (fragment-editor-design.md, build plan, step 7)
+const EDITOR_THEME = mergeEditorTheme()
+
+const JSON_EDIT_REACT_INDENT = 2
+
 const withoutBody = ({ expression: _body, ...fields }: FragmentDefinition): DefinitionFields =>
   fields
+
+// The row an issue marks: the one at its path, or where that isn't in the
+// definition, such as a key registration requires, the nearest above it
+const drawnRow = (fields: DefinitionFields, path: Readonly<Path>): Path => {
+  for (let length = path.length; length > 0; length--)
+    if (valueAt(fields, path.slice(0, length)) !== undefined) return path.slice(0, length)
+  return []
+}

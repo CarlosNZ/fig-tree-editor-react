@@ -11,9 +11,9 @@ import { strings } from './strings'
 // and as wide as it: shown only when it has lines, under a header of counts
 // that folds it away, scrolling beyond `maxHeight`. Each line has its
 // severity, or "added" for a value the editor filled in, the path of the row
-// it marks, which reveals the row, and the full message, with its quick fixes
-// at the top right. Where more than one value was filled in, the header can
-// dismiss them all.
+// it marks, which reveals the row where the area is given `onReveal`, and
+// the full message, with its quick fixes at the top right. Where more than
+// one value was filled in, the header can dismiss them all.
 export const Messages = ({
   messages,
   maxHeight,
@@ -24,8 +24,8 @@ export const Messages = ({
   messages: readonly EditorMessage[]
   maxHeight: number | string
   editorTheme: EditorTheme
-  onReveal: (row: Path) => void
-  onDismissAll: () => void
+  onReveal?: (row: Path) => void
+  onDismissAll?: () => void
 }) => {
   const [open, setOpen] = useState(true)
   if (messages.length === 0) return null
@@ -62,7 +62,7 @@ export const Messages = ({
             )}
           </span>
         </button>
-        {counts.filledIn > 1 && (
+        {counts.filledIn > 1 && onDismissAll && (
           <button type="button" className="ft-fix" onClick={onDismissAll}>
             {strings.FT_DISMISS_ALL}
           </button>
@@ -76,14 +76,20 @@ export const Messages = ({
                 <span className="ft-severity" style={labelStyle(labelOf(message), editorTheme)}>
                   {LABEL[labelOf(message)]}
                 </span>
-                <button
-                  type="button"
-                  className="ft-message-path"
-                  title={strings.FT_REVEAL_ROW}
-                  onClick={() => onReveal(message.row)}
-                >
-                  {displayPath(message.row) || strings.FT_ROOT_PATH}
-                </button>
+                {onReveal ? (
+                  <button
+                    type="button"
+                    className="ft-message-path"
+                    title={strings.FT_REVEAL_ROW}
+                    onClick={() => onReveal(message.row)}
+                  >
+                    {displayPath(message.row) || strings.FT_ROOT_PATH}
+                  </button>
+                ) : (
+                  <span className="ft-message-path">
+                    {displayPath(message.row) || strings.FT_ROOT_PATH}
+                  </span>
+                )}
                 <span className="ft-message-text">{message.message}</span>
               </span>
               {message.fixes.length > 0 && (

@@ -393,6 +393,7 @@ function App() {
                   </Text>
                 </Box>
                 <FragmentDefinitionEditor
+                  figTree={figTree}
                   definition={fragmentDefinition as FragmentDefinition}
                   setDefinition={saveFragmentDefinition}
                   minWidth="90%"

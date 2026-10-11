@@ -1,6 +1,6 @@
 import { type CSSProperties } from 'react'
 import { toPathString, type NodeData, type Theme, type ThemeInput } from 'json-edit-react'
-import { type TraceStatus } from 'fig-tree-evaluator'
+import { type Issue, type TraceStatus } from 'fig-tree-evaluator'
 import {
   brokenIssue,
   flaggedIssues,
@@ -126,10 +126,7 @@ const editorThemeLayer = ({
   const tint = (nodeData: NodeData) => {
     if (nodeForm(nodeData) !== undefined) return null
     const severity = flaggedIssues(issues, nodeData.path)[0]?.severity
-    if (severity === undefined) return null
-    return severity === 'error'
-      ? { colour: editorTheme.error, strength: ERROR_TINT }
-      : { colour: editorTheme.warning, strength: WARNING_TINT }
+    return severity === undefined ? null : severityTint(severity, editorTheme)
   }
 
   // A row the editor has just filled in is highlighted over its own style,
@@ -268,6 +265,11 @@ interface Tint {
 
 const ERROR_TINT = '9%'
 const WARNING_TINT = '10%'
+
+const severityTint = (severity: Issue['severity'], editorTheme: EditorTheme): Tint =>
+  severity === 'error'
+    ? { colour: editorTheme.error, strength: ERROR_TINT }
+    : { colour: editorTheme.warning, strength: WARNING_TINT }
 const TINT_GAP = '0.4em'
 
 const tintStyle = ({ colour, strength }: Tint) => ({
@@ -395,12 +397,44 @@ export const runText = (status: TraceStatus, editorTheme: EditorTheme) => {
     : colour
 }
 
-export const layerTheme = (
+export const layerTheme = (hostTheme: ThemeInput | undefined, context: ThemeContext) =>
+  stackTheme(editorThemeLayer(context), hostTheme)
+
+// The fragment definition editor's layer: a row with an issue is tinted as
+// the expression editor tints one, by the most severe of its issues, keyed by
+// the row's path as json-edit-react's `toPathString` gives it
+export const definitionTheme = (
   hostTheme: ThemeInput | undefined,
-  context: ThemeContext
-): ThemeInput => {
-  const editorLayer = editorThemeLayer(context)
-  return hostTheme === undefined
-    ? editorLayer
-    : [editorLayer, ...(Array.isArray(hostTheme) ? hostTheme : [hostTheme])]
+  { severities, editorTheme, indent }: DefinitionThemeContext
+) => {
+  const tint = ({ path }: NodeData) => {
+    const severity = severities.get(toPathString(path))
+    return severity === undefined ? null : severityTint(severity, editorTheme)
+  }
+  const layer: Theme = {
+    styles: {
+      collection: (nodeData) => {
+        const blockTint = tint(nodeData)
+        const rowIndent = nodeData.path.length === 0 ? 0 : indent
+        return blockTint && issueBlock(blockTint, rowIndent, nodeData.collapsed)
+      },
+      valueRow: (nodeData) => {
+        const rowTint = tint(nodeData)
+        return rowTint && issueRow(rowTint)
+      },
+    },
+  }
+  return stackTheme(layer, hostTheme)
 }
+
+export interface DefinitionThemeContext {
+  severities: ReadonlyMap<string, Issue['severity']>
+  editorTheme: EditorTheme
+  indent: number // json-edit-react's, which sets each row's left margin
+}
+
+// json-edit-react stacks `theme` over its own default, later layers winning
+// wherever they overlap, so a layer beneath the host's lets the host's styles
+// apply over it
+const stackTheme = (layer: Theme, hostTheme: ThemeInput | undefined): ThemeInput =>
+  hostTheme === undefined ? layer : [layer, ...(Array.isArray(hostTheme) ? hostTheme : [hostTheme])]

@@ -49,7 +49,7 @@ The sample values start inside the definition editor, since they live in the def
   evaluationData={data} // $data in a body, as in any expression
   // ...
 />
-<FragmentDefinitionEditor definition={definition} setDefinition={setDefinition} />
+<FragmentDefinitionEditor figTree={figTree} definition={definition} setDefinition={setDefinition} />
 ```
 
 **The editor takes an expression or a fragment definition, never both.** The props type is a union: `expression` with `setExpression`, or `fragmentDefinition` with `setFragmentDefinition`. Passing `fragmentDefinition` is what switches fragment mode on. `setFragmentDefinition` takes the same `SetExpressionOptions` as `setExpression` (`autoUpdate`), so a host keeping history can record an automatic update in place.
@@ -185,6 +185,7 @@ Evaluating through a call makes F10, an `evaluate()` option for `$params` values
 - **Its own components,** from `@json-edit-react/components`: a colour picker for `backgroundColor` and `textColor`, without opacity, and chips for `type`.
 - **A declaration's `type` has three entries in the type selector,** one for each form it takes: **Single**, a basic type picked from a list (an enum); **Multiple**, a union shown as chips picked from the basic types, `any` left out since a union with it is `any`; and **Literal**, a literal union of strings shown as chips typed freely. Switching from Single to Multiple keeps the type as the union's one member. A switch to Single takes the list's first type (`any`), since json-edit-react's switch to an enum reads the value before the definition's `toStandardType`; with that changed, it would keep the union's first member, or `string` from a literal union.
 - **Everything else is plain JSON** held to the shape. A picker for `constraints` comes later.
+- **Its issues** are registration's, outside the body ("Validation"), so it takes the host's `figTree`. Each tints its row as in the expression editor, and is listed beneath the tree in a messages area. Revealing a row from the list comes later.
 
 ---
 
