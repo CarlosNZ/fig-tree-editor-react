@@ -111,7 +111,7 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 ### Open
 
-- Should `getFragments()` or `getCatalog` report `samples`? The definition editor gets the definition from the host, so it does not need them to.
+- Should `getFragments()` or `getCatalog` report `samples`? The definition editor gets the definition from `useFragmentEditor`, which keeps the definitions, so it does not need them to.
 - A declared `returns`, which registration would check against the inferred one. Inference covers the editor's needs, so this can wait.
 
 ---
