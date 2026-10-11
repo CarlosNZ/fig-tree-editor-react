@@ -245,6 +245,7 @@ export const FigTreeEditor = ({
   // references resolving against the declared names (fragment-editor-design.md,
   // "Validation")
   const params = fragmentDefinition && Object.keys(fragmentDefinition.parameters ?? {})
+  const stableParams = useStableValue(params)
   const validate = (value: unknown) =>
     figTree.validate(value, {
       ...(params && { params }),
@@ -346,6 +347,7 @@ export const FigTreeEditor = ({
         evaluator,
         run: runMarks,
         evaluationData: stableEvaluationData,
+        params: stableParams,
       }),
     [
       figTree,
@@ -360,6 +362,7 @@ export const FigTreeEditor = ({
       evaluator,
       runMarks,
       stableEvaluationData,
+      stableParams,
     ]
   )
 
@@ -381,8 +384,8 @@ export const FigTreeEditor = ({
   )
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
   const allowTypeSelection = useMemo(
-    () => typesFor(figTree, classification),
-    [figTree, classification]
+    () => typesFor(figTree, classification, stableParams),
+    [figTree, classification, stableParams]
   )
   const guards = useMemo(() => {
     const context: GuardContext = {
@@ -853,13 +856,15 @@ const combineFilter = (
 }
 
 // Each value row's type dropdown, from its slot and the fragments registered
-// when it opens. A comment has none, since it is always a string (plan, 9.4).
+// when it opens, and in fragment mode the declared parameters. A comment has
+// none, since it is always a string (plan, 9.4).
 const typesFor =
-  (figTree: FigTree, classification: Classification) =>
+  (figTree: FigTree, classification: Classification, params: readonly string[] | undefined) =>
   ({ path, value, parentData, fullData }: Parameters<TypeFilterFunction>[0]) => {
     const part = commentPart(classification, { path, value, parentData })
     if (part === 'note' || part === 'line') return false
-    return typeOptions(rowAt(classification, path), value, fullData, figTree.getFragments())
+    const fragments = figTree.getFragments()
+    return typeOptions(rowAt(classification, path), value, fullData, fragments, params)
   }
 
 // A collapsed node's summary, in place of json-edit-react's item count

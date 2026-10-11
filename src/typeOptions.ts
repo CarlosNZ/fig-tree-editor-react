@@ -19,8 +19,8 @@ import { strings } from './strings'
 //    with `null` only where the slot admits it. A literal union of strings
 //    is one enum.
 // 2. The reference entries: Data at every slot that isn't literal-only,
-//    Variable where a var is in scope, and Element inside an iterator's
-//    per-element parameter.
+//    Parameter beside it in a fragment body, Variable where a var is in
+//    scope, and Element inside an iterator's per-element parameter.
 // 3. Operator, where Data is offered, then Fragment, where a registered
 //    fragment can fit the slot, so choosing it never creates a call that is
 //    an error from the start.
@@ -43,12 +43,14 @@ export const typeOptions = (
   row: Row | undefined,
   value: unknown,
   data: unknown,
-  fragments: readonly FragmentInfo[]
+  fragments: readonly FragmentInfo[],
+  params?: readonly string[] // the declared names, in a fragment body
 ): TypeOptions => {
   const { slot, scope = [] } = row ?? {}
   const options: TypeOptions = slot ? admitted(slot.admits) : [...STANDARD]
   if (slot && !slot.literalOnly) {
     options.push(REFERENCE_ENTRIES.data)
+    if (params !== undefined) options.push(REFERENCE_ENTRIES.params)
     if (nearestVar(scope, data) !== undefined) options.push(REFERENCE_ENTRIES.vars)
     if (nearestIterator(scope) !== undefined) options.push(REFERENCE_ENTRIES.element)
     options.push(strings.FT_TYPE_OPERATOR)
@@ -94,18 +96,22 @@ const currentType = (row: Row | undefined, value: unknown, options: TypeOptions)
 
 // ── The reference entries' starting values ─────────────────────────────────
 
-// Data is `$data.`, for the path to be typed after it; a var is the first of
-// the nearest block that has one; an element is the innermost iterator's, by
-// its `as` name where it has one. Each is valid where it's offered, and
-// spelled by `referenceNames`.
+// Data is `$data.`, for the path to be typed after it; a parameter is the
+// first declared, or `$params.` for the name to be typed where none is; a var
+// is the first of the nearest block that has one; an element is the
+// innermost iterator's, by its `as` name where it has one. Each is spelled by
+// `referenceNames`, and valid where it's offered, a parameter where one is
+// declared.
 export const referenceStart = (
-  namespace: 'data' | 'vars' | 'element',
+  namespace: 'data' | 'params' | 'vars' | 'element',
   row: Row | undefined,
   data: unknown,
-  referenceNames: ReferenceNames = 'canonical'
+  referenceNames: ReferenceNames = 'canonical',
+  params: readonly string[] = []
 ) => {
   const scope = row?.scope ?? []
   const token = NAMESPACE_TOKENS[referenceNames]
+  if (namespace === 'params') return `${token.params}.${params[0] ?? ''}`
   if (namespace === 'vars') {
     const name = nearestVar(scope, data)
     return name === undefined ? token.vars : `${token.vars}.${name}`
@@ -118,8 +124,8 @@ export const referenceStart = (
 }
 
 const NAMESPACE_TOKENS = {
-  canonical: { data: '$data', vars: '$vars', element: '$element' },
-  alias: { data: '$d', vars: '$v', element: '$e' },
+  canonical: { data: '$data', params: '$params', vars: '$vars', element: '$element' },
+  alias: { data: '$d', params: '$p', vars: '$v', element: '$e' },
 }
 
 const nearestVar = (scope: readonly ScopeEntry[], data: unknown) => {

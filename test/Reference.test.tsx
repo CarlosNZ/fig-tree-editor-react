@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+import { type FragmentDefinition } from 'fig-tree-evaluator'
 import { FigTreeEditor } from '../src'
 import { figTree, type EditorProps } from './fixtures'
 import { keyLabel } from './queries'
@@ -289,6 +290,67 @@ describe('a reference', () => {
       expect(selection()).toEqual([6, 11])
       await user.keyboard('{Enter}')
       expect(latest(written)).toMatchObject({ value: '$vars.price' })
+    })
+
+    describe('Parameter, in fragment mode', () => {
+      // A host holding a fragment definition, so each commit comes back as
+      // the editor's next definition, in StrictMode
+      const fragmentHost = (
+        initial: FragmentDefinition,
+        referenceNames?: EditorProps['referenceNames']
+      ) => {
+        const written: FragmentDefinition[] = []
+        const Host = () => {
+          const [definition, setDefinition] = useState(initial)
+          return (
+            <FigTreeEditor
+              figTree={figTree}
+              fragmentDefinition={definition}
+              setFragmentDefinition={(next) => {
+                written.push(next)
+                setDefinition(next)
+              }}
+              collapse={false}
+              referenceNames={referenceNames}
+            />
+          )
+        }
+        render(<Host />, { wrapper: StrictMode })
+        return { written, user: userEvent.setup() }
+      }
+      const body = { operator: 'round', value: 3 }
+
+      it('opens at the first declared parameter, with its name selected', async () => {
+        const parameters = { amount: { type: 'number' as const }, places: {} }
+        const { written, user } = fragmentHost({ expression: body, parameters })
+        await chooseType(user, 1, 'Parameter')
+        expect(screen.getByRole('textbox')).toHaveValue('$params.amount')
+        expect(selection()).toEqual([8, 14])
+        await user.keyboard('{Enter}')
+        expect(latest(written)).toEqual({
+          expression: { ...body, value: '$params.amount' },
+          parameters,
+        })
+      })
+
+      it('opens at `$p.` where none is declared, and declares the name typed', async () => {
+        const { written, user } = fragmentHost({ expression: body }, 'alias')
+        await chooseType(user, 1, 'Parameter')
+        expect(screen.getByRole('textbox')).toHaveValue('$p.')
+        expect(selection()).toEqual([3, 3])
+        await user.keyboard('amount{Enter}')
+        expect(latest(written)).toEqual({
+          expression: { ...body, value: '$p.amount' },
+          parameters: { amount: { type: expect.anything() as unknown } },
+        })
+      })
+
+      it('is not offered outside fragment mode', async () => {
+        const { user } = host(body)
+        await user.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+        const options = within(screen.getByRole('combobox')).getAllByRole('option')
+        expect(options.map((option) => option.textContent)).not.toContain('Parameter')
+      })
     })
 
     it('opens Element at the element, or at its `as` name, with the caret at the end', async () => {

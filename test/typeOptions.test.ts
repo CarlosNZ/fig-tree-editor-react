@@ -5,16 +5,33 @@ import { valueAt, type Path } from '../src/paths'
 import { referenceStart, typeOptions } from '../src/typeOptions'
 import { registry } from './fixtures'
 
-const optionsAt = (expression: unknown, path: Path, fragments = registry.fragments) =>
+const optionsAt = (
+  expression: unknown,
+  path: Path,
+  fragments = registry.fragments,
+  params?: string[]
+) =>
   typeOptions(
     rowAt(classify(expression, registry), path),
     valueAt(expression, path),
     expression,
-    fragments
+    fragments,
+    params
   )
 
-const startAt = (namespace: 'data' | 'vars' | 'element', expression: unknown, path: Path) =>
-  referenceStart(namespace, rowAt(classify(expression, registry), path), expression)
+const startAt = (
+  namespace: 'data' | 'params' | 'vars' | 'element',
+  expression: unknown,
+  path: Path,
+  params?: string[]
+) =>
+  referenceStart(
+    namespace,
+    rowAt(classify(expression, registry), path),
+    expression,
+    'canonical',
+    params
+  )
 
 const STANDARD = ['string', 'number', 'boolean', 'null', 'object', 'array']
 const OPTION = { enum: 'Option', values: ['test', 'extract', 'match'], matchPriority: 1 }
@@ -119,6 +136,20 @@ describe('typeOptions', () => {
     expect(optionsAt(round, ['value'], [])).not.toContain('Fragment')
   })
 
+  it('offers Parameter after Data in a fragment body, where Data is offered', () => {
+    const map = { operator: 'map', input: [1], each: 1, vars: { price: 2 } }
+    expect(optionsAt(map, ['each'], registry.fragments, [])).toEqual([
+      ...STANDARD,
+      'Data',
+      'Parameter',
+      'Variable',
+      'Element',
+      'Operator',
+      'Fragment',
+    ])
+    expect(optionsAt({ ...map, as: 'item' }, ['as'], registry.fragments, ['x'])).toEqual(['string'])
+  })
+
   it('treats a value outside a literal union as its own type', () => {
     const regex = { operator: 'regex', value: 'a', pattern: 'a', mode: 'other' }
     expect(optionsAt(regex, ['mode'])).toEqual([OPTION, 'Data', 'Operator', 'Fragment', 'string'])
@@ -128,6 +159,12 @@ describe('typeOptions', () => {
 describe('referenceStart', () => {
   it('starts Data as `$data.`, for the path to be typed after it', () => {
     expect(startAt('data', { operator: 'round', value: 1 }, ['value'])).toBe('$data.')
+  })
+
+  it('starts Parameter as the first declared, or as `$params.` where none is', () => {
+    const round = { operator: 'round', value: 1 }
+    expect(startAt('params', round, ['value'], ['amount', 'places'])).toBe('$params.amount')
+    expect(startAt('params', round, ['value'], [])).toBe('$params.')
   })
 
   it('starts Variable as the first var of the nearest block that has one', () => {

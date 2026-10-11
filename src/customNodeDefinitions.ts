@@ -55,6 +55,7 @@ export interface Shared {
   evaluator: Evaluator
   run: RunMarks | null // how the rows ran in the latest evaluation
   evaluationData: Record<string, unknown> | undefined // the host's `$data`
+  params: readonly string[] | undefined // the declared names, in fragment mode
 }
 
 export interface CreatedNode {
@@ -195,12 +196,12 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   // One named definition per reference entry, so a reference row shows its
   // entry as its type (topic 4, "The type dropdown"). Choosing an entry keeps
   // the input open for the path (`editOnTypeSwitch`). Parameter, for
-  // `$params`, is never offered while fragment-definition mode is parked.
+  // `$params`, is offered in fragment mode only (`typeOptions`).
   // TO-DO: offer Error, for `$error`, inside a fallback, once its starting
   // value is settled.
   const referenceEntry = (
     namespaces: ReferenceNamespace[],
-    start: 'data' | 'vars' | 'element' | undefined
+    start: 'data' | 'params' | 'vars' | 'element' | undefined
   ) =>
     unlabelledVariants(
       definition(
@@ -224,7 +225,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
                   start,
                   rowAt(shared.classification, nodeData.path),
                   nodeData.fullData,
-                  shared.referenceNames
+                  shared.referenceNames,
+                  shared.params
                 ),
         }
       )
@@ -280,7 +282,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     ...referenceEntry(['data'], 'data'),
     ...referenceEntry(['vars'], 'vars'),
     ...referenceEntry(['element', 'index'], 'element'),
-    ...referenceEntry(['params'], undefined),
+    ...referenceEntry(['params'], 'params'),
     ...referenceEntry(['error'], undefined),
     // Only the root's gets the bare Evaluate button, for now (topic 3)
     definition(

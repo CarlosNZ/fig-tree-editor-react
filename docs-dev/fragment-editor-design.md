@@ -130,9 +130,9 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 ### In the expression editor
 
-- **The Parameter entry** in the type dropdown is offered in fragment mode only. It starts as the first declared parameter, or as `$params.` with the name to type when none is declared yet. It is spelt by `referenceNames` (`$params` or `$p`), and coloured with the `$params` token (magenta).
-- **Autocomplete** after `$params.` lists the declared parameters.
-- **Everything that handles a reference handles `$params`:** template tokens, `get` with `from: '$params'`, the to-get-node button, the conversions, and the ▶ on reference rows. Most of this is already shared across namespaces, and each place is to be checked.
+- **The Parameter entry** in the type dropdown is offered in fragment mode only, after Data, wherever Data is. It starts as the first declared parameter, its name selected, or as `$params.` with the name to type when none is declared yet. It is spelt by `referenceNames` (`$params` or `$p`), and coloured with the `$params` token (magenta). The name is typed freely: a typo is declared beside the name it misspells, which shows as unused.
+- **Everything that handles a reference handles `$params`,** checked against fig-tree: template tokens (validated with the declared names, found by `getDependencies()`, and left as written by the conversions, as every namespace's are), `get` with `from: '$params'` (a bare `$params` is a value, so it has a ▶), the to-get-node button (`{ path: 'country', from: '$params' }`), the conversions (`$params` and `$p` respelt by `referenceNames`), and the ▶ on reference rows (a call to the draft). None needed a change.
+- **Later:** autocomplete after `$params.`, listing the declared parameters, if typing the names turns out to be a nuisance. json-edit-react's input gives a component its live text, so it needs no upstream change.
 
 ---
 
