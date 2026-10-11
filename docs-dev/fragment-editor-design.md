@@ -146,7 +146,9 @@ In fragment mode the picker never offers the fragment being defined, or any frag
 
 **Through a call.** The editor already evaluates fragment bodies whenever an expression calls one. So the body, or a sub-tree of it, is evaluated as a call: `{ fragment: name, parameters: samples }`. That gives the behaviour of a real call for free: defaults applied, `null` treated as unset, and the arguments checked against the declarations. A required parameter with no sample fails the call's own argument check, which is the right message. A ▶ on an inner row wraps that sub-tree as a temporary fragment with the same declarations, with the scope around it wrapped as `subTree.ts` does in expression mode.
 
-**On a derived instance.** The draft is registered on an instance derived from the host's, `figTree.with({ fragments: { [name]: draft } })` (F19 in [v3-upstream.md](v3-upstream.md)), and the call is evaluated there. `with()` builds a new instance as if `updateOptions()` had been applied to a copy, so the host's instance is untouched. The two share the result store: a result key carries the definition's fingerprint, so neither can serve the other's entries, and a cached operator in a body caches as it does in expression mode. One is derived for each ▶, so it is never out of date.
+**On a derived instance.** The draft is registered on an instance derived from the host's, `figTree.with({ fragments: { [name]: draft } })` (F19 in [v3-upstream.md](v3-upstream.md)), and the call is evaluated there. `with()` builds a new instance as if `updateOptions()` had been applied to a copy, so the host's instance is untouched. It has a result store of its own, so nothing one instance does reaches the other's. One is derived for each ▶, so it is never out of date.
+
+The cost is that results aren't reused from one ▶ to the next. Within one evaluation, caching works as usual. But each ▶ starts with an empty store, so every cached request in the draft (an `http` or `sql` node) runs again on every press, where in expression mode it would be read from the store until it expired. If that matters, the editor can keep the derived instance and derive a new one only when the fragment it registered (the body, or the ▶'s sub-tree, and the declarations) or the host's instance has changed.
 
 **Under a temporary name.** Registering the draft under its own name would check every registered fragment that calls it against the draft's declarations, so a caller elsewhere in the registry could refuse the draft. Under a temporary name, a draft that reaches its registered version through another fragment runs that version. Cycles are the fragment picker's to prevent ("The fragment picker").
 
@@ -158,18 +160,22 @@ In fragment mode the picker never offers the fragment being defined, or any frag
 
 - `updateOptions()` on the host's instance, which changes the host's state and checks the registry's callers against the draft.
 - A second instance the host builds for drafts, which needs the host's operator definitions passed in as well as the instance.
-- `getOptions({ full: true })`, so the editor could build the second instance itself. It would be the one method to hand out operator implementations and fragment bodies, which fig-tree withholds everywhere else, and the instance it built couldn't share the result store.
+- `getOptions({ full: true })`, so the editor could build the second instance itself. It would be the one method to hand out operator implementations and fragment bodies, which fig-tree withholds everywhere else.
 - Substituting the samples for the body's `$params` references, then evaluating it as an expression. The walk would copy fig-tree's reference grammar (`$p`, drills, bare `$params`, template tokens, `get` from `$params` with a computed path), wrap every value in `literal` so a sample isn't read as an expression, and copy a call's defaults and argument checks.
 
 Evaluating through a call makes F10, an `evaluate()` option for `$params` values, unnecessary.
 
 ---
 
-## Validation — **Open**
+## Validation — **Agreed**
 
-Registration and `validate()` run the same static checks. The one difference is that registration passes the declared names (`runStaticChecks(artifact, { fragmentParams })`), so `$params` references resolve against them, while `validate()` passes nothing, so each one is `unresolved-param`. The checks read only the names, not the declared types. So a `validate()` option carrying the names (F9 in [v3-upstream.md](v3-upstream.md)) checks a body as registration does. It also gives `missing-data-path` against the sample data at body paths, and the body's warnings, which registration keeps for `getFragments()` and a calling expression's `validate()` never repeats.
+**The body, through `validate()` with the declared names** (F9 in [v3-upstream.md](v3-upstream.md)): `validate(body, { params, data })`, on each edit, as an expression is validated now. Registration and `validate()` run the same static checks. The one difference is that registration passes the declared names (`runStaticChecks(artifact, { fragmentParams })`), so `$params` references resolve against them, while `validate()` passes nothing, so each one is `unresolved-param`. The checks read only the names, not the declared types. So with the names, `validate()` checks a body as registration does, and it also gives what registration can't: `missing-data-path` against the sample data at body paths, and the body's warnings, which registration keeps for `getFragments()` and a calling expression's `validate()` never repeats. Every issue is at its path in the body, so the tree shows it as it shows an expression's, and a ▶ is blocked only by errors a real call would refuse on.
 
-What `validate()` can't check is the declarations themselves (their shape, defaults against their types, `required` with a `default`). Registration checks them, so registering the draft through `with()` (F19) reports them, at `['fragments', name, 'parameters', 'x', 'default']`, which the definition editor shows at its own paths. To decide: whether that runs on each edit, since each `with()` checks the whole registry again, or only on demand.
+**The declarations, through registration.** `validate()` can't check the declarations themselves (their shape, defaults against their types, `required` with a `default`). Registering the draft on a derived instance, `figTree.with()` under a temporary name as in "Evaluation", does, and throws them with every issue at its path, such as `['fragments', name, 'parameters', 'x', 'default']`. The definition editor shows each at its path in the definition (`['parameters', 'x', 'default']`). Registration's issues inside `expression` are left out, since `validate()` already reports the body's.
+
+**On each edit, to start with.** Each `with()` checks the whole registry again. A host's registry is likely small enough that this doesn't matter. If it is slow, the check runs only when something outside `expression` changes, since that is where the issues it adds are.
+
+---
 
 ## The definition editor — **Proposed**
 
@@ -196,7 +202,7 @@ Each step ends with one or two expressions or definitions to try by hand in the 
 2. **The props, and fragment mode as a pass-through.** The props type becomes the union in "The props". In fragment mode, `fragmentDefinition.expression` is the editor's expression, and each edit is written back with the rest of the definition kept: `{ ...fragmentDefinition, expression }`. Nothing else changes yet, so `$params` rows carry `unresolved-param` errors.
 3. **The demo.** A starting `FragmentDefinition` in state, and a switch between expression mode and fragment mode for the main editor.
 4. **`FragmentDefinitionEditor`.** The component ("The definition editor"), with declarations added by hand. The details, colour pickers among them, are settled as it is built. Then, beside it, a pure function with its own tests that takes a body, its classification and its declarations, and returns the declarations with any missing ones added: the names from `getDependencies()`' `params` entry, each typed by the position it was typed at ("Parameters").
-5. **Evaluation and validation.** Settle "Evaluation" and "Validation", and build them, in fig-tree too if needed. Log the fig-tree changes in [v3-upstream.md](v3-upstream.md), and settle F9 and F10 there.
+5. **Evaluation and validation.** Build them as settled in "Validation" and "Evaluation", on fig-tree's F9 and F19 ([v3-upstream.md](v3-upstream.md)). Validation comes first: until the body's `$params` references resolve, every row that reads one, and every row above it, has its ▶ blocked by their errors.
 6. **Fragment mode in the expression editor.** The Parameter entry, autocomplete and every reference path for `$params` ("Parameters"); adding declarations through step 4's function, in the editor's update path; the fragment picker leaving out cycles (`fragmentName`); the unused-declaration warning.
 7. **Finishing.** Export the component and its types from `src/index.ts`, its styles on the `editorTheme` tokens, the bundle budget in `scripts/entries.mjs`, and a "Register" button in the demo beside "Reset fragments", so a fragment authored in fragment mode can be called from expression mode.
 8. **Back to the published fig-tree.** fig-tree publishes no preview until this is built, since the two are changed together. Meanwhile `pnpm dev` runs the demo on the sibling checkout's fig-tree (`demo:local-evaluator`), and the demo's `tsconfig.json` reads its types from there, and the library is checked with `typecheck:local-evaluator` and `test:local-evaluator`. Once fig-tree publishes, both `package.json` files take the new version, `pnpm dev` goes back to `demo:local`, and the demo's `tsconfig.json` drops its fig-tree paths.
@@ -211,5 +217,5 @@ To be logged in [v3-upstream.md](v3-upstream.md) once agreed:
 - **Allow `samples` on the definition wrapper** (fig-tree, `DEFINITION_KEYS` in `fragments.ts`), and add it to `FragmentDefinition`. The engine ignores it, unless registration checks it (Open above).
 - **A `params` entry on `getDependencies()`** (fig-tree): the parameter names an expression reads, in every form a reference takes, not following calls into called fragments' bodies.
 - **`with(update)`, an instance derived with an options update** (fig-tree), for evaluating a draft ("Evaluation"). Logged as F19. It makes F10 unnecessary, so F10 is dropped.
-- **F9, the fragment-body option on `validate()`** (fig-tree, already logged), depending on how "Validation" is settled.
+- **F9, the fragment-body option on `validate()`** (fig-tree, already logged), for validating a body ("Validation").
 - **F8, the scope-aware rename helper** (fig-tree, already logged), for renaming a parameter.

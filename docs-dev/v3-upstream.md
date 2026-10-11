@@ -24,7 +24,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F6  | fig-tree-evaluator | Export `typesIntersect`                                                    | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
 | F7  | fig-tree-evaluator | A description on every parameter                                           | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
 | F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                                  | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
-| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                     | Open     | Not filed                                                         | —               |
+| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                     | Wanted   | Not filed                                                         | —               |
 | F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                 | Dropped  | Not filed                                                         | —               |
 | F11 | fig-tree-evaluator | Infer and report a fragment's result type                                  | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
@@ -183,15 +183,13 @@ It refuses a reference where the new name is declared closer, since rewriting it
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200), item 5.
 
-### F9 · A fragment-body option on `validate()` — **Open**
+### F9 · A fragment-body option on `validate()` — **Wanted**
 
-**The change, to be decided.** A `validate()` option that checks an expression as the body of a fragment, for example `validate(body, { params: ['x', 'y'] })`. The declared names are all it needs: registration and `validate()` run the same static checks, and registration differs only in passing the names (`runStaticChecks(artifact, { fragmentParams })` in `src/compile/staticChecks.ts`), against which `$params` references resolve. The checks don't read the declared types. The option is `validate()`'s alone, since `CallOptions` is shared with `evaluate()`. The declarations themselves and cycles are left to registration, which F19 lets the editor run.
+**The change.** A `validate()` option that checks an expression as the body of a fragment, for example `validate(body, { params: ['x', 'y'] })`. The declared names are all it needs: registration and `validate()` run the same static checks, and registration differs only in passing the names (`runStaticChecks(artifact, { fragmentParams })` in `src/compile/staticChecks.ts`), against which `$params` references resolve. The checks don't read the declared types. The option is `validate()`'s alone, since `CallOptions` is shared with `evaluate()`. The declarations themselves are left to registration, which F19 lets the editor run, and cycles to the editor's fragment picker.
 
 **Why.** In fragment mode, `validate()` reports every `$params` reference as `unresolved-param`, declared or not. Registering the draft through F19 reports a body's errors, but only as a throw, and keeps its warnings for `getFragments()`; it has no sample data, so it gives no `missing-data-path` warnings; and it checks the whole registry again each time ("Validation" in [fragment-editor-design.md](fragment-editor-design.md)).
 
 **Without it.** The editor validates a body by registering it through F19 on each edit, with the warnings read from `getFragments()`, and without sample-data warnings.
-
-**Open because** "Validation" in [fragment-editor-design.md](fragment-editor-design.md) is still open.
 
 **Issue.** Not filed.
 
@@ -316,7 +314,7 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 
 ### F19 · `with(update)`: a derived instance with an options update — **Required**
 
-**The change.** A `FigTree` method, `with(update)`, that returns a new instance built as if `updateOptions(update)` had been applied to a copy; the instance it's called on is untouched. It reuses `buildState(this.state, update)`, so it merges, checks and throws exactly as `updateOptions()` does. The two instances share the result store, as `CompiledExpression` handles do, which is safe because a result key carries the definition's fingerprint. An update that names `cache` gives the new instance a store of its own, so the original's configuration is never changed.
+**The change.** A `FigTree` method, `with(update)`, that returns a new instance built as if `updateOptions(update)` had been applied to a copy; the instance it's called on is untouched. It reuses `buildState(this.state, update)`, so it merges, checks and throws exactly as `updateOptions()` does. The new instance has a result store of its own, so neither instance's `clearCache()` or `cache` configuration reaches the other. Sharing the store, as `CompiledExpression` handles do, was considered and not asked for: the editor derives an instance for one evaluation, and sharing would add rules to the method for little gain.
 
 **Why.** The fragment editor evaluates a draft, or a sub-tree of one, as a call to it ("Evaluation" in [fragment-editor-design.md](fragment-editor-design.md)), so the draft has to be registered. `updateOptions()` on the host's instance changes the host's state. The editor can't build a second instance itself, since `getOptions()`, `getOperators()` and `getFragments()` never return operator implementations or fragment bodies, and that withholding is deliberate. With `with()`, the editor registers the draft under a temporary name, `figTree.with({ fragments: { [name]: draft } })`, and evaluates `{ fragment: name, parameters: samples }` there.
 
