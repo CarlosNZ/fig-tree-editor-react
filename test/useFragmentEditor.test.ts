@@ -36,6 +36,10 @@ describe('useFragmentEditor', () => {
     act(() => result.current.startFromExpression({ operator: 'plus', values: [1, 2] }))
     expect(result.current.draft.definition).toEqual({
       expression: { operator: 'plus', values: [1, 2] },
+      parameters: {},
+      description: strings.FT_DESCRIPTION_SEED,
+      samples: {},
+      metadata: {},
     })
     expect(result.current.selectProps.selected).toBeNull()
     expect(result.current.canSave).toBe(false)
@@ -99,11 +103,12 @@ describe('useFragmentEditor', () => {
     const { result } = setup()
     act(() => result.current.startFromExpression(1))
     act(() => result.current.startFromExpression(2))
-    expect(result.current.draft.definition).toEqual({ expression: 2 })
+    expect(result.current.draft.definition.expression).toBe(2)
 
-    act(() => result.current.editorProps.setFragmentDefinition({ expression: 3 }))
+    const { definition } = result.current.draft
+    act(() => result.current.editorProps.setFragmentDefinition({ ...definition, expression: 3 }))
     act(() => result.current.startFromExpression(4))
-    expect(result.current.draft.definition).toEqual({ expression: 3 })
+    expect(result.current.draft.definition.expression).toBe(3)
   })
 
   it("renames a registered fragment at once, leaving the draft's edits unsaved", () => {

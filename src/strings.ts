@@ -24,6 +24,8 @@ export const strings = {
   FT_FRAGMENT_NAME: 'Fragment name',
   // `useFragmentEditor`'s refusal of a save whose only issues are the draft's
   // own, which the editors already show
+  // A new fragment's description, to be replaced
+  FT_DESCRIPTION_SEED: 'Set fragment description...',
   FT_SAVE_REFUSED: 'Not saved: the fragment has errors',
   // Its default question before picking another fragment over unsaved edits
   FT_CONFIRM_DISCARD: 'Discard the unsaved changes to this fragment?',

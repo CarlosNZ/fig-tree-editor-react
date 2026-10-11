@@ -149,7 +149,7 @@ export const useFragmentEditor = ({
   // expression as its body, unless the draft has edits not yet saved
   const startFromExpression = (expression: unknown) => {
     if (hasUnsavedEdits(draft)) return
-    const started = { expression }
+    const started = newDefinition(expression)
     replaceDraft({ definition: started, registered: false, baseline: started })
   }
 
@@ -207,12 +207,22 @@ const hasUnsavedEdits = ({ definition, name, registered, baseline }: FragmentDra
 // fragment is, or an empty one
 const restoreDraft = (draft: FragmentDraft | undefined, fragments: Fragments): FragmentDraft => {
   if (draft === undefined) {
-    const empty = { expression: null }
+    const empty = newDefinition(null)
     return { definition: empty, registered: false, baseline: empty }
   }
   const registered = draft.registered && draft.name !== undefined && draft.name in fragments
   return { ...draft, registered }
 }
+
+// A new fragment's definition, with every field there to fill in: the
+// description seeded, and the rest empty
+const newDefinition = (expression: unknown): FragmentDefinition => ({
+  expression,
+  parameters: {},
+  description: strings.FT_DESCRIPTION_SEED,
+  samples: {},
+  metadata: {},
+})
 
 // An update to the instance's fragments that leaves them `next`: each of
 // `previous` that `next` doesn't have is null, which removes it
