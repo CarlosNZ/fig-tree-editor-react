@@ -554,6 +554,7 @@ describe('FigTreeEditor', () => {
         ...definition,
         expression: { $plus: ['$params.name', '$params.greeting'] },
         parameters: { ...definition.parameters, greeting: { type: expect.anything() as unknown } },
+        samples: { greeting: 1 },
       })
     })
 
@@ -585,6 +586,7 @@ describe('FigTreeEditor', () => {
         ...definition,
         expression: body,
         parameters: { ...definition.parameters, gone: { type: 'any' } },
+        samples: { gone: 'Replace me' },
       })
     })
 

@@ -49,6 +49,7 @@ import { type ReferenceNames } from './conversions'
 import { commentPart, settleCommentLines } from './comments'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
 import { declareParameters } from './declareParameters'
+import { addSamples } from './definitionShape'
 import {
   buildDisplayData,
   type CategoryListingsProp,
@@ -421,9 +422,10 @@ export const FigTreeEditor = ({
   //
   // In fragment mode, the parameters the edit brings into the body, and any a
   // quick fix names, are declared in the same write, each typed by where it
-  // is read (fragment-editor-design.md, "Parameters"). A parameter the body
-  // read before the edit isn't, so one left undeclared some other way, such
-  // as its declaration removed, stays an error with a fix to declare it.
+  // is read, and each with a sample (fragment-editor-design.md, "Parameters"
+  // and "The definition editor"). A parameter the body read before the edit
+  // isn't, so one left undeclared some other way, such as its declaration
+  // removed, stays an error with a fix to declare it.
   const commit = (data: unknown, declare: readonly string[] = []) => {
     const pending = pendingFix.current
     pendingFix.current = null
@@ -441,11 +443,13 @@ export const FigTreeEditor = ({
       classify(body, { operators, fragments }),
       [...brought, ...declare, ...(pending ? pendingDeclare(pending) : [])]
     )
-    setFragmentDefinition?.({
-      ...fragmentDefinition,
-      expression: body,
-      ...(parameters && { parameters }),
-    })
+    setFragmentDefinition?.(
+      addSamples(fragmentDefinition, {
+        ...fragmentDefinition,
+        expression: body,
+        ...(parameters && { parameters }),
+      })
+    )
   }
 
   // Whether json-edit-react has an edit open, followed through its events,

@@ -21,7 +21,8 @@ import { strings } from './strings'
 // shows a definition less its body, which the expression editor edits. Keys
 // are offered from the shape, and a change that would leave a key outside it
 // is refused. Renaming or removing a parameter renames or removes its
-// entries in `samples` and `metadata.seeds` in the same change.
+// entries in `samples` and `metadata.seeds` in the same change, and a new
+// required parameter gets a sample.
 //
 // The values themselves are plain JSON: registration checks them.
 
@@ -186,6 +187,23 @@ const newField = (key: string, fields: unknown) => {
 const sampleValue = (name: string, fields: unknown) =>
   getStartingValue(name, toParameter(declarationsOf(fields)[name]), seedsOf(fields)) ?? null
 
+// The definition with a sample for each required parameter declared in it
+// and not in `previous`, where it has none, as a new `samples` field gives
+// them. A declaration starts required, however it's added, so each starts
+// with a sample, and a ▶ is never refused for want of one.
+export const addSamples = <T>(previous: unknown, next: T): T => {
+  if (!isRecord(next) || ('samples' in next && !isRecord(next.samples))) return next
+  const before = declarationsOf(previous)
+  const declarations = declarationsOf(next)
+  const samples = recordAt(next, 'samples') ?? {}
+  const added = Object.keys(declarations).filter(
+    (name) => !(name in before) && !(name in samples) && toParameter(declarations[name]).required
+  )
+  if (added.length === 0) return next
+  const newSamples = Object.fromEntries(added.map((name) => [name, sampleValue(name, next)]))
+  return { ...next, samples: { ...samples, ...newSamples } }
+}
+
 // `required` starts as the opposite of what the declaration already means,
 // since adding it is how an author changes that
 const newDeclarationField = (key: string, declaration: unknown) => {
@@ -271,8 +289,9 @@ export const removeParameter = <T extends DefinitionFields>(fields: T, name: str
   return followParameters(fields, next, { event: 'delete', path: ['parameters', name] }) as T
 }
 
-// A renamed parameter's entries are renamed, in place, and a removed
-// parameter's are removed, however it was removed
+// A renamed parameter's entries are renamed, in place, a removed parameter's
+// are removed, however it was removed, and a required one added gets a
+// sample
 const followParameters = (
   previous: unknown,
   next: unknown,
@@ -286,10 +305,13 @@ const followParameters = (
     )
   const declared = declarationsOf(next)
   const removed = Object.keys(declarationsOf(previous)).filter((key) => !(key in declared))
-  if (removed.length === 0) return next
-  return withEntries(next, (entries) =>
-    Object.fromEntries(Object.entries(entries).filter(([key]) => !removed.includes(key)))
-  )
+  const followed =
+    removed.length === 0
+      ? next
+      : withEntries(next, (entries) =>
+          Object.fromEntries(Object.entries(entries).filter(([key]) => !removed.includes(key)))
+        )
+  return addSamples(previous, followed)
 }
 
 // The definition with `samples` and `metadata.seeds` changed, each only where

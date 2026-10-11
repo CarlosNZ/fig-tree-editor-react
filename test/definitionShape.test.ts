@@ -127,6 +127,31 @@ describe('definitionShape', () => {
       expect(update({ event: 'edit', path: ['parameters'], newData: removed })).toEqual(expected)
     })
 
+    it('adds a sample for a new required parameter, where it has none', () => {
+      const added = { ...fields, parameters: { ...fields.parameters, country: { type: 'any' } } }
+      expect(update({ event: 'add', path: ['parameters', 'country'], newData: added })).toEqual({
+        data: { ...added, samples: { name: 'Ada', country: typeSeeds.any } },
+      })
+      const optional = {
+        ...fields,
+        parameters: { ...fields.parameters, country: { type: 'string', default: 'NZ' } },
+      }
+      expect(update({ event: 'edit', path: ['parameters'], newData: optional })).toBeUndefined()
+      const sampled = { ...added, samples: { name: 'Ada', country: 'NZ' } }
+      expect(update({ event: 'edit', path: [], newData: sampled })).toBeUndefined()
+    })
+
+    it("adds `samples` for a new parameter's sample, where there is none", () => {
+      const { samples: _, ...withoutSamples } = fields
+      const added = {
+        ...withoutSamples,
+        parameters: { ...fields.parameters, count: { type: 'number' } },
+      }
+      expect(update({ event: 'add', path: ['parameters', 'count'], newData: added })).toEqual({
+        data: { ...added, samples: { count: typeSeeds.number } },
+      })
+    })
+
     it('lets through a change that keeps the shape', () => {
       const edited = { ...fields, description: 'Greets someone' }
       expect(update({ event: 'edit', path: ['description'], newData: edited })).toBeUndefined()

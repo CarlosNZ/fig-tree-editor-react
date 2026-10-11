@@ -342,6 +342,7 @@ describe('a reference', () => {
         expect(latest(written)).toEqual({
           expression: { ...body, value: '$p.amount' },
           parameters: { amount: { type: expect.anything() as unknown } },
+          samples: { amount: 1 },
         })
       })
 
