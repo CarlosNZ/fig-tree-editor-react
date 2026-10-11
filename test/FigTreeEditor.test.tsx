@@ -1,8 +1,9 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { FigTree } from 'fig-tree-evaluator'
 import { type CustomTextDefinitions } from 'json-edit-react'
+import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { FigTreeEditor, type EditorStatus } from '../src'
+import { FigTreeEditor, type EditorStatus, type FigTreeEditorHandle } from '../src'
 import { figTree as demoFigTree } from './fixtures'
 import { keyLabel } from './queries'
 
@@ -508,6 +509,69 @@ describe('FigTreeEditor', () => {
       expect(messages.map(({ row, message }) => ({ row, message }))).toEqual([
         { row: ['$plus', 1], message: expect.stringContaining("'undeclared'") as string },
       ])
+    })
+
+    // Edits the string at `path` to `value`, through the editor's handle
+    const editString = (
+      ref: { current: FigTreeEditorHandle | null },
+      path: (string | number)[],
+      value: string
+    ) => {
+      act(() => {
+        ref.current!.startEdit({ path })
+      })
+      fireEvent.change(screen.getByRole('textbox'), { target: { value } })
+      fireEvent.keyDown(screen.getByRole('textbox'), { key: 'Enter' })
+    }
+
+    it('declares a parameter an edit brings in, in the same write', () => {
+      const ref = createRef<FigTreeEditorHandle>()
+      const setFragmentDefinition = vi.fn()
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={{ ...definition, expression: { $plus: ['$params.name', 'x'] } }}
+          setFragmentDefinition={setFragmentDefinition}
+          editorRef={ref}
+        />
+      )
+      editString(ref, ['$plus', 1], '$params.greeting')
+      expect(setFragmentDefinition).toHaveBeenCalledExactlyOnceWith({
+        ...definition,
+        expression: { $plus: ['$params.name', '$params.greeting'] },
+        parameters: { ...definition.parameters, greeting: { type: expect.anything() as unknown } },
+      })
+    })
+
+    it('leaves undeclared a parameter the body read before the edit, and offers to declare it', () => {
+      const ref = createRef<FigTreeEditorHandle>()
+      const setFragmentDefinition = vi.fn()
+      const onStatusChange = vi.fn()
+      const body = { a: '$params.gone', b: 'x' }
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={{ ...definition, expression: body }}
+          setFragmentDefinition={setFragmentDefinition}
+          onStatusChange={onStatusChange}
+          editorRef={ref}
+        />
+      )
+      editString(ref, ['b'], 'y')
+      expect(setFragmentDefinition).toHaveBeenCalledExactlyOnceWith({
+        ...definition,
+        expression: { ...body, b: 'y' },
+      })
+
+      const { messages } = onStatusChange.mock.lastCall![0] as EditorStatus
+      const [fix] = messages[0].fixes
+      expect(fix.label).toBe('Declare gone')
+      act(() => fix.apply())
+      expect(setFragmentDefinition).toHaveBeenLastCalledWith({
+        ...definition,
+        expression: body,
+        parameters: { ...definition.parameters, gone: { type: 'any' } },
+      })
     })
 
     it('fills in a body that arrives incomplete, and marks the write', () => {

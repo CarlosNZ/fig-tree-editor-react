@@ -66,4 +66,12 @@ describe('declareParameters', () => {
     const call = { fragment: 'greet', parameters: { name: '$params.who' } }
     expect(Object.keys(declare(call) ?? {})).toEqual(['who'])
   })
+
+  it('declares only the names given, where they are', () => {
+    const body = { operator: 'plus', values: ['$params.a', '$params.b'] }
+    const only = (names: string[]) =>
+      declareParameters(body, undefined, figTree, classify(body, registry), names)
+    expect(Object.keys(only(['b', 'c']) ?? {})).toEqual(['b'])
+    expect(only(['c'])).toBeUndefined()
+  })
 })

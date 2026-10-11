@@ -122,6 +122,10 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 **Renaming is done on the declaration,** and rewrites the body's references to it, through F8 (the rename helper in [v3-upstream.md](v3-upstream.md)). Retyping a reference in the body only adds a new declaration. Renaming or removing a parameter also renames or removes its entries in `samples` and `metadata.seeds`.
 
+**A declaration is added on an edit in the expression editor,** not as a standing rule, and in the same write as the edit. The edit declares the parameters it brings into the body: those read after it and not before. A reference left undeclared some other way (its declaration removed or renamed in the definition editor, or a body the host changed) is an `unresolved-param` error, with a quick fix to declare it, typed as an edit's would be. The issue names the parameter (F21 in [v3-upstream.md](v3-upstream.md)). As a standing rule, removing a declaration still in use would put it straight back.
+
+**Removing a declaration still in use is allowed,** leaving those errors. Refusing it would need the definition editor to walk the body, and renaming its key leaves references behind in the same way. Until F8, the quick fix after a rename declares the old name again, so the references are renamed by hand.
+
 **Why a mix of the two directions.** Declarations alone as the source of truth makes the author declare each parameter before using it. The body alone as the source of truth turns every typo into a parameter, and loses a declaration's type, description and default the moment its last reference goes. The mix keeps the "type it and it exists" flow while never losing a declaration.
 
 ### In the expression editor
@@ -129,11 +133,6 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 - **The Parameter entry** in the type dropdown is offered in fragment mode only. It starts as the first declared parameter, or as `$params.` with the name to type when none is declared yet. It is spelt by `referenceNames` (`$params` or `$p`), and coloured with the `$params` token (magenta).
 - **Autocomplete** after `$params.` lists the declared parameters.
 - **Everything that handles a reference handles `$params`:** template tokens, `get` with `from: '$params'`, the to-get-node button, the conversions, and the ▶ on reference rows. Most of this is already shared across namespaces, and each place is to be checked.
-
-### Proposed
-
-- **When a declaration is added:** on an edit made in the expression editor, not as a standing rule. A reference left undeclared some other way (its declaration removed or renamed in the definition editor) is an `unresolved-param` error, with a quick fix to declare it. As a standing rule, removing a declaration still in use would put it straight back.
-- **Removing a declaration in use:** allowed, leaving those errors, or refused while references remain.
 
 ---
 
@@ -225,3 +224,4 @@ To be logged in [v3-upstream.md](v3-upstream.md) once agreed:
 - **F20, registration type-checks `samples`** (fig-tree), and a literal union's failure gives the value.
 - **F9, the fragment-body option on `validate()`** (fig-tree, already logged), for validating a body ("Validation").
 - **F8, the scope-aware rename helper** (fig-tree, already logged), for renaming a parameter.
+- **F21, `unresolved-param` names its parameter, with a suggestion** (fig-tree), for the quick fix that declares it.

@@ -11,7 +11,9 @@ import { valueAt } from './paths'
 // elsewhere (a drill, a template token, a `get`) the position says nothing
 // about the parameter's own value, so it's `any`, as it is where the
 // positions disagree. An existing declaration is never changed, and an
-// unchanged set is returned as it was given.
+// unchanged set is returned as it was given. Where `names` is given, only
+// those are declared: an edit declares the parameters it brings in, not
+// those left undeclared some other way.
 //
 // TO-DO: a `get` whose path is the parameter alone (`{ path: 'x', from:
 // '$params' }`) typed by its own position, in each of the node's forms
@@ -22,12 +24,17 @@ export const declareParameters = (
   body: unknown,
   declarations: Declarations | undefined,
   figTree: Pick<FigTree, 'getDependencies'>,
-  classification: Classification
+  classification: Classification,
+  names?: readonly string[]
 ): Declarations | undefined => {
   const declared = declarations ?? {}
   const undeclared = figTree
     .getDependencies(body)
-    .params.names.filter((name) => !Object.prototype.hasOwnProperty.call(declared, name))
+    .params.names.filter(
+      (name) =>
+        !Object.prototype.hasOwnProperty.call(declared, name) &&
+        (names === undefined || names.includes(name))
+    )
   if (undeclared.length === 0) return declarations
 
   const positions = typesByPosition(body, classification)

@@ -36,6 +36,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | F18 | fig-tree-evaluator | `get`'s `from` as a bare namespace, and one `toGet` shape                     | Wanted   | [#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237) | 3.0.0-preview.9 |
 | F19 | fig-tree-evaluator | `with(update)`: a derived instance with an options update                     | Required | Not filed                                                         | —               |
 | F20 | fig-tree-evaluator | Registration type-checks `samples`; a literal union's failure gives the value | Wanted   | Not filed                                                         | —               |
+| F21 | fig-tree-evaluator | `unresolved-param` names its parameter, with a suggestion                     | Wanted   | Not filed                                                         | —               |
 | J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open             | Dropped  | Not filed                                                         | —               |
 | J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                    | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
 | J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                          | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
@@ -339,6 +340,29 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 **Without it.** A sample that doesn't fit is found only by a ▶, as a failure at the evaluated row. The editor names the fragment in the message by its own name, so the temporary one never shows. A required parameter with no sample is the editor's to catch, and it refuses the ▶ before the call either way.
 
 **Issue.** Not filed.
+
+### F21 · `unresolved-param` names its parameter, with a suggestion — **Wanted**
+
+**The change.** An `unresolved-param` issue names the parameter its reference reads, the reference's first key, as `parameter`: `'contry'` for `$params.contry.code`, inside a fragment body or outside one, and nothing where the reference names none (a bare `$params`). Inside a body, an undeclared one also carries the nearest declared name as `suggestion`, with the message's "did you mean". It is how fig-tree already reports the same mistake from the calling side: a call's argument the fragment doesn't declare is `unknown-node-key` with `{ parameter, suggestion }`.
+
+```json
+{
+  "severity": "error",
+  "code": "unresolved-param",
+  "message": "'$params.contry': the fragment declares no parameter 'contry' — did you mean 'country'?",
+  "path": ["template"],
+  "parameter": "contry",
+  "suggestion": "country"
+}
+```
+
+**Why.** The quick fix that declares a parameter left undeclared ("Parameters" in [fragment-editor-design.md](fragment-editor-design.md)) needs its name, which the issue held only in its message. A template's tokens are each an issue at the template's path, so the name is all that tells them apart.
+
+**Without it.** The editor reads the name from the reference at the issue's path, and a template token's issue offers to declare every undeclared parameter its template reads.
+
+**Made** in fig-tree-evaluator (db4ea01), as asked, not yet published. `resolveParam` in `src/compile/staticChecks.ts` sets both, with `nearestName` and `didYouMean`, as the call side does. In fragment mode, the expression editor offers "Declare" on the issue.
+
+**Issue.** Not filed: made directly in fig-tree-evaluator (db4ea01).
 
 ---
 

@@ -48,6 +48,7 @@ import {
 import { type ReferenceNames } from './conversions'
 import { commentPart, settleCommentLines } from './comments'
 import { customNodeDefinitions, type CreatedNode } from './customNodeDefinitions'
+import { declareParameters } from './declareParameters'
 import {
   buildDisplayData,
   type CategoryListingsProp,
@@ -84,7 +85,7 @@ import { addableKeys, getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
 import { Messages } from './Messages'
 import { countMessages, orderMessages } from './messageLines'
-import { getQuickFixes } from './quickFixes'
+import { getQuickFixes, type QuickFix } from './quickFixes'
 import { valueAt, type Path } from './paths'
 import { revealRow } from './revealRow'
 import { markRun, type RunMarks } from './runMarks'
@@ -397,18 +398,39 @@ export const FigTreeEditor = ({
 
   // A quick fix clicked while an edit was open, waiting for that edit's
   // commit, and applied to what it produces, in the same write (plan, 10.2c)
-  const pendingFix = useRef<((expression: unknown) => unknown) | null>(null)
+  const pendingFix = useRef<PendingFix | null>(null)
 
   // A node the type dropdown created is marked for this commit only: where
   // the commit doesn't carry it, the host's `onUpdate` rejected it. A comment
   // a write leaves a line short of two is settled in the same write.
-  const commit = (data: unknown) => {
-    const fix = pendingFix.current
+  //
+  // In fragment mode, the parameters the edit brings into the body, and any a
+  // quick fix names, are declared in the same write, each typed by where it
+  // is read (fragment-editor-design.md, "Parameters"). A parameter the body
+  // read before the edit isn't, so one left undeclared some other way, such
+  // as its declaration removed, stays an error with a fix to declare it.
+  const commit = (data: unknown, declare: readonly string[] = []) => {
+    const pending = pendingFix.current
     pendingFix.current = null
-    const next = fix ? fix(data) : data
+    const next = pending ? pending.fix(data) : data
     const mark = created.current
     if (mark && valueAt(next, mark.path) !== mark.node) created.current = null
-    setExpression(fill(settleCommentLines(latest.current, next, latestClassification.current)))
+    const body = fill(settleCommentLines(latest.current, next, latestClassification.current))
+    if (!fragmentDefinition) return setExpression(body)
+    const before = new Set(figTree.getDependencies(latest.current).params.names)
+    const brought = figTree.getDependencies(body).params.names.filter((name) => !before.has(name))
+    const parameters = declareParameters(
+      body,
+      fragmentDefinition.parameters,
+      figTree,
+      classify(body, { operators, fragments }),
+      [...brought, ...declare, ...(pending ? pendingDeclare(pending) : [])]
+    )
+    setFragmentDefinition?.({
+      ...fragmentDefinition,
+      expression: body,
+      ...(parameters && { parameters }),
+    })
   }
 
   // Whether json-edit-react has an edit open, followed through its events,
@@ -472,9 +494,9 @@ export const FigTreeEditor = ({
     }
     if (event.startsWith('commit')) {
       editOpen.current = false
-      const fix = pendingFix.current
+      const pending = pendingFix.current
       pendingFix.current = null
-      if (fix) commit(fix(latest.current))
+      if (pending) commit(pending.fix(latest.current), pendingDeclare(pending))
     }
     if (event.startsWith('cancel') || event === 'updateError') {
       editOpen.current = false
@@ -492,8 +514,8 @@ export const FigTreeEditor = ({
   // expression from before it, which would undo an edit elsewhere. An edit
   // whose commit is refused, such as raw JSON that doesn't parse, stays open
   // with its error, and the fix isn't applied.
-  const applyFix = (fix: (expression: unknown) => unknown) => {
-    if (!editOpen.current) return commit(fix(latest.current))
+  const applyFix = (fix: PendingFix) => {
+    if (!editOpen.current) return commit(fix.fix(latest.current), pendingDeclare(fix))
     pendingFix.current = fix
     submitted.current = false
     handle.current?.confirm()
@@ -595,7 +617,11 @@ export const FigTreeEditor = ({
                   classification,
                   operators,
                   fragments,
-                }).map(({ label, fix }) => ({ label, apply: () => latestApplyFix.current(fix) })),
+                  fragmentMode: fragmentDefinition !== undefined,
+                }).map(({ label, ...fix }) => ({
+                  label,
+                  apply: () => latestApplyFix.current(fix),
+                })),
               }
             : {
                 kind: 'filledIn',
@@ -705,6 +731,10 @@ export const FigTreeEditor = ({
     </div>
   )
 }
+
+// A quick fix's change to the body, and the parameter it declares, if any
+type PendingFix = Omit<QuickFix, 'label'>
+const pendingDeclare = ({ declare }: PendingFix) => (declare === undefined ? [] : [declare])
 
 // json-edit-react props the editor sets, which a host can override. They
 // change how the tree looks and where a click collapses it.

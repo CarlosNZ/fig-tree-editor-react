@@ -29,6 +29,7 @@ export const strings = {
   FT_FIX_REMOVE: 'Remove',
   FT_FIX_RENAME: (name: string) => `Rename to ${name}`,
   FT_FIX_CHANGE: (name: string) => `Change to ${name}`,
+  FT_FIX_DECLARE: (name: string) => `Declare ${name}`,
   FT_DISMISS: 'Dismiss', // a filled-in line
   FT_DISMISS_ALL: 'Dismiss all', // every filled-in line, from the header
   FT_COUNT_ERRORS: errors,

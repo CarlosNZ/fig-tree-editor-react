@@ -22,22 +22,27 @@ import { switchOperator } from './switchOperator'
 //   an unknown one: the picker's switch on a broken node, which cleans it.
 // - Rename a `$` key that names nothing, where fig-tree suggests one, which
 //   makes the object a shorthand node for the fill-in step to complete.
+// - Declare, in a fragment body, a parameter the body reads that isn't
+//   declared (F21 names it). The body is left as it is, and the editor adds
+//   the declaration named by `declare` in the same write.
 
 export interface QuickFix {
   label: string
   fix: (expression: unknown) => unknown
+  declare?: string
 }
 
 export interface QuickFixContext {
   classification: Classification
   operators: readonly OperatorInfo[]
   fragments: readonly FragmentInfo[]
+  fragmentMode?: boolean
 }
 
 export const getQuickFixes = (
-  { code, path, suggestion }: Issue,
+  { code, path, parameter, suggestion }: Issue,
   expression: unknown,
-  { classification, operators, fragments }: QuickFixContext
+  { classification, operators, fragments, fragmentMode = false }: QuickFixContext
 ): QuickFix[] => {
   const key = path.at(-1)
   const parentPath = path.slice(0, -1)
@@ -71,6 +76,8 @@ export const getQuickFixes = (
       return suggestion !== undefined && fragments.some(({ name }) => name === suggestion)
         ? [changeFix(path, suggestion, (node) => switchFragment(node, suggestion, null, fragments))]
         : []
+    case 'unresolved-param':
+      return fragmentMode && parameter !== undefined ? [declareFix(parameter)] : []
     default:
       return []
   }
@@ -107,6 +114,12 @@ const changeFix = (
       const fields = asObject(node)
       return fields ? change(fields) : node
     }),
+})
+
+const declareFix = (name: string): QuickFix => ({
+  label: strings.FT_FIX_DECLARE(name),
+  fix: (expression) => expression,
+  declare: name,
 })
 
 const asObject = (value: unknown) =>

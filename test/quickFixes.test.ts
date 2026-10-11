@@ -128,6 +128,29 @@ describe('quick fixes', () => {
     })
   })
 
+  describe('on an undeclared parameter', () => {
+    const body = { $plus: ['$params.contry', 1] }
+    const fixesFor = (fragmentMode: boolean) =>
+      figTree.validate(body, { params: ['country'] }).issues.map((issue) =>
+        getQuickFixes(issue, body, {
+          ...registry,
+          classification: classify(body, registry),
+          fragmentMode,
+        })
+      )
+
+    it('declares it in fragment mode, leaving the body as it is', () => {
+      const [[fix]] = fixesFor(true)
+      expect(fix.label).toBe('Declare contry')
+      expect(fix.declare).toBe('contry')
+      expect(fix.fix(body)).toBe(body)
+    })
+
+    it('offers nothing outside fragment mode', () => {
+      expect(fixesFor(false)).toEqual([[]])
+    })
+  })
+
   it('offers nothing on other issues', () => {
     expect(offered({ $upper: 5 })).toEqual([['type-check', []]])
   })
