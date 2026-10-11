@@ -11,16 +11,17 @@ import {
 // @ts-expect-error No declaration
 import { PostgresInterface } from './postgresInterface.js'
 import { evaluatorConfig } from './data/evaluatorConfig'
+import { type Fragments } from '@fig-tree-editor-react'
 import { getLocalStorage } from './helpers'
 
 // The options the demo lets you change, from its Configuration panel and per
 // demo: the instance's, and the editor's coverage analysis's, which aren't the
-// instance's. They're plain data, so they can be kept in local storage.
+// instance's. They're plain data, so they can be kept in local storage. The
+// fragments aren't among them, since `useFragmentEditor` holds them.
 export type DemoOptions = {
   coverage?: Pick<FallbackCoverageOptions, 'strictNumbers'>
 } & Pick<
   FigTreeOptions,
-  | 'fragments'
   | 'http'
   | 'graphQL'
   | 'operatorDefaults'
@@ -32,9 +33,10 @@ export type DemoOptions = {
 >
 
 export const defaultOptions: DemoOptions = {
-  fragments: evaluatorConfig.fragments,
   cache: { maxSize: 50, maxTime: 1800 },
 }
+
+export const defaultFragments: Fragments = evaluatorConfig.fragments
 
 // Every operator the demo can use: the core set, HTTP over the browser's
 // fetch, SQL through the local Postgres bridge (src/express/server.js), and
@@ -149,7 +151,6 @@ export const figTree = new FigTree({ operators, cache: { store: cacheStore } })
 // given as null, and FigTree's default applies. The cache keeps the demo's
 // own defaults, and its store.
 const prepareOptions = (previous: DemoOptions, options: DemoOptions): OptionsUpdate => ({
-  fragments: replacing(previous.fragments, options.fragments),
   http: replacing(previous.http, options.http),
   graphQL: replacing(previous.graphQL, options.graphQL),
   operatorDefaults: replacing(previous.operatorDefaults, options.operatorDefaults),
@@ -194,4 +195,18 @@ export const initialOptions = ((): DemoOptions => {
     }
   applyOptions(defaultOptions)
   return defaultOptions
+})()
+
+// The saved fragments if FigTree accepts them, else the defaults, for
+// `useFragmentEditor` to register
+export const initialFragments = ((): Fragments => {
+  const saved = getLocalStorage('fragments') as Fragments | null
+  if (saved)
+    try {
+      figTree.with({ fragments: saved })
+      return saved
+    } catch {
+      // Not valid, so the defaults
+    }
+  return defaultFragments
 })()

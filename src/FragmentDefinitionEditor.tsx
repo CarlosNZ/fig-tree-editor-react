@@ -51,6 +51,9 @@ import { UNUSED_PARAM, unusedParameters } from './unusedParameters'
 //
 // The root row's label is the fragment's button, as a call to it shows, which
 // renames the fragment through `setFragmentName` where the host passes it.
+//
+// `saveIssues` are a refused registration's, from `useFragmentEditor`, listed
+// with the rest.
 export interface FragmentDefinitionEditorProps extends Omit<
   JsonEditorProps,
   | 'data'
@@ -68,6 +71,7 @@ export interface FragmentDefinitionEditorProps extends Omit<
   setDefinition: (definition: FragmentDefinition) => void
   fragmentName?: string // the name it is registered under, or will be
   setFragmentName?: (name: string | undefined) => void
+  saveIssues?: Issue[] // at their paths in the definition
 }
 
 export const FragmentDefinitionEditor = ({
@@ -76,6 +80,7 @@ export const FragmentDefinitionEditor = ({
   setDefinition,
   fragmentName,
   setFragmentName,
+  saveIssues = [],
   theme,
   id,
   minWidth = DEFAULT_MIN_WIDTH,
@@ -111,6 +116,7 @@ export const FragmentDefinitionEditor = ({
   // Worked out on every render, as the expression editor's issues are, since
   // `updateOptions()` changes the registry without changing the instance
   const issues = [
+    ...saveIssues,
     ...declarationIssues(figTree, definition),
     ...unusedParameters(figTree, definition),
   ].map((issue) => ({ issue, row: drawnRow(fields, issue.path) }))

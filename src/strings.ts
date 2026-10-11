@@ -22,6 +22,11 @@ export const strings = {
   FT_UNNAMED_FRAGMENT: 'Fragment — click to rename',
   FT_RENAME_FRAGMENT: 'Click to rename',
   FT_FRAGMENT_NAME: 'Fragment name',
+  // `useFragmentEditor`'s refusal of a save whose only issues are the draft's
+  // own, which the editors already show
+  FT_SAVE_REFUSED: 'Not saved: the fragment has errors',
+  // Its default question before picking another fragment over unsaved edits
+  FT_CONFIRM_DISCARD: 'Discard the unsaved changes to this fragment?',
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
@@ -151,6 +156,8 @@ export const strings = {
   FT_PICKER_NOT_VALID_REASON: (returns: string, takes: string) =>
     `Returns ${returns}; this position takes ${takes}`,
   FT_FRAGMENT_PICKER_PLACEHOLDER: 'Search fragments',
+  // The host's picker of the registered fragment to edit
+  FT_FRAGMENT_SELECT_PLACEHOLDER: 'Select fragment',
   FT_NO_FRAGMENTS: 'No fragments registered',
   FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 

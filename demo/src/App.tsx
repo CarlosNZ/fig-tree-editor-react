@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import JSON5 from 'json5'
 import './App.css'
 import {
@@ -21,19 +21,31 @@ import { FaNpm, FaExternalLinkAlt, FaGithub } from 'react-icons/fa'
 import {
   FigTreeEditor,
   FragmentDefinitionEditor,
+  FragmentSelect,
+  useFragmentEditor,
   type EditorStatus,
   type Evaluation,
+  type FragmentDraft,
   type SetExpressionOptions,
 } from '@fig-tree-editor-react'
-import { version as figTreeVersion, type FragmentDefinition } from 'fig-tree-evaluator'
+import { useJsonEditorConfirm } from '@json-edit-react/utils'
+import { version as figTreeVersion } from 'fig-tree-evaluator'
 import { OptionsModal } from './OptionsModal'
 import { getLocalStorage, setLocalStorage, truncate } from './helpers'
-import { applyOptions, figTree, initialOptions, type DemoOptions } from './figTree'
+import {
+  applyOptions,
+  figTree,
+  initialFragments,
+  initialOptions,
+  type DemoOptions,
+} from './figTree'
 import { JsonEditor } from 'json-edit-react'
 import { demoData, defaultBlurb, initialFragmentDefinition, initialFragmentName } from './data'
 import { evaluatorConfig } from './data/evaluatorConfig'
 import { ResultToast } from './ResultToast'
 import { useUndo } from './useUndo'
+import { UndoRedoButtons } from './UndoRedoButtons'
+import { ConfirmDialog } from './ConfirmDialog'
 import { InfoModal } from './InfoModal'
 import { SafeBadge } from './SafeBadge'
 import { SourceIndicator } from './SourceIndicator'
@@ -46,6 +58,15 @@ console.log('Site built:', timestamp)
 
 // What the main editor edits: an expression, or a fragment definition's body
 type EditorMode = 'expression' | 'fragment'
+
+// The fragment draft to start with, before one is saved: the demo's sample,
+// named but not registered
+const sampleDraft: FragmentDraft = {
+  definition: initialFragmentDefinition,
+  name: initialFragmentName,
+  registered: false,
+  baseline: initialFragmentDefinition,
+}
 
 // A row's path, as the toasts name it
 const describePath = (path: (string | number)[]) =>
@@ -88,44 +109,32 @@ function App() {
   const [editorMode, setEditorMode] = useState<EditorMode>(
     getLocalStorage('editorMode') ?? 'expression'
   )
+  const { confirm, dialog } = useJsonEditorConfirm()
+  const fragmentEditor = useFragmentEditor({
+    figTree,
+    initialFragments,
+    initialDraft: getLocalStorage('fragmentDraft') ?? sampleDraft,
+    onFragmentsChange: (fragments) => setLocalStorage('fragments', fragments),
+    confirmDiscard: () =>
+      confirm({
+        title: 'Discard changes?',
+        message: "This fragment has changes that haven't been saved.",
+      }),
+  })
+  useEffect(() => setLocalStorage('fragmentDraft', fragmentEditor.draft), [fragmentEditor.draft])
+
+  // A switch to fragment mode starts a fragment from the expression, unless
+  // the draft has unsaved edits
   const changeEditorMode = (mode: EditorMode) => {
+    if (mode === 'fragment' && editorMode === 'expression')
+      fragmentEditor.startFromExpression(expression)
     setEditorMode(mode)
     setLocalStorage('editorMode', mode)
   }
 
-  const {
-    data: fragmentDefinition,
-    setData: setFragmentDefinition,
-    UndoRedo: FragmentUndoRedo,
-  } = useUndo(getLocalStorage('fragmentDefinition') ?? initialFragmentDefinition)
-
-  // Saved here rather than in `onUpdate`, which doesn't see the editor's own
-  // writes. Both fragment editors write the whole definition.
-  const saveFragmentDefinition = (
-    newDefinition: FragmentDefinition,
-    options?: SetExpressionOptions
-  ) => {
-    setFragmentDefinition(newDefinition, options)
-    setLocalStorage('fragmentDefinition', newDefinition)
-  }
-
-  // Stored as '' while the fragment has no name, so it stays unnamed on reload
-  const [fragmentName, setFragmentName] = useState<string | undefined>(() => {
-    const stored = getLocalStorage('fragmentName')
-    return stored === null ? initialFragmentName : stored || undefined
-  })
-  const saveFragmentName = (name: string | undefined) => {
-    setFragmentName(name)
-    setLocalStorage('fragmentName', name ?? '')
-  }
-
   const editorSource =
     editorMode === 'fragment'
-      ? {
-          fragmentDefinition: fragmentDefinition as FragmentDefinition,
-          fragmentName,
-          setFragmentDefinition: saveFragmentDefinition,
-        }
+      ? fragmentEditor.editorProps
       : {
           expression,
           setExpression: (newExpression: unknown, options?: SetExpressionOptions) => {
@@ -192,11 +201,14 @@ function App() {
         <OptionsModal
           options={options}
           onSave={updateOptions}
+          fragments={fragmentEditor.fragments}
+          setFragments={fragmentEditor.setFragments}
           modalState={{
             modalOpen,
             setModalOpen,
           }}
         />
+        <ConfirmDialog {...dialog} />
         <InfoModal
           selected={currentDemoData?.name ?? 'main'}
           content={
@@ -402,18 +414,35 @@ function App() {
                     description and display metadata.
                   </Text>
                 </Box>
+                <HStack w="var(--column-width)" mt={3} mb={1} justify="space-between">
+                  <FragmentSelect {...fragmentEditor.selectProps} />
+                  <Button
+                    size="sm"
+                    colorScheme="green"
+                    isDisabled={!fragmentEditor.canSave}
+                    onClick={fragmentEditor.save}
+                  >
+                    Save
+                  </Button>
+                </HStack>
                 <FragmentDefinitionEditor
                   figTree={figTree}
-                  definition={fragmentDefinition as FragmentDefinition}
-                  setDefinition={saveFragmentDefinition}
-                  fragmentName={fragmentName}
-                  setFragmentName={saveFragmentName}
+                  {...fragmentEditor.definitionProps}
                   minWidth="90%"
                   jsonParse={JSON5.parse}
                 />
               </>
             )}
-            {editorMode === 'fragment' ? FragmentUndoRedo : ExpressionUndoRedo}
+            {editorMode === 'fragment' ? (
+              <UndoRedoButtons
+                undo={fragmentEditor.undo}
+                redo={fragmentEditor.redo}
+                canUndo={fragmentEditor.canUndo}
+                canRedo={fragmentEditor.canRedo}
+              />
+            ) : (
+              ExpressionUndoRedo
+            )}
           </Flex>
         </Flex>
       </VStack>

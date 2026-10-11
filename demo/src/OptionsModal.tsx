@@ -29,7 +29,7 @@ import {
 import { filterObjectRecursive } from './helpers'
 import {
   cacheStore,
-  defaultOptions,
+  defaultFragments,
   figTree,
   setCaching,
   usesCache,
@@ -39,7 +39,7 @@ import {
 import { fragmentsRestrictions } from './fragmentDefinitions'
 import { operatorDefaultsRestrictions } from './operatorDefaults'
 import { JsonEditor, type ThemeInput } from 'json-edit-react'
-import { type FragmentDefinition } from 'fig-tree-evaluator'
+import { type Fragments } from '@fig-tree-editor-react'
 
 // The JSON editors carry no box of their own, and show their root key as a
 // label
@@ -65,7 +65,7 @@ const sectionTheme = jsonEditorTheme(
   { marginBottom: '0.5em' }
 )
 
-const resetFormState = (options: DemoOptions) => {
+const resetFormState = (options: DemoOptions, fragments: Fragments) => {
   const headers = { ...options.http?.headers }
   const authHeader = headers.Authorization
   const gqlHeaders = { ...options.graphQL?.headers }
@@ -80,7 +80,7 @@ const resetFormState = (options: DemoOptions) => {
     gqlAuth,
     gqlHeaders,
     strictDataPaths: options.strictDataPaths ?? false,
-    fragments: options.fragments,
+    fragments,
     operatorDefaults: options.operatorDefaults ?? {},
     maxCacheSize: options.cache?.maxSize,
     maxCacheTime: options.cache?.maxTime,
@@ -97,27 +97,31 @@ const toLimit = (text: string) => (text.trim() === '' ? undefined : Number(text)
 export const OptionsModal = ({
   options,
   onSave,
+  fragments,
+  setFragments,
   modalState: { modalOpen, setModalOpen },
 }: {
   options: DemoOptions
   // Throws on invalid options
   onSave: (options: DemoOptions) => void
+  fragments: Fragments
+  // `useFragmentEditor`'s, which throws on invalid fragments
+  setFragments: (fragments: Fragments) => void
   modalState: { modalOpen: boolean; setModalOpen: Dispatch<React.SetStateAction<boolean>> }
 }) => {
-  const [formState, setFormState] = useState(resetFormState(options))
+  const [formState, setFormState] = useState(resetFormState(options, fragments))
   const [cacheSize, setCacheSize] = useState(0)
   const toast = useToast()
 
   useEffect(() => {
     if (modalOpen) {
-      setFormState(resetFormState(options))
+      setFormState(resetFormState(options, fragments))
       setCacheSize(cacheStore.size)
     }
-  }, [modalOpen, options])
+  }, [modalOpen, options, fragments])
 
   // Plain JSON, so its serialisation is enough to compare it
-  const fragmentsChanged =
-    JSON.stringify(formState.fragments ?? {}) !== JSON.stringify(defaultOptions.fragments)
+  const fragmentsChanged = JSON.stringify(formState.fragments) !== JSON.stringify(defaultFragments)
 
   // Empties the cache at once, without waiting for Save
   const clearCache = () => {
@@ -135,7 +139,6 @@ export const OptionsModal = ({
       gqlAuth,
       gqlHeaders,
       strictDataPaths,
-      fragments,
       operatorDefaults,
       maxCacheSize,
       maxCacheTime,
@@ -155,15 +158,17 @@ export const OptionsModal = ({
         maxDepth,
         maxNodes,
       }),
-      fragments,
       // Unfiltered, since `fallback: null` is a default
       operatorDefaults,
       ...(strictNumbers && { coverage: { strictNumbers: true } }),
     }
 
-    // FigTree checks the options, the fragment definitions included, as they're
-    // applied
+    // FigTree checks the options and the fragment definitions as they're
+    // applied. The fragments go first, so a refusal of them leaves the options
+    // as they were.
     try {
+      if (JSON.stringify(formState.fragments) !== JSON.stringify(fragments))
+        setFragments(formState.fragments)
       onSave(newOptions)
     } catch (err) {
       toast({
@@ -289,11 +294,11 @@ export const OptionsModal = ({
                 </Accordion>
                 <FormControl id="fragments">
                   <JsonEditor
-                    data={formState.fragments ?? {}}
+                    data={formState.fragments}
                     setData={(data) =>
                       setFormState({
                         ...formState,
-                        fragments: data as Record<string, FragmentDefinition>,
+                        fragments: data as Fragments,
                       })
                     }
                     collapse={0}
@@ -310,7 +315,7 @@ export const OptionsModal = ({
                       size="xs"
                       colorScheme="green"
                       onClick={() =>
-                        setFormState((curr) => ({ ...curr, fragments: defaultOptions.fragments }))
+                        setFormState((curr) => ({ ...curr, fragments: defaultFragments }))
                       }
                     >
                       Reset Fragments
