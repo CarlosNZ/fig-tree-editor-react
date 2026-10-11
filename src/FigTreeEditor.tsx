@@ -70,6 +70,7 @@ import {
   type EvaluatorHandlers,
 } from './evaluation'
 import { fillAndTidy, withoutHeldBack } from './fillAndTidy'
+import { closingCycles } from './fragmentOptions'
 import {
   confirmFilledIn,
   dismissFilledIn,
@@ -181,8 +182,6 @@ export const FigTreeEditor = ({
   setExpression: setHostExpression,
   fragmentDefinition,
   setFragmentDefinition,
-  // TO-DO: the fragment picker leaves out the fragments whose use would close
-  // a cycle through this one (fragment-editor-design.md, build plan, step 6)
   fragmentName,
   defaultOperators,
   defaultFragment,
@@ -246,6 +245,13 @@ export const FigTreeEditor = ({
   // "Validation")
   const params = fragmentDefinition && Object.keys(fragmentDefinition.parameters ?? {})
   const stableParams = useStableValue(params)
+  // The fragments never offered in this body, since using one would close a
+  // cycle through it
+  const excludedFragments = useStableValue(
+    fragmentDefinition && fragmentName !== undefined
+      ? closingCycles(fragments, fragmentName)
+      : NO_FRAGMENTS
+  )
   const validate = (value: unknown) =>
     figTree.validate(value, {
       ...(params && { params }),
@@ -348,6 +354,7 @@ export const FigTreeEditor = ({
         run: runMarks,
         evaluationData: stableEvaluationData,
         params: stableParams,
+        excludedFragments,
       }),
     [
       figTree,
@@ -363,6 +370,7 @@ export const FigTreeEditor = ({
       runMarks,
       stableEvaluationData,
       stableParams,
+      excludedFragments,
     ]
   )
 
@@ -384,8 +392,8 @@ export const FigTreeEditor = ({
   )
   const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
   const allowTypeSelection = useMemo(
-    () => typesFor(figTree, classification, stableParams),
-    [figTree, classification, stableParams]
+    () => typesFor(figTree, classification, stableParams, excludedFragments),
+    [figTree, classification, stableParams, excludedFragments]
   )
   const guards = useMemo(() => {
     const context: GuardContext = {
@@ -621,6 +629,7 @@ export const FigTreeEditor = ({
                   operators,
                   fragments,
                   fragmentMode: fragmentDefinition !== undefined,
+                  excludedFragments,
                 }).map(({ label, ...fix }) => ({
                   label,
                   apply: () => latestApplyFix.current(fix),
@@ -856,16 +865,24 @@ const combineFilter = (
 }
 
 // Each value row's type dropdown, from its slot and the fragments registered
-// when it opens, and in fragment mode the declared parameters. A comment has
-// none, since it is always a string (plan, 9.4).
+// when it opens, less those that would close a cycle, and in fragment mode
+// the declared parameters. A comment has none, since it is always a string
+// (plan, 9.4).
 const typesFor =
-  (figTree: FigTree, classification: Classification, params: readonly string[] | undefined) =>
+  (
+    figTree: FigTree,
+    classification: Classification,
+    params: readonly string[] | undefined,
+    excludedFragments: readonly string[]
+  ) =>
   ({ path, value, parentData, fullData }: Parameters<TypeFilterFunction>[0]) => {
     const part = commentPart(classification, { path, value, parentData })
     if (part === 'note' || part === 'line') return false
-    const fragments = figTree.getFragments()
+    const fragments = figTree.getFragments().filter(({ name }) => !excludedFragments.includes(name))
     return typeOptions(rowAt(classification, path), value, fullData, fragments, params)
   }
+
+const NO_FRAGMENTS: readonly string[] = []
 
 // A collapsed node's summary, in place of json-edit-react's item count
 // (design, topic 3, "Collapsed nodes"), and a vars block's count of vars,

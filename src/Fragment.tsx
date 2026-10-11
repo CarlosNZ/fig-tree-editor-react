@@ -102,6 +102,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
               broken?.code === 'unknown-fragment' ? (broken.suggestion ?? undefined) : undefined
             }
             onSwitch={(next) => commit(next)}
+            excludedFragments={componentProps!.excludedFragments}
           />
           {addParameter()}
         </Toolbar>

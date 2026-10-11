@@ -20,6 +20,7 @@ interface FragmentPickerProps {
   suggestion: string | undefined // an unknown fragment's suggestion
   startOpen: boolean // on a new call
   onSwitch: (next: Record<string, unknown>) => void
+  excludedFragments: readonly string[] // those that would close a cycle
 }
 
 export const FragmentPicker = ({
@@ -31,12 +32,19 @@ export const FragmentPicker = ({
   suggestion,
   startOpen,
   onSwitch,
+  excludedFragments,
 }: FragmentPickerProps) => {
   const fragments = figTree.getFragments()
   return (
     <Select
       className="ft-fragment-picker"
-      optionGroups={fragmentOptions({ fragments, displayData, admits, current })}
+      optionGroups={fragmentOptions({
+        fragments,
+        displayData,
+        admits,
+        current,
+        excludedFragments,
+      })}
       selected={current}
       highlighted={suggestion}
       startOpen={startOpen || current === null}

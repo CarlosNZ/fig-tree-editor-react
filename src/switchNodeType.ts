@@ -29,6 +29,7 @@ export interface NodeTypeContext {
   displayData: DisplayData
   defaultOperators?: DefaultOperators
   defaultFragment?: string
+  excludedFragments?: readonly string[] // those that would close a cycle
 }
 
 const KEPT = ['//', 'vars', 'fallback', 'noCache']

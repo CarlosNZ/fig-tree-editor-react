@@ -1,7 +1,7 @@
 import { FigTree } from 'fig-tree-evaluator'
 import { describe, expect, it } from 'vitest'
 import { buildDisplayData } from '../src/displayData'
-import { fragmentOptions } from '../src/fragmentOptions'
+import { closingCycles, fragmentOptions } from '../src/fragmentOptions'
 
 // Registered in this order, which the list keeps: fig-tree infers `today` to
 // return a string and `count` a number
@@ -62,9 +62,44 @@ describe('fragmentOptions', () => {
     expect(valid.options[0].disabled).toBe(false)
   })
 
+  it('leaves out the fragments that would close a cycle, but for the current one', () => {
+    const excluded = (current: string | null) =>
+      fragmentOptions({
+        fragments,
+        displayData,
+        admits: 'any',
+        current,
+        excludedFragments: ['today', 'count'],
+      })[0].options.map(({ value }) => value)
+    expect(excluded(null)).toEqual(['anything'])
+    expect(excluded('count')).toEqual(['count', 'anything'])
+  })
+
   it('has no groups where nothing is registered', () => {
     expect(fragmentOptions({ fragments: [], displayData, admits: 'any', current: null })).toEqual(
       []
     )
+  })
+})
+
+describe('closingCycles', () => {
+  // `greet` is called by `welcome` directly, and by `home` through it
+  const calls = (name: string) => ({ expression: { fragment: name } })
+  const registry = new FigTree({
+    fragments: {
+      greet: { expression: 'Hi' },
+      welcome: calls('greet'),
+      home: calls('welcome'),
+      other: { expression: 'Bye' },
+    },
+  }).getFragments()
+
+  it('names the fragment and every fragment that calls it, directly or not', () => {
+    expect(closingCycles(registry, 'greet')).toEqual(['greet', 'welcome', 'home'])
+    expect(closingCycles(registry, 'other')).toEqual(['other'])
+  })
+
+  it('names none for a fragment not registered', () => {
+    expect(closingCycles(registry, 'draft')).toEqual([])
   })
 })

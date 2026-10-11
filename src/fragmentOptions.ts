@@ -16,20 +16,28 @@ import { strings } from './strings'
 // here" group, as operators do, which can't be chosen, with the reason in
 // place of its description. The current fragment stays in the list, and can
 // be chosen, even where it doesn't fit.
+//
+// In fragment mode, the fragments whose use would close a cycle
+// (`closingCycles`) are left out, but for the current one.
 
 export interface FragmentPickerContext {
   fragments: readonly FragmentInfo[]
   displayData: DisplayData
   admits: ExpectedType // what the call's own position admits
   current: string | null // null on a broken call
+  excludedFragments?: readonly string[]
 }
 
 export const fragmentOptions = ({
-  fragments,
+  fragments: registered,
   displayData,
   admits,
   current,
+  excludedFragments = [],
 }: FragmentPickerContext): OptionGroup<string>[] => {
+  const fragments = registered.filter(
+    ({ name }) => name === current || !excludedFragments.includes(name)
+  )
   const option = ({ name, returns }: FragmentInfo, fits: boolean): SelectOption<string> => {
     const display = displayData.fragments[name]
     return {
@@ -55,3 +63,16 @@ export const fragmentOptions = ({
     (group) => group.options.length > 0
   )
 }
+
+// The fragments a fragment body can't call (fragment-editor-design.md, "The
+// fragment picker"): the fragment being defined, where it is registered, and
+// every fragment that calls it, directly or through others. Registration
+// refuses a cycle, so these are the only ones a body could close. A fragment
+// with no name isn't registered, so nothing calls it.
+export const closingCycles = (fragments: readonly FragmentInfo[], fragmentName: string) =>
+  fragments
+    .filter(
+      ({ name, dependencies }) =>
+        name === fragmentName || dependencies.fragments.includes(fragmentName)
+    )
+    .map(({ name }) => name)

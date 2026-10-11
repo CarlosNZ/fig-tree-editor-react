@@ -46,6 +46,7 @@ export const NodeTypeSwitch = ({
     displayData: shared.displayData,
     defaultOperators: shared.defaultOperators,
     defaultFragment: shared.defaultFragment,
+    excludedFragments: shared.excludedFragments,
   }
 
   const switchTo = (target: NodeType) => {

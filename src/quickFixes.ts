@@ -20,6 +20,7 @@ import { switchOperator } from './switchOperator'
 //   node). Not on a node's own `$name`, which holds its content.
 // - Change to, where fig-tree suggests a registered operator or fragment for
 //   an unknown one: the picker's switch on a broken node, which cleans it.
+//   Not to a fragment the picker leaves out.
 // - Rename a `$` key that names nothing, where fig-tree suggests one, which
 //   makes the object a shorthand node for the fill-in step to complete.
 // - Declare, in a fragment body, a parameter the body reads that isn't
@@ -37,12 +38,19 @@ export interface QuickFixContext {
   operators: readonly OperatorInfo[]
   fragments: readonly FragmentInfo[]
   fragmentMode?: boolean
+  excludedFragments?: readonly string[]
 }
 
 export const getQuickFixes = (
   { code, path, parameter, suggestion }: Issue,
   expression: unknown,
-  { classification, operators, fragments, fragmentMode = false }: QuickFixContext
+  {
+    classification,
+    operators,
+    fragments,
+    fragmentMode = false,
+    excludedFragments = [],
+  }: QuickFixContext
 ): QuickFix[] => {
   const key = path.at(-1)
   const parentPath = path.slice(0, -1)
@@ -73,7 +81,9 @@ export const getQuickFixes = (
         ? [changeFix(path, suggestion, (node) => switchOperator(node, suggestion, null, operators))]
         : []
     case 'unknown-fragment':
-      return suggestion !== undefined && fragments.some(({ name }) => name === suggestion)
+      return suggestion !== undefined &&
+        !excludedFragments.includes(suggestion) &&
+        fragments.some(({ name }) => name === suggestion)
         ? [changeFix(path, suggestion, (node) => switchFragment(node, suggestion, null, fragments))]
         : []
     case 'unresolved-param':

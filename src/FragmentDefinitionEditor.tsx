@@ -13,6 +13,7 @@ import {
   defaultValue,
   newKeyOptions,
   checkDefinition,
+  removeParameter,
   type DefinitionFields,
 } from './definitionShape'
 import { definitionNodes } from './definitionNodes'
@@ -29,6 +30,7 @@ import { Messages } from './Messages'
 import { valueAt, type Path } from './paths'
 import { type EditorMessage } from './status'
 import { strings } from './strings'
+import { UNUSED_PARAM, unusedParameters } from './unusedParameters'
 
 // The rest of a fragment definition beside its body: the parameter
 // declarations, description, samples and metadata (fragment-editor-design.md,
@@ -39,7 +41,9 @@ import { strings } from './strings'
 //
 // The definition is checked as registration on `figTree` would check it
 // ("Validation"), and each issue outside the body is shown on its row and
-// listed beneath the tree, as the expression editor shows its issues.
+// listed beneath the tree, as the expression editor shows its issues. So is
+// a warning on each declared parameter the body never reads, with a fix that
+// removes it ("Parameters").
 //
 // A whole definition pasted over the root, its body included, replaces the
 // definition: the body goes to the expression editor, and the rest is held
@@ -99,10 +103,10 @@ export const FragmentDefinitionEditor = ({
 
   // Worked out on every render, as the expression editor's issues are, since
   // `updateOptions()` changes the registry without changing the instance
-  const issues = declarationIssues(figTree, definition).map((issue) => ({
-    issue,
-    row: drawnRow(fields, issue.path),
-  }))
+  const issues = [
+    ...declarationIssues(figTree, definition),
+    ...unusedParameters(figTree, definition),
+  ].map((issue) => ({ issue, row: drawnRow(fields, issue.path) }))
   const severities = new Map<string, Issue['severity']>()
   for (const { issue, row } of issues) {
     const key = toPathString(row)
@@ -115,7 +119,15 @@ export const FragmentDefinitionEditor = ({
     issue,
     row,
     message: issue.message,
-    fixes: [],
+    fixes:
+      issue.code === UNUSED_PARAM
+        ? [
+            {
+              label: strings.FT_FIX_REMOVE,
+              apply: () => setDefinition(removeParameter(definition, String(issue.path[1]))),
+            },
+          ]
+        : [],
   }))
 
   const layeredTheme = definitionTheme(theme, {

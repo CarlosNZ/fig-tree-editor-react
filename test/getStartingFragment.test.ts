@@ -31,6 +31,14 @@ describe('getStartingFragment', () => {
     expect(start('any', 'nope')).toEqual({ fragment: 'today' })
   })
 
+  it('passes over the fragments that would close a cycle', () => {
+    const excludedFragments = ['today', 'lookup']
+    const context = { fragments, displayData, excludedFragments }
+    expect(getStartingFragment('any', { ...context, defaultFragment: 'lookup' })).toEqual({
+      fragment: 'count',
+    })
+  })
+
   it('is null where no fragment can fit, or none is registered', () => {
     const [today] = fragments
     expect(getStartingFragment('number', { fragments: [today], displayData })).toBeNull()

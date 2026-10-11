@@ -20,6 +20,7 @@ export const strings = {
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
+  FT_UNUSED_PARAMETER: (name: string) => `The body never reads '${name}'`,
   // The type selector's entries for a declaration's `type`
   FT_TYPE_SINGLE: 'Single',
   FT_TYPE_MULTIPLE: 'Multiple',

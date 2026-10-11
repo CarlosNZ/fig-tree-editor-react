@@ -56,6 +56,9 @@ export interface Shared {
   run: RunMarks | null // how the rows ran in the latest evaluation
   evaluationData: Record<string, unknown> | undefined // the host's `$data`
   params: readonly string[] | undefined // the declared names, in fragment mode
+  // The fragments the editor never offers, since using one would close a
+  // cycle through the fragment being defined (`closingCycles`)
+  excludedFragments: readonly string[]
 }
 
 export interface CreatedNode {
@@ -187,6 +190,7 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
       fragments: shared.figTree.getFragments(),
       displayData: shared.displayData,
       defaultFragment: shared.defaultFragment,
+      excludedFragments: shared.excludedFragments,
     })
     if (node === null) return nodeData.value
     shared.created.current = { path: nodeData.path, node, replaced: nodeData.value }

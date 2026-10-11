@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
-import { FigTree } from 'fig-tree-evaluator'
+import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { type CustomTextDefinitions } from 'json-edit-react'
 import { createRef } from 'react'
 import { describe, expect, it, vi } from 'vitest'
@@ -572,6 +572,31 @@ describe('FigTreeEditor', () => {
         expression: body,
         parameters: { ...definition.parameters, gone: { type: 'any' } },
       })
+    })
+
+    it('leaves out of the type dropdown the fragments that would close a cycle', () => {
+      // `welcome` calls `greet`, so in `greet`'s body neither can be called
+      const registry = new FigTree({
+        operators: [coreOperators],
+        fragments: { greet: { expression: 'Hi' }, welcome: { expression: { fragment: 'greet' } } },
+      })
+      const types = (fragmentName?: string) => {
+        const { unmount } = render(
+          <FigTreeEditor
+            figTree={registry}
+            fragmentDefinition={{ expression: { operator: 'upper', value: 'x' } }}
+            setFragmentDefinition={vi.fn()}
+            fragmentName={fragmentName}
+          />
+        )
+        fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[1])
+        const options = [...screen.getByRole('combobox').querySelectorAll('option')]
+        unmount()
+        return options.map((option) => option.textContent)
+      }
+      expect(types('greet')).not.toContain('Fragment')
+      expect(types('other')).toContain('Fragment')
+      expect(types()).toContain('Fragment')
     })
 
     it('fills in a body that arrives incomplete, and marks the write', () => {

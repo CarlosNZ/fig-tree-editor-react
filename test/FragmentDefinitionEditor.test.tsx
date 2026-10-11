@@ -154,6 +154,33 @@ describe('FragmentDefinitionEditor', () => {
       expect(other?.style.boxShadow).toBe('')
     })
 
+    it('warns of a declared parameter the body never reads, with a fix to remove it', () => {
+      const setDefinition = vi.fn()
+      const unread: FragmentDefinition = {
+        expression: '$params.name',
+        parameters: { name: { type: 'string' }, formal: { type: 'boolean' } },
+        samples: { name: 'Ada', formal: true },
+        metadata: { seeds: { formal: false } },
+      }
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={unread}
+          setDefinition={setDefinition}
+        />
+      )
+      const list = screen.getByRole('list')
+      expect(within(list).getByText('parameters.formal')).toBeInTheDocument()
+      expect(within(list).getByText("The body never reads 'formal'")).toBeInTheDocument()
+      fireEvent.click(within(list).getByRole('button', { name: 'Remove' }))
+      expect(setDefinition).toHaveBeenCalledExactlyOnceWith({
+        expression: '$params.name',
+        parameters: { name: { type: 'string' } },
+        samples: { name: 'Ada' },
+        metadata: { seeds: {} },
+      })
+    })
+
     it('shows no messages area for a definition that registers', () => {
       const { container } = render(
         <FragmentDefinitionEditor

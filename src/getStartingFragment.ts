@@ -13,13 +13,20 @@ export interface StartingFragmentContext {
   fragments: readonly FragmentInfo[]
   displayData: DisplayData
   defaultFragment?: string
+  excludedFragments?: readonly string[] // those that would close a cycle
 }
 
 export const getStartingFragment = (
   admits: ExpectedType,
-  { fragments, displayData, defaultFragment }: StartingFragmentContext
+  { fragments, displayData, defaultFragment, excludedFragments }: StartingFragmentContext
 ): { fragment: string } | null => {
-  const fitting = fragmentOptions({ fragments, displayData, admits, current: null })
+  const fitting = fragmentOptions({
+    fragments,
+    displayData,
+    admits,
+    current: null,
+    excludedFragments,
+  })
     .flatMap(({ options }) => options)
     .filter(({ disabled }) => !disabled)
     .map(({ value }) => value)

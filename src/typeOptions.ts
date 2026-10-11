@@ -23,7 +23,7 @@ import { strings } from './strings'
 //    scope, and Element inside an iterator's per-element parameter.
 // 3. Operator, where Data is offered, then Fragment, where a registered
 //    fragment can fit the slot, so choosing it never creates a call that is
-//    an error from the start.
+//    an error from the start. The fragments given are those offered.
 // 4. The row's current type, where it isn't already listed, so the dropdown
 //    never shows a value it doesn't offer.
 

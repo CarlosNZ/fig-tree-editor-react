@@ -264,6 +264,13 @@ export const checkDefinition = (
   return next === update.newData ? undefined : { data: next }
 }
 
+// The definition without the parameter's declaration, or its entries
+export const removeParameter = <T extends DefinitionFields>(fields: T, name: string): T => {
+  const { [name]: _, ...declarations } = fields.parameters ?? {}
+  const next = { ...fields, parameters: declarations }
+  return followParameters(fields, next, { event: 'delete', path: ['parameters', name] }) as T
+}
+
 // A renamed parameter's entries are renamed, in place, and a removed
 // parameter's are removed, however it was removed
 const followParameters = (

@@ -113,6 +113,17 @@ describe('quick fixes', () => {
       })
     })
 
+    it("doesn't change a call to a fragment that would close a cycle", () => {
+      const expression = { fragment: 'geet' }
+      const [issue] = figTree.validate(expression).issues
+      const fixes = getQuickFixes(issue, expression, {
+        ...registry,
+        classification: classify(expression, registry),
+        excludedFragments: ['greet'],
+      })
+      expect(fixes).toEqual([])
+    })
+
     it('offers nothing without a suggestion', () => {
       expect(offered({ operator: 'zzzzz', values: [1] })).toEqual([['unknown-operator', []]])
     })

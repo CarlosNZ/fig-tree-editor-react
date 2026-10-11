@@ -116,7 +116,7 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 **Its type is what the reference's position admits** (the slot's `admits`), so `$params.country` typed into `plus.values` is declared `['number', 'string']`, and one typed into `if.condition` what `condition` admits. Where the position says nothing about the parameter's own value, the type is `any`: a drill, whose position admits the drilled value; a template token, whose value is turned into text; a `get`, unless its path is the parameter alone; and plain data. Where one edit adds the same new name at several positions (a pasted body), they must all agree on a type, otherwise it is `any`. A parameter added by hand in the definition editor also starts as `any`. An existing declaration's type is never changed.
 
-**Nothing removes a declaration on its own.** When the last reference to a parameter goes, its declaration stays, flagged as unused, with a quick fix to remove it. fig-tree has no such warning, so the editor works it out from its own walk of the references.
+**Nothing removes a declaration on its own.** When the last reference to a parameter goes, its declaration stays, flagged as unused in the definition editor, with a quick fix to remove it (and its `samples` and `metadata.seeds` entries). fig-tree has no such warning, so the editor works it out from the names `getDependencies()` finds the body reading. Where the body's reads can't be listed (a bare `$params`, or a computed path from it), it may read any parameter, so none is flagged.
 
 **A typo is visible, not silent.** `$params.contry` adds a second declaration beside `country`, which becomes unused, so both show in the definition editor.
 
@@ -138,7 +138,11 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 ## The fragment picker — **Agreed**
 
-In fragment mode the picker never offers the fragment being defined, or any fragment whose `dependencies.fragments` includes it, since using either would close a cycle. This needs the fragment's name (`fragmentName`), and no upstream change. Without a name, nothing is left out: a fragment not yet registered cannot be called by any other.
+In fragment mode the picker never offers the fragment being defined, or any fragment whose `dependencies.fragments` includes it, since using either would close a cycle. This needs the fragment's name (`fragmentName`), and no upstream change. Without a name, nothing is left out: a fragment not yet registered cannot be called by any other. So this matters only while a registered fragment is being edited.
+
+They are left out, not dimmed, since they can never be used in this body, and not only from the picker: from everything that offers a fragment (the type dropdown's Fragment entry, the node-type switch, the starting fragment, and the "Change to" fix on an unknown fragment). A call already in the body keeps its fragment in the picker, as the current one.
+
+The editor goes no further than the expression editor in catching cycles. A call that closes one and arrives some other way (pasted, or in the raw-JSON editor) isn't reported: it fails at registration, as it would anywhere else. Until then, a ▶ runs the draft under its temporary name, so the call reaches the registered version, once.
 
 ---
 
