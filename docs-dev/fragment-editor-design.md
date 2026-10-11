@@ -34,7 +34,7 @@ The expression editor is already most of a fragment editor: a fragment body is a
 
 The sample values start inside the definition editor, since they live in the definition ("The definition's shape"). They move to a component of their own only if the definition editor turns out too cluttered.
 
-**One piece of state.** The host holds one `FragmentDefinition`. The expression editor edits its `expression` and adds declarations ("Parameters"); the definition editor edits the rest. Both are controlled, so they cannot drift apart: they are two views of the same object.
+**One piece of state.** One `FragmentDefinition` is held, by `useFragmentEditor` on the host's behalf ("Authoring state"). The expression editor edits its `expression` and adds declarations ("Parameters"); the definition editor edits the rest. Both are controlled, so they cannot drift apart: they are two views of the same object.
 
 **Fragment mode is switched on explicitly** by the host, as agreed in v3-design.md (topic 6), rather than inferred. In that mode the expression editor needs the whole definition, since it writes declarations, and, once the fragment is registered, its name, for cycles ("The fragment picker").
 
@@ -64,7 +64,7 @@ The sample values start inside the definition editor, since they live in the def
 
 **Separate props, not one object,** as `expression` and `setExpression` are, so nothing in the editor depends on the identity of an object the host builds on each render.
 
-**The name is a prop of its own,** since `FragmentDefinition` has no `name`: a fragment is named by its key where it is registered, and registration rejects unknown keys on the definition. It is optional. A fragment not yet registered cannot be called by any other, so there is no cycle for the picker to prevent, and evaluating through a call can use a temporary name. The host holds it, as it holds the definition, and passes it to both editors: the definition editor is where it is changed ("The definition editor").
+**The name is a prop of its own,** since `FragmentDefinition` has no `name`: a fragment is named by its key where it is registered, and registration rejects unknown keys on the definition. It is optional. A fragment not yet registered cannot be called by any other, so there is no cycle for the picker to prevent, and evaluating through a call can use a temporary name. It is held with the definition ("Authoring state") and passed to both editors: the definition editor is where it is changed ("The definition editor").
 
 ---
 
@@ -196,16 +196,49 @@ Evaluating through a call makes F10, an `evaluate()` option for `$params` values
 - The sample values are keyed by the declared parameters only. An optional parameter left without one is unset.
 - **Its own components,** from `@json-edit-react/components`: a colour picker for `backgroundColor` and `textColor`, without opacity, and chips for `type`.
 - **A declaration's `type` has three entries in the type selector,** one for each form it takes: **Single**, a basic type picked from a list (an enum); **Multiple**, a union shown as chips picked from the basic types, `any` left out since a union with it is `any`; and **Literal**, a literal union of strings shown as chips typed freely. Switching from Single to Multiple keeps the type as the union's one member. A switch to Single takes the list's first type (`any`), since json-edit-react's switch to an enum reads the value before the definition's `toStandardType`; with that changed, it would keep the union's first member, or `string` from a literal union.
-- **Its root row is a preview of a call's header,** in place of the root's name: the fragment's button as a call to it shows in the expression editor, labelled with the fragment's name in its colours, with its display name at the top right. A click on the button turns it into an input that renames the fragment: Enter or leaving it saves, Escape cancels, and clearing it leaves the fragment unnamed. An unnamed fragment's button says "Fragment — click to rename". The button has no ▶, since nothing runs from it. It is json-edit-react's `keyComponent` for the root, so the rest of the root row (its chevron, its edit tools, pasting a whole definition) is json-edit-react's own. Without `setFragmentName` the button is a preview only.
+- **Its root row is a preview of a call's header,** in place of the root's name: the fragment's button as a call to it shows in the expression editor, labelled with the fragment's name in its colours, with its display name at the top right. A click on the button turns it into an input that renames the fragment: Enter or leaving it saves, Escape cancels, and clearing it leaves the fragment unnamed, unless it is registered ("Authoring state", "A rename saves at once"). An unnamed fragment's button says "Fragment — click to rename". The button has no ▶, since nothing runs from it. It is json-edit-react's `keyComponent` for the root, so the rest of the root row (its chevron, its edit tools, pasting a whole definition) is json-edit-react's own. Without `setFragmentName` the button is a preview only.
 - **Everything else is plain JSON** held to the shape. A picker for `constraints` comes later.
 - **A whole definition pasted over the root,** its body included, replaces the definition: the body goes to the expression editor, and the rest is held to the shape as any other change is. A definition is often written whole, so this saves splitting it by hand.
 - **Its issues** are registration's, outside the body ("Validation"), so it takes the host's `figTree`. Each tints its row as in the expression editor, and is listed beneath the tree in a messages area. Revealing a row from the list comes later.
 
 ---
 
-## Demo — **Proposed**
+## Authoring state: `useFragmentEditor` — **Agreed**
 
-A fragment-authoring page: the two components side by side, and a button that registers the definition through `updateOptions()`, beside the Config panel's "Reset fragments".
+The host lays out the components, but the state and logic behind them belong to the editor, in a hook. The host gives it the instance and the fragments it starts with, and wires what it returns into the components and its own buttons:
+
+```tsx
+const fragmentEditor = useFragmentEditor({
+  figTree,
+  initialFragments, // the definitions to start with, bodies included
+  initialDraft, // optional: { definition, name }, to restore a draft
+  onFragmentsChange, // optional: (fragments) => persist them
+  confirmDiscard, // optional: () => boolean | Promise<boolean>, window.confirm by default
+})
+
+<FragmentSelect {...fragmentEditor.selectProps} />
+<FigTreeEditor figTree={figTree} {...fragmentEditor.editorProps} />
+<FragmentDefinitionEditor figTree={figTree} {...fragmentEditor.definitionProps} />
+<button disabled={!fragmentEditor.canSave} onClick={fragmentEditor.save}>Save</button>
+```
+
+It also returns `undo`, `redo`, `canUndo` and `canRedo`, `startFromExpression(expression)`, `draft`, and `fragments` with `setFragments(fragments)`.
+
+- **The hook holds the fragments.** An instance never returns a fragment's body (`getFragments()` leaves out `expression` and `samples`), so whatever loads a fragment into the editors must keep the definitions itself. The hook registers `initialFragments` on the instance when it is first rendered, and from then on is the only thing that changes the instance's fragments. `fragments` is the current record, and `setFragments` replaces it whole, for a host's own fragments editor such as the demo's Config panel. A host persists them through `onFragmentsChange`, called with the whole record after each change that registers.
+- **And the draft:** the definition being edited, its name, the version last saved, whether it has been edited since it was started or loaded, and its undo history. The components stay controlled, with plain props: the hook only builds them, so a host can still wire them by hand. Rejected: a context provider the components read from, which hides the wiring.
+- **The picker, `FragmentSelect`,** is the editor's `Select`, listing `figTree.getFragments()` as the toolbar's fragment picker does. Its placeholder, "Select fragment", shows while the draft is not a registered fragment. Its name keeps it apart from the toolbar's `FragmentPicker`.
+- **Picking a fragment** loads its definition into both editors, and its name, and clears the undo history, so undo never brings back another fragment's body. A draft with unsaved edits is discarded only once `confirmDiscard` resolves true, so a host can open its own dialog.
+- **Switching to fragment mode** is the host's, which calls `startFromExpression(expression)`. It starts a new, unnamed fragment with the expression as its body and no parameters, unless the draft has edits not yet saved, which keeps it. A draft started from the expression and never edited is replaced, so switching back and forth picks up the expression's changes.
+- **Saving.** `canSave` is true when the draft has a name, and is unregistered or differs from its saved version. They are compared by value, so undoing back to the saved version disables it again, and a fragment just loaded starts with it disabled. `save()` registers the draft under its name.
+- **A rename saves at once,** so there is only ever one name. A registered fragment's saved version moves to the new name, in one `updateOptions()` with the old name `null`, and the draft's unsaved edits stay unsaved. A draft never registered is only named, and Save registers it. A registered fragment can't be left unnamed, so clearing its name cancels the rename.
+- **A refused registration,** from a save or a rename, changes nothing. Its error is listed in the definition editor's messages area, where registration's issues already are, so the host shows nothing itself. A rename or a change of declarations that breaks a fragment calling this one is refused by registration's own checks, and the hook does nothing more about it, since fragments calling fragments are uncommon.
+- **Undo** covers the definition only, since a rename is a save, not an edit.
+
+---
+
+## Demo — **Agreed**
+
+A fragment-authoring page wired through `useFragmentEditor`: the picker above the definition editor, the two editors, and a Save button. The Config panel's fragments editor reads and replaces the hook's `fragments`, and its "Reset fragments" replaces them with the defaults, so the demo's `applyOptions` leaves fragments to the hook. The draft is kept in localStorage, through `initialDraft` and `draft`. `confirmDiscard` opens a Chakra dialog.
 
 ---
 
@@ -219,7 +252,7 @@ Each step ends with one or two expressions or definitions to try by hand in the 
 4. **`FragmentDefinitionEditor`.** The component ("The definition editor"), with declarations added by hand. The details, colour pickers among them, are settled as it is built. Then, beside it, a pure function with its own tests that takes a body, its classification and its declarations, and returns the declarations with any missing ones added: the names from `getDependencies()`' `params` entry, each typed by the position it was typed at ("Parameters").
 5. **Evaluation and validation.** Build them as settled in "Validation" and "Evaluation", on fig-tree's F9 and F19 ([v3-upstream.md](v3-upstream.md)). Validation comes first: until the body's `$params` references resolve, every row that reads one, and every row above it, has its ▶ blocked by their errors.
 6. **Fragment mode in the expression editor.** The Parameter entry, autocomplete and every reference path for `$params` ("Parameters"); adding declarations through step 4's function, in the editor's update path; the fragment picker leaving out cycles (`fragmentName`); the unused-declaration warning.
-7. **Finishing.** Export the component and its types from `src/index.ts`, its styles on the `editorTheme` tokens, the bundle budget in `scripts/entries.mjs`, and a "Register" button in the demo beside "Reset fragments", so a fragment authored in fragment mode can be called from expression mode.
+7. **Finishing.** `useFragmentEditor` and `FragmentSelect` ("Authoring state"), and the demo wired through them ("Demo"), so a fragment authored in fragment mode can be saved and called from expression mode. Export them and the definition editor, with their types, from `src/index.ts`, the styles on the `editorTheme` tokens, and the bundle budget in `scripts/entries.mjs`.
 8. **Back to the published fig-tree.** fig-tree publishes no preview until this is built, since the two are changed together. Meanwhile `pnpm dev` runs the demo on the sibling checkout's fig-tree (`demo:local-evaluator`), and the demo's `tsconfig.json` reads its types from there, and the library is checked with `typecheck:local-evaluator` and `test:local-evaluator`. Once fig-tree publishes, both `package.json` files take the new version, `pnpm dev` goes back to `demo:local`, and the demo's `tsconfig.json` drops its fig-tree paths.
 
 ---
