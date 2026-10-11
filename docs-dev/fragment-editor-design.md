@@ -95,15 +95,16 @@ interface FragmentMetadata {
 
 **`samples` sits at the root of the definition,** not in `metadata`: sample values are part of authoring and testing the fragment, not of how it is presented. They are keyed by parameter name, as `seeds` is.
 
+**Registration type-checks `samples`** against the declarations, as it does `default`s (F20 in [v3-upstream.md](v3-upstream.md)), so a sample a call would reject is reported where it is written, not at every ▶. The call to a draft checks every sample, read or not.
+
 **`samples` and `seeds` are different things.** A seed is what a new call starts with, often an empty value (`""`); a sample is a realistic value to test the body with (`"NZ"`). They are kept apart.
 
 **Each parameter's `metadata` stays opaque.** Nothing needs a convention for it yet.
 
-Both changes are fig-tree's: the rename, and `samples` among the wrapper's allowed keys ("Upstream changes").
+The changes are fig-tree's: the rename, `samples` among the wrapper's allowed keys, and their type check ("Upstream changes").
 
 ### Open
 
-- Should registration type-check `samples` against the declarations, as it does `default`s? A sample that a real call would reject is then reported where it is written, not when it is first used.
 - Should `getFragments()` or `getCatalog` report `samples`? The definition editor gets the definition from the host, so it does not need them to.
 - A declared `returns`, which registration would check against the inferred one. Inference covers the editor's needs, so this can wait.
 
@@ -144,7 +145,7 @@ In fragment mode the picker never offers the fragment being defined, or any frag
 
 ## Evaluation — **Agreed**
 
-**Through a call.** The editor already evaluates fragment bodies whenever an expression calls one. So the body, or a sub-tree of it, is evaluated as a call: `{ fragment: name, parameters: samples }`. That gives the behaviour of a real call for free: defaults applied, `null` treated as unset, and the arguments checked against the declarations. A required parameter with no sample fails the call's own argument check, which is the right message. A ▶ on an inner row wraps that sub-tree as a temporary fragment with the same declarations, with the scope around it wrapped as `subTree.ts` does in expression mode.
+**Through a call.** The editor already evaluates fragment bodies whenever an expression calls one. So the body, or a sub-tree of it, is evaluated as a call: `{ fragment: name, parameters: samples }`. That gives the behaviour of a real call for free: defaults applied, `null` treated as unset, and the arguments checked against the declarations. A required parameter with no sample would fail every row's call alike, whether the row reads it or not, so the editor refuses the ▶ before the call, naming the parameters without samples. A failure's message names the fragment by `fragmentName`, or `draft` without one, never by the temporary name. A ▶ on an inner row wraps that sub-tree as a temporary fragment with the same declarations, with the scope around it wrapped as `subTree.ts` does in expression mode.
 
 **On a derived instance.** The draft is registered on an instance derived from the host's, `figTree.with({ fragments: { [name]: draft } })` (F19 in [v3-upstream.md](v3-upstream.md)), and the call is evaluated there. `with()` builds a new instance as if `updateOptions()` had been applied to a copy, so the host's instance is untouched. It has a result store of its own, so nothing one instance does reaches the other's. One is derived for each ▶, so it is never out of date.
 
@@ -154,7 +155,9 @@ The cost is that results aren't reused from one ▶ to the next. Within one eval
 
 **A draft that doesn't register** throws from `with()`, with every issue at its path. The ▶ reports it as a refused evaluation, as `evaluateSubTree` does a refusal in expression mode. Its errors are already in the tree, from validation.
 
-**The trace.** Each body node's entry carries `source: { fragment }` and its path in the definition. Registration compiles a body under `['expression']`, so that key comes off to give the row (to confirm when built). `readTrace` in `runMarks.ts` reads the draft's entries by those paths, and lets each call to another fragment stand in for that body's entries, as it does now. A failure inside the draft carries the same `fragment` and `fragmentPath`, mapped the same way.
+**The trace.** Each body node's entry carries `source: { fragment }` and its path in the definition. Registration compiles a body under `['expression']`, so that key comes off to give the row (checked against fig-tree). The call itself is the root entry, at `[]`, and each argument has an entry at `['parameters', name]`, with no `source`: these stand for nothing in the tree. `readTrace` in `runMarks.ts` reads the draft's entries by their paths, and lets each call to another fragment stand in for that body's entries, as it does now. The `Evaluation` a host receives carries the draft's temporary name as `draft`, so it can tell the tree's entries from the rest.
+
+**Failures.** Once a failure has left a fragment body, fig-tree gives where in the body it failed as `fragment` and `fragmentPath`, and keeps its `path` at the call, in the coordinates of the body that made it (checked against fig-tree). A failure in the draft has the draft's name and its row as `fragmentPath`, so it is the tree's own, without a `fragment`. One in a fragment the draft calls, at any depth, has its `path` at the call in the draft's body, and keeps its `fragment`, as in expression mode. One with neither, such as a sample a required parameter lacks, is at the call, so it marks the evaluated row.
 
 **Rejected:**
 
@@ -218,5 +221,6 @@ To be logged in [v3-upstream.md](v3-upstream.md) once agreed:
 - **Allow `samples` on the definition wrapper** (fig-tree, `DEFINITION_KEYS` in `fragments.ts`), and add it to `FragmentDefinition`. The engine ignores it, unless registration checks it (Open above).
 - **A `params` entry on `getDependencies()`** (fig-tree): the parameter names an expression reads, in every form a reference takes, not following calls into called fragments' bodies.
 - **`with(update)`, an instance derived with an options update** (fig-tree), for evaluating a draft ("Evaluation"). Logged as F19. It makes F10 unnecessary, so F10 is dropped.
+- **F20, registration type-checks `samples`** (fig-tree), and a literal union's failure gives the value.
 - **F9, the fragment-body option on `validate()`** (fig-tree, already logged), for validating a body ("Validation").
 - **F8, the scope-aware rename helper** (fig-tree, already logged), for renaming a parameter.

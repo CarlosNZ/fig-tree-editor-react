@@ -449,6 +449,58 @@ describe('marking how a run went', () => {
     expect(at(marks, ['d', '$plus', 0]).runs[0].cached).toBe(true)
   })
 
+  describe('in a fragment body', () => {
+    const parameters = { n: { type: 'number' as const } }
+    const inFragment = (expression: unknown, path: Path) =>
+      evaluate(expression, path, { fragment: { expression, parameters, samples: { n: 0 } } })
+
+    it('marks the rows by their runs, and nothing for the call around the body', async () => {
+      const { marks } = await inFragment(
+        { vars: { m: { $plus: ['$params.n', 1] } }, a: { $multiply: ['$vars.m', 2] } },
+        ['a']
+      )
+      expect(statuses(marks)).toEqual({
+        a: 'value',
+        'a.$multiply[0]': 'value',
+        'vars.m': 'value',
+        'vars.m.$plus[0]': 'value',
+      })
+      expect(at(marks, ['a']).runs[0].value).toBe(2)
+    })
+
+    it("gives a failure in the body as the tree's own", async () => {
+      const { marks } = await inFragment(
+        { a: { operator: 'if', condition: { $divide: [1, '$params.n'] }, then: 1 } },
+        ['a']
+      )
+      expect(statuses(marks)).toEqual({
+        a: 'failed',
+        'a.condition': 'failed',
+        'a.condition.$divide[1]': 'value',
+      })
+      const [run] = at(marks, ['a']).runs
+      expect(run.failedAt).toEqual(['a', 'condition'])
+      expect(run).not.toHaveProperty('fragment')
+    })
+
+    it("gives a failed call's message as the editor words it", async () => {
+      const expression = { a: { $plus: [1, 1] } }
+      const { marks } = await evaluate(expression, ['a'], {
+        fragment: { expression, parameters, samples: { n: 'two' } },
+        fragmentName: 'weigh',
+      })
+      const [run] = at(marks, ['a']).runs
+      expect(run.status).toBe('failed')
+      expect(run.message).toMatch(/^'weigh\.n': expected number/)
+    })
+
+    it("gives a failure in a fragment the body calls as that fragment's, at the call", async () => {
+      const { marks } = await inFragment({ a: { b: { fragment: 'broken' } } }, ['a'])
+      const [run] = at(marks, ['a']).runs
+      expect(run).toMatchObject({ failedAt: ['a', 'b'], fragment: 'broken' })
+    })
+  })
+
   it('marks only the evaluated row, failed, where there is no trace', async () => {
     const { evaluation, marks } = await evaluate(
       { x: { operator: 'nope' }, y: { $plus: [1, 1] } },

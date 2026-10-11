@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { FigTree, coreOperators, defineOperator } from 'fig-tree-evaluator'
+import { FigTree, coreOperators, defineOperator, type FragmentDefinition } from 'fig-tree-evaluator'
 import { classify } from '../src/classify'
 import {
   createEvaluator,
@@ -145,6 +145,101 @@ describe('evaluating a row', () => {
     expect(evaluation.status).toBe('failed')
     expect(evaluation.failure).toMatchObject({ path: ['x'], fragment: 'broken' })
     expect(evaluation.failure?.fragmentPath).toBeDefined()
+  })
+})
+
+describe('evaluating a row of a fragment body', () => {
+  // The definition around a body, with its declarations and samples
+  const definition = (
+    expression: unknown,
+    rest: Omit<FragmentDefinition, 'expression'> = {}
+  ): FragmentDefinition => ({
+    expression,
+    parameters: { n: { type: 'number' }, unit: { type: 'string', default: 'kg' } },
+    samples: { n: 2 },
+    ...rest,
+  })
+  const inFragment = (
+    expression: unknown,
+    path: Path,
+    rest?: Omit<FragmentDefinition, 'expression'>
+  ) => evaluate(expression, path, { fragment: definition(expression, rest) })
+
+  it('is done with the value a call with the samples gives, defaults applied', async () => {
+    const body = {
+      vars: { scale: 10 },
+      value: { amount: { $multiply: ['$params.n', '$vars.scale'] }, unit: '$params.unit' },
+    }
+    const evaluation = await inFragment(body, [])
+    expect(evaluation).toMatchObject({
+      status: 'done',
+      result: { value: { amount: 20, unit: 'kg' } },
+    })
+    const row = await inFragment(body, ['value', 'amount'])
+    expect(row).toMatchObject({ path: ['value', 'amount'], status: 'done', result: 20 })
+    expect(row.draft).toBe('fragmentDraft')
+  })
+
+  it('reads the samples as a caller writes them', async () => {
+    const body = { $plus: ['$params.n', 1] }
+    const evaluation = await evaluate(body, [], {
+      fragment: definition(body, { samples: { n: '$data.n' } }),
+      data: { n: 5 },
+    })
+    expect(evaluation.result).toBe(6)
+  })
+
+  it("fails at its row where the body fails, as the tree's own failure", async () => {
+    const body = { a: { $divide: ['$params.n', 0] } }
+    const evaluation = await inFragment(body, [])
+    expect(failed(evaluation)).toEqual([['a'], 'divide'])
+    expect(evaluation.failure).not.toHaveProperty('fragment')
+    expect(evaluation.failure).not.toHaveProperty('fragmentPath')
+  })
+
+  it("fails at the call where a fragment the body calls fails, keeping that fragment's", async () => {
+    const evaluation = await inFragment({ a: [{ fragment: 'broken' }] }, [])
+    expect(evaluation.failure).toMatchObject({ path: ['a', 0], fragment: 'broken' })
+  })
+
+  it('is refused, with no trace, where a required parameter has no sample, read or not', async () => {
+    const evaluation = await inFragment({ x: 1 }, ['x'], {
+      parameters: { n: {}, m: { required: true }, o: { default: 1 }, p: { required: false } },
+      samples: { m: null },
+    })
+    expect(evaluation).toMatchObject({ status: 'failed', failure: { path: ['x'] } })
+    expect(evaluation.failure?.message).toBe('No samples for `n`, `m`, which are required')
+    expect(evaluation).not.toHaveProperty('trace')
+  })
+
+  it('fails at the evaluated row where the call refuses a sample, naming the fragment', async () => {
+    const body = { x: '$params.n' }
+    const fragment = definition(body, { samples: { n: 'two' } })
+    const named = await evaluate(body, ['x'], { fragment, fragmentName: 'weigh' })
+    expect(named.failure).toMatchObject({ path: ['x'] })
+    expect(named.failure?.message).toMatch(/^'weigh\.n': expected number/)
+    const unnamed = await evaluate(body, ['x'], { fragment })
+    expect(unnamed.failure?.message).toMatch(/^'draft\.n': /)
+    expect(unnamed.failure?.error.message).toMatch(/^'fragmentDraft\.n': /)
+  })
+
+  it("is refused, with no trace, where the declarations don't register", async () => {
+    const evaluation = await inFragment({ x: '$params.n' }, ['x'], {
+      parameters: { n: { type: 'number', default: 'two' } },
+    })
+    expect(evaluation).toMatchObject({ status: 'failed', path: ['x'], failure: { path: ['x'] } })
+    expect(evaluation).not.toHaveProperty('trace')
+  })
+
+  it('lists the fallbacks that fired in the body, at their rows', async () => {
+    const body = { a: { $divide: ['$params.n', 0], fallback: 0 } }
+    const evaluation = await inFragment(body, [])
+    expect(evaluation.fallbacks.map(({ path }) => path)).toEqual([['a']])
+  })
+
+  it("leaves the host's instance as it was", async () => {
+    await inFragment({ x: '$params.n' }, [])
+    expect(figTree.getFragments().map(({ name }) => name)).toEqual(['risky', 'broken'])
   })
 })
 

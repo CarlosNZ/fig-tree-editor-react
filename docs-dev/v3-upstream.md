@@ -14,42 +14,43 @@ An entry also records whether its issue has been filed, and when the change has 
 
 ## Summary
 
-| ID  | Package            | Change                                                                     | State    | Issue                                                             | Shipped         |
-| --- | ------------------ | -------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
-| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout`       | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
-| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`                  | Dropped  | Not filed                                                         | —               |
-| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                      | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                                  | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F6  | fig-tree-evaluator | Export `typesIntersect`                                                    | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F7  | fig-tree-evaluator | A description on every parameter                                           | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
-| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                                  | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
-| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                     | Wanted   | Not filed                                                         | —               |
-| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                 | Dropped  | Not filed                                                         | —               |
-| F11 | fig-tree-evaluator | Infer and report a fragment's result type                                  | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                       | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                   | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
-| F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference` | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
-| F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                 | Maybe    | Not filed                                                         | —               |
-| F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                            | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | 3.0.0-preview.8 |
-| F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`           | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
-| F18 | fig-tree-evaluator | `get`'s `from` as a bare namespace, and one `toGet` shape                  | Wanted   | [#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237) | 3.0.0-preview.9 |
-| F19 | fig-tree-evaluator | `with(update)`: a derived instance with an options update                  | Required | Not filed                                                         | —               |
-| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open          | Dropped  | Not filed                                                         | —               |
-| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                 | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
-| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                       | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
-| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                               | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    | —               |
-| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens           | Dropped  | Not filed                                                         | —               |
-| J6  | json-edit-react    | A type selector for collection rows                                        | Maybe    | Not filed                                                         | —               |
-| J7  | json-edit-react    | A key component for array elements while indexes are hidden                | Maybe    | Not filed                                                         | —               |
-| J8  | json-edit-react    | Open an object's add-key input from the editor handle                      | Dropped  | Not filed                                                         | —               |
-| J9  | json-edit-react    | Reveal a row from the editor handle                                        | Maybe    | Not filed                                                         | —               |
-| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                       | Open     | Not filed                                                         | —               |
-| J11 | json-edit-react    | A row without the collection wrapper is never collapsed                    | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
-| J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
-| J13 | json-edit-react    | A commit function for custom buttons                                       | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | 2.0.4           |
-| J14 | json-edit-react    | A compact array view                                                       | Open     | Not filed                                                         | —               |
-| J15 | json-edit-react    | A definition that keeps its row from collapsing                            | Maybe    | [#419](https://github.com/CarlosNZ/json-edit-react/issues/419)    | —               |
+| ID  | Package            | Change                                                                        | State    | Issue                                                             | Shipped         |
+| --- | ------------------ | ----------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
+| F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout`          | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
+| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`                     | Dropped  | Not filed                                                         | —               |
+| F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                          | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                         | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F6  | fig-tree-evaluator | Export `typesIntersect`                                                       | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F7  | fig-tree-evaluator | A description on every parameter                                              | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
+| F8  | fig-tree-evaluator | A scope-aware rename helper in `./format`                                     | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | —               |
+| F9  | fig-tree-evaluator | A fragment-body option on `validate()`                                        | Wanted   | Not filed                                                         | —               |
+| F10 | fig-tree-evaluator | Supplying `$params` values to `evaluate()`                                    | Dropped  | Not filed                                                         | —               |
+| F11 | fig-tree-evaluator | Infer and report a fragment's result type                                     | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F12 | fig-tree-evaluator | Sample-data warnings at the path of the reading node                          | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F13 | fig-tree-evaluator | A `buildString` template seed that needs no substitution                      | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
+| F14 | fig-tree-evaluator | Export `singlePositionalTarget`, and `as` bindings in `recognizeReference`    | Maybe    | [#201](https://github.com/CarlosNZ/fig-tree-evaluator/issues/201) | 3.0.0-preview.3 |
+| F15 | fig-tree-evaluator | `as` bindings in `toGet` and `toReference`                                    | Maybe    | Not filed                                                         | —               |
+| F16 | fig-tree-evaluator | A commented `get` stays a node in `toShorthand`                               | Wanted   | [#203](https://github.com/CarlosNZ/fig-tree-evaluator/issues/203) | 3.0.0-preview.8 |
+| F17 | fig-tree-evaluator | No `hint` severity: the renumber hint folds into `unbound-token`              | Maybe    | Not filed                                                         | 3.0.0-preview.5 |
+| F18 | fig-tree-evaluator | `get`'s `from` as a bare namespace, and one `toGet` shape                     | Wanted   | [#237](https://github.com/CarlosNZ/fig-tree-evaluator/issues/237) | 3.0.0-preview.9 |
+| F19 | fig-tree-evaluator | `with(update)`: a derived instance with an options update                     | Required | Not filed                                                         | —               |
+| F20 | fig-tree-evaluator | Registration type-checks `samples`; a literal union's failure gives the value | Wanted   | Not filed                                                         | —               |
+| J1  | json-edit-react    | Keep a node's edit tools visible while its custom toolbar is open             | Dropped  | Not filed                                                         | —               |
+| J2  | json-edit-react    | Expose the raw-JSON editor to custom collection components                    | Wanted   | [#411](https://github.com/CarlosNZ/json-edit-react/issues/411)    | 2.0.1           |
+| J3  | json-edit-react    | Transactions in `useUndo` (`@json-edit-react/utils`)                          | Dropped  | [#412](https://github.com/CarlosNZ/json-edit-react/issues/412)    | —               |
+| J4  | json-edit-react    | A target-aware drop filter for drag-and-drop                                  | Wanted   | [#413](https://github.com/CarlosNZ/json-edit-react/issues/413)    | —               |
+| J5  | json-edit-react    | Theme definitions that can carry a custom component's own tokens              | Dropped  | Not filed                                                         | —               |
+| J6  | json-edit-react    | A type selector for collection rows                                           | Maybe    | Not filed                                                         | —               |
+| J7  | json-edit-react    | A key component for array elements while indexes are hidden                   | Maybe    | Not filed                                                         | —               |
+| J8  | json-edit-react    | Open an object's add-key input from the editor handle                         | Dropped  | Not filed                                                         | —               |
+| J9  | json-edit-react    | Reveal a row from the editor handle                                           | Maybe    | Not filed                                                         | —               |
+| J10 | json-edit-react    | Report a rejected `setValue` to the custom component                          | Open     | Not filed                                                         | —               |
+| J11 | json-edit-react    | A row without the collection wrapper is never collapsed                       | Required | [#415](https://github.com/CarlosNZ/json-edit-react/issues/415)    | 2.0.2           |
+| J12 | json-edit-react    | No left click zone where `collapseClickZones` leaves it out                   | Wanted   | [#417](https://github.com/CarlosNZ/json-edit-react/issues/417)    | —               |
+| J13 | json-edit-react    | A commit function for custom buttons                                          | Wanted   | [#418](https://github.com/CarlosNZ/json-edit-react/issues/418)    | 2.0.4           |
+| J14 | json-edit-react    | A compact array view                                                          | Open     | Not filed                                                         | —               |
+| J15 | json-edit-react    | A definition that keeps its row from collapsing                               | Maybe    | [#419](https://github.com/CarlosNZ/json-edit-react/issues/419)    | —               |
 
 ---
 
@@ -322,9 +323,22 @@ A host can't declare a fragment's `returns`. That would be an additive later cha
 
 **Without it.** The host passes in its operators and fragments, or a factory for a second instance, as well as the instance; or fragment mode has no ▶.
 
-**Made** in fig-tree-evaluator (d12a616), as asked, not yet published. `with(update)` builds through `buildState`, so it merges, checks and throws as `updateOptions()` does, and carries the registry and compile cache across when the update leaves the registry alone. The derived instance's result store is its own, built from the merged `cache` block. A bad draft throws one `invalid-options` error whose `issues` hold every problem at its full path (`['fragments', name, 'parameters', 'x', 'default']`), the body's among them under `['fragments', name, 'expression']`. `FragmentDefinitionEditor` registers the draft through it on each render, under a temporary name (`src/draft.ts`), and shows the issues outside `expression`.
+**Made** in fig-tree-evaluator (d12a616), as asked, not yet published. `with(update)` builds through `buildState`, so it merges, checks and throws as `updateOptions()` does, and carries the registry and compile cache across when the update leaves the registry alone. The derived instance's result store is its own, built from the merged `cache` block. A bad draft throws one `invalid-options` error whose `issues` hold every problem at its full path (`['fragments', name, 'parameters', 'x', 'default']`), the body's among them under `['fragments', name, 'expression']`. `FragmentDefinitionEditor` registers the draft through it on each render, under a temporary name (`src/draft.ts`), and shows the issues outside `expression`. In fragment mode, a ▶ registers the row's sub-tree the same way, with the definition's declarations, and evaluates a call to it with the samples (`src/evaluation.ts`).
 
 **Issue.** Not filed: made directly in fig-tree-evaluator (d12a616).
+
+### F20 · Registration type-checks `samples`, and a literal union's failure gives the value — **Wanted**
+
+**The change.** Two parts:
+
+- Registration checks each entry of a definition's `samples` against its parameter's declaration, as it checks a `default`: its type and constraints, at `['fragments', name, 'samples', parameter]`. A sample for an undeclared parameter is an error there too. A missing sample isn't, since samples are optional.
+- A value failing a literal union is described by the value, not its type: `expected one of "string", received "Ada"` rather than `… received string`, which reads as nonsense when a member is a type's name.
+
+**Why.** The call to a draft checks every sample against its declaration, whether the evaluated row reads that parameter or not, so a sample that doesn't fit fails every ▶ in the body, reported at the evaluated row with the call's message (Carl, from trying it). Checked at registration, the bad sample shows on its own row in the definition editor as it is written, and the ▶ is refused with the same message ("Validation" and "Evaluation" in [fragment-editor-design.md](fragment-editor-design.md)). That settles the design's open question in favour of checking.
+
+**Without it.** A sample that doesn't fit is found only by a ▶, as a failure at the evaluated row. The editor names the fragment in the message by its own name, so the temporary one never shows. A required parameter with no sample is the editor's to catch, and it refuses the ▶ before the call either way.
+
+**Issue.** Not filed.
 
 ---
 

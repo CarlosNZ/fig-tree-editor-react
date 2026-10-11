@@ -110,7 +110,8 @@ const reasonText = (reason: NotRunReason) => {
 // failures fig-tree relates to it, as an `and` or `or` does. Where a
 // fallback beneath failed too, fig-tree reports the fallback's failure, with
 // its node's as the cause: the node's comes first, then the fallback's.
-const Failure = ({ run: { error, failedAt }, row }: { run: RunInstance; row: Path }) => {
+const Failure = ({ run, row }: { run: RunInstance; row: Path }) => {
+  const { error, failedAt } = run
   if (error === undefined) return null
   const inFallback =
     error.cause instanceof Error &&
@@ -125,7 +126,7 @@ const Failure = ({ run: { error, failedAt }, row }: { run: RunInstance; row: Pat
           <Line text={strings.FT_RUN_FALLBACK_FAILED(error.message)} />
         </>
       ) : (
-        <Line text={located(error, failedAt, row)} />
+        <Line text={located({ message: error.message, ...run }, failedAt, row)} />
       )}
       {error.related?.map((related, index) => (
         <Line key={index} text={strings.FT_RUN_ALSO_FAILED(related.message)} />

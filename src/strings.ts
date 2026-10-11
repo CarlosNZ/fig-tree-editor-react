@@ -98,6 +98,14 @@ export const strings = {
   FT_RUN_FAILURE_AT_IN_FRAGMENT: (at: string, fragment: string, path: string, message: string) =>
     `At \`${at}\`, in fragment \`${fragment}\` at \`${path}\`: ${message}`,
   FT_RUN_FALLBACK_FAILED: (message: string) => `The fallback also failed: ${message}`,
+  // What a failure's message calls a fragment being authored that has no name
+  FT_DRAFT_NAME: 'draft',
+  // A fragment body's evaluation, refused before the call, where a required
+  // parameter has no sample
+  FT_RUN_NO_SAMPLE: (names: string[]) =>
+    names.length === 1
+      ? `No sample for \`${names[0]}\`, which is required`
+      : `No samples for ${names.map((name) => `\`${name}\``).join(', ')}, which are required`,
   FT_RUN_ALSO_FAILED: (message: string) => `Also failed: ${message}`,
   FT_RUN_CAUGHT: (message: string) => `Caught: ${message}`,
   // An element's line, inside an iterator

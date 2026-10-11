@@ -440,7 +440,11 @@ export const FigTreeEditor = ({
       }
       return {
         start: (signal) =>
-          evaluateSubTree(figTree, path, subTree, { data: evaluationData, signal }),
+          evaluateSubTree(figTree, path, subTree, {
+            data: evaluationData,
+            signal,
+            ...(fragmentDefinition && { fragment: fragmentDefinition, fragmentName }),
+          }),
         cancelled: () => cancelledEvaluation(path, subTree),
       }
     },

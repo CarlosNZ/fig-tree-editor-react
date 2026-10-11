@@ -671,6 +671,35 @@ describe('evaluating', () => {
   })
 })
 
+describe('evaluating in fragment mode', () => {
+  const definition = {
+    expression: { x: { $plus: ['$params.n', 1] }, y: { $plus: ['$params.n', '$params.m'] } },
+    parameters: { n: { type: 'number' as const }, m: { type: 'number' as const, default: 10 } },
+    samples: { n: 2 },
+  }
+
+  it('evaluates a row of the body as a call with the samples, and marks how it ran', async () => {
+    const evaluations: Evaluation[] = []
+    render(
+      <FigTreeEditor
+        figTree={figTree}
+        fragmentDefinition={definition}
+        setFragmentDefinition={() => {}}
+        collapse={false}
+        onEvaluate={(evaluation) => evaluations.push(evaluation)}
+      />
+    )
+    const [x, y] = screen
+      .getAllByRole('button')
+      .filter(({ textContent }) => textContent === '$plus')
+    fireEvent.click(y)
+    await waitFor(() => expect(evaluations).toHaveLength(1))
+    expect(evaluations[0]).toMatchObject({ path: ['y'], status: 'done', result: 12 })
+    expect(y.querySelector('[data-run]')).toHaveAttribute('data-run', 'value')
+    expect(x.querySelector('[data-run]')).toBeNull()
+  })
+})
+
 // A colour as the DOM gives an inline style's back
 const toRgb = (hex: string) => {
   const [r, g, b] = [1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16))

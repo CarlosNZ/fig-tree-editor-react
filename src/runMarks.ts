@@ -1,7 +1,7 @@
 import { type FigTreeError, type TraceNode, type TraceStatus } from 'fig-tree-evaluator'
 import { toPathString } from 'json-edit-react'
 import { rowAt, type Classification, type Row } from './classify'
-import { type Evaluation } from './evaluation'
+import { calledFragment, entryKind, failedRow, inDraftBody, type Evaluation } from './evaluation'
 import { isWithin, type Path } from './paths'
 
 // How an evaluation ran, row by row (design, topic 7, "How it ran, in the
@@ -42,6 +42,9 @@ export interface RunInstance {
   value?: unknown
   error?: FigTreeError // why it failed, or what its fallback caught, as fig-tree has it
   failedAt?: Path // where that error is from, in the tree
+  fragment?: string // where the error is from a called fragment's body
+  fragmentPath?: Path // where in the body, in its own coordinates
+  message?: string // the error's message, where the editor words it differently
   elapsed?: number // in milliseconds, what it holds included
   // A value from the cache: its own lookup's, or for a fragment call, every
   // lookup its body made, since the body has no rows to show them
@@ -64,7 +67,7 @@ export type RunMarks = ReadonlyMap<string, RowRun>
 
 // Every node and reference that took part in the evaluation, with the
 // evaluated row whatever it is, or null for a cancelled one, which leaves
-// nothing. `row` is where the row is in the trace, as the sub-tree has it.
+// nothing. `row` is where the row is in its sub-tree.
 export const markRun = (
   evaluation: Evaluation,
   classification: Classification,
@@ -77,7 +80,7 @@ export const markRun = (
   const evaluatedPart = partOf(evaluatedRow, evaluated) ?? 'container'
   if (trace === undefined) return failedWithoutTrace(evaluation, evaluatedPart)
 
-  const { runs, regions } = readTrace(trace, evaluation, row)
+  const { runs, regions } = readTrace(trace, evaluation, inDraftBody(row, evaluation.draft))
   const marked = new Map<string, MarkedRow>([
     [toPathString(evaluated), { path: evaluated, row: evaluatedRow, part: evaluatedPart }],
   ])
@@ -133,15 +136,24 @@ interface MarkedRow {
 // that ran for it. A wrapper's own entry stands for the row's ancestor
 // holding the scope, which itself never ran. A wrapped vars block holds the
 // var the row is, or is in, as well, and nothing reads that copy, so only
-// the row's own entries stand for it. A fragment body's entries are in the
-// body, not the tree, so the call stands in for them: its run is cached
-// where the body made cache lookups and every one hit.
-const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation, row: Path) => {
+// the row's own entries stand for it. A called fragment's body's entries are
+// in the body, not the tree, so the call stands in for them: its run is
+// cached where the body made cache lookups and every one hit. In fragment
+// mode the tree's entries are the draft body's, and the call around them, with
+// its arguments, stands for nothing in the tree. `row` is where the row is in
+// the trace.
+const readTrace = (trace: TraceNode, evaluation: Evaluation, row: Path) => {
+  const { path: evaluated, toTreePath, draft } = evaluation
   const runs = new Map<string, RunInstance[]>()
   const regions: Path[] = [evaluated]
   const bodies = new Map<RunInstance, { hits: number; misses: number }>()
   const visit = (entry: TraceNode, call: RunInstance | undefined) => {
-    if (entry.source !== undefined) {
+    const kind = entryKind(entry, draft)
+    if (kind === 'call') {
+      entry.children?.forEach((child) => visit(child, undefined))
+      return
+    }
+    if (kind === 'body') {
       if (call) {
         const count = bodies.get(call) ?? { hits: 0, misses: 0 }
         bodies.set(call, count)
@@ -152,7 +164,7 @@ const readTrace = (trace: TraceNode, { path: evaluated, toTreePath }: Evaluation
     const path = toTreePath(entry.path)
     if (isWithin(path, evaluated) && !isWithin(entry.path, row)) return
     const wrapper = path.length < evaluated.length && isWithin(evaluated, path)
-    const run = wrapper ? undefined : instance(entry, toTreePath)
+    const run = wrapper ? undefined : instance(entry, evaluation)
     if (run) {
       const key = toPathString(path)
       runs.set(key, [...(runs.get(key) ?? []), run])
@@ -177,11 +189,15 @@ const countLookups = (entry: TraceNode, count: { hits: number; misses: number })
 
 const instance = (
   { status, value, error, elapsed, events }: TraceNode,
-  toTreePath: (path: Path) => Path
+  evaluation: Evaluation
 ): RunInstance => ({
   status,
   ...(status !== 'skipped' && status !== 'failed' && status !== 'cancelled' && { value }),
-  ...(error !== undefined && { error, failedAt: toTreePath(error.path) }),
+  ...(error !== undefined && {
+    error,
+    failedAt: failedRow(error, evaluation),
+    ...calledFragment(error, evaluation.draft),
+  }),
   ...(elapsed !== undefined && { elapsed }),
   cached: events?.some(({ type, hit }) => type === 'cache' && hit === true) ?? false,
 })
@@ -325,7 +341,18 @@ const failedWithoutTrace = ({ path, failure }: Evaluation, part: RunPart): RunMa
         part,
         status: 'failed',
         perElement: false,
-        runs: failure ? [{ status: 'failed', error: failure.error, cached: false }] : [],
+        runs: failure
+          ? [
+              {
+                status: 'failed',
+                error: failure.error,
+                ...(failure.message !== failure.error.message && { message: failure.message }),
+                ...(failure.fragment !== undefined && { fragment: failure.fragment }),
+                ...(failure.fragmentPath && { fragmentPath: failure.fragmentPath }),
+                cached: false,
+              },
+            ]
+          : [],
       },
     ],
   ])
