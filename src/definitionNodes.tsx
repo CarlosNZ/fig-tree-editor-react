@@ -10,6 +10,7 @@ import {
   type JsonData,
 } from 'json-edit-react'
 import { UNION_TYPES, isColourField, isLiteralUnion, isTypeField } from './definitionShape'
+import { FragmentNameKey, type FragmentNameConfig } from './FragmentNameKey'
 import { strings } from './strings'
 
 // The fragment definition editor's own components (fragment-editor-design.md,
@@ -75,3 +76,13 @@ export const definitionNodes = [
   unionDefinition,
   literalDefinition,
 ] as unknown as CustomNodeDefinition[]
+
+// The root's label, a preview of a call's button that renames the fragment
+// (FragmentNameKey.tsx). Only the label: the rest of the root row is
+// json-edit-react's own.
+export const rootNameDefinition = (config: FragmentNameConfig) =>
+  ({
+    condition: ({ path }) => path.length === 0,
+    keyComponent: FragmentNameKey,
+    componentProps: config,
+  }) as CustomNodeDefinition<FragmentNameConfig> as unknown as CustomNodeDefinition

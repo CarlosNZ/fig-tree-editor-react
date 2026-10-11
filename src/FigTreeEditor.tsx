@@ -354,6 +354,8 @@ export const FigTreeEditor = ({
         run: runMarks,
         evaluationData: stableEvaluationData,
         params: stableParams,
+        fragmentMode: fragmentDefinition !== undefined,
+        fragmentName,
         excludedFragments,
       }),
     [
@@ -370,6 +372,8 @@ export const FigTreeEditor = ({
       runMarks,
       stableEvaluationData,
       stableParams,
+      fragmentDefinition !== undefined,
+      fragmentName,
       excludedFragments,
     ]
   )
@@ -711,7 +715,7 @@ export const FigTreeEditor = ({
       <JsonEditor
         {...editorDefaults}
         {...props}
-        rootName={fragmentDefinition ? strings.FT_FRAGMENT_ROOT(fragmentName) : props.rootName}
+        rootName={fragmentDefinition ? strings.FT_FRAGMENT_ROOT : props.rootName}
         minWidth={0}
         maxWidth="100%"
         editorRef={handle}

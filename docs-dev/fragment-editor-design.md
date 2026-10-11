@@ -49,7 +49,13 @@ The sample values start inside the definition editor, since they live in the def
   evaluationData={data} // $data in a body, as in any expression
   // ...
 />
-<FragmentDefinitionEditor figTree={figTree} definition={definition} setDefinition={setDefinition} />
+<FragmentDefinitionEditor
+  figTree={figTree}
+  definition={definition}
+  setDefinition={setDefinition}
+  fragmentName="getCapital" // optional, as above
+  setFragmentName={setName} // optional; without it the name can't be changed here
+/>
 ```
 
 **The editor takes an expression or a fragment definition, never both.** The props type is a union: `expression` with `setExpression`, or `fragmentDefinition` with `setFragmentDefinition`. Passing `fragmentDefinition` is what switches fragment mode on. `setFragmentDefinition` takes the same `SetExpressionOptions` as `setExpression` (`autoUpdate`), so a host keeping history can record an automatic update in place.
@@ -58,7 +64,7 @@ The sample values start inside the definition editor, since they live in the def
 
 **Separate props, not one object,** as `expression` and `setExpression` are, so nothing in the editor depends on the identity of an object the host builds on each render.
 
-**The name is a prop of its own,** since `FragmentDefinition` has no `name`: a fragment is named by its key where it is registered, and registration rejects unknown keys on the definition. It is optional. A fragment not yet registered cannot be called by any other, so there is no cycle for the picker to prevent, and evaluating through a call can use a temporary name.
+**The name is a prop of its own,** since `FragmentDefinition` has no `name`: a fragment is named by its key where it is registered, and registration rejects unknown keys on the definition. It is optional. A fragment not yet registered cannot be called by any other, so there is no cycle for the picker to prevent, and evaluating through a call can use a temporary name. The host holds it, as it holds the definition, and passes it to both editors: the definition editor is where it is changed ("The definition editor").
 
 ---
 
@@ -190,6 +196,7 @@ Evaluating through a call makes F10, an `evaluate()` option for `$params` values
 - The sample values are keyed by the declared parameters only. An optional parameter left without one is unset.
 - **Its own components,** from `@json-edit-react/components`: a colour picker for `backgroundColor` and `textColor`, without opacity, and chips for `type`.
 - **A declaration's `type` has three entries in the type selector,** one for each form it takes: **Single**, a basic type picked from a list (an enum); **Multiple**, a union shown as chips picked from the basic types, `any` left out since a union with it is `any`; and **Literal**, a literal union of strings shown as chips typed freely. Switching from Single to Multiple keeps the type as the union's one member. A switch to Single takes the list's first type (`any`), since json-edit-react's switch to an enum reads the value before the definition's `toStandardType`; with that changed, it would keep the union's first member, or `string` from a literal union.
+- **Its root row is a preview of a call's header,** in place of the root's name: the fragment's button as a call to it shows in the expression editor, labelled with the fragment's name in its colours, with its display name at the top right. A click on the button turns it into an input that renames the fragment: Enter or leaving it saves, Escape cancels, and clearing it leaves the fragment unnamed. An unnamed fragment's button says "Fragment — click to rename". The button has no ▶, since nothing runs from it. It is json-edit-react's `keyComponent` for the root, so the rest of the root row (its chevron, its edit tools, pasting a whole definition) is json-edit-react's own. Without `setFragmentName` the button is a preview only.
 - **Everything else is plain JSON** held to the shape. A picker for `constraints` comes later.
 - **A whole definition pasted over the root,** its body included, replaces the definition: the body goes to the expression editor, and the rest is held to the shape as any other change is. A definition is often written whole, so this saves splitting it by hand.
 - **Its issues** are registration's, outside the body ("Validation"), so it takes the host's `figTree`. Each tints its row as in the expression editor, and is listed beneath the tree in a messages area. Revealing a row from the list comes later.

@@ -112,18 +112,7 @@ export const DisplayBar = ({
         )}
         {inline && <div className="ft-display-bar-value">{inline}</div>}
       </span>
-      {display && (
-        <span className="ft-display-name">
-          {display.docUrl ? (
-            <a href={display.docUrl} target="_blank" rel="noreferrer">
-              {display.displayName}
-            </a>
-          ) : (
-            display.displayName
-          )}
-          {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
-        </span>
-      )}
+      {display && <DisplayName display={display} />}
       {conversion && display && (
         <span className="ft-convert-area">
           <button
@@ -222,9 +211,23 @@ const NameOrButton = ({
     </HoverCard>
   )
 
+// The display name at a header's top right, linked to its documentation
+export const DisplayName = ({ display }: { display: HeaderDisplay }) => (
+  <span className="ft-display-name">
+    {display.docUrl ? (
+      <a href={display.docUrl} target="_blank" rel="noreferrer">
+        {display.displayName}
+      </a>
+    ) : (
+      display.displayName
+    )}
+    {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
+  </span>
+)
+
 // A symbol is set large enough to read at a glance, and a long name small
 // enough to keep the button compact
-const nameSize = (name: string) => {
+export const nameSize = (name: string) => {
   if (name.length === 1) return '2em'
   if (name.length < 3) return '1.6em'
   if (name.length < 7) return '1.2em'

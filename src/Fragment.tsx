@@ -136,7 +136,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
 // with no display name shows "Fragment" alone, and one with no colours takes
 // the editor's fragment colours, as does a call to no registered fragment.
 export const fragmentHeader = (
-  display: FragmentDisplay | undefined,
+  display: Omit<FragmentDisplay, 'seeds'> | undefined,
   editorTheme: EditorTheme
 ): HeaderDisplay => ({
   displayName: display?.displayName ?? strings.FT_FRAGMENT,

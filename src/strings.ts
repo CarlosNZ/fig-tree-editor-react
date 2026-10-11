@@ -11,12 +11,17 @@ const warnings = countOf('warning', 'warnings')
 // (displayData.ts), not wording.
 export const strings = {
   FT_ROOT_PATH: '(root)',
-  // The root's name in fragment mode, in place of the host's `rootName`
-  FT_FRAGMENT_ROOT: (name?: string) => (name === undefined ? 'Fragment' : `Fragment: ${name}`),
+  // The root's name in fragment mode, in place of the host's `rootName`, and
+  // before the fragment's name where it has one
+  FT_FRAGMENT_ROOT: 'Fragment',
   FT_MESSAGES: 'Messages', // the messages area's header
-  // The fragment definition editor: its root's name, and the changes it
-  // refuses, which would leave the definition out of shape
-  FT_DEFINITION_ROOT: 'definition',
+  // The fragment definition editor's refusals of changes that would leave
+  // the definition out of shape
+  // The definition editor's root, a preview of a call's button: its label
+  // while the fragment has no name, its tip, and its rename input's name
+  FT_UNNAMED_FRAGMENT: 'Fragment — click to rename',
+  FT_RENAME_FRAGMENT: 'Click to rename',
+  FT_FRAGMENT_NAME: 'Fragment name',
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,

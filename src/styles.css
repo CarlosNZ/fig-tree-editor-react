@@ -468,6 +468,44 @@ button.ft-message-path:hover {
   }
 }
 
+/* The definition editor's root label: the fragment's button, as a call to
+   it shows, on the root row, with room above and below it there. Its rename
+   input keeps the button's shape and colours, and a preview without a rename
+   doesn't respond to the pointer. It sits inline, beside the root's
+   bracket, as json-edit-react's own key label does. */
+.ft-fragment-name {
+  display: inline-flex;
+  vertical-align: middle;
+  margin: 0.2em 0.3em 0.2em 0;
+}
+
+/* Its display name's letters level with the button's top, which sits lower
+   on the root row than a node's button does in its header */
+.ft-fragment-name ~ .ft-display-name {
+  top: 0.15em;
+}
+
+.ft-fragment-name-input {
+  box-sizing: content-box;
+  font-weight: bold;
+  text-align: center;
+  cursor: text;
+}
+
+.ft-fragment-name-input:hover,
+.ft-fragment-name-fixed:hover {
+  filter: none;
+}
+
+.ft-fragment-name-input:active,
+.ft-fragment-name-fixed:active {
+  transform: none;
+}
+
+.ft-fragment-name-fixed {
+  cursor: default;
+}
+
 /* The root's bare Evaluate button, above its rows (mockup F1) */
 .ft-root-bar {
   display: flex;

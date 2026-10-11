@@ -56,6 +56,8 @@ export interface Shared {
   run: RunMarks | null // how the rows ran in the latest evaluation
   evaluationData: Record<string, unknown> | undefined // the host's `$data`
   params: readonly string[] | undefined // the declared names, in fragment mode
+  fragmentMode: boolean
+  fragmentName: string | undefined // in fragment mode, where the host gives it
   // The fragments the editor never offers, since using one would close a
   // cycle through the fragment being defined (`closingCycles`)
   excludedFragments: readonly string[]
@@ -336,6 +338,13 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
     // keeps json-edit-react's rendering, and gains only the card on its key
     ...withFlag({
       condition: matches(hasCard),
+      keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
+      componentProps: { ...shared },
+    }),
+    // The root in fragment mode, where nothing above drew it, gains only its
+    // label (ParameterKey)
+    ...withFlag({
+      condition: ({ path }) => shared.fragmentMode && path.length === 0,
       keyComponent: ParameterKey as unknown as CustomNodeDefinition['keyComponent'],
       componentProps: { ...shared },
     }),

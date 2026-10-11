@@ -278,4 +278,95 @@ describe('FragmentDefinitionEditor', () => {
       })
     })
   })
+
+  describe("the root's name button", () => {
+    const withMetadata: FragmentDefinition = {
+      ...definition,
+      metadata: { displayName: 'Greeting', backgroundColor: 'rgb(1, 2, 3)', textColor: 'white' },
+    }
+    const renderNamed = (fragmentName: string | undefined, setFragmentName = vi.fn()) => {
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={withMetadata}
+          setDefinition={vi.fn()}
+          fragmentName={fragmentName}
+          setFragmentName={setFragmentName}
+        />
+      )
+      return setFragmentName
+    }
+
+    it("shows the name in the fragment's colours, with its display name, for the root's", () => {
+      renderNamed('greeting')
+      const button = screen.getByRole('button', { name: 'greeting' })
+      expect(button).toHaveStyle({ backgroundColor: 'rgb(1, 2, 3)', color: 'rgb(255, 255, 255)' })
+      expect(screen.getByText('Greeting')).toBeInTheDocument()
+      expect(screen.queryByText('definition')).not.toBeInTheDocument()
+    })
+
+    it('invites a name while there is none', () => {
+      renderNamed(undefined)
+      expect(screen.getByRole('button', { name: 'Fragment — click to rename' })).toBeInTheDocument()
+    })
+
+    it('renames the fragment from an input that replaces it', () => {
+      const setFragmentName = renderNamed('greeting')
+      fireEvent.click(screen.getByRole('button', { name: 'greeting' }))
+      const input = screen.getByRole('textbox', { name: 'Fragment name' })
+      fireEvent.change(input, { target: { value: ' hello ' } })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(setFragmentName).toHaveBeenCalledExactlyOnceWith('hello')
+    })
+
+    it('saves the name on leaving the input', () => {
+      const setFragmentName = renderNamed('greeting')
+      fireEvent.click(screen.getByRole('button', { name: 'greeting' }))
+      const input = screen.getByRole('textbox', { name: 'Fragment name' })
+      fireEvent.change(input, { target: { value: 'hello' } })
+      fireEvent.blur(input)
+      expect(setFragmentName).toHaveBeenCalledExactlyOnceWith('hello')
+    })
+
+    it('leaves the fragment unnamed where the name is cleared', () => {
+      const setFragmentName = renderNamed('greeting')
+      fireEvent.click(screen.getByRole('button', { name: 'greeting' }))
+      const input = screen.getByRole('textbox', { name: 'Fragment name' })
+      fireEvent.change(input, { target: { value: '' } })
+      fireEvent.keyDown(input, { key: 'Enter' })
+      expect(setFragmentName).toHaveBeenCalledExactlyOnceWith(undefined)
+    })
+
+    it('keeps the name on Escape', () => {
+      const setFragmentName = renderNamed('greeting')
+      fireEvent.click(screen.getByRole('button', { name: 'greeting' }))
+      const input = screen.getByRole('textbox', { name: 'Fragment name' })
+      fireEvent.change(input, { target: { value: 'hello' } })
+      fireEvent.keyDown(input, { key: 'Escape' })
+      expect(setFragmentName).not.toHaveBeenCalled()
+      expect(screen.getByRole('button', { name: 'greeting' })).toBeInTheDocument()
+    })
+
+    it("doesn't collapse the root", () => {
+      renderNamed('greeting')
+      const chevron = screen.getAllByRole('button', { expanded: true })[0]
+      fireEvent.click(screen.getByRole('button', { name: 'greeting' }))
+      expect(chevron).toHaveAttribute('aria-expanded', 'true')
+      fireEvent.click(screen.getByRole('textbox', { name: 'Fragment name' }))
+      expect(chevron).toHaveAttribute('aria-expanded', 'true')
+    })
+
+    it("is a preview only without the host's setter", () => {
+      render(
+        <FragmentDefinitionEditor
+          figTree={figTree}
+          definition={withMetadata}
+          setDefinition={vi.fn()}
+          fragmentName="greeting"
+        />
+      )
+      expect(screen.getByText('greeting')).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'greeting' })).not.toBeInTheDocument()
+    })
+  })
 })

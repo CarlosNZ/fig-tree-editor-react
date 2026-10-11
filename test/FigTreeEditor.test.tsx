@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { FigTree, coreOperators } from 'fig-tree-evaluator'
 import { type CustomTextDefinitions } from 'json-edit-react'
 import { createRef } from 'react'
@@ -471,7 +471,9 @@ describe('FigTreeEditor', () => {
           rootName="expression"
         />
       )
-      expect(keyLabel('Fragment: greeting')).toBeInTheDocument()
+      const named = keyLabel('Fragment')
+      expect(named).toHaveTextContent(/^Fragment: greeting$/)
+      expect(within(named).getByText('greeting').tagName).toBe('STRONG')
       rerender(
         <FigTreeEditor
           figTree={figTree}
@@ -480,7 +482,7 @@ describe('FigTreeEditor', () => {
           rootName="expression"
         />
       )
-      expect(keyLabel('Fragment')).toBeInTheDocument()
+      expect(keyLabel('Fragment')).toHaveTextContent(/^Fragment$/)
       rerender(
         <FigTreeEditor
           figTree={figTree}
@@ -490,6 +492,18 @@ describe('FigTreeEditor', () => {
         />
       )
       expect(keyLabel('expression')).toBeInTheDocument()
+    })
+
+    it('labels a plain value at the root by the fragment, without a colon', () => {
+      render(
+        <FigTreeEditor
+          figTree={figTree}
+          fragmentDefinition={{ expression: 'Hello' }}
+          setFragmentDefinition={vi.fn()}
+          fragmentName="greeting"
+        />
+      )
+      expect(keyLabel('Fragment')).toHaveTextContent(/^Fragment: greeting$/)
     })
 
     it('resolves references to the declared parameters, and reports any other', () => {

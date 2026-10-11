@@ -109,11 +109,21 @@ function App() {
     setLocalStorage('fragmentDefinition', newDefinition)
   }
 
+  // Stored as '' while the fragment has no name, so it stays unnamed on reload
+  const [fragmentName, setFragmentName] = useState<string | undefined>(() => {
+    const stored = getLocalStorage('fragmentName')
+    return stored === null ? initialFragmentName : stored || undefined
+  })
+  const saveFragmentName = (name: string | undefined) => {
+    setFragmentName(name)
+    setLocalStorage('fragmentName', name ?? '')
+  }
+
   const editorSource =
     editorMode === 'fragment'
       ? {
           fragmentDefinition: fragmentDefinition as FragmentDefinition,
-          fragmentName: initialFragmentName,
+          fragmentName,
           setFragmentDefinition: saveFragmentDefinition,
         }
       : {
@@ -396,6 +406,8 @@ function App() {
                   figTree={figTree}
                   definition={fragmentDefinition as FragmentDefinition}
                   setDefinition={saveFragmentDefinition}
+                  fragmentName={fragmentName}
+                  setFragmentName={saveFragmentName}
                   minWidth="90%"
                   jsonParse={JSON5.parse}
                 />

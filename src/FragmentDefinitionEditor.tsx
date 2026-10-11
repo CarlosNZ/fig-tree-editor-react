@@ -16,7 +16,7 @@ import {
   removeParameter,
   type DefinitionFields,
 } from './definitionShape'
-import { definitionNodes } from './definitionNodes'
+import { definitionNodes, rootNameDefinition } from './definitionNodes'
 import { declarationIssues } from './draft'
 import { definitionTheme, mergeEditorTheme } from './editorTheme'
 import {
@@ -48,10 +48,14 @@ import { UNUSED_PARAM, unusedParameters } from './unusedParameters'
 // A whole definition pasted over the root, its body included, replaces the
 // definition: the body goes to the expression editor, and the rest is held
 // to the shape as any other change is.
+//
+// The root row's label is the fragment's button, as a call to it shows, which
+// renames the fragment through `setFragmentName` where the host passes it.
 export interface FragmentDefinitionEditorProps extends Omit<
   JsonEditorProps,
   | 'data'
   | 'setData'
+  | 'rootName'
   | 'newKeyOptions'
   | 'defaultValue'
   | 'allowTypeSelection'
@@ -62,13 +66,16 @@ export interface FragmentDefinitionEditorProps extends Omit<
   figTree: FigTree
   definition: FragmentDefinition
   setDefinition: (definition: FragmentDefinition) => void
+  fragmentName?: string // the name it is registered under, or will be
+  setFragmentName?: (name: string | undefined) => void
 }
 
 export const FragmentDefinitionEditor = ({
   figTree,
   definition,
   setDefinition,
-  rootName = strings.FT_DEFINITION_ROOT,
+  fragmentName,
+  setFragmentName,
   theme,
   id,
   minWidth = DEFAULT_MIN_WIDTH,
@@ -130,6 +137,14 @@ export const FragmentDefinitionEditor = ({
         : [],
   }))
 
+  const customNodeDefinitions = useMemo(
+    () => [
+      rootNameDefinition({ fragmentName, setFragmentName, editorTheme: EDITOR_THEME }),
+      ...definitionNodes,
+    ],
+    [fragmentName, setFragmentName]
+  )
+
   const layeredTheme = definitionTheme(theme, {
     severities,
     editorTheme: EDITOR_THEME,
@@ -145,7 +160,6 @@ export const FragmentDefinitionEditor = ({
       style={{ minWidth, maxWidth, fontSize: props.baseFontSize ?? DEFAULT_FONT_SIZE }}
     >
       <JsonEditor
-        rootName={rootName}
         {...props}
         minWidth={0}
         maxWidth="100%"
@@ -157,7 +171,7 @@ export const FragmentDefinitionEditor = ({
         allowTypeSelection={allowTypeSelection}
         allowAdd={allowAdd}
         onUpdate={onUpdate}
-        customNodeDefinitions={definitionNodes}
+        customNodeDefinitions={customNodeDefinitions}
       />
       <Messages
         messages={messages}

@@ -168,7 +168,7 @@ const LISTING_FIELDS = ['displayName', 'docUrl', 'backgroundColor', 'textColor']
 
 // `metadata` is the definition's own record, so only fields of the right type
 // are read from it
-const readListing = (metadata: Record<string, unknown> | undefined) => {
+export const readListing = (metadata: Record<string, unknown> | undefined) => {
   const listing: FragmentMetadata = {}
   if (!metadata) return listing
   for (const field of LISTING_FIELDS) {
