@@ -31,6 +31,7 @@ export const strings = {
   FT_CONFIRM_DISCARD: 'Discard the unsaved changes to this fragment?',
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
+  FT_NOT_A_CONSTRAINT: (key: string) => `'${key}' is not a constraint`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
   FT_UNUSED_PARAMETER: (name: string) => `The body never reads '${name}'`,
   // The type selector's entries for a declaration's `type`

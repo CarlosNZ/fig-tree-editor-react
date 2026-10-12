@@ -36,9 +36,25 @@ describe('definitionShape', () => {
         'required',
         'default',
         'metadata',
-        'constraints',
       ])
       expect(newKeyOptions(node(['metadata']))).toEqual(['docUrl', 'backgroundColor', 'textColor'])
+    })
+
+    it('offers `constraints` where the type is an array, and the three constraints', () => {
+      const declare = (type: unknown) => ({
+        ...fields,
+        parameters: { list: { type, constraints: { length: 2 } } },
+      })
+      const offered = (type: unknown) =>
+        newKeyOptions(node(['parameters', 'list'], { parameters: { list: { type } } }))
+      expect(offered('array')).toContain('constraints')
+      expect(offered(['array', 'null'])).toContain('constraints')
+      expect(offered('any')).not.toContain('constraints')
+      expect(offered(['array', 'string'])).not.toContain('constraints')
+      expect(newKeyOptions(node(['parameters', 'list', 'constraints'], declare('array')))).toEqual([
+        'homogeneous',
+        'elementShape',
+      ])
     })
 
     it('offers samples and seeds the declared parameters only', () => {
@@ -79,6 +95,14 @@ describe('definitionShape', () => {
       expect(defaultValue(node(['parameters', 'formal']), 'required')).toBe(true)
     })
 
+    it('starts each constraint as one that holds', () => {
+      const path = ['parameters', 'list', 'constraints']
+      const list = { parameters: { list: { type: 'array', constraints: {} } } }
+      expect(defaultValue(node(path, list), 'length')).toBe(2)
+      expect(defaultValue(node(path, list), 'homogeneous')).toEqual(['string'])
+      expect(defaultValue(node(path, list), 'elementShape')).toEqual({})
+    })
+
     it("starts a default or a seed as a value of the parameter's type", () => {
       expect(defaultValue(node(['parameters', 'name']), 'default')).toBe(typeSeeds.string)
       expect(defaultValue(node(['metadata', 'seeds']), 'formal')).toBe(typeSeeds.boolean)
@@ -96,6 +120,15 @@ describe('definitionShape', () => {
       expect(allowTypeSelection(node(['parameters', 'name']))).toBe(false)
       expect(allowTypeSelection(node(['metadata', 'displayName']))).toEqual(['string'])
       expect(allowTypeSelection(node(['samples', 'name']))).toBe(true)
+      const list = {
+        parameters: {
+          list: { type: 'array', constraints: { length: 2, homogeneous: ['string'] } },
+        },
+      }
+      const constraints = ['parameters', 'list', 'constraints']
+      expect(allowTypeSelection(node(constraints, list))).toBe(false)
+      expect(allowTypeSelection(node([...constraints, 'length'], list))).toEqual(['number'])
+      expect(allowTypeSelection(node([...constraints, 'homogeneous'], list))).toBe(false)
     })
   })
 
@@ -152,6 +185,23 @@ describe('definitionShape', () => {
       })
     })
 
+    it('drops constraints when the type stops being an array', () => {
+      const constrained = (type: unknown) => ({
+        parameters: { list: { type, constraints: { length: 2 } } },
+        samples: { list: [1, 2] },
+      })
+      const retyped = constrained('string')
+      expect(
+        update({ event: 'edit', path: ['parameters', 'list', 'type'], newData: retyped })
+      ).toEqual({
+        data: { parameters: { list: { type: 'string' } }, samples: { list: [1, 2] } },
+      })
+      const nullable = constrained(['array', 'null'])
+      expect(
+        update({ event: 'edit', path: ['parameters', 'list', 'type'], newData: nullable })
+      ).toBeUndefined()
+    })
+
     it('lets through a change that keeps the shape', () => {
       const edited = { ...fields, description: 'Greets someone' }
       expect(update({ event: 'edit', path: ['description'], newData: edited })).toBeUndefined()
@@ -164,6 +214,13 @@ describe('definitionShape', () => {
       const declaration = { ...fields, parameters: { name: { typ: 'string' } }, samples: {} }
       expect(update({ event: 'edit', path: ['parameters'], newData: declaration })).toEqual({
         error: "'typ' is not a field of a parameter declaration",
+      })
+      const constraint = {
+        parameters: { list: { type: 'array', constraints: { size: 2 } } },
+        samples: { list: [] },
+      }
+      expect(update({ event: 'edit', path: ['parameters', 'list'], newData: constraint })).toEqual({
+        error: "'size' is not a constraint",
       })
       const sample = { ...fields, samples: { nme: 'Ada' } }
       expect(update({ event: 'rename', path: ['samples', 'name'], newData: sample })).toEqual({

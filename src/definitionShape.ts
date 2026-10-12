@@ -22,7 +22,8 @@ import { strings } from './strings'
 // are offered from the shape, and a change that would leave a key outside it
 // is refused. Renaming or removing a parameter renames or removes its
 // entries in `samples` and `metadata.seeds` in the same change, and a new
-// required parameter gets a sample.
+// required parameter gets a sample. A declaration's `constraints` are offered
+// and kept only where its type is an array.
 //
 // The values themselves are plain JSON: registration checks them.
 
@@ -32,6 +33,7 @@ type Key = string | number
 
 const FIELDS = ['parameters', 'description', 'samples', 'metadata']
 const DECLARATION_FIELDS = ['type', 'required', 'default', 'description', 'metadata', 'constraints']
+const CONSTRAINT_FIELDS = ['length', 'homogeneous', 'elementShape']
 const METADATA_FIELDS = ['displayName', 'docUrl', 'backgroundColor', 'textColor', 'seeds']
 
 // Where a row is in the definition, by its path
@@ -41,6 +43,8 @@ type Place =
   | 'declarations' // `parameters`
   | 'declaration'
   | 'declarationField'
+  | 'constraints' // a declaration's `constraints`
+  | 'constraintField'
   | 'samples'
   | 'sample'
   | 'metadata'
@@ -53,8 +57,11 @@ const placeOf = (path: readonly Key[]): Place => {
   const [field, key] = path
   const depth = path.length
   if (depth === 0) return 'root'
-  if (field === 'parameters')
+  if (field === 'parameters') {
+    if (path[2] === 'constraints')
+      return depth === 3 ? 'constraints' : depth === 4 ? 'constraintField' : 'within'
     return (['declarations', 'declaration', 'declarationField'] as const)[depth - 1] ?? 'within'
+  }
   if (field === 'samples') return (['samples', 'sample'] as const)[depth - 1] ?? 'within'
   if (field === 'metadata') {
     if (depth === 1) return 'metadata'
@@ -66,9 +73,13 @@ const placeOf = (path: readonly Key[]): Place => {
 }
 
 // The rows the definition editor draws with components of its own
-// (definitionNodes.tsx): a declaration's `type`, and the two colours
+// (definitionNodes.tsx): a declaration's `type`, its `homogeneous`
+// constraint, and the two colours
 export const isTypeField = ({ path }: { path: readonly Key[] }) =>
   placeOf(path) === 'declarationField' && path[2] === 'type'
+
+export const isHomogeneousField = ({ path }: { path: readonly Key[] }) =>
+  placeOf(path) === 'constraintField' && path[3] === 'homogeneous'
 
 export const isColourField = ({ path }: { path: readonly Key[] }) =>
   placeOf(path) === 'metadataField' && (path[1] === 'backgroundColor' || path[1] === 'textColor')
@@ -126,12 +137,24 @@ const toParameter = (declaration: unknown): FragmentParameter => {
   }
 }
 
+// Constraints need an array, though `null` skips them, so they fit a type
+// whose members are all `array`, or `null`
+const takesConstraints = (type: ExpectedType) =>
+  type === 'array' ||
+  (Array.isArray(type) &&
+    type.includes('array') &&
+    type.every((member) => member === 'array' || member === 'null'))
+
 const startingValue = (type: ExpectedType) => structuredClone(typeValue(type) ?? null)
 
 // The keys a collection may gain, where the shape lists them
-const keysFor = (place: Place, fields: unknown): string[] | null => {
+const keysFor = (place: Place, fields: unknown, value: unknown): string[] | null => {
   if (place === 'root') return FIELDS
-  if (place === 'declaration') return DECLARATION_FIELDS
+  if (place === 'declaration')
+    return takesConstraints(typeOf(value))
+      ? DECLARATION_FIELDS
+      : DECLARATION_FIELDS.filter((key) => key !== 'constraints')
+  if (place === 'constraints') return CONSTRAINT_FIELDS
   if (place === 'metadata') return METADATA_FIELDS
   if (place === 'samples' || place === 'seeds') return Object.keys(declarationsOf(fields))
   return null
@@ -141,13 +164,13 @@ const notYetIn = (keys: string[], value: unknown) =>
   keys.filter((key) => !(isRecord(value) && key in value))
 
 export const newKeyOptions: NewKeyOptionsFunction = ({ path, value, fullData }) => {
-  const keys = keysFor(placeOf(path), fullData)
+  const keys = keysFor(placeOf(path), fullData, value)
   return keys && notYetIn(keys, value)
 }
 
 // A collection whose keys are all taken has no Add
 export const allowAdd: FilterFunction = ({ path, value, fullData }) => {
-  const keys = keysFor(placeOf(path), fullData)
+  const keys = keysFor(placeOf(path), fullData, value)
   return keys === null || notYetIn(keys, value).length > 0
 }
 
@@ -160,6 +183,8 @@ export const defaultValue: DefaultValueFunction = ({ path, value, fullData }, ne
       return { type: 'any' }
     case 'declaration':
       return newDeclarationField(newKey, value)
+    case 'constraints':
+      return newConstraint(newKey)
     case 'samples':
       return sampleValue(newKey, fullData)
     case 'metadata':
@@ -221,6 +246,18 @@ const newDeclarationField = (key: string, declaration: unknown) => {
   }
 }
 
+// `homogeneous` can't be empty, so it starts with one type
+const newConstraint = (key: string) => {
+  switch (key) {
+    case 'length':
+      return 2
+    case 'homogeneous':
+      return ['string']
+    default:
+      return {}
+  }
+}
+
 const newMetadataField = (key: string) => {
   switch (key) {
     case 'backgroundColor':
@@ -240,7 +277,13 @@ const DECLARATION_TYPES: Record<string, boolean | TypeOptions> = {
   default: true,
   description: ['string'],
   metadata: false,
-  constraints: false,
+}
+
+// `homogeneous` is drawn as chips of basic types (definitionNodes.tsx)
+const CONSTRAINT_TYPES: Record<string, boolean | TypeOptions> = {
+  length: ['number'],
+  homogeneous: false,
+  elementShape: false,
 }
 
 const METADATA_TYPES: Record<string, boolean | TypeOptions> = {
@@ -256,6 +299,7 @@ export const allowTypeSelection: TypeFilterFunction = ({ path, key }) => {
     case 'root':
     case 'declarations':
     case 'declaration':
+    case 'constraints':
     case 'samples':
     case 'metadata':
     case 'seeds':
@@ -264,6 +308,8 @@ export const allowTypeSelection: TypeFilterFunction = ({ path, key }) => {
       return ['string']
     case 'declarationField':
       return DECLARATION_TYPES[String(key)] ?? true
+    case 'constraintField':
+      return CONSTRAINT_TYPES[String(key)] ?? true
     case 'metadataField':
       return METADATA_TYPES[String(key)] ?? true
     default:
@@ -271,12 +317,13 @@ export const allowTypeSelection: TypeFilterFunction = ({ path, key }) => {
   }
 }
 
-// Each change: a parameter's entries follow it, then the result is held to
-// the shape. Undefined where the change stands as it is.
+// Each change: a parameter's entries follow it, constraints that no longer
+// fit their type are dropped, then the result is held to the shape.
+// Undefined where the change stands as it is.
 export const checkDefinition = (
   update: Parameters<UpdateFunction>[0]
 ): { error: string } | { data: unknown } | undefined => {
-  const next = followParameters(update.fullData, update.newData, update)
+  const next = dropUnfitConstraints(followParameters(update.fullData, update.newData, update))
   const problem = findShapeProblem(next)
   if (problem !== undefined) return { error: problem }
   return next === update.newData ? undefined : { data: next }
@@ -335,6 +382,30 @@ const withEntries = (
   return result
 }
 
+// The definition without the `constraints` of each declaration whose type
+// isn't an array, which no value but `null` could then satisfy
+const dropUnfitConstraints = (fields: unknown) => {
+  if (!isRecord(fields)) return fields
+  const declarations = declarationsOf(fields)
+  const unfit = Object.keys(declarations).filter((name) => {
+    const declaration = declarations[name]
+    return (
+      isRecord(declaration) &&
+      'constraints' in declaration &&
+      !takesConstraints(typeOf(declaration))
+    )
+  })
+  if (unfit.length === 0) return fields
+  const kept = Object.fromEntries(
+    Object.entries(declarations).map(([name, declaration]) => {
+      if (!unfit.includes(name) || !isRecord(declaration)) return [name, declaration]
+      const { constraints: _, ...rest } = declaration
+      return [name, rest]
+    })
+  )
+  return { ...fields, parameters: kept }
+}
+
 const renameKey = (entries: Record<string, unknown>, from: string, to: string) =>
   Object.fromEntries(
     Object.entries(entries).map(([key, value]) => [key === from ? to : key, value])
@@ -352,6 +423,12 @@ const findShapeProblem = (fields: unknown): string | undefined => {
     if (!isRecord(declaration)) continue
     const unknownKey = Object.keys(declaration).find((key) => !DECLARATION_FIELDS.includes(key))
     if (unknownKey !== undefined) return strings.FT_NOT_A_DECLARATION_FIELD(unknownKey)
+    const constraints = declaration.constraints
+    if (!isRecord(constraints)) continue
+    const unknownConstraint = Object.keys(constraints).find(
+      (key) => !CONSTRAINT_FIELDS.includes(key)
+    )
+    if (unknownConstraint !== undefined) return strings.FT_NOT_A_CONSTRAINT(unknownConstraint)
   }
   const undeclared = [
     ...Object.keys(recordAt(fields, 'samples') ?? {}),

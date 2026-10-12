@@ -11,7 +11,7 @@ The build plan's remaining work (what is left of step 7, the definition editor's
 - **Autocomplete after `$params.`,** listing the declared parameters, if typing the names turns out to be a nuisance ("Parameters", "In the expression editor"). See also "Suggestions while a reference is typed" below.
 - **"Change to" on an undeclared parameter,** from the issue's `suggestion` (F21), beside "Declare". It rewrites the reference's first key, in each form a reference takes (`$p`, a drill, a template token, `get` from `$params`).
 - **A `get` whose path is the parameter alone** (`{ path: 'x', from: '$params' }`) declared with its own position's type, as `$params.x` is (TO-DO in `src/declareParameters.ts`).
-- **A picker for a declaration's `constraints`** ("The definition editor").
+- **A picker for a declaration's `elementShape` constraint,** whose fields are declarations of their own, nested ("The definition editor").
 - **Revealing a row from the definition editor's messages,** as the expression editor's do ("The definition editor").
 - **Open:** whether `getFragments()` or `getCatalog` reports `samples`; a declared `returns`, checked against the inferred one ("The definition's shape", "Open").
 

@@ -9,15 +9,22 @@ import {
   type CustomNodeDefinition,
   type JsonData,
 } from 'json-edit-react'
-import { UNION_TYPES, isColourField, isLiteralUnion, isTypeField } from './definitionShape'
+import {
+  UNION_TYPES,
+  isColourField,
+  isHomogeneousField,
+  isLiteralUnion,
+  isTypeField,
+} from './definitionShape'
 import { FragmentNameKey, type FragmentNameConfig } from './FragmentNameKey'
 import { strings } from './strings'
 
 // The fragment definition editor's own components (fragment-editor-design.md,
 // "The definition editor"), from @json-edit-react/components: a colour
-// picker for the two colours, and chips for a declaration's `type` where it
-// is a union or a literal union. A single type is an enum, which
-// json-edit-react draws itself (definitionShape.ts, `SINGLE_TYPE`).
+// picker for the two colours, chips for a declaration's `type` where it is a
+// union or a literal union, and chips for its `homogeneous` constraint. A
+// single type is an enum, which json-edit-react draws itself
+// (definitionShape.ts, `SINGLE_TYPE`).
 
 const colourDefinition = colorPickerDefinition({ condition: isColourField })
 
@@ -57,6 +64,14 @@ const LiteralChips = (props: CustomComponentProps<ChipsCustomProps>) => {
   )
 }
 
+// The types a homogeneous array's elements may share, with no entry in the
+// type selector, since `homogeneous` takes no other form
+const homogeneousDefinition = chipsDefinition({
+  condition: isHomogeneousField,
+  componentProps: { options: UNION_TYPES },
+  showInTypeSelector: false,
+})
+
 const literalDefinition: CustomNodeDefinition<ChipsCustomProps> = {
   condition: (nodeData) => isTypeField(nodeData) && isLiteralUnion(nodeData.value),
   component: LiteralChips,
@@ -75,6 +90,7 @@ export const definitionNodes = [
   colourDefinition,
   unionDefinition,
   literalDefinition,
+  homogeneousDefinition,
 ] as unknown as CustomNodeDefinition[]
 
 // The root's label, a preview of a call's button that renames the fragment
