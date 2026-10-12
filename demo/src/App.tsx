@@ -195,7 +195,7 @@ function App() {
     const visited = getLocalStorage('visited')
     if (!visited?.[demoData?.[selected]?.name]) setShowInfo(true)
 
-    const { objectData, expression, figTreeOptions = {} } = demoData[selected]
+    const { objectData, expression } = demoData[selected]
     void changeEditorMode('expression')
     setExpression(expression)
     setLocalStorage('expression', expression)
@@ -205,7 +205,6 @@ function App() {
     }
     setLocalStorage('lastSelected', demoData[selected].name)
     modalContent.current = demoData[selected].name
-    updateOptions({ ...options, ...figTreeOptions })
   }
 
   return (

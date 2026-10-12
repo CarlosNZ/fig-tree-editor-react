@@ -1,5 +1,4 @@
 import { JsonEditorProps } from 'json-edit-react'
-import { DemoOptions } from '../figTree'
 import { and, byKey, byLevel, byType, inArray, not, root } from '@json-edit-react/utils/filters'
 
 export interface DemoData {
@@ -9,7 +8,6 @@ export interface DemoData {
   objectJsonEditorProps?: Omit<JsonEditorProps, 'data' | 'setData'>
   expression: unknown
   expressionCollapse?: number
-  figTreeOptions?: DemoOptions
 }
 
 export const demoData: DemoData[] = [
