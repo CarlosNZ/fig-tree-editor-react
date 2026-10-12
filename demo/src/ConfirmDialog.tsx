@@ -11,13 +11,16 @@ import {
 import { type ConfirmDialogState } from '@json-edit-react/utils'
 
 // The dialog for a question `useJsonEditorConfirm` asks, such as
-// `useFragmentEditor`'s before discarding unsaved edits
+// `useFragmentEditor`'s before discarding unsaved edits. A question may name
+// its own buttons, as `confirmLabel` and `cancelLabel`.
 export const ConfirmDialog = ({
   isOpen,
   title,
   message,
   onConfirm,
   onCancel,
+  confirmLabel = 'Discard',
+  cancelLabel = 'Cancel',
 }: ConfirmDialogState) => {
   const cancelRef = useRef<HTMLButtonElement>(null)
   return (
@@ -28,10 +31,10 @@ export const ConfirmDialog = ({
           <AlertDialogBody>{message}</AlertDialogBody>
           <AlertDialogFooter gap={3}>
             <Button ref={cancelRef} onClick={onCancel}>
-              Cancel
+              {String(cancelLabel)}
             </Button>
             <Button colorScheme="red" onClick={onConfirm}>
-              Discard
+              {String(confirmLabel)}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>

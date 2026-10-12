@@ -124,10 +124,23 @@ function App() {
   useEffect(() => setLocalStorage('fragmentDraft', fragmentEditor.draft), [fragmentEditor.draft])
 
   // A switch to fragment mode starts a fragment from the expression, unless
-  // the draft has unsaved edits
-  const changeEditorMode = (mode: EditorMode) => {
+  // the draft has unsaved edits. Leaving fragment mode with unsaved edits
+  // asks whether to discard them, or keep them for the next switch back.
+  const changeEditorMode = async (mode: EditorMode) => {
     if (mode === 'fragment' && editorMode === 'expression')
       fragmentEditor.startFromExpression(expression)
+    if (
+      mode === 'expression' &&
+      editorMode === 'fragment' &&
+      fragmentEditor.hasUnsavedEdits &&
+      (await confirm({
+        title: 'Discard changes?',
+        message: "This fragment has changes that haven't been saved. Discard them?",
+        confirmLabel: 'OK',
+        cancelLabel: 'Keep it',
+      }))
+    )
+      fragmentEditor.discard()
     setEditorMode(mode)
     setLocalStorage('editorMode', mode)
   }
@@ -183,7 +196,7 @@ function App() {
     if (!visited?.[demoData?.[selected]?.name]) setShowInfo(true)
 
     const { objectData, expression, figTreeOptions = {} } = demoData[selected]
-    changeEditorMode('expression')
+    void changeEditorMode('expression')
     setExpression(expression)
     setLocalStorage('expression', expression)
     if (objectData) {
@@ -342,7 +355,7 @@ function App() {
                     <Button
                       key={mode}
                       variant={editorMode === mode ? 'solid' : 'outline'}
-                      onClick={() => changeEditorMode(mode)}
+                      onClick={() => void changeEditorMode(mode)}
                     >
                       {mode === 'fragment' ? 'Fragment' : 'Expression'}
                     </Button>

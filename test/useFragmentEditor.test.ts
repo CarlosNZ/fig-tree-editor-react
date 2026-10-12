@@ -111,6 +111,37 @@ describe('useFragmentEditor', () => {
     expect(result.current.draft.definition.expression).toBe(3)
   })
 
+  it('discards a registered fragment back to its saved version', () => {
+    const { result } = setup()
+    act(() => result.current.selectProps.onSelect('greet'))
+    expect(result.current.hasUnsavedEdits).toBe(false)
+    act(() => result.current.definitionProps.setDefinition({ ...greet, description: 'Hi' }))
+    expect(result.current.hasUnsavedEdits).toBe(true)
+
+    act(() => result.current.discard())
+    expect(result.current.draft).toEqual({
+      definition: greet,
+      name: 'greet',
+      registered: true,
+      baseline: greet,
+    })
+    expect(result.current.hasUnsavedEdits).toBe(false)
+    expect(result.current.canUndo).toBe(false)
+  })
+
+  it('discards a draft never registered, so the next start takes the expression', () => {
+    const { result } = setup()
+    act(() => result.current.startFromExpression(1))
+    act(() => result.current.definitionProps.setFragmentName('one'))
+    expect(result.current.hasUnsavedEdits).toBe(true)
+
+    act(() => result.current.discard())
+    expect(result.current.draft.name).toBeUndefined()
+    expect(result.current.hasUnsavedEdits).toBe(false)
+    act(() => result.current.startFromExpression(2))
+    expect(result.current.draft.definition.expression).toBe(2)
+  })
+
   it("renames a registered fragment at once, leaving the draft's edits unsaved", () => {
     const { result, figTree, registered } = setup()
     act(() => result.current.selectProps.onSelect('greet'))

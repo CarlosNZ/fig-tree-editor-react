@@ -153,6 +153,14 @@ export const useFragmentEditor = ({
     replaceDraft({ definition: started, registered: false, baseline: started })
   }
 
+  // Drops the draft's unsaved edits: a registered fragment goes back to its
+  // saved version, and a draft never registered is replaced by an empty one.
+  // Either way, the next `startFromExpression` starts from the expression.
+  const discard = () => {
+    if (!hasUnsavedEdits(draft)) return
+    replaceDraft(registered ? { ...draft, definition: baseline } : emptyDraft())
+  }
+
   // Replaces the fragments whole, for a host's own fragments editor. It
   // throws where the instance refuses them, leaving everything as it was. A
   // draft whose fragment is gone is no longer registered, and one with no
@@ -185,6 +193,8 @@ export const useFragmentEditor = ({
     },
     canSave,
     save,
+    hasUnsavedEdits: hasUnsavedEdits(draft),
+    discard,
     undo: history.undo,
     redo: history.redo,
     canUndo: history.canUndo,
@@ -206,12 +216,14 @@ const hasUnsavedEdits = ({ definition, name, registered, baseline }: FragmentDra
 // The draft to start with: the host's, still registered only where its
 // fragment is, or an empty one
 const restoreDraft = (draft: FragmentDraft | undefined, fragments: Fragments): FragmentDraft => {
-  if (draft === undefined) {
-    const empty = newDefinition(null)
-    return { definition: empty, registered: false, baseline: empty }
-  }
+  if (draft === undefined) return emptyDraft()
   const registered = draft.registered && draft.name !== undefined && draft.name in fragments
   return { ...draft, registered }
+}
+
+const emptyDraft = (): FragmentDraft => {
+  const empty = newDefinition(null)
+  return { definition: empty, registered: false, baseline: empty }
 }
 
 // A new fragment's definition, with every field there to fill in: the
