@@ -107,6 +107,8 @@ interface FragmentMetadata {
 
 **Each parameter's `metadata` stays opaque.** Nothing needs a convention for it yet.
 
+**`description` stays at the root of the definition,** not in `metadata`, though the engine never reads it and an operator's description is in its listing. Each parameter's description belongs in its declaration, beside the type and `required` it explains, not in a map keyed by name that would have to follow a renamed parameter as `samples` and `seeds` do. The fragment's own description sits at the root of the definition in the same way.
+
 The changes are fig-tree's: the rename, `samples` among the wrapper's allowed keys, and their type check ("Upstream changes").
 
 ### Open
@@ -234,6 +236,76 @@ It also returns `undo`, `redo`, `canUndo` and `canRedo`, `startFromExpression(ex
 - **A rename saves at once,** so there is only ever one name. A registered fragment's saved version moves to the new name, in one `updateOptions()` with the old name `null`, and the draft's unsaved edits stay unsaved. A draft never registered is only named, and Save registers it. A registered fragment can't be left unnamed, so clearing its name cancels the rename.
 - **A refused registration,** from a save or a rename, changes nothing. Its error is listed in the definition editor's messages area, where registration's issues already are, so the host shows nothing itself. A rename or a change of declarations that breaks a fragment calling this one is refused by registration's own checks, and the hook does nothing more about it, since fragments calling fragments are uncommon.
 - **Undo** covers the definition only, since a rename is a save, not an edit.
+
+---
+
+## Body, declarations and samples, as built — **Findings**
+
+_How the three blocks affect each other in the editor as built, checked against the code, for going through point by point. Where it differs from the sections above, this records the code, not the decision._
+
+**The pieces.** The body (`expression`) is edited in `FigTreeEditor`. The declarations (`parameters`) and the samples (`samples`, keyed by declared names only) are edited in `FragmentDefinitionEditor`. `metadata.seeds` comes in only as the starting value for a new sample. Both editors write one `FragmentDefinition`, held by `useFragmentEditor`. The links between the blocks are in [declareParameters.ts](../src/declareParameters.ts) (declarations from the body), `followParameters` and `addSamples` in [definitionShape.ts](../src/definitionShape.ts) (samples and seeds following declarations), and [unusedParameters.ts](../src/unusedParameters.ts).
+
+**Two rules run through everything:**
+
+- **Required** is `required ?? (no default)`, so a declaration with neither is required.
+- **A new sample's value** is `getStartingValue`: the parameter's seed if it has one, otherwise a value for its type. A literal union gives its first member, `string` and `any` give `"Replace me"`, `number` gives 1, `boolean` gives `true`, and a union gives its first non-null member's value.
+
+### What loads when
+
+| Event                                                                                | Declarations                                                                                                                 | Samples   |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `startFromExpression(expr)`                                                          | `{}`. Each `$params` reference in the body is an `unresolved-param` error with a "Declare" fix, since a load is not an edit. | `{}`      |
+| Picking a saved fragment                                                             | As saved                                                                                                                     | As saved  |
+| A body the host changes, an undo, or a body pasted over the definition editor's root | Unchanged. Only an edit in the expression editor declares (the arrival write-back doesn't).                                  | Unchanged |
+| The empty starting draft                                                             | `{}`                                                                                                                         | `{}`      |
+
+### Changes in the body (expression editor)
+
+| Action                                                                           | Declarations                                                                                                                                                                                           | Samples                                                     |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| An edit brings in a new name (read after the edit, not before)                   | Declared in the same write. Its type is what the reference's position admits; `any` for a drill, a template token, a `get`, plain data, or positions that disagree. Required, since it has no default. | A sample is added, since the parameter is new and required. |
+| A name already declared                                                          | The declaration is never changed, its type included.                                                                                                                                                   | Unchanged                                                   |
+| A name the body already read while undeclared (its declaration deleted, for one) | Other edits don't declare it. It stays an `unresolved-param` error until **Declare**, which declares it as an edit would.                                                                              | A sample is added with the declaration.                     |
+| The last reference removed                                                       | The declaration stays, with an "unused" warning and a **Remove** fix. There is no warning where the body has dynamic reads (a bare `$params`, or a computed path from it).                             | Kept. **Remove** also removes the sample and the seed.      |
+| A typo (`$params.contry`)                                                        | A second declaration is added. The real one shows as unused if nothing else reads it.                                                                                                                  | The typo gets a sample too.                                 |
+| The **Parameter** entry in the type dropdown                                     | Inserts `$params.<first declared>`, whatever its type, or `$params.` where none is declared.                                                                                                           | —                                                           |
+
+### Changes in the declarations (definition editor)
+
+| Action                                                                     | Body                                                                                                                                                       | Samples                                                                                                                                      |
+| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Add one by hand                                                            | Starts as `{ type: 'any' }`, so it is required. Where the body doesn't read it, it has the unused warning.                                                 | A sample is added (`"Replace me"`, or the seed).                                                                                             |
+| Delete one the body still reads                                            | Each reference is an `unresolved-param` error with **Declare**.                                                                                            | The sample and the seed are removed. **Declare** adds a new sample.                                                                          |
+| Rename the key                                                             | The references are not rewritten (F8). The old name is an `unresolved-param` error, which **Declare** declares again, and the renamed one shows as unused. | The sample and the seed are renamed in place.                                                                                                |
+| Change `type`                                                              | Not checked against where the body reads it.                                                                                                               | Unchanged, and not checked again.                                                                                                            |
+| Add a `default`, so it is optional                                         | —                                                                                                                                                          | Kept                                                                                                                                         |
+| Add `required`, which starts as the opposite of what the declaration means | —                                                                                                                                                          | Kept when it is set false. When it is set true, no sample is added, so ▶ is refused until there is one.                                      |
+| `required: true` with a `default`                                          | —                                                                                                                                                          | — (registration's error, on the `default`)                                                                                                   |
+| Paste a whole definition                                                   | The body goes to the expression editor, its references not declared.                                                                                       | Sample keys not declared are refused. A new required declaration without a sample gets one, and a removed declaration's sample goes with it. |
+
+### Changes in the samples
+
+- **Add:** the ＋ on `samples` offers only the declared names not yet present, and a key that isn't declared is refused. The value is `getStartingValue`'s. Adding the whole `samples` field again gives each required parameter a sample.
+- **Remove:** nothing puts it back. For a required parameter, ▶ is refused; for an optional one, the call leaves it unset, so it takes its default, or null.
+- **`null`** is unset, the same as a sample removed.
+- **Edit a value:** nothing checks it until ▶.
+
+### At ▶
+
+`{ fragment: <temporary name>, parameters: samples }` is evaluated on `figTree.with()`, with the body or sub-tree registered under the definition's declarations:
+
+1. A definition whose declarations don't register (a default of the wrong type, `required` with a `default`) refuses the ▶.
+2. A required parameter whose sample is missing or null refuses the ▶, naming every such parameter, whether the row reads it or not.
+3. Otherwise it is a real call: defaults applied, null as unset, and each sample type-checked against its declaration. A sample that fails fails the ▶, on the evaluated row.
+
+### Not type-matched
+
+1. **A declaration's type against where the body reads it.** `validate()` checks only that each name is declared, so a `string` parameter read in a `number` slot has no warning. The Parameter entry offers parameters whatever their type.
+2. **A sample against its declaration's type,** only at ▶, by the call. Registration checks only that `samples` is an object (F20 in [v3-upstream.md](v3-upstream.md), Wanted).
+3. **A declaration's type is set by the first reference.** Moving a reference, or adding others, never changes it.
+4. **A sample doesn't follow a change of `type` or `required`.** A parameter made required later gets no sample, since `addSamples` only covers parameters new in that change.
+5. **Seeds** are never type-checked.
+6. **A default against its type** is the one pair checked: registration's error, on the `default`.
 
 ---
 
