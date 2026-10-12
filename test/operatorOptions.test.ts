@@ -74,4 +74,9 @@ describe('operatorOptions', () => {
     const other = group(groupsAt('any', null, registry), 'Other').map(({ value }) => value)
     expect(other).toContain('reverse')
   })
+
+  it('labels an operator with no display name by its name', () => {
+    const other = group(groupsAt('any', null, registry), 'Other')
+    expect(other.find(({ value }) => value === 'reverse')).toMatchObject({ label: 'reverse' })
+  })
 })

@@ -25,13 +25,15 @@ import { strings } from './strings'
 // description, and a host operator's colours), then an operator's own
 // `metadata` read as an `OperatorListing`, then the host's `operatorListings`
 // prop. Categories take the host's `categoryListings` prop over the
-// package's, field by field.
+// package's, field by field. An operator's display name is only one a
+// listing gives it, so a host operator with none shows only its name, on the
+// header's button, and the picker falls back to the name itself.
 
 export type OperatorListingsProp = OperatorListingMap
 export type CategoryListingsProp = { [category in OperatorCategory]?: Partial<CategoryListing> }
 
 export interface OperatorDisplay {
-  displayName: string
+  displayName?: string
   description?: string
   parameterDescriptions: Record<string, string>
   docUrl?: string
@@ -120,9 +122,20 @@ export const buildDisplayData = ({
     operatorListings
   )
 
+  // `getCatalog` falls back to the name where no listing has a display name
+  const listingLayers = [coreOperatorListings, metadataListings, operatorListings]
+  const hasDisplayName = (name: string) =>
+    listingLayers.some(
+      (layer) =>
+        Object.prototype.hasOwnProperty.call(layer, name) && layer[name].displayName !== undefined
+    )
+
   return {
     operators: Object.fromEntries(
-      catalog.operators.map((operator) => [operator.name, operatorDisplay(operator)])
+      catalog.operators.map((operator) => [
+        operator.name,
+        operatorDisplay(operator, hasDisplayName(operator.name)),
+      ])
     ),
     categories,
     fragments: Object.fromEntries(
@@ -134,17 +147,13 @@ export const buildDisplayData = ({
   }
 }
 
-const operatorDisplay = ({
-  displayName,
-  description,
-  docUrl,
-  backgroundColor,
-  textColor,
-  parameters,
-}: CatalogOperator): OperatorDisplay => {
+const operatorDisplay = (
+  { displayName, description, docUrl, backgroundColor, textColor, parameters }: CatalogOperator,
+  hasDisplayName: boolean
+): OperatorDisplay => {
   const entries = Object.entries(parameters)
   return {
-    displayName,
+    ...(hasDisplayName && { displayName }),
     description,
     parameterDescriptions: Object.fromEntries(
       entries.flatMap(([key, { description }]) =>

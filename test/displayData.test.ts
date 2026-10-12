@@ -91,16 +91,15 @@ describe('display data', () => {
       })
       const { displayName, seeds, parameterDescriptions } = displayData({ operators: [operator] })
         .operators.shout
-      expect(displayName).toBe('shout')
+      expect(displayName).toBeUndefined()
       expect(seeds).toEqual({ value: 'Replace me', other: 'Replace me' })
       expect(parameterDescriptions).toEqual({ value: 'What to shout' })
     })
 
-    it('shows a host operator with no listing by its name, in shades of its category', () => {
+    it('gives a host operator with no listing no display name, and shades of its category', () => {
       const operator = hostOperator('shout', 'string')
       const { string } = coreCategoryListings
       expect(displayData({ operators: [operator] }).operators.shout).toEqual({
-        displayName: 'shout',
         description: undefined,
         parameterDescriptions: {},
         docUrl: undefined,

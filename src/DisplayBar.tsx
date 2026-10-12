@@ -112,7 +112,7 @@ export const DisplayBar = ({
         )}
         {inline && <div className="ft-display-bar-value">{inline}</div>}
       </span>
-      {display && <DisplayName display={display} />}
+      {display?.displayName !== undefined && <DisplayName display={display} />}
       {conversion && display && (
         <span className="ft-convert-area">
           <button
@@ -211,7 +211,9 @@ const NameOrButton = ({
     </HoverCard>
   )
 
-// The display name at a header's top right, linked to its documentation
+// The display name at a header's top right, linked to its documentation. An
+// operator with no display name shows nothing there, since its button already
+// shows its name.
 export const DisplayName = ({ display }: { display: HeaderDisplay }) => (
   <span className="ft-display-name">
     {display.docUrl ? (

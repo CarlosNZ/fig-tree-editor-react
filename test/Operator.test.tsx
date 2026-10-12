@@ -90,12 +90,11 @@ describe('the operator node', () => {
     expect(names).toEqual(['if', 'greaterThan', '$not', 'and'])
   })
 
-  it('shows a host operator by its name, with no link when it has no docUrl', () => {
+  it('shows a host operator with no display name by its name on the button alone', () => {
     const { container } = editor({ operator: 'reverse', value: 'abc' })
     const bar = within(displayBar(container))
     expect(bar.getByRole('button', { name: 'reverse' })).toBeInTheDocument()
-    expect(bar.getByText('reverse', { selector: '.ft-display-name' })).toBeInTheDocument()
-    expect(bar.queryByRole('link')).not.toBeInTheDocument()
+    expect(displayBar(container).querySelector('.ft-display-name')).not.toBeInTheDocument()
   })
 
   it("takes the host's display overrides", () => {
