@@ -2,7 +2,7 @@
 
 _Work still to do, across sessions, by area. One item per line, with where it is described in full where it is. An item is removed once it is done, since its commit records it. A decision an item needs is made in its design doc, and the item links there._
 
-The build plan's remaining work (what is left of step 7, the definition editor's styles on the `editorTheme` tokens, and step 8, back to the published fig-tree) is in [fragment-editor-design.md](fragment-editor-design.md), and isn't repeated here.
+The build plan's remaining work (what is left of step 7, the definition editor's styles on the `editorTheme` tokens) is in [fragment-editor-design.md](fragment-editor-design.md), and isn't repeated here.
 
 ## Fragment editor
 
