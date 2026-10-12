@@ -194,8 +194,13 @@ const EDITOR_THEME = mergeEditorTheme()
 
 const JSON_EDIT_REACT_INDENT = 2
 
-const withoutBody = ({ expression: _body, ...fields }: FragmentDefinition): DefinitionFields =>
-  fields
+// The definition less its body, with its description first, under the name
+const withoutBody = ({
+  expression: _body,
+  description,
+  ...fields
+}: FragmentDefinition): DefinitionFields =>
+  description === undefined ? fields : { description, ...fields }
 
 const isPastedDefinition = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value) && 'expression' in value

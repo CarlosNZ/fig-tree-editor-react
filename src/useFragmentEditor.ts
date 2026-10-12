@@ -230,8 +230,8 @@ const emptyDraft = (): FragmentDraft => {
 // description seeded, and the rest empty
 const newDefinition = (expression: unknown): FragmentDefinition => ({
   expression,
-  parameters: {},
   description: strings.FT_DESCRIPTION_SEED,
+  parameters: {},
   samples: {},
   metadata: {},
 })

@@ -411,17 +411,29 @@ export const definitionTheme = (
     const severity = severities.get(toPathString(path))
     return severity === undefined ? null : severityTint(severity, editorTheme)
   }
+  // The definition's own fields, labelled more prominently, and each spaced
+  // from the row above it
+  const isField = ({ path }: NodeData) => path.length === 1
+  const fieldGap = (nodeData: NodeData) => (isField(nodeData) ? { marginTop: '0.6em' } : null)
   const layer: Theme = {
     styles: {
-      collection: (nodeData) => {
-        const blockTint = tint(nodeData)
-        const rowIndent = nodeData.path.length === 0 ? 0 : indent
-        return blockTint && issueBlock(blockTint, rowIndent, nodeData.collapsed)
-      },
-      valueRow: (nodeData) => {
-        const rowTint = tint(nodeData)
-        return rowTint && issueRow(rowTint)
-      },
+      collection: [
+        (nodeData) => {
+          const blockTint = tint(nodeData)
+          const rowIndent = nodeData.path.length === 0 ? 0 : indent
+          return blockTint && issueBlock(blockTint, rowIndent, nodeData.collapsed)
+        },
+        fieldGap,
+      ],
+      property: (nodeData) =>
+        isField(nodeData) ? { fontWeight: 'bold', fontSize: '1.1em' } : null,
+      valueRow: [
+        (nodeData) => {
+          const rowTint = tint(nodeData)
+          return rowTint && issueRow(rowTint)
+        },
+        fieldGap,
+      ],
     },
   }
   return stackTheme(layer, hostTheme)

@@ -7,10 +7,6 @@ The build plan's remaining work (what is left of step 7, the definition editor's
 ## Fragment editor
 
 - **Checks on the fragment's name** in the definition editor: fig-tree's legal-name and reserved-name rules (`checkNameLegality`, `isReservedRegistrationName`, not exported) and a name an operator or alias holds, all of which registration refuses, and a name another registered fragment has, which registration replaces without a word. Since a registered fragment's rename saves at once, a rename onto another fragment's name replaces that fragment straight away; `useFragmentEditor` knows whether the draft is registered, which tells a rename onto it from editing it ("The definition editor", "Authoring state").
-- **The definition editor's layout:**
-  - the top-level labels (`parameters`, `samples`, `metadata`) more prominent: bold, and perhaps larger;
-  - the description first, at the top, under the name;
-  - vertical space between the blocks (parameters, samples, metadata), perhaps a border, to be tried.
 - **Whether the fragment is saved (registered):** an indicator, in the host or the editor, to be decided, from `useFragmentEditor`'s `canSave` and the draft's `registered` ("Authoring state").
 - **Autocomplete after `$params.`,** listing the declared parameters, if typing the names turns out to be a nuisance ("Parameters", "In the expression editor"). See also "Suggestions while a reference is typed" below.
 - **"Change to" on an undeclared parameter,** from the issue's `suggestion` (F21), beside "Declare". It rewrites the reference's first key, in each form a reference takes (`$p`, a drill, a template token, `get` from `$params`).
