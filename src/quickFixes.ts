@@ -22,7 +22,8 @@ import { switchOperator } from './switchOperator'
 //   an unknown one: the picker's switch on a broken node, which cleans it.
 //   Not to a fragment the picker leaves out.
 // - Rename a `$` key that names nothing, where fig-tree suggests one, which
-//   makes the object a shorthand node for the fill-in step to complete.
+//   makes the object a shorthand node for the fill-in step to complete. On a
+//   node or among its arguments, it can be removed as an unknown key can.
 // - Declare, in a fragment body, a parameter the body reads that isn't
 //   declared (F21 names it). The body is left as it is, and the editor adds
 //   the declaration named by `declare` in the same write.
@@ -58,18 +59,17 @@ export const getQuickFixes = (
   const hasKey = (name: string) => parent !== null && name in parent
 
   switch (code) {
-    case 'unknown-node-key': {
+    case 'unknown-node-key':
+    case 'unrecognized-identifier': {
       if (typeof key !== 'string') return []
       const rename =
         suggestion !== undefined && !hasKey(suggestion)
           ? [renameFix(parentPath, key, suggestion)]
           : []
+      if (code === 'unrecognized-identifier' && !isNodeOrArguments(classification, parentPath))
+        return rename
       return [...rename, removeFix(parentPath, key)]
     }
-    case 'unrecognized-identifier':
-      return typeof key === 'string' && suggestion !== undefined && !hasKey(suggestion)
-        ? [renameFix(parentPath, key, suggestion)]
-        : []
     case 'malformed-node': {
       if (typeof key !== 'string') return []
       const node = rowAt(classification, parentPath)?.kind
@@ -131,6 +131,17 @@ const declareFix = (name: string): QuickFix => ({
   fix: (expression) => expression,
   declare: name,
 })
+
+// A node's own keys, a named payload or a fragment call's arguments, where a
+// stray key is as removable as any unknown one. Elsewhere a `$` key holds
+// plain data's content.
+const isNodeOrArguments = (classification: Classification, path: Path) => {
+  const row = rowAt(classification, path)
+  return (
+    row?.payload !== undefined ||
+    ['operator', 'fragment', 'literal'].includes(row?.kind?.kind ?? '')
+  )
+}
 
 const asObject = (value: unknown) =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

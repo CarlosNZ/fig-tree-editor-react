@@ -988,10 +988,10 @@ The region below the tree that topic 3 proposed, as a sibling of the `JsonEditor
 
 **Quick fixes,** in the messages area only:
 
-- **Remove,** on an unknown key: `unknown-node-key`, and `malformed-node` at a stray sibling key (`{ $plus: [1], extra: 2 }`).
+- **Remove,** on an unknown key: `unknown-node-key`, `malformed-node` at a stray sibling key (`{ $plus: [1], extra: 2 }`), and `unrecognized-identifier` at a `$` key on a node, in a named payload or among a fragment call's arguments (`{ operator: 'plus', values: [1], $foo: 1 }`), where fig-tree reads a `$` key as a node meant there (fig-tree 3.0.0-preview.14).
 - **Rename to `then`,** where fig-tree suggests the name (F3), which also clears the `missing-required` the typo guard held back.
 - **Change to `plus`,** on an unknown operator or fragment name where fig-tree suggests one (F3), the one-click form of the picker opening on the suggestion (topic 4).
-- **Rename to `$greaterThan`,** on a `$` key that names no operator or fragment (`{ $graeterThan: [...] }`), where fig-tree suggests one on its `unrecognized-identifier` warning (F3). The object is plain data until the key is renamed, so it has no picker, and this is the only repair offered short of editing the key by hand. The suggestion keeps the sigil, so it replaces the key as written, and the renamed object becomes a shorthand node, which the fill-in step then completes (Carl, September 2026).
+- **Rename to `$greaterThan`,** on a `$` key that names no operator or fragment (`{ $graeterThan: [...] }`), where fig-tree suggests one on its `unrecognized-identifier` error (F3). The object is plain data until the key is renamed, so it has no picker, and this is the only repair offered short of editing the key by hand. The suggestion keeps the sigil, so it replaces the key as written, and the renamed object becomes a shorthand node, which the fill-in step then completes (Carl, September 2026).
 - **Dismiss,** on a filled-in line, and **Dismiss all** in the header when there is more than one.
 
 Do later: the same fixes in the row's hover card ("Where issues attach"), which would need the card to stay open while the pointer moves into it.

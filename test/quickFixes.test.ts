@@ -137,6 +137,37 @@ describe('quick fixes', () => {
         condition: { $greaterThan: [1, 2] },
       })
     })
+
+    it('removes it on a node or among its arguments, as an unknown key', () => {
+      const removable = [
+        [{ operator: 'plus', values: [1], $foo: 1 }, ['$foo']],
+        [{ $plus: { values: [1], $foo: 1 } }, ['$plus', '$foo']],
+        [{ fragment: 'greet', parameters: { name: 'x', $foo: 1 } }, ['parameters', '$foo']],
+        [{ $greet: { name: 'x', $foo: 1 } }, ['$greet', '$foo']],
+        [{ operator: 'literal', value: 1, $foo: 1 }, ['$foo']],
+      ] as const
+      for (const [expression, path] of removable) {
+        expect(offered(expression)).toContainEqual([
+          'unrecognized-identifier',
+          expect.arrayContaining(['Remove']),
+        ])
+        const result = fixed(expression, 'unrecognized-identifier', 'Remove')
+        expect(path.reduce<unknown>((value, key) => (value as never)?.[key], result)).toBe(
+          undefined
+        )
+      }
+      expect(offered({ $not: { $greaterThn: [1, 2] } })).toContainEqual([
+        'unrecognized-identifier',
+        ['Rename to $greaterThan', 'Remove'],
+      ])
+    })
+
+    it('leaves it in plain data, where it holds the content', () => {
+      expect(offered({ $graeterThan: [1, 2], '//': 'Note' })).toEqual([
+        ['unrecognized-identifier', ['Rename to $greaterThan']],
+      ])
+      expect(offered({ title: 'x', $zzzzz: 1 })).toEqual([['unrecognized-identifier', []]])
+    })
   })
 
   describe('on an undeclared parameter', () => {
