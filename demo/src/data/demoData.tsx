@@ -25,7 +25,7 @@ export const demoData: DemoData[] = [
 
 A basic expression that just joins a couple of values pulled from some form data. A string such as \`"$data.user.firstName"\` is a *reference*: it reads that path from the data object.
 
-Experiment with changing the values of the data object as well as the paths being referenced. (See what happens if you reference a path that doesn't exist: it reads as \`null\`, so the whole result is \`null\`. Then try wrapping the reference in a \`firstOf\` to give it a default.)
+Experiment with changing the values of the data object as well as the paths being referenced. (See what happens if you reference a path that doesn't exist: it reads as \`null\`, so the whole result is \`null\`. Then try wrapping the reference in a \`firstNonNull\` to give it a default.)
 
 Click the **plus** button to see the result.
 

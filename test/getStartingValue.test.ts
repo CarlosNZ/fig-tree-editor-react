@@ -106,8 +106,8 @@ describe('getStartingElement', () => {
     ["`plus`'s numbers", { $plus: [1, 2] }, ['$plus'], 1],
     ['`join.values`', { operator: 'join', values: ['a', 'b'] }, ['values'], 'Charlie'],
     [
-      '`firstOf.values`',
-      { operator: 'firstOf', values: ['$data.x', '$data.y'] },
+      '`firstNonNull.values`',
+      { operator: 'firstNonNull', values: ['$data.x', '$data.y'] },
       ['values'],
       'The first non-null value',
     ],

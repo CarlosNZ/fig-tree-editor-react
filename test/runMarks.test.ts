@@ -220,7 +220,7 @@ describe('marking how a run went', () => {
       expect(statuses(marks, true)).toEqual({ value: 'value', branches: 'value' })
 
       // A shorthand's argument list of constants, which has no slot of its own
-      const { marks: listed } = await evaluate({ $firstOf: [null, 'first', 'second'] }, [])
+      const { marks: listed } = await evaluate({ $firstNonNull: [null, 'first', 'second'] }, [])
       expect(statuses(listed, true)).toEqual({})
     })
 

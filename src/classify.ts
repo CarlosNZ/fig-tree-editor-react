@@ -548,12 +548,15 @@ const withVars = (value: Record<string, unknown>, path: Path, context: Context):
 export const bindings = (scope: readonly ScopeEntry[]) =>
   scope.flatMap((entry) => (entry.kind === 'iterator' && entry.as !== undefined ? [entry.as] : []))
 
-// An iterator's `as`, where it is a literal name. An illegal one is
-// `validate()`'s to report, and binds nothing.
+// An iterator's `as`, where it is a literal name that starts with a letter or
+// `_`, as fig-tree's compiler requires of the token after a `$`. An illegal
+// one is `validate()`'s to report (`invalid-as`), and binds nothing.
 const asName = (operator: OperatorInfo | undefined, node: Record<string, unknown>) => {
   if (operator?.parameters.as?.evaluation !== 'structural') return undefined
   const { as } = node
-  return typeof as === 'string' && recognizeReference(as).kind === 'plain' ? as : undefined
+  return typeof as === 'string' && recognizeReference(as).kind === 'plain' && /^[\p{L}_]/u.test(as)
+    ? as
+    : undefined
 }
 
 // An element's declaration is its array parameter's, or a fragment's

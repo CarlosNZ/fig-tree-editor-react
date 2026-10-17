@@ -319,6 +319,16 @@ describe('the classification walk', () => {
       expect(kind(node, [...each, 1])).toMatchObject({ binding: 'line' })
       expect(kind(node, ['$map', 'each', '$map', 'input'])).toMatchObject({ binding: 'order' })
     })
+
+    it('binds no `as` name that starts with other than a letter or `_`', () => {
+      const node = { $map: { input: [1, 2], as: '5', each: '$5.00' } }
+      expect(row(node, ['$map', 'each'])?.scope).toEqual([
+        { kind: 'iterator', path: [], as: undefined },
+      ])
+      expect(kind(node, ['$map', 'each'])).toBeUndefined()
+      const named = { $map: { input: [1, 2], as: '_n', each: '$_n' } }
+      expect(kind(named, ['$map', 'each'])).toMatchObject({ binding: '_n' })
+    })
   })
 
   // `inspect()` is the compiler's own reading, so every operator node,
@@ -416,7 +426,7 @@ describe('the classification walk', () => {
       { operator: 'match', value: '$data.k', branches: { a: '$data.a', b: { $plus: [1] } } },
       { $map: { input: '$data.list', as: 'item', each: { $plus: ['$item.p', '$itemIndex'] } } },
       { $buildString: { template: 'Hi {{$data.name}}' } },
-      { '//': ['A', '$data.x'], $firstOf: ['$data.a', { $get: 'b' }] },
+      { '//': ['A', '$data.x'], $firstNonNull: ['$data.a', { $get: 'b' }] },
     ]
     const cases = [
       ...shapes.map((expression) => ({ name: JSON.stringify(expression), expression })),

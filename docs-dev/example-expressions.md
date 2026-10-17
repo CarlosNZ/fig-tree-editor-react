@@ -285,7 +285,7 @@ Each `$error` and `$err` is a reference in the binding colour, typed "Error", wi
 
 ## Every operator, at work
 
-One expression that evaluates in full, using every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments, and most of FigTree's grammar. Paste the data into the demo's data editor first. It validates with four warnings, each deliberate: an unread var, two contact fields for `firstOf` to pass over, and a passport number that's absent, so `get` gives its default. Evaluating the root takes about a second, making HTTP and GraphQL requests to httpbin.org, countriesnow.space and countries.trevorblades.com; a second run comes from the cache, all but `echo`, which has `noCache`.
+One expression that evaluates in full, using every operator the demo registers apart from `sql`, which needs the demo's local Postgres bridge, as well as the demo's own operators, both its fragments, and most of FigTree's grammar. Paste the data into the demo's data editor first. It validates with four warnings, each deliberate: an unread var, two contact fields for `firstNonNull` to pass over, and a passport number that's absent, so `get` gives its default. Evaluating the root takes about a second, making HTTP and GraphQL requests to httpbin.org, countriesnow.space and countries.trevorblades.com; a second run comes from the cache, all but `echo`, which has `noCache`.
 
 After the root's Evaluate, the tree shows every way a node can run: green throughout, amber where a fallback caught a failure (`trips`' `$divide` for Lisbon, which has no travellers, and `safeRatio`), grey where a node never ran (`vars.unused`, `eligibility.else`, `perk`'s `default`), black for the request `race` stopped, and red for `unsafeRatio`, whose `$divide` fails the `$plus` above it and leaves a null in the root's value, as the root's card says.
 
@@ -437,7 +437,12 @@ The expression:
     "default": { "$literal": "Standard {{allowance}}" }
   },
   "contact": {
-    "$firstOf": ["$data.user.phone", "$data.user.mobile", { "$trim": "$data.user.email" }, "none"]
+    "$firstNonNull": [
+      "$data.user.phone",
+      "$data.user.mobile",
+      { "$trim": "$data.user.email" },
+      "none"
+    ]
   },
   "home": {
     "operator": "get",
@@ -504,7 +509,7 @@ The expression:
 
 | Operators                                                                                                                   | Where                                                                                         |
 | --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Logic: `and`, `or`, `not` (as `!`), `if`, `match`, `firstOf`                                                                | `eligibility`, `allBooked`, `race`, `perk`, `contact`                                         |
+| Logic: `and`, `or`, `not` (as `!`), `if`, `match`, `firstNonNull`                                                           | `eligibility`, `allBooked`, `race`, `perk`, `contact`                                         |
 | Comparison: `equal`, `notEqual`, `greaterThan`, `greaterThanOrEqual` (and `>=`), `lessThan`, `lessThanOrEqual`              | `eligibility`, `anyFree`, `firstAbroad`, `longTrips`, `allBooked`, `cheaperThan`              |
 | Maths: `plus` (and `+`), `subtract`, `multiply`, `divide`, `modulo`, `power`, `round`, `floor`, `ceil`, `abs`, `min`, `max` | `stats`, `trips`, `safeRatio`, `unsafeRatio`                                                  |
 | Strings: `buildString`, `split`, `join`, `lower`, `upper`, `trim`, `regex` in each of its modes                             | `greeting`, `trips`, `interests`, `vars.fullName`, `email`, `hasDigits`, `domain`, `initials` |
@@ -524,7 +529,7 @@ The expression:
 | `fallback` on a node, on a request, on a fragment call, and catching for one element of an iterator         | `safeRatio`, `country`, `capital`, `trips`                                   |
 | `noCache`, and the instance's cache on a second run                                                         | `echo`, which is never cached, and the fragments in `trips`                  |
 | Comments of one line and of several                                                                         | `trips`' `each`, the root                                                    |
-| Lazy evaluation: an untaken branch, unchosen `match` branches, `firstOf` stopping at its first value        | `eligibility`, `perk`, `contact`                                             |
+| Lazy evaluation: an untaken branch, unchosen `match` branches, `firstNonNull` stopping at its first value   | `eligibility`, `perk`, `contact`                                             |
 | A race stopping the slower request                                                                          | `race`                                                                       |
 | A failure failing the node above it, leaving a null in the root                                             | `unsafeRatio`                                                                |
 | Defaults: `noMatchDefault` and `get`'s `default`                                                            | `firstAbroad`, `domain`, `home`, `passport`                                  |
@@ -848,7 +853,7 @@ The expression:
       ]
     },
     "droid": {
-      "$firstOf": [
+      "$firstNonNull": [
         "$vars.droid.callsign",
         { "$upper": "$vars.droid.serial" },
         { "$buildString": ["unit %1", { "$plus": ["$vars.droid.rank", 1] }] }
@@ -1025,7 +1030,7 @@ To be continued…
 | `crew`             | a line per member but the leader, from a vars block on the node, each with a `getFlag` call whose fallback catches Bletchley Park's 404, joined with commas and an "and" before the last |
 | `skills`           | three iterators deep: each member's skills that none of the leader's equal                                                                                                               |
 | `funds`, `share`   | the crew's credits converted to numbers, with a fallback of 0 for one that isn't, summed and rounded; the share `floor`ed; the currency from the GraphQL query                           |
-| `droid`            | `firstOf` the droid's callsign, which is null, its serial upper-cased, and a name that's never built                                                                                     |
+| `droid`            | `firstNonNull` the droid's callsign, which is null, its serial upper-cased, and a name that's never built                                                                                |
 | `course`           | whether `some` member is a navigator, then the one `find` finds                                                                                                                          |
 | `cloak`            | empty, since the ship isn't cloaked, and `closeGaps` takes the space before it                                                                                                           |
 | `{{$d.ship.name}}` | a reference token in the template                                                                                                                                                        |
