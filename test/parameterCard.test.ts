@@ -72,7 +72,7 @@ describe('parameterCard', () => {
       [
         '`values` · required · takes an array',
         'Evaluated: all at once; stops as soon as the answer is known',
-        'If null: a null element counts as false',
+        'If null: an error; a null element counts as false',
       ],
     ],
     [
@@ -82,7 +82,7 @@ describe('parameterCard', () => {
       [
         '`values` · required · takes an array',
         'Elements: exactly 2, all numbers or all strings',
-        'If null: the result is null; a null element makes the result null unless `nullValueDefault` is set',
+        'If null: an error; a null element makes the result null unless `nullValueDefault` is set',
       ],
     ],
     [
@@ -92,7 +92,6 @@ describe('parameterCard', () => {
       [
         '`nullValueDefault` · optional · takes a number, a string, an array or an object',
         'Evaluated: only when needed',
-        "If null: means 'not set'",
         'Used in place of a null in `values`',
       ],
     ],
@@ -102,8 +101,30 @@ describe('parameterCard', () => {
       ['input'],
       [
         '`input` · required · takes an array',
-        'If null: the result is null unless `nullInputDefault` is set',
+        'If null: an error unless `nullInputDefault` is set; null elements are accepted',
       ],
+    ],
+    [
+      '`map.as`',
+      { operator: 'map', input: [1], each: 1, as: 'item' },
+      ['as'],
+      [
+        '`as` · optional · takes a string',
+        "Evaluated: a name, not an expression, so it can't be computed",
+        'If null: an error',
+      ],
+    ],
+    [
+      '`join.values`, whose holder replaces only null elements',
+      { operator: 'join', values: ['a'] },
+      ['values'],
+      ['`values` · required · takes an array', 'If null: an error; null elements are accepted'],
+    ],
+    [
+      '`http.url`',
+      { operator: 'http', url: 'https://a.b' },
+      ['url'],
+      ['`url` · required · takes a string', 'If null: an error'],
     ],
     [
       '`map.each`',
@@ -130,7 +151,7 @@ describe('parameterCard', () => {
       [
         '`entries` · required · takes an array',
         'Elements: each an object with `key` and `value`',
-        'If null: the result is null',
+        'If null: an error; a null element is an error',
       ],
     ],
     [

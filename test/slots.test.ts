@@ -1,3 +1,4 @@
+import { FigTree, defineOperator } from 'fig-tree-evaluator'
 import { describe, expect, it } from 'vitest'
 import { classify, rowAt } from '../src/classify'
 import { type Path } from '../src/paths'
@@ -58,6 +59,21 @@ describe('slots', () => {
         'object',
         'null',
       ])
+    })
+
+    it('admit no null where only `truthiness` is declared, which the engine rejects', () => {
+      const allTrue = defineOperator({
+        name: 'allTrue',
+        category: 'logic',
+        parameters: {
+          values: { type: 'array', truthiness: true, constraints: { homogeneous: ['boolean'] } },
+        },
+        evaluate: ({ values }) => (values as unknown[]).every(Boolean),
+      })
+      const figTree = new FigTree({ operators: [allTrue] })
+      const host = { operators: figTree.getOperators(), fragments: [] }
+      const node = { operator: 'allTrue', values: [true] }
+      expect(rowAt(classify(node, host), ['values', 0])?.slot?.admits).toEqual(['boolean'])
     })
 
     it("take their positions after a positional parameter's", () => {

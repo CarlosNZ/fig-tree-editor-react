@@ -1,6 +1,7 @@
 import {
   OPERATOR_CATEGORIES,
   type CatalogOperator,
+  type CatalogParameter,
   type CategoryListing,
   type FragmentInfo,
   type FragmentMetadata,
@@ -17,7 +18,8 @@ import {
 import { strings } from './strings'
 
 // How operators, categories and fragments are shown: names, text, links,
-// colours, and the seeds the starting-value rule reads.
+// colours, the seeds the starting-value rule reads, and what a null does at
+// each parameter.
 //
 // An operator's comes from `./catalog`'s `getCatalog`, which merges its
 // listings field by field, `seeds` and `parameterDescriptions` per parameter,
@@ -40,7 +42,12 @@ export interface OperatorDisplay {
   backgroundColor: string
   textColor: string
   seeds: Record<string, unknown> // every declared parameter's starting value
+  nullOutcomes: Record<string, NullOutcomes> // every declared parameter's
 }
+
+// What a null does at a parameter, and at one of its elements, as the
+// engine resolves it
+export type NullOutcomes = Pick<CatalogParameter, 'nullOutcome' | 'elementNullOutcome'>
 
 export interface CategoryDisplay extends CategoryListing {
   category: OperatorCategory
@@ -164,6 +171,12 @@ const operatorDisplay = (
     backgroundColor,
     textColor,
     seeds: Object.fromEntries(entries.map(([key, { seed }]) => [key, seed])),
+    nullOutcomes: Object.fromEntries(
+      entries.map(([key, { nullOutcome, elementNullOutcome }]) => [
+        key,
+        { nullOutcome, ...(elementNullOutcome !== undefined && { elementNullOutcome }) },
+      ])
+    ),
   }
 }
 

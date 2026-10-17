@@ -7,7 +7,7 @@ import {
 import { cacheStatus, type CacheContext } from './caching'
 import { type Row, type RowKind } from './classify'
 import { describeType } from './describeType'
-import { type OperatorDisplay } from './displayData'
+import { type NullOutcomes, type OperatorDisplay } from './displayData'
 import { type Path } from './paths'
 import { strings } from './strings'
 
@@ -64,7 +64,12 @@ export const parameterCard = (
     elementsLine(declaration),
     defaultLine(declaration),
     evaluatedLine(declaration, as),
-    nullLine(name, declaration, operator),
+    nullLine(
+      name,
+      declaration,
+      operator,
+      display?.nullOutcomes[name] ?? argumentOutcomes(declaration)
+    ),
     replacementLine(declaration),
   ].filter(isString)
 }
@@ -128,47 +133,66 @@ const evaluatedLine = (declaration: Declaration, as: string | undefined) => {
   }
 }
 
-// In order: a truthiness position's null counts as false; a conditional
-// policy depends on another parameter; an optional parameter that can't be
-// null is unset by it; an eager parameter that propagates gives null; one
-// that takes null takes it as a value; and a required one that can't be
-// null is an error. A replacement's rescue is added where it applies.
-const nullLine = (name: string, declaration: Declaration, operator: OperatorInfo | undefined) => {
+// What a null does, at the parameter and at one of its elements, as the
+// catalog's `nullOutcome` and `elementNullOutcome` report it. A null that is
+// only a value goes unsaid, except at a truthiness position, where it counts
+// as false. A replacement's rescue is added where it applies: at a parameter
+// declaring an element policy it replaces null elements only, so it is said
+// of a null element that makes the result null, and elsewhere of the
+// parameter's own null.
+const nullLine = (
+  name: string,
+  declaration: Declaration,
+  operator: OperatorInfo | undefined,
+  outcomes: NullOutcomes
+) => {
   const replacer = Object.entries(operator?.parameters ?? {}).find(([, parameter]) =>
     parameter.replacesNullAt?.includes(name)
   )?.[0]
   const unless = (phrase: string) =>
     replacer === undefined ? phrase : strings.FT_CARD_UNLESS(phrase, code(replacer))
+  const { nullOutcome, elementNullOutcome } = outcomes
+  const truthiness = 'truthiness' in declaration && declaration.truthiness
+  const rescuesElements =
+    'elementNullPolicy' in declaration && declaration.elementNullPolicy !== undefined
 
-  const isArray = declaration.type === 'array'
-  const elementPolicy =
-    'elementNullPolicy' in declaration ? declaration.elementNullPolicy : undefined
-  const elements =
-    elementPolicy === 'propagate'
-      ? unless(strings.FT_CARD_NULL_ELEMENT_PROPAGATES)
-      : elementPolicy === 'value'
-        ? strings.FT_CARD_NULL_ELEMENTS_ACCEPTED
-        : undefined
-
+  const elements = {
+    propagate: unless(strings.FT_CARD_NULL_ELEMENT_PROPAGATES),
+    value: truthiness ? strings.FT_CARD_NULL_ELEMENT_FALSE : strings.FT_CARD_NULL_ELEMENTS_ACCEPTED,
+    error: strings.FT_CARD_NULL_ELEMENT_ERROR,
+  }
   const whole = (): string | undefined => {
-    if ('truthiness' in declaration && declaration.truthiness)
-      return isArray ? strings.FT_CARD_NULL_ELEMENT_FALSE : strings.FT_CARD_NULL_FALSE
-    const policy = 'nullPolicy' in declaration ? declaration.nullPolicy : undefined
-    if (typeof policy === 'object') return conditional(policy)
-    if (!declaration.required && !takesNull(declaration.type))
-      return hasDefault(declaration) ? strings.FT_CARD_NULL_UNSET : strings.FT_CARD_NULL_UNSET_ONLY
-    const eager = 'evaluation' in declaration && declaration.evaluation === 'eager'
-    if (eager && policy === 'propagate')
-      return elements === undefined
-        ? unless(strings.FT_CARD_NULL_PROPAGATES)
-        : strings.FT_CARD_NULL_PROPAGATES
-    if (takesNull(declaration.type)) return undefined
-    return declaration.required ? strings.FT_CARD_NULL_ERROR : undefined
+    if (typeof nullOutcome === 'object') return conditional(nullOutcome)
+    const rescued = (phrase: string) => (rescuesElements ? phrase : unless(phrase))
+    switch (nullOutcome) {
+      case 'propagate':
+        return rescued(strings.FT_CARD_NULL_PROPAGATES)
+      case 'error':
+        return rescued(strings.FT_CARD_NULL_ERROR)
+      case 'unset':
+        return hasDefault(declaration)
+          ? strings.FT_CARD_NULL_UNSET
+          : strings.FT_CARD_NULL_UNSET_ONLY
+      case 'value':
+        return truthiness ? strings.FT_CARD_NULL_FALSE : undefined
+      case 'none':
+        return undefined
+    }
   }
 
-  const parts = [whole(), elements].filter(isString)
+  const parts = [
+    whole(),
+    elementNullOutcome === undefined ? undefined : elements[elementNullOutcome],
+  ].filter(isString)
   return parts.length === 0 ? undefined : strings.FT_CARD_IF_NULL(parts.join('; '))
 }
+
+// A fragment's argument, which the catalog doesn't cover: its null is a value
+// where its type names null, else it unsets an optional argument and is an
+// error at a required one
+const argumentOutcomes = (declaration: Declaration): NullOutcomes => ({
+  nullOutcome: takesNull(declaration.type) ? 'value' : declaration.required ? 'error' : 'unset',
+})
 
 // "if `to` is 'boolean', null is used as a value; otherwise the result is
 // null": the cases that differ from the commonest policy, then the rest

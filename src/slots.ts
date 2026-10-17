@@ -124,15 +124,14 @@ export const takesElements = (declaration: Declaration | undefined) => {
 
 // The metadata declares no element type, so an element admits what the
 // constraints say: the `homogeneous` types, an object for an
-// `elementShape`, and anything otherwise. It admits null where the
-// container declares an `elementNullPolicy` or `truthiness`.
+// `elementShape`, and anything otherwise. Where they rule null out, it
+// admits null only where the container declares an `elementNullPolicy`, as
+// the catalog's `elementNullOutcome` has it.
 export const elementAdmits = (declaration: ParameterInfo | FragmentParameter): ExpectedType => {
   const { homogeneous, elementShape } = declaration.constraints ?? {}
   const types: BasicType[] = homogeneous ? [...homogeneous] : elementShape ? ['object'] : []
   if (types.length === 0) return 'any'
-  const nullable =
-    ('elementNullPolicy' in declaration && declaration.elementNullPolicy !== undefined) ||
-    ('truthiness' in declaration && declaration.truthiness)
+  const nullable = 'elementNullPolicy' in declaration && declaration.elementNullPolicy !== undefined
   return nullable ? [...types, 'null'] : types
 }
 

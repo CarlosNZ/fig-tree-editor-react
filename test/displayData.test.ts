@@ -23,6 +23,12 @@ const hostOperator = (
     evaluate: ({ value }) => value,
   })
 
+// What a null does at `hostOperator`'s two eager `any` parameters
+const SHOUT_NULL_OUTCOMES = {
+  value: { nullOutcome: 'propagate' },
+  other: { nullOutcome: 'propagate' },
+}
+
 const displayData = (
   options: ConstructorParameters<typeof FigTree>[0] = {},
   listings: {
@@ -53,6 +59,11 @@ describe('display data', () => {
         backgroundColor: '#d7edd4',
         textColor: '#193e1e',
         seeds: expect.objectContaining({ values: [1, 2, 3] }) as Record<string, unknown>,
+        nullOutcomes: {
+          values: { nullOutcome: 'error', elementNullOutcome: 'propagate' },
+          expect: { nullOutcome: 'unset' },
+          nullValueDefault: { nullOutcome: 'none' },
+        },
       })
     })
 
@@ -80,6 +91,7 @@ describe('display data', () => {
         backgroundColor: '#ffeecc',
         textColor: '#332200',
         seeds: { value: 'hello', other: 'Replace me' },
+        nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 
@@ -106,6 +118,7 @@ describe('display data', () => {
         backgroundColor: lightShade(string.backgroundColor),
         textColor: darkShade(string.backgroundColor),
         seeds: { value: 'Replace me', other: 'Replace me' },
+        nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 

@@ -248,6 +248,7 @@ export const strings = {
   FT_CARD_NULL_ERROR: 'an error',
   FT_CARD_NULL_ELEMENT_PROPAGATES: 'a null element makes the result null',
   FT_CARD_NULL_ELEMENTS_ACCEPTED: 'null elements are accepted',
+  FT_CARD_NULL_ELEMENT_ERROR: 'a null element is an error',
   FT_CARD_UNLESS: (what: string, replacement: string) => `${what} unless ${replacement} is set`,
   FT_CARD_NULL_CONDITIONAL: (selector: string, cases: string, then: string, otherwise: string) =>
     `if ${selector} is ${cases}, ${then}; otherwise ${otherwise}`,
