@@ -340,13 +340,21 @@ The expression:
     "mode": "extract",
     "noMatchDefault": "no domain"
   },
+  "tagList": {
+    "$regex": {
+      "value": "$data.user.tags",
+      "pattern": ",\\s*",
+      "mode": "replace",
+      "replacement": " · "
+    }
+  },
   "nameBackwards": { "$reverse": "$d.user.firstName" },
   "shouting": { "$changeCase": ["$data.user.lastName", "upper"] },
   "today": { "operator": "currentDate" },
   "stats": {
     "vars": { "nights": { "operator": "map", "input": "$vars.trips", "each": "$element.nights" } },
     "totalNights": { "operator": "+", "values": "$vars.nights" },
-    "roundedUp": { "$ceil": { "$plus": "$vars.nights" } },
+    "roundedUp": { "$ceiling": { "$plus": "$vars.nights" } },
     "longest": { "$max": "$vars.nights" },
     "shortest": { "$min": "$vars.nights" },
     "average": {
@@ -507,18 +515,18 @@ The expression:
 }
 ```
 
-| Operators                                                                                                                   | Where                                                                                         |
-| --------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Logic: `and`, `or`, `not` (as `!`), `if`, `match`, `firstNonNull`                                                           | `eligibility`, `allBooked`, `race`, `perk`, `contact`                                         |
-| Comparison: `equal`, `notEqual`, `greaterThan`, `greaterThanOrEqual` (and `>=`), `lessThan`, `lessThanOrEqual`              | `eligibility`, `anyFree`, `firstAbroad`, `longTrips`, `allBooked`, `cheaperThan`              |
-| Maths: `plus` (and `+`), `subtract`, `multiply`, `divide`, `modulo`, `power`, `round`, `floor`, `ceil`, `abs`, `min`, `max` | `stats`, `trips`, `safeRatio`, `unsafeRatio`                                                  |
-| Strings: `buildString`, `split`, `join`, `lower`, `upper`, `trim`, `regex` in each of its modes                             | `greeting`, `trips`, `interests`, `vars.fullName`, `email`, `hasDigits`, `domain`, `initials` |
-| Arrays: `length`, `map`, `filter`, `find`, `some`, `every`                                                                  | `stats`, `trips`, `longTrips`, `firstAbroad`, `anyFree`, `allBooked`, `cheaperThan`           |
-| Data and conversion: `get`, `buildObject`, `convert`                                                                        | `home`, `passport`, `card`, `flagFromNode`, `trips`                                           |
-| I/O: `http`, `graphQL`                                                                                                      | `echo`, `race`, `country`, and both fragments' bodies                                         |
-| The demo's own: `reverse`, `changeCase`, `currentDate`                                                                      | `nameBackwards`, `shouting`, `flagFromNode`, `today`                                          |
-| Fragments: `getCapital`, `getFlag`, full and shorthand, with static and dynamic arguments                                   | `capital`, `trips`, `flagFromForm`, `flagFromNode`                                            |
-| `literal`, full and shorthand                                                                                               | `template`, `perk`'s `default`                                                                |
+| Operators                                                                                                                      | Where                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Logic: `and`, `or`, `not` (as `!`), `if`, `match`, `firstNonNull`                                                              | `eligibility`, `allBooked`, `race`, `perk`, `contact`                                                    |
+| Comparison: `equal`, `notEqual`, `greaterThan`, `greaterThanOrEqual` (and `>=`), `lessThan`, `lessThanOrEqual`                 | `eligibility`, `anyFree`, `firstAbroad`, `longTrips`, `allBooked`, `cheaperThan`                         |
+| Maths: `plus` (and `+`), `subtract`, `multiply`, `divide`, `modulo`, `power`, `round`, `floor`, `ceiling`, `abs`, `min`, `max` | `stats`, `trips`, `safeRatio`, `unsafeRatio`                                                             |
+| Strings: `buildString`, `split`, `join`, `lower`, `upper`, `trim`, `regex` in each of its modes                                | `greeting`, `trips`, `interests`, `vars.fullName`, `email`, `hasDigits`, `domain`, `initials`, `tagList` |
+| Arrays: `length`, `map`, `filter`, `find`, `some`, `every`                                                                     | `stats`, `trips`, `longTrips`, `firstAbroad`, `anyFree`, `allBooked`, `cheaperThan`                      |
+| Data and conversion: `get`, `buildObject`, `convert`                                                                           | `home`, `passport`, `card`, `flagFromNode`, `trips`                                                      |
+| I/O: `http`, `graphQL`                                                                                                         | `echo`, `race`, `country`, and both fragments' bodies                                                    |
+| The demo's own: `reverse`, `changeCase`, `currentDate`                                                                         | `nameBackwards`, `shouting`, `flagFromNode`, `today`                                                     |
+| Fragments: `getCapital`, `getFlag`, full and shorthand, with static and dynamic arguments                                      | `capital`, `trips`, `flagFromForm`, `flagFromNode`                                                       |
+| `literal`, full and shorthand                                                                                                  | `template`, `perk`'s `default`                                                                           |
 
 | Feature                                                                                                     | Where                                                                        |
 | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
@@ -915,7 +923,7 @@ The expression:
         "gap": {
           "$min": [
             {
-              "$ceil": {
+              "$ceiling": {
                 "$abs": {
                   "operator": "-",
                   "value": "$d.empire.fleet.position",
@@ -1035,7 +1043,7 @@ To be continued…
 | `cloak`            | empty, since the ship isn't cloaked, and `closeGaps` takes the space before it                                                                                                           |
 | `{{$d.ship.name}}` | a reference token in the template                                                                                                                                                        |
 | `destination`      | an `or` racing two requests, made afresh on every run by its `noCache`, where the first to answer lets it go on to a POST that httpbin echoes back                                       |
-| `pursuit`          | the gap between the ships, from a vars block on the node, by `-`, `abs`, `ceil` and `min`                                                                                                |
+| `pursuit`          | the gap between the ships, from a vars block on the node, by `-`, `abs`, `ceiling` and `min`                                                                                             |
 | `signoff`          | read by `get` from a `literal`, whose `upper` node is data, so it never runs                                                                                                             |
 
 The root's vars: `code` spells the base's country code from the capitals in `meetAt` (`regex` in match mode), `country` asks GraphQL for it with a `buildObject` whose key is computed, `crew` filters out the droid, and `leader`, `others` and `funds` each read `crew`.

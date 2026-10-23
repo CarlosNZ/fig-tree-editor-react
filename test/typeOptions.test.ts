@@ -34,7 +34,7 @@ const startAt = (
   )
 
 const STANDARD = ['string', 'number', 'boolean', 'null', 'object', 'array']
-const OPTION = { enum: 'Option', values: ['test', 'extract', 'match'], matchPriority: 1 }
+const OPTION = { enum: 'Option', values: ['test', 'extract', 'match', 'replace'], matchPriority: 1 }
 
 // The design's examples (topic 4, "The type dropdown"). The registry's
 // fragments call `http`, which returns anything, so Fragment fits wherever

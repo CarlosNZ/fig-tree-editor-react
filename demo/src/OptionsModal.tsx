@@ -65,11 +65,15 @@ const sectionTheme = jsonEditorTheme(
   { marginBottom: '0.5em' }
 )
 
+// A header's text, for the Authorization fields
+const headerText = (value: string | number | boolean | null | undefined) =>
+  value == null ? undefined : String(value)
+
 const resetFormState = (options: DemoOptions, fragments: Fragments) => {
   const headers = { ...options.http?.headers }
-  const authHeader = headers.Authorization
+  const authHeader = headerText(headers.Authorization)
   const gqlHeaders = { ...options.graphQL?.headers }
-  const gqlAuth = gqlHeaders.Authorization
+  const gqlAuth = headerText(gqlHeaders.Authorization)
   delete headers.Authorization
   delete gqlHeaders.Authorization
   return {
@@ -227,7 +231,7 @@ export const OptionsModal = ({
                     setData={(data) =>
                       setFormState({
                         ...formState,
-                        headers: data as Record<string, string>,
+                        headers: data as typeof formState.headers,
                       })
                     }
                     collapse={Object.keys(formState.headers).length > 0 ? 1 : 0}
@@ -276,7 +280,7 @@ export const OptionsModal = ({
                             setData={(data) =>
                               setFormState({
                                 ...formState,
-                                gqlHeaders: data as Record<string, string>,
+                                gqlHeaders: data as typeof formState.gqlHeaders,
                               })
                             }
                             collapse={Object.keys(formState.gqlHeaders).length > 0 ? 1 : 0}

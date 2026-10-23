@@ -559,18 +559,18 @@ A slot finds its default by its type: an `any` slot the `any` entry; a basic typ
 
 **Examples:**
 
-| Slot                                              | admits                           | Options                                                                        |
-| ------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| `if.condition`, a var, plain data                 | `any`                            | string · number · boolean · null · object · array · Data · Operator · Fragment |
-| `round.value`                                     | `['number', 'null']`             | number · null · Data · Operator · Fragment                                     |
-| `round.decimals` (optional)                       | `integer`                        | number · Data · Operator · Fragment                                            |
-| `regex.mode` (optional)                           | `'test' \| 'extract' \| 'match'` | Option · Data · Operator · Fragment                                            |
-| a `greaterThan` element                           | `['number', 'string', 'null']`   | number · string · null · Data · Operator · Fragment                            |
-| a `buildObject` entry                             | `object`                         | object · Data · Operator · Fragment                                            |
-| `map.each`, where the node sits in a `vars` scope | `any`                            | the six standard types · Data · Variable · Element · Operator · Fragment       |
-| `map.as`                                          | `string`, literal only           | string                                                                         |
-| `noCache`                                         | `true`, literal only             | boolean                                                                        |
-| quoted content                                    | no slot                          | string · number · boolean · null · object · array                              |
+| Slot                                              | admits                                        | Options                                                                        |
+| ------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------ |
+| `if.condition`, a var, plain data                 | `any`                                         | string · number · boolean · null · object · array · Data · Operator · Fragment |
+| `round.value`                                     | `['number', 'null']`                          | number · null · Data · Operator · Fragment                                     |
+| `round.decimals` (optional)                       | `integer`                                     | number · Data · Operator · Fragment                                            |
+| `regex.mode` (optional)                           | `'test' \| 'extract' \| 'match' \| 'replace'` | Option · Data · Operator · Fragment                                            |
+| a `greaterThan` element                           | `['number', 'string', 'null']`                | number · string · null · Data · Operator · Fragment                            |
+| a `buildObject` entry                             | `object`                                      | object · Data · Operator · Fragment                                            |
+| `map.each`, where the node sits in a `vars` scope | `any`                                         | the six standard types · Data · Variable · Element · Operator · Fragment       |
+| `map.as`                                          | `string`, literal only                        | string                                                                         |
+| `noCache`                                         | `true`, literal only                          | boolean                                                                        |
+| quoted content                                    | no slot                                       | string · number · boolean · null · object · array                              |
 
 **Collection rows: raw JSON — Agreed.** A parameter holding an array or object (`values: [1, 2]`, `entries`, `body`) has no type dropdown, so turning it into a reference or a node goes through raw JSON, as in v1. A type selector for collection rows is logged as J6 in [v3-upstream.md](v3-upstream.md), Maybe, to revisit once the editor is in use.
 
