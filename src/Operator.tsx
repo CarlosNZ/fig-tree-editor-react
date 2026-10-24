@@ -1,19 +1,15 @@
 import { type CustomComponentProps } from 'json-edit-react'
-import { AddParameter } from './AddParameter'
 import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type CardLine } from './HoverCard'
 import { DisplayBar } from './DisplayBar'
 import { withoutFilteredRows } from './nodeRows'
-import { NodeTypeSwitch } from './NodeTypeSwitch'
-import { OperatorPicker } from './OperatorPicker'
+import { NodeToolbar } from './NodeToolbar'
 import { cacheLine, operatorDefaultsLine } from './parameterCard'
 import { rowMark } from './revealRow'
-import { addKey, addableKeys } from './parameterOptions'
 import { modifierNames, otherSpelling } from './spelling'
 import { strings } from './strings'
-import { Toolbar } from './Toolbar'
 import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 import { useEvaluation } from './useEvaluation'
@@ -35,21 +31,13 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const { setValue, keyboardControls } = props
   const { figTree, classification, displayData, issues, nodeIssues, editorTheme, created } =
     componentProps!
-  const {
-    editor,
-    created: isNew,
-    openToolbar,
-    commit,
-    confirm,
-    revert,
-    snapshot,
-  } = useNodeEditor(props)
+  const nodeEditor = useNodeEditor(props)
+  const { editor, openToolbar } = nodeEditor
   const { path } = nodeData
   const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
 
   useOpenCreated(created, path, canEdit, openToolbar)
-  const row = rowAt(classification, path)
-  const kind = row?.kind as OperatorKind
+  const kind = rowAt(classification, path)?.kind as OperatorKind
   // `literal` is grammar rather than an operator, so its kind names nothing,
   // and its display data is under its own name
   const operatorName = kind.kind === 'literal' ? 'literal' : kind.operator
@@ -58,22 +46,6 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   const node = value as Record<string, unknown>
   const broken = brokenIssue(issues, classification, path, node)
   const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
-
-  // Parameters are added once the node has an operator the editor knows, so
-  // a broken node's toolbar offers the picker alone
-  const addParameter = () => {
-    const context = {
-      classification,
-      operators: figTree.getOperators(),
-      fragments: figTree.getFragments(),
-      displayData,
-    }
-    const keys = addableKeys(node, path, kind, context)
-    if (broken || keys === null) return null
-    return (
-      <AddParameter keys={keys} onAdd={(entry) => commit(addKey(node, entry, kind, context))} />
-    )
-  }
 
   // Where the operator has an alias, a modifier-click on the button writes
   // the other spelling (design, topic 2, "Name or alias")
@@ -107,29 +79,15 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
   return (
     <div className="ft-node" {...rowMark(path)} data-node-run={evaluation.mark?.status}>
       {editor === 'toolbar' ? (
-        <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
-          <NodeTypeSwitch
-            current="operator"
-            node={node}
-            path={path}
-            shared={componentProps!}
-            snapshot={snapshot}
-            commit={commit}
-          />
-          <OperatorPicker
-            figTree={figTree}
-            displayData={displayData}
-            admits={row?.slot?.admits ?? 'any'}
-            node={node}
-            current={broken ? null : operatorName}
-            startOpen={isNew}
-            suggestion={
-              broken?.code === 'unknown-operator' ? (broken.suggestion ?? undefined) : undefined
-            }
-            onSwitch={(next) => commit(next)}
-          />
-          {addParameter()}
-        </Toolbar>
+        <NodeToolbar
+          node={node}
+          kind={kind}
+          path={path}
+          broken={broken}
+          shared={componentProps!}
+          editor={nodeEditor}
+          editConfirmRef={editConfirmRef}
+        />
       ) : (
         <DisplayBar
           name={written}

@@ -147,7 +147,7 @@ A representation, not an editing form. The values inside are editable as what th
 
 - **`['label']`, the node itself.** A collection row with the **Shorthand** component.
   - JER draws the header row. Its ✎ opens the node as raw JSON; its ＋ adds a key to the node object itself, which is where a sibling `fallback` or `//` goes.
-  - Inside the inner block, the Shorthand component draws the DisplayBar, then the child rows. The DisplayBar has no pencil and no toolbar. It shows the `$if` button in italics and one conversion button, which steps through the forms: "To positional" here, since the node is named; "To full" on a positional node; and "To full" on a node with no positional form, such as a fragment call.
+  - Inside the inner block, the Shorthand component draws the DisplayBar, then the child rows. The DisplayBar's pencil opens a full node's toolbar, which edits the node lifted to full form and lowers each change back (topic 2 of the design, "Two editors per node"). It shows the `$if` button in italics and one conversion button, which steps through the forms: "To positional" here, since the node is named; "To full" on a positional node; and "To full" on a node with no positional form, such as a fragment call.
 - **`['label', '$if']`, the payload.** A flattened payload, so the parameters appear directly beneath the DisplayBar, as they would on a full node. Having no edit tools of its own, it offers no ＋, so adding a parameter means converting to full form. Each parameter row keeps its own ✎ and ✕, and its type dropdown is filtered by the parameter's declared type, looked up by its key.
   - `['label', '$if', 'condition']`: a **Reference**.
   - `['label', '$if', 'then']` and `['label', '$if', 'else']`: plain JER.

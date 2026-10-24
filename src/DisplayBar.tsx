@@ -18,9 +18,9 @@ import { type EvaluateControl } from './useEvaluation'
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
 // other spelling. A shorthand node's name is in italics, and its single value
 // can sit on the button's line. The conversion button sits beneath the display
-// name, in the node's colours, shown while it is hovered on a full node, and
-// on a shorthand node while the header is, away from the Evaluate button. One
-// that gives a reference shows while the header is hovered anywhere. The
+// name, in the node's colours, shown while it is hovered, so it doesn't
+// compete with the pencil. One that gives a reference shows while the header
+// is hovered anywhere. The
 // node's other issues, and those on rows it holds that no nearer node does,
 // are listed at the top of the button's card, which then shows sooner, and a
 // "!" badge on the button's corner, in the colour of the most severe, shows

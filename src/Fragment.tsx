@@ -1,5 +1,4 @@
 import { type CustomComponentProps } from 'json-edit-react'
-import { AddParameter } from './AddParameter'
 import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
@@ -7,14 +6,11 @@ import { type CardLine } from './HoverCard'
 import { DisplayBar, type HeaderDisplay } from './DisplayBar'
 import { type FragmentDisplay } from './displayData'
 import { type EditorTheme } from './editorTheme'
-import { FragmentPicker } from './FragmentPicker'
-import { NodeTypeSwitch } from './NodeTypeSwitch'
 import { withoutFilteredRows } from './nodeRows'
+import { NodeToolbar } from './NodeToolbar'
 import { cacheLine } from './parameterCard'
-import { addKey, addableKeys } from './parameterOptions'
 import { rowMark } from './revealRow'
 import { strings } from './strings'
-import { Toolbar } from './Toolbar'
 import { useConversion } from './useConversion'
 import { useNodeEditor, useOpenCreated } from './useNodeEditor'
 import { useEvaluation } from './useEvaluation'
@@ -35,42 +31,18 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   const { setValue } = props
   const { figTree, classification, displayData, issues, nodeIssues, editorTheme, created } =
     componentProps!
-  const {
-    editor,
-    created: isNew,
-    openToolbar,
-    commit,
-    confirm,
-    revert,
-    snapshot,
-  } = useNodeEditor(props)
+  const nodeEditor = useNodeEditor(props)
+  const { editor, openToolbar } = nodeEditor
   const { path } = nodeData
   const evaluation = useEvaluation(path, nodeData.fullData, componentProps!)
   useOpenCreated(created, path, canEdit, openToolbar)
 
-  const row = rowAt(classification, path)
-  const kind = row?.kind as FragmentKind
+  const kind = rowAt(classification, path)?.kind as FragmentKind
   // An unregistered name is looked up nowhere, since it may be anything
   const display = kind.registered ? displayData.fragments[kind.name!] : undefined
   const node = value as Record<string, unknown>
   const broken = brokenIssue(issues, classification, path, node)
   const conversion = useConversion(value, componentProps!, !broken && canEdit, setValue)
-
-  // Arguments are added once the call names a fragment the editor knows, so a
-  // broken call's toolbar offers the picker alone
-  const addParameter = () => {
-    const context = {
-      classification,
-      operators: figTree.getOperators(),
-      fragments: figTree.getFragments(),
-      displayData,
-    }
-    const keys = addableKeys(node, path, kind, context)
-    if (broken || keys === null) return null
-    return (
-      <AddParameter keys={keys} onAdd={(entry) => commit(addKey(node, entry, kind, context))} />
-    )
-  }
 
   if (editor === 'json')
     return (
@@ -82,30 +54,15 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   return (
     <div className="ft-node" {...rowMark(path)} data-node-run={evaluation.mark?.status}>
       {editor === 'toolbar' ? (
-        <Toolbar confirm={confirm} revert={revert} editConfirmRef={editConfirmRef}>
-          <NodeTypeSwitch
-            current="fragment"
-            node={node}
-            path={path}
-            shared={componentProps!}
-            snapshot={snapshot}
-            commit={commit}
-          />
-          <FragmentPicker
-            figTree={figTree}
-            displayData={displayData}
-            admits={row?.slot?.admits ?? 'any'}
-            node={node}
-            current={broken ? null : kind.name}
-            startOpen={isNew}
-            suggestion={
-              broken?.code === 'unknown-fragment' ? (broken.suggestion ?? undefined) : undefined
-            }
-            onSwitch={(next) => commit(next)}
-            excludedFragments={componentProps!.excludedFragments}
-          />
-          {addParameter()}
-        </Toolbar>
+        <NodeToolbar
+          node={node}
+          kind={kind}
+          path={path}
+          broken={broken}
+          shared={componentProps!}
+          editor={nodeEditor}
+          editConfirmRef={editConfirmRef}
+        />
       ) : (
         <DisplayBar
           name={kind.name}

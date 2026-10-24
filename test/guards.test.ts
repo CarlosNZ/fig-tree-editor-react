@@ -66,12 +66,8 @@ describe('canAdd', () => {
   it.each<[string, unknown, Path]>([
     ['a full operator node', { operator: 'round', value: 1 }, []],
     ['a broken full operator node', { operator: 'plsu', values: [1] }, []],
-    [
-      // `noCache` isn't offered, since nothing in it caches
-      'a shorthand node with nothing left to add',
-      { '//': 'x', $plus: [1], fallback: 0, vars: {} },
-      [],
-    ],
+    ['a shorthand node', { $plus: [1] }, []],
+    ['a malformed shorthand node', { $plus: [1], extra: 2 }, []],
     ['a full fragment call', { fragment: 'greet' }, []],
     [
       'an array parameter at its fixed length',
@@ -87,7 +83,6 @@ describe('canAdd', () => {
   })
 
   it.each<[string, unknown, Path]>([
-    ['a shorthand node with a modifier to add', { $plus: [1] }, []],
     [
       'an array parameter under its fixed length',
       { operator: 'lessThan', values: [1] },

@@ -2,7 +2,6 @@ import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { positionalLayout } from 'fig-tree-evaluator/format'
 import { type NodeData } from 'json-edit-react'
 import { rowAt, type Classification } from './classify'
-import { addableKeys } from './parameterOptions'
 import { type Path } from './paths'
 import { takesElements } from './slots'
 
@@ -66,10 +65,10 @@ const elementCount = (arrayPath: Path, array: unknown, context: GuardContext) =>
 
 // ── Adding ──────────────────────────────────────────────────────────────────
 
-// Blocked: a full operator node, `literal` included, or fragment call, whose
-// toolbar adds its parameters; any other node with nothing left to add; an
-// array parameter at its fixed length; and an argument list with no position
-// left, or whose rest parameter is at its fixed length.
+// Blocked: a node, in either form, whose toolbar adds its parameters (a
+// malformed shorthand node has none, and is repaired first); an array
+// parameter at its fixed length; and an argument list with no position left,
+// or whose rest parameter is at its fixed length.
 export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
   const row = rowAt(context.classification, path)
   if (Array.isArray(value)) {
@@ -87,14 +86,8 @@ export const canAdd = ({ path, value }: NodeData, context: GuardContext) => {
     const length = operator.parameters[rest].constraints?.length
     return length === undefined || value.length - layout.restAt < length
   }
-  if (typeof value !== 'object' || value === null) return true
-  const kind = row?.kind
-  const isNode = kind?.kind === 'operator' || kind?.kind === 'fragment' || kind?.kind === 'literal'
-  if (isNode && kind.form === 'full') return false
-  // A key already there, a comment offered again for a line, isn't one ＋
-  // can add
-  const keys = addableKeys(value as Record<string, unknown>, path, kind, context)
-  return keys === null || [...keys.parameters, ...keys.modifiers].some(({ key }) => !(key in value))
+  const kind = row?.kind?.kind
+  return kind !== 'operator' && kind !== 'fragment' && kind !== 'literal'
 }
 
 // The operator whose argument list the array at `arrayPath` is, if it is one

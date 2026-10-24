@@ -933,13 +933,11 @@ button.ft-message-path:hover {
 
 .ft-convert-button:hover,
 .ft-convert-button:focus-visible,
-.ft-shorthand:hover:not(:has(.ft-hover-card-anchor:hover, .ft-evaluate-button:hover))
-  .ft-convert-button,
 .ft-display-bar:hover .ft-convert-to-reference {
   opacity: 1;
 }
 
-/* A full node's toolbar, in place of its DisplayBar */
+/* A node's toolbar, in place of its DisplayBar */
 .ft-toolbar {
   display: flex;
   flex-wrap: wrap;

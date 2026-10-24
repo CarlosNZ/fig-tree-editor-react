@@ -252,9 +252,9 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
   const withFlag = (base: CustomNodeDefinition) => [flagged(base), base]
 
   return [
-    // A full node owns both its editors: every edit session renders the
-    // component, which shows json-edit-react's raw-JSON editor as
-    // `originalNode` or its own toolbar (design, topic 2, "Two editors per
+    // A node owns both its editors, in either form: every edit session
+    // renders the component, which shows json-edit-react's raw-JSON editor
+    // as `originalNode` or its own toolbar (design, topic 2, "Two editors per
     // node"). A `literal` is an operator node in every way but its content,
     // which is quoted, so it shares the definition, and a switch to or from
     // it keeps the toolbar (plan, 9.3).
@@ -282,7 +282,8 @@ export const customNodeDefinitions = (shared: Shared): CustomNodeDefinition[] =>
             isKind('operator', 'shorthand')(row) ||
             isKind('fragment', 'shorthand')(row) ||
             isKind('literal', 'shorthand')(row)
-        )
+        ),
+        { showOnEdit: true, passOriginalNode: true }
       )
     ),
     ...referenceEntry(['data'], 'data'),

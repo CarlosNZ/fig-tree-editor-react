@@ -17,7 +17,7 @@ An entry also records whether its issue has been filed, and when the change has 
 | ID  | Package            | Change                                                                        | State    | Issue                                                             | Shipped         |
 | --- | ------------------ | ----------------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- | --------------- |
 | F1  | fig-tree-evaluator | Export `classifyObject`, `recognizeReference` and `positionalLayout`          | Required | [#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199) | 3.0.0-preview.2 |
-| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`                     | Dropped  | Not filed                                                         | —               |
+| F2  | fig-tree-evaluator | A single-level option for `toShorthand` and `toCanonical`                     | Required | [#281](https://github.com/CarlosNZ/fig-tree-evaluator/issues/281) | —               |
 | F3  | fig-tree-evaluator | A machine-readable suggestion on unknown-name issues                          | Wanted   | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F4  | fig-tree-evaluator | A `literal` entry in `./editor-hints`                                         | Maybe    | [#200](https://github.com/CarlosNZ/fig-tree-evaluator/issues/200) | 3.0.0-preview.2 |
 | F5  | fig-tree-evaluator | `plus` declares `homogeneous` on `values`                                     | Maybe    | [#198](https://github.com/CarlosNZ/fig-tree-evaluator/issues/198) | 3.0.0-preview.2 |
@@ -73,17 +73,15 @@ An entry also records whether its issue has been filed, and when the change has 
 
 **Issue.** [CarlosNZ/fig-tree-evaluator#199](https://github.com/CarlosNZ/fig-tree-evaluator/issues/199).
 
-### F2 · A single-level conversion option — **Dropped**
+### F2 · A single-level conversion option — **Required**
 
-**The change.** An option on `toShorthand` and `toCanonical` that converts the given node only, leaving its children as they are. The format spec deferred this ("Finer control … can come later").
+**The change.** An option on `toShorthand` and `toCanonical` that converts the given node only, leaving its children as they are: `recursive: false`.
 
-**Why it came up.** A shorthand node's positional/named conversion was to affect that node only. The editor cannot fake it by swapping the children for placeholders before converting, because the single-value collapse rule depends on what the child is.
+**Why.** A shorthand node's toolbar ([#18](https://github.com/CarlosNZ/fig-tree-editor-react/issues/18); "Two editors per node" in [v3-design.md](v3-design.md)) lifts the node to full form, edits it with a full node's controls, and lowers each change back, which must leave the children in the forms the author gave them. The editor cannot fake it by swapping the children for placeholders before converting, because the single-value collapse rule depends on what the child is. The conversion button still converts the whole subtree at every step.
 
-**Why it was dropped.** The editor's one conversion button now converts the whole subtree at every step: "To shorthand" (named), "To positional" and "To full" ("Conversions" in [v3-design.md](v3-design.md)), all of which `./format` already does.
+**Status.** Committed on fig-tree-evaluator's `281-non-recursive-format` branch, not yet published, so the editor is checked against it with `pnpm typecheck:local-evaluator` and `pnpm test:local-evaluator`.
 
-**Revisit.** If node-only conversion proves wanted once the editor is in use.
-
-**Issue.** Not filed.
+**Issue.** [CarlosNZ/fig-tree-evaluator#281](https://github.com/CarlosNZ/fig-tree-evaluator/issues/281).
 
 ### F3 · A machine-readable suggestion on unknown-name issues — **Wanted**
 

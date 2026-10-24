@@ -61,6 +61,15 @@ describe('switchOperator', () => {
     expect(switched(data, 'literal', null)).toEqual({ operator: 'literal', value: data })
   })
 
+  it('quotes the node as written, where it is handed in another form', () => {
+    const written = { $plus: [1], fallback: 0 }
+    const lifted = { operator: 'plus', values: [1], fallback: 0 }
+    expect(switchOperator(lifted, 'literal', 'plus', operators, { quoted: written })).toEqual({
+      operator: 'literal',
+      value: written,
+    })
+  })
+
   it('switches a new node to literal as to any operator, less its value', () => {
     const node = { operator: 'upper', value: 'x', fallback: 0 }
     expect(switchOperator(node, 'literal', 'upper', operators, { quote: false })).toEqual({

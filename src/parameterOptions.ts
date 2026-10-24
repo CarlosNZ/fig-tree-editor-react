@@ -8,9 +8,8 @@ import { getStartingValue } from './getStartingValue'
 import { type Path } from './paths'
 import { strings } from './strings'
 
-// What can be added to a node (design, topic 4, "Adding parameters and
-// starting values", and topic 2, "Guards"), offered by the toolbar's "Add
-// parameter" and by json-edit-react's ＋ on the node's row:
+// What a node's toolbar offers to add to it, in full form (design, topic 4,
+// "Adding parameters and starting values"):
 //
 // - A full operator node: its declared parameters not yet present, missing
 //   required ones first, then the rest in fill-in's key order; then the
@@ -22,7 +21,9 @@ import { strings } from './strings'
 //   arguments has "Static arguments" in their place, which replaces the
 //   reference or node with a map of arguments. Then the modifiers not yet
 //   present.
-// - A shorthand node: the modifiers, since any other key makes it malformed.
+// - A shorthand node, which its toolbar edits lifted to full form, so `node`
+//   is that form: as its full form, less "Dynamic arguments", since a call
+//   whose arguments are a reference has no shorthand form.
 //
 // `noCache` is among the modifiers only where it would do something, as
 // `validate()` has it: something at or beneath the node caches, and no node
@@ -91,16 +92,19 @@ export const addableKeys = (
       return { parameters: [], modifiers: absent(MODIFIERS.slice(0, 1)) }
     case 'fragment': {
       const fragment = context.fragments.find(({ name }) => name === kind.name)
-      const declared = kind.form === 'full' && kind.malformed === undefined && fragment
+      const declared = kind.malformed === undefined && fragment
       return {
-        parameters: declared ? argumentsOf(node, kind, fragment) : [],
+        parameters: declared
+          ? argumentsOf(node, kind, fragment).filter(
+              (entry) => kind.form === 'full' || entry !== DYNAMIC_ARGUMENTS
+            )
+          : [],
         modifiers: modifiers(),
       }
     }
     case 'operator': {
       const operator = context.operators.find(({ name }) => name === kind.operator)
-      const declared =
-        kind.form === 'full' && kind.malformed === undefined && operator !== undefined
+      const declared = kind.malformed === undefined && operator !== undefined
       return {
         parameters: declared
           ? absent(parametersOf(operator, context.displayData?.operators[operator.name]))

@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { getNodeFor, nodeConversion, type ReferenceNames } from '../src/conversions'
+import {
+  getNodeFor,
+  liftNode,
+  lowerNode,
+  nodeConversion,
+  shorthandArguments,
+  type ReferenceNames,
+} from '../src/conversions'
 import { figTree } from './fixtures'
 
 const convert = (node: unknown, referenceNames: ReferenceNames = 'canonical') =>
@@ -145,5 +152,45 @@ describe("a reference's `get` node", () => {
     expect(getNodeFor('$index', 'canonical')).toBeNull()
     expect(getNodeFor('$item.price', 'canonical')).toBeNull()
     expect(getNodeFor('$vars[0]', 'canonical')).toBeNull()
+  })
+})
+
+describe("a shorthand node's toolbar conversions", () => {
+  it('lifts the node alone to full form, and lowers it back', () => {
+    const child = { $abs: -1 }
+    const node = { $plus: [child, 2], fallback: 0 }
+    const lifted = liftNode(node, figTree)!
+    expect(lifted).toEqual({ operator: 'plus', values: [child, 2], fallback: 0 })
+    expect((lifted.values as unknown[])[0]).toBe(child)
+    expect(lowerNode(lifted, figTree, 'positional')).toEqual(node)
+    expect(lowerNode(lifted, figTree, 'named')).toEqual({
+      $plus: { values: [child, 2] },
+      fallback: 0,
+    })
+  })
+
+  it('lowers to a named payload where an argument list would have a gap', () => {
+    const node = { operator: 'if', condition: true, else: 'No' }
+    expect(lowerNode(node, figTree, 'positional')).toEqual({
+      $if: { condition: true, else: 'No' },
+    })
+  })
+
+  it('keeps a `get` a node', () => {
+    expect(lowerNode({ operator: 'get', path: 'a.b' }, figTree, 'positional')).toEqual({
+      $get: 'a.b',
+    })
+  })
+
+  it('gives null where the node has no full form, or no shorthand one', () => {
+    expect(liftNode({ $plus: [1], extra: 2 }, figTree)).toBeNull()
+    expect(lowerNode({ fragment: 'greet', parameters: '$data.form' }, figTree, 'named')).toBeNull()
+  })
+
+  it("reads a shorthand node's arguments", () => {
+    expect(shorthandArguments({ $if: { condition: true } }, figTree)).toBe('named')
+    expect(shorthandArguments({ $if: [true] }, figTree)).toBe('positional')
+    expect(shorthandArguments({ $not: '$data.x' }, figTree)).toBe('positional')
+    expect(shorthandArguments({ $not: { $abs: 1 } }, figTree)).toBe('positional')
   })
 })

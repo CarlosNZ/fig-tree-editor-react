@@ -179,14 +179,6 @@ describe('FigTreeEditor', () => {
     // The last Add button is the innermost collection's
     const addToLast = () => fireEvent.click(screen.getAllByRole('button', { name: 'Add' }).at(-1)!)
 
-    // json-edit-react's key selector, opened by the root's ＋
-    const keyOptions = () => {
-      fireEvent.click(screen.getAllByRole('button', { name: 'Add' })[0])
-      const select = screen.getByRole('combobox')
-      const options = [...select.querySelectorAll('option')].map(({ value }) => value)
-      return { select, options: options.filter((value) => value !== '') }
-    }
-
     it("leaves a full operator node's adding to its toolbar", () => {
       render(
         <FigTreeEditor
@@ -198,31 +190,20 @@ describe('FigTreeEditor', () => {
       expect(screen.queryAllByRole('button', { name: 'Add' })).toEqual([])
     })
 
-    it('offers a shorthand node its modifiers by name, and starts the one chosen', () => {
-      const setExpression = vi.fn()
+    it("leaves a shorthand node's adding to its toolbar, broken or not", () => {
       const { unmount } = render(
+        <FigTreeEditor figTree={figTree} expression={{ $not: true }} setExpression={vi.fn()} />
+      )
+      expect(screen.queryAllByRole('button', { name: 'Add' })).toEqual([])
+      unmount()
+      render(
         <FigTreeEditor
           figTree={figTree}
-          expression={{ $plus: [1, 2] }}
-          setExpression={setExpression}
+          expression={{ $not: true, extra: 1 }}
+          setExpression={vi.fn()}
         />
       )
-      const { select, options } = keyOptions()
-      expect(options).toEqual(['//', 'fallback', 'vars'])
-      fireEvent.change(select, { target: { value: 'fallback' } })
-      expect(setExpression).toHaveBeenCalledExactlyOnceWith({ $plus: [1, 2], fallback: null })
-      unmount()
-
-      // `noCache` where the node caches, the demo's registry having the HTTP
-      // operators
-      const request = { $http: 'https://example.com' }
-      render(
-        <FigTreeEditor figTree={demoFigTree} expression={request} setExpression={setExpression} />
-      )
-      const cached = keyOptions()
-      expect(cached.options).toEqual(['//', 'fallback', 'noCache', 'vars'])
-      fireEvent.change(cached.select, { target: { value: 'noCache' } })
-      expect(setExpression).toHaveBeenLastCalledWith({ ...request, noCache: true })
+      expect(screen.queryAllByRole('button', { name: 'Add' })).toEqual([])
     })
 
     it('starts a free-typed key as anything', () => {

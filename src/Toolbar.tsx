@@ -2,7 +2,7 @@ import { type ReactNode, type RefObject } from 'react'
 import { IconCancel, IconOk } from './Icons'
 import { strings } from './strings'
 
-// A full node's toolbar, in place of its DisplayBar while it is open (design,
+// A node's toolbar, in place of its DisplayBar while it is open (design,
 // topic 3, "Header and toolbar"): the node's controls, then ✓ and ✗. ✓ holds
 // json-edit-react's `editConfirmRef`, so the handle's `confirm()` clicks it.
 

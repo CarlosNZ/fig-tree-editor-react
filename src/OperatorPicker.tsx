@@ -11,14 +11,15 @@ import { switchOperator } from './switchOperator'
 // dropdown has just created, so typing filters at once. Choosing an operator
 // switches the node, and choosing the current one again changes nothing: a
 // modifier-click on the DisplayBar's button writes the name or the alias.
-// Choosing `literal` quotes the node, but on a new node, which has nothing
-// worth quoting.
+// Choosing `literal` quotes the node, as written, but on a new node, which
+// has nothing worth quoting.
 
 interface OperatorPickerProps {
   figTree: FigTree
   displayData: DisplayData
   admits: ExpectedType // what the node's position admits
   node: Record<string, unknown>
+  written?: Record<string, unknown> // the node as written, where `node` is its full form
   current: string | null // the canonical operator; null on a broken node
   suggestion: string | undefined // an unknown operator's suggestion, perhaps an alias
   startOpen: boolean // on a new node
@@ -30,6 +31,7 @@ export const OperatorPicker = ({
   displayData,
   admits,
   node,
+  written,
   current,
   suggestion,
   startOpen,
@@ -57,7 +59,10 @@ export const OperatorPicker = ({
       border="group"
       placeholder={strings.FT_PICKER_PLACEHOLDER}
       setSelected={({ value }) => {
-        const next = switchOperator(node, value, current, operators, { quote: !startOpen })
+        const next = switchOperator(node, value, current, operators, {
+          quote: !startOpen,
+          quoted: written,
+        })
         if (next !== node) onSwitch(next, value)
       }}
     />

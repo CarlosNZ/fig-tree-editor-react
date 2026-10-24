@@ -13,12 +13,13 @@ import { cleanNode } from './cleanNode'
 //   operator's missing required parameters when the switch is committed.
 //
 // - Choosing `literal` quotes the node: the node as it stands, its comment and
-//   modifiers included, becomes the literal's content, since the usual reason
-//   is a part of the tree read as an expression that should be data, and
-//   everything quoted is quoted (design, topic 5, "`literal`"). Without
-//   `quote`, on a node only just created, which has nothing worth quoting,
-//   it switches as to any operator, less `value`, so the fill-in step seeds
-//   the content.
+//   modifiers included, becomes the literal's content (`quoted`, the node as
+//   written, where the picker edits a shorthand node lifted to full form),
+//   since the usual reason is a part of the tree read as an expression that
+//   should be data, and everything quoted is quoted (design, topic 5,
+//   "`literal`"). Without `quote`, on a node only just created, which has
+//   nothing worth quoting, it switches as to any operator, less `value`, so
+//   the fill-in step seeds the content.
 //
 // `current` is the node's canonical operator, or null on a broken node, whose
 // every choice is a switch: it repairs the node.
@@ -33,7 +34,7 @@ export const switchOperator = (
   target: string,
   current: string | null,
   operators: readonly OperatorInfo[],
-  { quote = true } = {}
+  { quote = true, quoted = node }: { quote?: boolean; quoted?: Record<string, unknown> } = {}
 ): Record<string, unknown> => {
   const find = (name: string | null): Target | undefined =>
     name === LITERAL.name ? LITERAL : operators.find((operator) => operator.name === name)
@@ -42,7 +43,7 @@ export const switchOperator = (
   const written = node.operator
 
   if (target === current) return node
-  if (target === LITERAL.name && quote) return { operator: LITERAL.name, value: node }
+  if (target === LITERAL.name && quote) return { operator: LITERAL.name, value: quoted }
 
   const from = find(current)
   const usesAlias = from?.alias !== undefined && written === from.alias

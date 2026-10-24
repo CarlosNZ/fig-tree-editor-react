@@ -70,6 +70,44 @@ export const nodeConversion = (
 export const getNodeFor = (reference: string, referenceNames: ReferenceNames) =>
   toGet(reference, { referenceNames })
 
+// A shorthand node's toolbar (Shorthand.tsx) edits the node lifted to full
+// form, and lowers each change back to shorthand, `named` or `positional`.
+// Each takes the node alone, leaving its children in the forms they're
+// written in. Lowering keeps a `get` a node, since "To reference" is the
+// conversion button's. Null where `./format` refuses the node, or, lowering,
+// where the node has no shorthand form, as a fragment call whose arguments
+// are a reference has none.
+export const liftNode = (node: unknown, figTree: FigTree) => {
+  try {
+    return toCanonical(node, figTree, { recursive: false }) as Record<string, unknown>
+  } catch {
+    return null
+  }
+}
+
+export const lowerNode = (
+  node: Record<string, unknown>,
+  figTree: FigTree,
+  args: 'named' | 'positional'
+) => {
+  try {
+    const lowered = toShorthand(node, figTree, {
+      arguments: args,
+      recursive: false,
+      getAsReference: false,
+    })
+    const form = formReader(figTree)(lowered)
+    return form === 'named' || form === 'positional' ? (lowered as Record<string, unknown>) : null
+  } catch {
+    return null
+  }
+}
+
+// A shorthand node's arguments: a named payload, or an argument list or
+// single value
+export const shorthandArguments = (node: unknown, figTree: FigTree) =>
+  formReader(figTree)(node) === 'named' ? 'named' : 'positional'
+
 // A value's form, as a conversion leaves it. `toShorthand` returns a string
 // only for a `get` it has made a reference.
 const formReader = (figTree: FigTree) => {

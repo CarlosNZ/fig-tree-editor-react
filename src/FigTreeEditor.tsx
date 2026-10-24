@@ -15,7 +15,6 @@ import {
   type FilterFunction,
   type JsonEditorHandle,
   type JsonEditorProps,
-  type NewKeyOptionsFunction,
   type NodeData,
   type OnCollapseFunction,
   type OnEditEventFunction,
@@ -83,7 +82,7 @@ import {
 import { type DefaultOperators } from './getStartingNode'
 import { canAdd, canDelete, type GuardContext } from './guards'
 import { getStartingElement } from './getStartingValue'
-import { addableKeys, getNewKeyValue } from './parameterOptions'
+import { getNewKeyValue } from './parameterOptions'
 import { injectStyles } from './injectStyles'
 import { Messages } from './Messages'
 import { countMessages, orderMessages } from './messageLines'
@@ -395,7 +394,6 @@ export const FigTreeEditor = ({
     () => newValue(figTree, classification, displayData),
     [figTree, classification, displayData]
   )
-  const newKeyOptions = useMemo(() => newKeys(figTree, classification), [figTree, classification])
   const allowTypeSelection = useMemo(
     () => typesFor(figTree, classification, stableParams, excludedFragments),
     [figTree, classification, stableParams, excludedFragments]
@@ -732,7 +730,6 @@ export const FigTreeEditor = ({
         customNodeDefinitions={definitions}
         customButtons={customButtons}
         defaultValue={defaultValue}
-        newKeyOptions={newKeyOptions}
         allowTypeSelection={allowTypeSelection}
         {...guards}
         allowDrag={false}
@@ -839,28 +836,6 @@ const isPlainObjectRow = (row: Row | undefined) =>
   row?.slot !== undefined &&
   row.payload !== 'flattened' &&
   (row.kind === undefined || row.kind.kind === 'container')
-
-// The keys json-edit-react's ＋ offers: on a node, the same list as "Add
-// parameter", by name, less the entries that don't add a key to the node
-// itself; elsewhere, a free-typed key (`null`). json-edit-react leaves out
-// those already present.
-const newKeys =
-  (figTree: FigTree, classification: Classification) =>
-  ({ path, value }: Parameters<NewKeyOptionsFunction>[0]) => {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-    const keys = addableKeys(
-      value as Record<string, unknown>,
-      path,
-      rowAt(classification, path)?.kind,
-      { classification, operators: figTree.getOperators(), fragments: figTree.getFragments() }
-    )
-    return (
-      keys &&
-      [...keys.parameters, ...keys.modifiers]
-        .filter(({ key, argument, label }) => !argument && label === undefined && !(key in value))
-        .map(({ key }) => key)
-    )
-  }
 
 // The host's filter, and the editor's: the editor only adds restrictions
 const combineFilter = (

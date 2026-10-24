@@ -13,8 +13,10 @@ import { nodeTypes, switchNodeType, type NodeType } from './switchNodeType'
 // whose component can't take over this toolbar, so the switch commits and
 // closes, marking the new node so that it opens its own toolbar on its picker
 // (topic 2, "Node lifecycle"). The mark carries the snapshot this toolbar
-// opened on, so ✗ there restores the node as it was before the session. A
-// switch to Value commits and closes.
+// opened on, so ✗ there restores the node as it was before the session. On a
+// shorthand node, whose component shows the other node type too, `reopen`
+// keeps this toolbar open on the new node instead, its picker open, with the
+// same snapshot. A switch to Value commits and closes.
 
 interface NodeTypeSwitchProps {
   current: 'operator' | 'fragment'
@@ -23,6 +25,7 @@ interface NodeTypeSwitchProps {
   shared: Shared
   snapshot: () => JsonData
   commit: (next: JsonData, options: { close: boolean }) => void
+  reopen?: (creation: { replaced: JsonData }) => void
 }
 
 const LABELS: Record<NodeType, string> = {
@@ -38,6 +41,7 @@ export const NodeTypeSwitch = ({
   shared,
   snapshot,
   commit,
+  reopen,
 }: NodeTypeSwitchProps) => {
   const context = {
     classification: shared.classification,
@@ -51,8 +55,12 @@ export const NodeTypeSwitch = ({
 
   const switchTo = (target: NodeType) => {
     const next = switchNodeType(node, target, path, context)
-    if (target !== 'value')
-      shared.created.current = { path, node: next as object, replaced: snapshot() }
+    if (target === 'value') return commit(next, { close: true })
+    if (reopen) {
+      commit(next, { close: false })
+      return reopen({ replaced: snapshot() })
+    }
+    shared.created.current = { path, node: next as object, replaced: snapshot() }
     commit(next, { close: true })
   }
 

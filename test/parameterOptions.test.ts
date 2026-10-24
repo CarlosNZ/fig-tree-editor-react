@@ -111,12 +111,19 @@ describe('addableKeys', () => {
     expect(keys.parameters[0].description).toBe(operatorListings.map.parameterDescriptions!.as)
   })
 
-  it('offers a shorthand node its modifiers only', () => {
-    expect(keysOf({ $plus: [1, 2], fallback: 0 })).toEqual({
-      parameters: [],
-      modifiers: ['//', 'vars'],
-    })
-    expect(keysOf({ $round: { value: 1 } })).toEqual({ parameters: [], modifiers: MODIFIERS })
+  it('offers a shorthand node, lifted to full form, what its full form is offered', () => {
+    const keysLifted = (expression: Record<string, unknown>, lifted: Record<string, unknown>) => {
+      const keys = addableKeys(lifted, [], kindAt(expression), contextFor(expression))!
+      return [...keys.parameters, ...keys.modifiers].map(({ key, label }) => label ?? key)
+    }
+    expect(keysLifted({ $round: [1] }, { operator: 'round', value: 1 })).toEqual([
+      'decimals',
+      ...MODIFIERS,
+    ])
+    // Less dynamic arguments, which shorthand can't hold
+    expect(
+      keysLifted({ $greet: { name: 'Ann' } }, { fragment: 'greet', parameters: { name: 'Ann' } })
+    ).toEqual(MODIFIERS)
   })
 
   describe('a full fragment call', () => {

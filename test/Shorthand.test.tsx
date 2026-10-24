@@ -1,4 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { StrictMode, useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { FigTree, coreOperators, httpOperators } from 'fig-tree-evaluator'
@@ -54,7 +55,7 @@ const host = (initial: unknown, props: EditorProps = {}) => {
     )
   }
   const { container } = render(<Host />, { wrapper: StrictMode })
-  return { container, written }
+  return { container, written, user: userEvent.setup() }
 }
 const latest = (written: unknown[]) => written[written.length - 1]
 
@@ -82,14 +83,195 @@ describe('the shorthand node', () => {
     expect(within(displayBar(container)).getByRole('button', { name: '$+' })).toBeInTheDocument()
   })
 
-  it("has no toolbar, and opens as raw JSON from json-edit-react's edit button", () => {
-    const { container } = editor({ $plus: [1, 2] })
-    expect(screen.queryByRole('button', { name: 'Open toolbar' })).not.toBeInTheDocument()
-    fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
-    expect(JSON.parse(screen.getByRole<HTMLTextAreaElement>('textbox').value)).toEqual({
-      $plus: [1, 2],
+  describe('editing', () => {
+    const pencil = () => screen.getByRole('button', { name: 'Open toolbar' })
+    const toolbar = (container: HTMLElement) => container.querySelector('.ft-toolbar')
+    const choose = async (user: ReturnType<typeof userEvent.setup>, from: string, to: string) => {
+      await user.click(screen.getByText(from))
+      await user.keyboard(`${to}{Enter}`)
+    }
+
+    it('opens the toolbar from the pencil, with the rows beneath it', () => {
+      const { container } = editor({ $plus: [1, 2] })
+      fireEvent.click(pencil())
+      expect(within(toolbar(container) as HTMLElement).getByText('Plus (+)')).toBeInTheDocument()
+      expect(displayBar(container)).toBeUndefined()
+      expect(container.querySelectorAll('.jer-collection-header-row')[1]).toHaveTextContent('[')
+      fireEvent.click(screen.getByRole('button', { name: 'Done' }))
+      expect(toolbar(container)).toBeNull()
+      expect(displayBar(container)).toBeInTheDocument()
     })
-    expect(container.querySelector('.ft-toolbar')).not.toBeInTheDocument()
+
+    it("shows json-edit-react's raw-JSON editor alone from its ✎", () => {
+      const { container } = editor({ $plus: [1, 2] })
+      fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
+      expect(JSON.parse(screen.getByRole<HTMLTextAreaElement>('textbox').value)).toEqual({
+        $plus: [1, 2],
+      })
+      expect(displayBar(container)).toBeUndefined()
+      expect(toolbar(container)).toBeNull()
+    })
+
+    it('moves a single value from the header line to beneath the toolbar', () => {
+      const { container } = editor({ $not: true })
+      fireEvent.click(pencil())
+      const value = screen.getByText('true')
+      expect(toolbar(container)).not.toContainElement(value)
+      expect(container.querySelector('.ft-node')).toContainElement(value)
+    })
+
+    it('offers no pencil on a broken node, or where editing is not allowed', () => {
+      const broken = editor({ $plus: [1], extra: 2 })
+      expect(screen.queryByRole('button', { name: 'Open toolbar' })).toBeNull()
+      broken.unmount()
+      editor({ $plus: [1, 2] }, { allowEdit: false })
+      expect(screen.queryByRole('button', { name: 'Open toolbar' })).toBeNull()
+    })
+
+    describe('switching the operator', () => {
+      it('keeps an argument list, the modifiers and the toolbar', async () => {
+        const { container, written, user } = host({ $plus: [1, 2], fallback: 0 })
+        await user.click(pencil())
+        await choose(user, 'Plus (+)', 'multiply')
+        expect(latest(written)).toEqual({ $multiply: [1, 2], fallback: 0 })
+        expect(toolbar(container)).toBeInTheDocument()
+      })
+
+      it('keeps the spelling, where the new operator has an alias', async () => {
+        const { written, user } = host({ '$+': [1, 2] })
+        await user.click(pencil())
+        await choose(user, 'Plus (+)', 'multiply')
+        expect(latest(written)).toEqual({ '$*': [1, 2] })
+      })
+
+      it('fills an argument list in, rather than giving a named payload', async () => {
+        const { written, user } = host({ $plus: [1, 2] })
+        await user.click(pencil())
+        await choose(user, 'Plus (+)', 'if')
+        expect(latest(written)).toEqual({
+          $if: [expect.anything() as unknown, 'The condition is true'],
+        })
+      })
+
+      it('keeps a named payload named', async () => {
+        const { written, user } = host({ $if: { condition: true, then: 1 } })
+        await user.click(pencil())
+        await choose(user, 'Conditional (?)', 'and')
+        expect(latest(written)).toEqual({ $and: { values: expect.anything() as unknown } })
+      })
+
+      it('leaves the children in their own forms', async () => {
+        const { written, user } = host({ $plus: [{ operator: 'abs', value: -1 }, { $abs: 2 }] })
+        await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[0])
+        await choose(user, 'Plus (+)', 'multiply')
+        expect(latest(written)).toEqual({
+          $multiply: [{ operator: 'abs', value: -1 }, { $abs: 2 }],
+        })
+      })
+
+      it('quotes the node as written on a switch to literal', async () => {
+        const { container, written, user } = host({ $plus: [1, 2] })
+        await user.click(pencil())
+        await choose(user, 'Plus (+)', 'literal')
+        expect(latest(written)).toEqual({ $literal: { $plus: [1, 2] } })
+        expect(toolbar(container)).toBeInTheDocument()
+      })
+
+      it('reverts every change on ✗', async () => {
+        const { written, user } = host({ $plus: [1, 2] })
+        await user.click(pencil())
+        await choose(user, 'Plus (+)', 'multiply')
+        await choose(user, 'Multiply (*)', 'if')
+        await user.click(screen.getByRole('button', { name: 'Cancel' }))
+        expect(latest(written)).toEqual({ $plus: [1, 2] })
+      })
+    })
+
+    describe('adding a parameter', () => {
+      const add = async (user: ReturnType<typeof userEvent.setup>, key: string) => {
+        await user.click(screen.getByText('Add parameter'))
+        await user.click(screen.getByText(key))
+      }
+
+      it('adds to an argument list where it can, keeping the toolbar', async () => {
+        const { container, written, user } = host({ $if: [true, 1] })
+        await user.click(pencil())
+        await add(user, 'else')
+        expect(latest(written)).toEqual({ $if: [true, 1, expect.anything() as unknown] })
+        expect(toolbar(container)).toBeInTheDocument()
+      })
+
+      it('adds to a named payload, and a modifier beside it', async () => {
+        const { written, user } = host({ $if: { condition: true, then: 1 } })
+        await user.click(pencil())
+        await add(user, 'else')
+        await add(user, 'fallback')
+        expect(latest(written)).toEqual({
+          $if: { condition: true, then: 1, else: expect.anything() as unknown },
+          fallback: null,
+        })
+      })
+    })
+
+    describe('as a fragment call', () => {
+      it('switches the fragment, keeping the payload named', async () => {
+        const { written, user } = host({ $greet: { name: 'Ada' } })
+        await user.click(pencil())
+        await choose(user, 'greet', 'getCapital')
+        expect(latest(written)).toEqual({ $getCapital: { country: expect.anything() as unknown } })
+      })
+
+      it("doesn't offer dynamic arguments, which shorthand can't hold", async () => {
+        const { user } = host({ $greet: { name: 'Ada' } })
+        await user.click(pencil())
+        await user.click(screen.getByText('Add parameter'))
+        const entries = [...document.querySelectorAll('.ft-select-option-title')].map(
+          (entry) => entry.textContent
+        )
+        expect(entries).toContain('fallback')
+        expect(entries).not.toContain('Dynamic arguments')
+      })
+    })
+
+    describe('switching the node type', () => {
+      const switchTo = async (
+        user: ReturnType<typeof userEvent.setup>,
+        from: string,
+        to: string
+      ) => {
+        await user.click(screen.getByText(from, { selector: '.ft-select-trigger-label' }))
+        await user.click(screen.getByText(to, { selector: '.ft-select-option-title' }))
+      }
+
+      it('stays in shorthand, keeping the toolbar, with the picker open', async () => {
+        const { container, written, user } = host({ $upper: 'x', fallback: 'y' })
+        await user.click(pencil())
+        await switchTo(user, 'Operator', 'Fragment')
+        expect(latest(written)).toEqual({ $getCapital: { country: 'Replace me' }, fallback: 'y' })
+        expect(toolbar(container)).toBeInTheDocument()
+        expect(screen.getByPlaceholderText('Search fragments')).toHaveFocus()
+        await user.keyboard('{Escape}')
+        await user.click(screen.getByRole('button', { name: 'Cancel' }))
+        expect(latest(written)).toEqual({ $upper: 'x', fallback: 'y' })
+      })
+
+      it('comes back to an argument list after a switch through a named payload', async () => {
+        const { written, user } = host({ $upper: 'x' })
+        await user.click(pencil())
+        await switchTo(user, 'Operator', 'Fragment')
+        await user.keyboard('{Escape}')
+        await switchTo(user, 'Fragment', 'Operator')
+        expect(latest(written)).toEqual({ $plus: [1, 2, 3] })
+      })
+
+      it('switches to a value, closing the toolbar', async () => {
+        const { container, written, user } = host({ $round: [1, { $abs: 2 }] })
+        await user.click(screen.getAllByRole('button', { name: 'Open toolbar' })[1])
+        await switchTo(user, 'Operator', 'Value')
+        expect(latest(written)).toEqual({ $round: [1, 2] })
+        expect(toolbar(container)).toBeNull()
+      })
+    })
   })
 
   describe('its rows', () => {
