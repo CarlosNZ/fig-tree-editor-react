@@ -7,11 +7,12 @@ import {
 const fragments: Record<string, FragmentDefinition> = {
   getCapital: {
     expression: {
-      operator: 'http',
-      url: 'https://countriesnow.space/api/v0.1/countries/capital',
-      method: 'post',
-      body: { country: '$params.country' },
-      returnPath: 'data.capital',
+      $http: {
+        url: 'https://countriesnow.space/api/v0.1/countries/capital',
+        method: 'post',
+        body: { country: '$params.country' },
+        returnPath: 'data.capital',
+      },
     },
     parameters: { country: { type: 'string' } },
     samples: { country: 'Japan' },
@@ -20,11 +21,12 @@ const fragments: Record<string, FragmentDefinition> = {
   },
   getFlag: {
     expression: {
-      operator: 'http',
-      url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
-      method: 'post',
-      body: { country: '$params.country' },
-      returnPath: 'data.unicodeFlag',
+      $http: {
+        url: 'https://countriesnow.space/api/v0.1/countries/flag/unicode',
+        method: 'post',
+        body: { country: '$params.country' },
+        returnPath: 'data.unicodeFlag',
+      },
     },
     parameters: { country: { type: 'string', default: 'New Zealand' } },
     samples: { country: 'France' },

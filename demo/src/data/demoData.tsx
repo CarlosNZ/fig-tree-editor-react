@@ -18,8 +18,7 @@ export const demoData: DemoData[] = [
 
 \`\`\`
 {
-  "operator": "plus",
-  "values": ["$data.user.firstName", " ", "$data.user.lastName"]
+  "$plus": ["$data.user.firstName", " ", "$data.user.lastName"]
 }
 \`\`\`
 
@@ -27,7 +26,7 @@ A basic expression that just joins a couple of values pulled from some form data
 
 Experiment with changing the values of the data object as well as the paths being referenced. (See what happens if you reference a path that doesn't exist: it reads as \`null\`, so the whole result is \`null\`. Then try wrapping the reference in a \`firstNonNull\` to give it a default.)
 
-Click the **plus** button to see the result.
+Click the **$plus** button to see the result.
 
 Try out some of the other [operators](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-file#operator-reference), and build your own expressions from scratch.
 `,
@@ -54,10 +53,7 @@ Try out some of the other [operators](https://github.com/CarlosNZ/fig-tree-evalu
         },
       },
     },
-    expression: {
-      operator: 'plus',
-      values: ['$data.user.firstName', ' ', '$data.user.lastName'],
-    },
+    expression: { $plus: ['$data.user.firstName', ' ', '$data.user.lastName'] },
     expressionCollapse: 3,
   },
   {
@@ -74,10 +70,7 @@ The rule is: the filmgoer must meet the minimum age restriction, unless they hav
 Note that the data is read with *references*, such as \`"$data.patron.age"\`. A reference is just a convenience to make complex expressions less verbose. So instead of:
 
 \`\`\`
-{
-  "operator": "get",
-  "path": "patron.age"
-}
+{ "$get": "patron.age" }
 \`\`\`
 
 we can just write:
@@ -102,29 +95,26 @@ Note that you can toggle any node to and from Shorthand form with the hover butt
       patron: { age: 12, isParentAttending: true },
     },
     expression: {
-      operator: 'if',
-      condition: {
-        operator: 'or',
-        values: [
-          {
-            operator: 'greaterThanOrEqual',
-            values: ['$data.patron.age', '$data.film.minAgeRating'],
+      $if: {
+        condition: {
+          $or: [
+            { $greaterThanOrEqual: ['$data.patron.age', '$data.film.minAgeRating'] },
+            {
+              $and: [
+                { $greaterThanOrEqual: ['$data.patron.age', 13] },
+                '$data.patron.isParentAttending',
+              ],
+            },
+          ],
+        },
+        then: {
+          $buildString: {
+            template: 'Enjoy "{{movie}}"! 🍿🎬',
+            substitutions: { movie: '$data.film.title' },
           },
-          {
-            operator: 'and',
-            values: [
-              { operator: 'greaterThanOrEqual', values: ['$data.patron.age', 13] },
-              '$data.patron.isParentAttending',
-            ],
-          },
-        ],
+        },
+        else: "Sorry, try again when you're older 😔",
       },
-      then: {
-        operator: 'buildString',
-        template: 'Enjoy "{{movie}}"! 🍿🎬',
-        substitutions: { movie: '$data.film.title' },
-      },
-      else: "Sorry, try again when you're older 😔",
     },
     expressionCollapse: 4,
   },
@@ -140,14 +130,13 @@ FigTree [caches](https://github.com/CarlosNZ/fig-tree-evaluator?tab=readme-ov-fi
 Try removing \`noCache\` to see the difference.
     `,
     expression: {
-      operator: 'buildString',
-      template:
-        'Hello, {{$vars.user.name.first}} {{$vars.user.name.last}} from {{$vars.user.location.city}}, {{$vars.user.location.country}}!',
+      $buildString: {
+        template:
+          'Hello, {{$vars.user.name.first}} {{$vars.user.name.last}} from {{$vars.user.location.city}}, {{$vars.user.location.country}}!',
+      },
       vars: {
         user: {
-          operator: 'http',
-          url: 'https://randomuser.me/api/',
-          returnPath: 'results[0]',
+          $http: { url: 'https://randomuser.me/api/', returnPath: 'results[0]' },
           noCache: true,
         },
       },
@@ -200,45 +189,52 @@ Try changing all these values and see the output differences.
       collapse: 3,
     },
     expression: {
-      operator: 'buildString',
-      template:
-        "This applicant's name is {{$data.user.name.first}} {{$data.user.name.last}}. {{genderLives}} in {{$data.user.country}}, where the capital city is {{capital}}. {{genderHas}} {{friendCount}}.",
-      substitutions: {
-        capital: {
-          operator: 'http',
-          url: 'https://countriesnow.space/api/v0.1/countries/capital',
-          method: 'post',
-          body: { country: '$data.user.country' },
-          returnPath: 'data.capital',
-          fallback: 'unknown',
-        },
-        friendCount: {
-          operator: 'match',
-          value: '$vars.count',
-          branches: { '0': 'no friends 😢', '1': 'only one friend' },
-          default: {
-            operator: 'if',
-            condition: { operator: 'greaterThan', values: ['$vars.count', 4] },
-            then: 'loads of friends',
-            else: {
-              operator: 'buildString',
-              template: '{{count}} friends',
-              substitutions: { count: '$vars.count' },
+      $buildString: {
+        template:
+          "This applicant's name is {{$data.user.name.first}} {{$data.user.name.last}}. {{genderLives}} in {{$data.user.country}}, where the capital city is {{capital}}. {{genderHas}} {{friendCount}}.",
+        substitutions: {
+          capital: {
+            $http: {
+              url: 'https://countriesnow.space/api/v0.1/countries/capital',
+              method: 'post',
+              body: { country: '$data.user.country' },
+              returnPath: 'data.capital',
+            },
+            fallback: 'unknown',
+          },
+          friendCount: {
+            $match: {
+              value: '$vars.count',
+              branches: { '0': 'no friends 😢', '1': 'only one friend' },
+              default: {
+                $if: {
+                  condition: { $greaterThan: ['$vars.count', 4] },
+                  then: 'loads of friends',
+                  else: {
+                    $buildString: {
+                      template: '{{count}} friends',
+                      substitutions: { count: '$vars.count' },
+                    },
+                  },
+                },
+              },
+            },
+            vars: { count: { $length: '$data.user.friends' } },
+          },
+          genderLives: {
+            $match: {
+              value: '$data.user.gender',
+              branches: { Female: 'She lives', Male: 'He lives' },
+              default: 'They live',
             },
           },
-          vars: { count: { operator: 'length', value: '$data.user.friends' } },
-        },
-        genderLives: {
-          operator: 'match',
-          value: '$data.user.gender',
-          branches: { Female: 'She lives', Male: 'He lives' },
-          default: 'They live',
-        },
-        genderHas: {
-          operator: 'match',
-          value: '$data.user.gender',
-          branches: { Female: 'She has', Male: 'He has' },
-          default: 'They have',
+          genderHas: {
+            $match: {
+              value: '$data.user.gender',
+              branches: { Female: 'She has', Male: 'He has' },
+              default: 'They have',
+            },
+          },
         },
       },
     },
@@ -266,11 +262,12 @@ Note the \`fallback\` property used here — an array with a *"Loading..."* indi
       userResponses: { name: 'Mohini', country: 'India' },
     },
     expression: {
-      operator: 'http',
-      url: 'https://countriesnow.space/api/v0.1/countries/cities',
-      method: 'post',
-      body: { country: '$data.userResponses.country' },
-      returnPath: 'data',
+      $http: {
+        url: 'https://countriesnow.space/api/v0.1/countries/cities',
+        method: 'post',
+        body: { country: '$data.userResponses.country' },
+        returnPath: 'data',
+      },
       fallback: 'Country not specified',
     },
   },
@@ -318,59 +315,69 @@ This expression also declares \`vars\`, values defined once and read with refere
       },
     },
     expression: {
-      operator: 'match',
-      value: '$data.numberOfPlayers',
-      branches: {
-        '1': {
-          operator: 'if',
-          condition: { operator: 'greaterThanOrEqual', values: ['$data.ageOfYoungestPlayer', 7] },
-          then: 'Solitaire',
-          else: 'No recommendations 😔',
-        },
-      },
-      default: {
-        operator: 'if',
-        condition: { operator: 'greaterThanOrEqual', values: ['$data.ageOfYoungestPlayer', 5] },
-        then: {
-          operator: 'if',
-          condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 8] },
-          then: 'Go Fish',
-          else: {
-            operator: 'if',
-            condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 12] },
-            then: '$vars.difficultyYounger',
-            else: {
-              operator: 'if',
-              condition: { operator: 'lessThan', values: ['$data.ageOfYoungestPlayer', 16] },
-              then: '$vars.difficultyOlder',
-              else: {
-                operator: 'match',
-                value: '$data.numberOfPlayers',
-                branches: {
-                  '4': {
-                    operator: 'if',
-                    condition: { operator: 'equal', values: ['$data.preferredDifficulty', 'hard'] },
-                    then: 'Bridge',
-                    else: '$vars.difficultyOlder',
-                  },
-                },
-                default: '$vars.difficultyOlder',
-              },
+      $match: {
+        value: '$data.numberOfPlayers',
+        branches: {
+          '1': {
+            $if: {
+              condition: { $greaterThanOrEqual: ['$data.ageOfYoungestPlayer', 7] },
+              then: 'Solitaire',
+              else: 'No recommendations 😔',
             },
           },
         },
-        else: 'Snap',
+        default: {
+          $if: {
+            condition: { $greaterThanOrEqual: ['$data.ageOfYoungestPlayer', 5] },
+            then: {
+              $if: {
+                condition: { $lessThan: ['$data.ageOfYoungestPlayer', 8] },
+                then: 'Go Fish',
+                else: {
+                  $if: {
+                    condition: { $lessThan: ['$data.ageOfYoungestPlayer', 12] },
+                    then: '$vars.difficultyYounger',
+                    else: {
+                      $if: {
+                        condition: { $lessThan: ['$data.ageOfYoungestPlayer', 16] },
+                        then: '$vars.difficultyOlder',
+                        else: {
+                          $match: {
+                            value: '$data.numberOfPlayers',
+                            branches: {
+                              '4': {
+                                $if: {
+                                  condition: { $equal: ['$data.preferredDifficulty', 'hard'] },
+                                  then: 'Bridge',
+                                  else: '$vars.difficultyOlder',
+                                },
+                              },
+                            },
+                            default: '$vars.difficultyOlder',
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            else: 'Snap',
+          },
+        },
       },
       vars: {
         difficultyYounger: {
-          operator: 'match',
-          value: '$data.preferredDifficulty',
-          branches: { easy: 'Go Fish', challenging: 'Rummy', hard: 'Rummy' },
+          $match: {
+            value: '$data.preferredDifficulty',
+            branches: { easy: 'Go Fish', challenging: 'Rummy', hard: 'Rummy' },
+          },
         },
         difficultyOlder: {
-          operator: 'match',
-          value: '$data.preferredDifficulty',
-          branches: { easy: 'Rummy', challenging: '500', hard: '500' },
+          $match: {
+            value: '$data.preferredDifficulty',
+            branches: { easy: 'Rummy', challenging: '500', hard: '500' },
+          },
         },
       },
     },
@@ -494,26 +501,28 @@ Change the \`selected\` character name to look up a different Star Wars characte
       },
     },
     expression: {
-      operator: 'buildString',
-      template: 'Name: %1\nGender: %2\nHomeworld: %3\nFirst appearance: %4',
-      substitutions: [
-        '$vars.character.name',
-        '$vars.character.gender',
-        { operator: 'http', url: '$vars.character.homeworld', returnPath: 'name' },
-        { operator: 'http', url: '$vars.character.films[0]', returnPath: 'title' },
-      ],
+      $buildString: {
+        template: 'Name: %1\nGender: %2\nHomeworld: %3\nFirst appearance: %4',
+        substitutions: [
+          '$vars.character.name',
+          '$vars.character.gender',
+          { $http: { url: '$vars.character.homeworld', returnPath: 'name' } },
+          { $http: { url: '$vars.character.films[0]', returnPath: 'title' } },
+        ],
+      },
       fallback: {
-        operator: 'plus',
-        values: ["Can't retrieve data for character: ", '$data.selected'],
+        $plus: ["Can't retrieve data for character: ", '$data.selected'],
         fallback: '‼️',
       },
       vars: {
         character: {
-          operator: 'http',
-          url: {
-            operator: 'buildString',
-            template: 'https://swapi.py4e.com/api/people/%1',
-            substitutions: [{ operator: 'get', path: '$data.selected', from: '$data.characters' }],
+          $http: {
+            url: {
+              $buildString: {
+                template: 'https://swapi.py4e.com/api/people/%1',
+                substitutions: [{ $get: { path: '$data.selected', from: '$data.characters' } }],
+              },
+            },
           },
           fallback: 'Nope',
         },
@@ -544,20 +553,17 @@ They both take a \`country\` parameter, which the fragment reads as \`"$params.c
       allowTypeSelection: false,
     },
     expression: {
-      operator: 'buildString',
-      template: '===={{country}}====\nCapital city: {{capital}}\nFlag: {{flag}}',
-      substitutions: {
-        capital: { fragment: 'getCapital', parameters: { country: '$vars.selectedCountry' } },
-        flag: { fragment: 'getFlag', parameters: { country: '$vars.selectedCountry' } },
-        country: '$vars.selectedCountry',
+      $buildString: {
+        template: '===={{country}}====\nCapital city: {{capital}}\nFlag: {{flag}}',
+        substitutions: {
+          capital: { $getCapital: { country: '$vars.selectedCountry' } },
+          flag: { $getFlag: { country: '$vars.selectedCountry' } },
+          country: '$vars.selectedCountry',
+        },
       },
       fallback: "Can't find country 😔",
       vars: {
-        selectedCountry: {
-          operator: 'get',
-          path: 'myFavouriteCountry',
-          default: 'Country not found',
-        },
+        selectedCountry: { $get: { path: 'myFavouriteCountry', default: 'Country not found' } },
       },
     },
     expressionCollapse: 3,
@@ -620,12 +626,10 @@ There are three registered with this FigTree instance:
       allowTypeSelection: false,
     },
     expression: {
-      operator: 'changeCase',
-      string: {
-        operator: 'plus',
-        values: [{ $reverse: ['$data.backwardsInput'] }, { operator: 'currentDate' }],
+      $changeCase: {
+        string: { $plus: [{ $reverse: '$data.backwardsInput' }, { $currentDate: {} }] },
+        toCase: '$data.toCase',
       },
-      toCase: '$data.toCase',
     },
     expressionCollapse: 4,
   },

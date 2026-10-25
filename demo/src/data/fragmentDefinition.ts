@@ -6,9 +6,8 @@ export const initialFragmentName = 'greeting'
 // two parameters, one of them optional
 export const initialFragmentDefinition: FragmentDefinition = {
   expression: {
-    operator: 'plus',
-    values: [
-      { operator: 'if', condition: '$params.formal', then: 'Good day, ', else: 'Hi, ' },
+    $plus: [
+      { $if: { condition: '$params.formal', then: 'Good day, ', else: 'Hi, ' } },
       '$params.name',
       '!',
     ],
