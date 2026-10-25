@@ -83,10 +83,10 @@ describe('collapse state through a conversion', () => {
     fireEvent.click(chevron('Operator: abs'))
     await settle()
     convert('To shorthand')
-    expect(collapsed('Shorthand: $abs')).toBe(false)
+    expect(collapsed('Operator: $abs')).toBe(false)
     convert('To positional')
-    expect(collapsed('Shorthand: $abs')).toBe(false)
-    convert('To full')
+    expect(collapsed('Operator: $abs')).toBe(false)
+    convert('To canonical')
     expect(collapsed('Operator: abs')).toBe(false)
   })
 
@@ -95,7 +95,7 @@ describe('collapse state through a conversion', () => {
     fireEvent.click(chevron('Operator: abs'))
     await settle()
     convert('To shorthand')
-    expect(collapsed('Shorthand: $abs')).toBe(true)
+    expect(collapsed('Operator: $abs')).toBe(true)
   })
 
   it('keeps a collapse-all, which json-edit-react replays only at the path it was made at', async () => {
@@ -103,8 +103,8 @@ describe('collapse state through a conversion', () => {
     fireEvent.click(chevron('Operator: abs'), { altKey: true })
     await settle()
     convert('To shorthand')
-    expect(collapsed('Shorthand: $round')).toBe(false)
-    expect(collapsed('Shorthand: $abs')).toBe(true)
+    expect(collapsed('Operator: $round')).toBe(false)
+    expect(collapsed('Operator: $abs')).toBe(true)
   })
 
   it("tells the host's onCollapse", async () => {
@@ -125,6 +125,6 @@ describe('collapse state through a conversion', () => {
     rerender(<Host collapse={({ level }) => level >= 2} />)
     await settle()
     convert('To shorthand')
-    expect(collapsed('Shorthand: $abs')).toBe(true)
+    expect(collapsed('Operator: $abs')).toBe(true)
   })
 })

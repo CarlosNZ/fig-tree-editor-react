@@ -61,7 +61,6 @@ export const strings = {
   FT_INVALID_NODE: 'invalid node', // an operator or fragment that isn't a string
   FT_SUMMARY_OPERATOR: (name: string) => `Operator: ${name}`, // a collapsed node
   FT_SUMMARY_FRAGMENT: (name: string) => `Fragment: ${name}`,
-  FT_SUMMARY_SHORTHAND: (name: string) => `Shorthand: ${name}`, // with its `$`
   FT_SUMMARY_LITERAL: 'Literal',
   FT_SUMMARY_VARS: (count: number) => (count === 1 ? '1 var' : `${count} vars`),
   FT_ITEMS: (count: number) => (count === 1 ? '1 item' : `${count} items`), // a plain collection
@@ -142,7 +141,8 @@ export const strings = {
   // The conversion buttons
   FT_TO_SHORTHAND: 'To shorthand',
   FT_TO_POSITIONAL: 'To positional',
-  FT_TO_FULL: 'To full',
+  FT_TO_CANONICAL: 'To canonical',
+  FT_CANONICAL: 'Canonical', // a full node's badge
   FT_TO_REFERENCE: 'To reference',
   FT_TO_GET_NODE: 'To get node',
   FT_TOOLBAR_CONFIRM: 'Done', // ✓, keeping the toolbar's changes

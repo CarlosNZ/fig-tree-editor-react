@@ -70,7 +70,7 @@ Topics, in the order they are worked through:
 
 ### Anchoring — **Agreed**
 
-Every node kind is anchored on its own object (or, for a bare reference, its string), so the custom node's `value` is the whole node and its `path` is the node's path. Converting between forms then replaces the value at the same path, so the node stays where it is and "To full" is `setValue(toCanonical(value, fig))` from the node's own component (topic 2, "Commit semantics").
+Every node kind is anchored on its own object (or, for a bare reference, its string), so the custom node's `value` is the whole node and its `path` is the node's path. Converting between forms then replaces the value at the same path, so the node stays where it is and "To canonical" is `setValue(toCanonical(value, fig))` from the node's own component (topic 2, "Commit semantics").
 
 In `{ total: { $plus: [1, 2] } }`, json-edit-react renders four rows: `[]` (the root), `['total']` (the shorthand object), `['total', '$plus']` (the payload) and `['total', '$plus', 0]` (the `1`). The shorthand node's component is attached at `['total']`. The alternative, which v1 uses for shorthand with a collection payload, attaches it at `['total', '$plus']`, where the `$plus` key row disappears when the node is converted to full form, so the component unmounts and the new node mounts at a different path.
 
@@ -110,7 +110,7 @@ The definition types used below:
 
 Both apply to a shorthand node's `$name` row (`$plus`, `$not`, …), whose key is redundant because the header above it already shows the name. Which one applies depends on what the row holds.
 
-In the sketches below, the header row (`[ $plus ▶ ] Addition  [To full]`) is the Shorthand component on the object row in both columns. The left column shows the `$name` row beneath it with no definition of its own, so json-edit-react renders it by default and repeats the name as its key label. The right column shows it with the definition described.
+In the sketches below, the header row (`[ $plus ▶ ] Addition  [To canonical]`) is the Shorthand component on the object row in both columns. The left column shows the `$name` row beneath it with no definition of its own, so json-edit-react renders it by default and repeats the name as its key label. The right column shows it with the definition described.
 
 **A flattened payload** is for a `$name` row holding an object of named parameters. The row's key, brackets, collapse chevron and edit tools all go, and its parameters render directly beneath the header, as a full node's do.
 
@@ -118,7 +118,7 @@ In the sketches below, the header row (`[ $plus ▶ ] Addition  [To full]`) is t
 { $if: { condition: '$data.ok', then: 'Yes' } }
 
 $name row left as is:               with a flattened payload:
-[ $if ▶ ] If  [To full]             [ $if ▶ ] If  [To full]
+[ $if ▶ ] If  [To canonical]        [ $if ▶ ] If  [To canonical]
    $if: {                              condition: $data.ok ▶
      condition: $data.ok ▶             then: Yes
      then: Yes
@@ -131,7 +131,7 @@ $name row left as is:               with a flattened payload:
 { $plus: [1, 2] } — the row is a plain array (None), unlabelled
 
 $name row left as is:               unlabelled:
-[ $plus ▶ ] Plus  [To full]         [ $plus ▶ ] Plus  [To full]
+[ $plus ▶ ] Plus  [To canonical]    [ $plus ▶ ] Plus  [To canonical]
    $plus: [                            [
      1                                   1
      2                                   2
@@ -142,7 +142,7 @@ $name row left as is:               unlabelled:
 { $not: '$data.x' } — the row is a Leaf (Reference), unlabelled
 
 $name row left as is:               unlabelled:
-[ $not ▶ ] Not  [To full]           [ $not ▶ ] Not  [To full]
+[ $not ▶ ] Not  [To canonical]      [ $not ▶ ] Not  [To canonical]
    $not: $data.x ▶                     $data.x ▶
 ```
 
@@ -150,7 +150,7 @@ $name row left as is:               unlabelled:
 { $not: { $greaterThan: ['$data.age', 18] } } — the row is a Node (Shorthand), unlabelled
 
 $name row left as is:               unlabelled:
-[ $not ▶ ] Not  [To full]           [ $not ▶ ] Not  [To full]
+[ $not ▶ ] Not  [To canonical]      [ $not ▶ ] Not  [To canonical]
    $not:                               [ $greaterThan ▶ ] Greater than
      [ $greaterThan ▶ ] …                 $data.age ▶
         $data.age ▶                       18
@@ -161,7 +161,7 @@ $name row left as is:               unlabelled:
 { $not: true } — the row has no definition of its own (None), unlabelled
 
 $name row left as is:               unlabelled:
-[ $not ▶ ] Not  [To full]           [ $not ▶ ] Not  [To full]
+[ $not ▶ ] Not  [To canonical]      [ $not ▶ ] Not  [To canonical]
    $not: true                          true
 ```
 
@@ -208,7 +208,7 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 | `{ $not: { $greaterThan: […] } }`, `{ $and: { $map: … } }`                     | object → Node (Shorthand); `$not` → Node (Shorthand), unlabelled                         | Header, then the inner node's header                                                                                            | As above                                                                                                                                                                                                                                                                                                                                                                     |
 | `{ $http: 'https://…', fallback: null }`                                       | object → Node (Shorthand); `$http` → Leaf or None, unlabelled; `fallback` → modifier row | Header, the URL, then the fallback row                                                                                          | As above                                                                                                                                                                                                                                                                                                                                                                     |
 | `{ $greet: { name: 'Ada' } }`, `{ $greet: {} }`                                | object → Node (Shorthand, fragment); `$greet` → Flattened payload                        | Header with the fragment's listing (no form toggle: fragments are named only), then the arguments                               | As above                                                                                                                                                                                                                                                                                                                                                                     |
-| `{ $greet: { $buildObject: […] } }`                                            | object → Node (Shorthand, fragment, dynamic); `$greet` → Node, unlabelled                | Header, then the node                                                                                                           | To full gives a canonical dynamic call                                                                                                                                                                                                                                                                                                                                       |
+| `{ $greet: { $buildObject: […] } }`                                            | object → Node (Shorthand, fragment, dynamic); `$greet` → Node, unlabelled                | Header, then the node                                                                                                           | To canonical gives a canonical dynamic call                                                                                                                                                                                                                                                                                                                                  |
 | `{ $plus: [1], extra: 2 }`, `{ $plus: 1, $minus: 2 }`, `{ $greet: '$data.x' }` | object → Node (Shorthand, broken state)                                                  | Header shows the error                                                                                                          | No Evaluate or conversion (`./format` throws); fixed through raw JSON                                                                                                                                                                                                                                                                                                        |
 
 #### `literal`
@@ -216,7 +216,7 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 | Shape                                             | Rows → definition                                                                                                                                                               | Renders                                                                                 | Behaviour                                                                                                               |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
 | `{ operator: 'literal', value: { $plus: 1 } }`    | object → Node (Operator's component); `operator` → Filtered; the `value` subtree is quoted, so None throughout                                                                  | Header with `literal`'s display data (topic 1, "Kinds"), then the content as plain data | Toolbar as for an operator (the picker lists `literal`); `value` accepts any type; To shorthand gives `{ $literal: … }` |
-| `{ $literal: { $plus: 1 } }`, `{ $literal: 'x' }` | object → Node (Shorthand's component); `$literal` → the content's own row, unlabelled (not flattened, so a collection keeps its brackets and edit tools); the content is quoted | Header (no form toggle), then the content as plain data                                 | To full gives the canonical form                                                                                        |
+| `{ $literal: { $plus: 1 } }`, `{ $literal: 'x' }` | object → Node (Shorthand's component); `$literal` → the content's own row, unlabelled (not flattened, so a collection keeps its brackets and edit tools); the content is quoted | Header (no form toggle), then the content as plain data                                 | To canonical gives the canonical form                                                                                   |
 
 #### References and other strings
 
@@ -242,8 +242,8 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 
 ### Conversions — **Agreed**
 
-- **One conversion button steps through the forms** (topic 3): a full node's button reads "To shorthand" and gives the named form; a named shorthand's reads "To positional"; a positional shorthand's reads "To full". A node with no positional form (a fragment call, `literal`, an operator without `positionalParams`) swaps between full and named.
-- **"To shorthand" and "To full" convert the node and its whole subtree,** as `./format`'s `toShorthand` (with `arguments: 'named'`) and `toCanonical` do.
+- **One conversion button steps through the forms** (topic 3): a full node's button reads "To shorthand" and gives the named form; a named shorthand's reads "To positional"; a positional shorthand's reads "To canonical". A node with no positional form (a fragment call, `literal`, an operator without `positionalParams`) swaps between full and named.
+- **"To shorthand" and "To canonical" convert the node and its whole subtree,** as `./format`'s `toShorthand` (with `arguments: 'named'`) and `toCanonical` do.
 - **"To positional" also converts the whole subtree,** as `./format`'s `toShorthand` with `arguments: 'positional'` does, so every conversion the button makes is subtree-wide.
 - **A shorthand node's toolbar converts the node alone,** with `./format`'s `recursive: false` (F2 in [v3-upstream.md](v3-upstream.md)): it lifts the node to full form, and lowers each change back, leaving the children as they are ("Two editors per node", topic 2).
 - **A bare reference can be turned into a `get` node** (`toGet`), so the author can add `default` or `from`. A `get` node can be turned back into a reference (`toReference`) wherever that returns a value; `null` means the affordance is not offered.
@@ -423,10 +423,11 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 
 ### Kinds — **Agreed**
 
-- **Shorthand nodes have a dashed border** (v1 draws none), which also keeps a nested shorthand node's extent visible (C4). The name on the button is italic, as in v1, for now.
+- **A node's border is the same in either form,** solid, which also keeps a nested node's extent visible (C4). The "Canonical" badge is what tells the forms apart. On a shorthand node, the name on the button is as written, `$` and all, in the same type as a full node's.
 - **A single plain value or reference sits on the button's line** (C3), as in v1, since the point of shorthand is concision. A nested node as the single value still goes beneath (C4).
 - **A positional payload keeps its brackets** (C2): the argument array is unlabelled rather than flattened, keeping its chevron and edit tools, since it is still one value beneath the `$name`. A named payload stays flattened (C1).
-- **One conversion button cycles the forms:** "To shorthand" on a full node (giving the named form), "To positional" on a named shorthand, "To full" on a positional one; a node with no positional form swaps between full and named ("Conversions", topic 1). Going from named back to full takes two clicks, by way of positional.
+- **A full node has a "Canonical" badge** at the header's top right, to the left of the display name, always shown, in a fixed colour (`canonicalBadge` and `canonicalBadgeText` in the editor theme). Where the header is narrower than 28em it is a dot in its text's colour, with "Canonical" on hover, before the display name's suffix goes at 24em. Shorthand is the usual form, and the two otherwise read alike, so it is the full form that is marked ([#18](https://github.com/CarlosNZ/fig-tree-editor-react/issues/18)).
+- **One conversion button cycles the forms:** "To shorthand" on a full node (giving the named form), "To positional" on a named shorthand, "To canonical" on a positional one; a node with no positional form swaps between full and named ("Conversions", topic 1). Going from named back to full takes two clicks, by way of positional.
 - **`literal` keeps its Evaluate button,** for consistency, though it only returns the content.
 - **References:** Evaluate is a small ▶ inline after the text, always visible (settled in plan 10.6, over a place among the edit tools, which show on hover only). "To get node" is a json-edit-react custom button on reference rows, a braces icon in the namespace's colour, appearing on hover with the other edit tools and committing through `onUpdate` (J13, plan 8.3). **Each namespace has its own colour:** `$data`, `$vars`, `$params`, and the iterator bindings (`$element`, `$index` and `as` names). The palette: violet for `$data`, teal for `$vars`, magenta for `$params`, and amber-brown for the bindings, each distinct from json-edit-react's string, number, boolean and null colours. **The colours are tokens that a host can swap,** through the `editorTheme` prop (topic 8, "Theming and CSS").
 - **Plain containers with holes** get the bare Evaluate button **at the root only,** for now.
@@ -437,7 +438,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 
 ### Collapsed nodes — **Agreed**
 
-As in v1: a collapsed node shows only json-edit-react's header row, with a summary between the brackets in place of the item count (section I of the mockups): `{ Operator: plus }`, `{ Fragment: greet }`, `{ Shorthand: $if }`, `{ Literal }`, `{ 2 vars }`, and the ordinary count for plain containers. A node with an issue colours its summary as an error, and with more than one, adds a count ("3 errors"). No collapsed row has an Evaluate of its own: a collapsed node is opened to evaluate it (Carl, plan 10.6, dropping the ▶ after a collapsed node's summary, which needed a json-edit-react option or a hover-only custom button).
+As in v1: a collapsed node shows only json-edit-react's header row, with a summary between the brackets in place of the item count (section I of the mockups): `{ Operator: plus }`, `{ Fragment: greet }`, a shorthand node by its key, `{ Operator: $if }` or `{ Fragment: $greet }`, `{ Literal }`, `{ 2 vars }`, and the ordinary count for plain containers. A node with an issue colours its summary as an error, and with more than one, adds a count ("3 errors"). No collapsed row has an Evaluate of its own: a collapsed node is opened to evaluate it (Carl, plan 10.6, dropping the ▶ after a collapsed node's summary, which needed a json-edit-react option or a hover-only custom button).
 
 ### Messages — **Agreed** in topic 7 ("The messages area"), with the host API in topic 8 ("Telling the host about state")
 
@@ -489,7 +490,7 @@ type Slot = {
 
 Rows with no slot: the `operator` and `fragment` rows (grammar), a shorthand's payload row (the argument list or the named payload, not a value delivered anywhere; an argument list's ＋ works out what a new element binds with `positionalLayout` at length + 1), the `vars` block itself (a map of names), quoted content and `//`. So a row has a slot exactly when it is evaluated.
 
-**`ownerPath` is recorded, not derived,** because how far up the owning node is depends on its form, from one level to four: `P + ['decimals']` and `P + ['$not']` are one up, `P + ['$multiply', 0]` and `P + ['values', 0]` two, `P + ['entries', 0, 'key']` three, and `P + ['$buildObject', 'entries', 0, 'key']` four. The walk knows it as it passes; a consumer starting from a row would have to redo the walk's reasoning. Because nodes are anchored on their own object, `ownerPath` survives a conversion: "To full" on `{ $multiply: [...] }` moves its elements from `P + ['$multiply', 0]` to `P + ['values', 0]`, and their owner stays `P`.
+**`ownerPath` is recorded, not derived,** because how far up the owning node is depends on its form, from one level to four: `P + ['decimals']` and `P + ['$not']` are one up, `P + ['$multiply', 0]` and `P + ['values', 0]` two, `P + ['entries', 0, 'key']` three, and `P + ['$buildObject', 'entries', 0, 'key']` four. The walk knows it as it passes; a consumer starting from a row would have to redo the walk's reasoning. Because nodes are anchored on their own object, `ownerPath` survives a conversion: "To canonical" on `{ $multiply: [...] }` moves its elements from `P + ['$multiply', 0]` to `P + ['values', 0]`, and their owner stays `P`.
 
 **Slots are worked out in the classification walk,** recorded per path beside each row's kind (topic 1). The walk already visits every row top-down, carrying each node's shape, so resolving positions there costs almost nothing, and every consumer reads one answer. A row's slot can change when an ancestor changes and its own data does not (switching `round` to `upper` changes what `value` admits), so slot content is part of the map compared by content: a change passes a new `customNodeDefinitions` array and every row re-renders. Only structural actions change slots, so this is rare. Consumers that read at the moment of use, such as json-edit-react's `allowTypeSelection` function or a picker as it opens, read the current map from a ref.
 
@@ -1460,7 +1461,8 @@ interface EditorTheme {
   runFallback: string
   runCancelled: string
   runSkipped: string // never ran
-  shorthandBorder: string // the dashed border (topic 3)
+  canonicalBadge: string // a full node's badge (topic 3)
+  canonicalBadgeText: string
   fragmentBackground: string // a fragment with no colours of its own (topic 3)
   fragmentText: string
 }

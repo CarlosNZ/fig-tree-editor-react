@@ -101,6 +101,7 @@ export const Operator = (props: CustomComponentProps<ComponentConfig>) => {
           broken={broken}
           flagged={issuesAt(nodeIssues, path)}
           editorTheme={editorTheme}
+          canonical
           onEdit={canEdit ? () => openToolbar() : undefined}
           onRespell={respell}
           respellModifiers={keyboardControls.clipboardModifier}

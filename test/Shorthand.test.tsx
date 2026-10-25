@@ -73,9 +73,14 @@ describe('the shorthand node', () => {
     const bar = displayBar(container)
     expect(bar).toHaveClass('ft-shorthand')
     expect(within(bar).getByRole('button', { name: '$if' })).toBeInTheDocument()
-    expect(bar.querySelector('.ft-display-name')).toHaveTextContent('Conditional (?)')
+    expect(bar.querySelector('.ft-display-name-text')).toHaveTextContent('Conditional (?)')
     // The stylesheet hides the card until hovered
     expect(within(bar).getByRole('tooltip', { hidden: true })).toHaveTextContent(description('if'))
+  })
+
+  it('has no Canonical badge', () => {
+    const { container } = editor({ $plus: [1, 2] })
+    expect(container.querySelector('.ft-canonical-badge')).toBeNull()
   })
 
   it('shows an alias as written', () => {
@@ -323,7 +328,9 @@ describe('the shorthand node', () => {
         backgroundColor: 'rgb(0, 0, 0)',
         color: 'rgb(255, 255, 255)',
       })
-      expect(bar.querySelector('.ft-display-name')).toHaveTextContent('Capital city · fragment')
+      expect(bar.querySelector('.ft-display-name-text')).toHaveTextContent(
+        'Capital city · fragment'
+      )
       expect(within(bar).getByRole('tooltip', { hidden: true })).toHaveTextContent(
         "Gets a country's capital city"
       )
@@ -336,7 +343,7 @@ describe('the shorthand node', () => {
       expect(within(bar).getByRole('button', { name: '$greet' })).toHaveStyle({
         backgroundColor: 'rgb(71, 119, 153)',
       })
-      expect(bar.querySelector('.ft-display-name')).toHaveTextContent(/^Fragment$/)
+      expect(bar.querySelector('.ft-display-name-text')).toHaveTextContent(/^Fragment$/)
     })
   })
 
@@ -428,7 +435,7 @@ describe('the shorthand node', () => {
       const { written } = host({ x: { $if: { condition: true, then: 'Yes', else: 'No' } } })
       fireEvent.click(convertButton('To positional'))
       expect(latest(written)).toEqual({ x: { $if: [true, 'Yes', 'No'] } })
-      fireEvent.click(convertButton('To full'))
+      fireEvent.click(convertButton('To canonical'))
       expect(latest(written)).toEqual({
         x: { operator: 'if', condition: true, then: 'Yes', else: 'No' },
       })
@@ -439,15 +446,15 @@ describe('the shorthand node', () => {
     it('goes from named back to full where there is no positional form', () => {
       // `from` has no position, and `default` no reference form
       editor({ $get: { path: 'a', from: '$data.x', default: 0 } })
-      expect(convertButton('To full')).toBeInTheDocument()
+      expect(convertButton('To canonical')).toBeInTheDocument()
     })
 
     it('shows only where converting is allowed and succeeds', () => {
       const locked = editor({ $plus: [1, 2] }, { allowEdit: false })
-      expect(screen.queryByRole('button', { name: 'To full' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'To canonical' })).not.toBeInTheDocument()
       locked.unmount()
       const broken = editor({ $plus: [1], extra: 2 })
-      expect(screen.queryByRole('button', { name: 'To full' })).not.toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'To canonical' })).not.toBeInTheDocument()
       broken.unmount()
       // `./format` refuses the node beneath, so neither has a button
       editor({ $not: { operator: 'flibble' } })
@@ -456,8 +463,12 @@ describe('the shorthand node', () => {
   })
 
   it('summarises itself when collapsed, as written', () => {
-    editor({ a: { $if: { condition: true, then: 1 } }, b: { '$+': [1, 2] } }, { collapse: 1 })
-    expect(screen.getByText('Shorthand: $if')).toBeInTheDocument()
-    expect(screen.getByText('Shorthand: $+')).toBeInTheDocument()
+    editor(
+      { a: { $if: { condition: true, then: 1 } }, b: { '$+': [1, 2] }, c: { $greet: {} } },
+      { collapse: 1 }
+    )
+    expect(screen.getByText('Operator: $if')).toBeInTheDocument()
+    expect(screen.getByText('Operator: $+')).toBeInTheDocument()
+    expect(screen.getByText('Fragment: $greet')).toBeInTheDocument()
   })
 })

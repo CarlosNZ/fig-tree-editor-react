@@ -35,7 +35,7 @@ export const nodeConversion = (
   const shorthand = (args: 'named' | 'positional') =>
     toShorthand(node, figTree, { arguments: args, referenceNames })
   const full = () => ({
-    label: strings.FT_TO_FULL,
+    label: strings.FT_TO_CANONICAL,
     result: toCanonical(node, figTree, { referenceNames }),
   })
   try {

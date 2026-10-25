@@ -78,6 +78,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
           broken={broken}
           flagged={issuesAt(nodeIssues, path)}
           editorTheme={editorTheme}
+          canonical
           onEdit={canEdit ? () => openToolbar() : undefined}
           conversion={conversion}
           evaluation={evaluation}

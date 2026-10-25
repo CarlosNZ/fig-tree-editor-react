@@ -123,7 +123,7 @@ describe('a literal', () => {
     const { written } = host({ x: { operator: 'literal', value: { $plus: [1] } } })
     fireEvent.click(screen.getByRole('button', { name: 'To shorthand' }))
     expect(latest(written)).toEqual({ x: { $literal: { $plus: [1] } } })
-    fireEvent.click(screen.getByRole('button', { name: 'To full' }))
+    fireEvent.click(screen.getByRole('button', { name: 'To canonical' }))
     expect(latest(written)).toEqual({ x: { operator: 'literal', value: { $plus: [1] } } })
   })
 
@@ -136,7 +136,7 @@ describe('a literal', () => {
     const summaries = [...container.querySelectorAll('.jer-collection-item-count.jer-visible')].map(
       ({ textContent }) => textContent
     )
-    expect(summaries).toEqual(['Literal', 'Shorthand: $literal'])
+    expect(summaries).toEqual(['Literal', 'Operator: $literal'])
   })
 })
 

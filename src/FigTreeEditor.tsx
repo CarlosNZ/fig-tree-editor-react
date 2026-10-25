@@ -894,14 +894,15 @@ const editorText = (
       return strings.FT_SUMMARY_VARS(
         Object.keys(value as object).filter((key) => key !== '//').length
       )
+    // A shorthand node is summarised by its key, `$` and all
     if (kind?.kind === 'literal')
       return kind.form === 'shorthand'
-        ? strings.FT_SUMMARY_SHORTHAND('$literal')
+        ? strings.FT_SUMMARY_OPERATOR('$literal')
         : strings.FT_SUMMARY_LITERAL
     if (kind?.kind !== 'operator' && kind?.kind !== 'fragment') return null
-    if (kind.form === 'shorthand') return strings.FT_SUMMARY_SHORTHAND(`$${kind.name}`)
     const text =
       kind.kind === 'operator' ? strings.FT_SUMMARY_OPERATOR : strings.FT_SUMMARY_FRAGMENT
+    if (kind.form === 'shorthand') return text(`$${kind.name}`)
     return text(kind.name ?? strings.FT_INVALID_NODE)
   }
   return {

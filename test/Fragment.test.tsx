@@ -82,7 +82,9 @@ describe('the fragment call', () => {
       'href',
       'https://example.com/capital'
     )
-    expect(container.querySelector('.ft-display-name')).toHaveTextContent('Capital city · fragment')
+    expect(container.querySelector('.ft-display-name-text')).toHaveTextContent(
+      'Capital city · fragment'
+    )
     // The stylesheet hides the card until hovered
     expect(bar.getByRole('tooltip', { hidden: true })).toHaveTextContent(
       "Gets a country's capital city"
@@ -96,7 +98,7 @@ describe('the fragment call', () => {
       backgroundColor: 'rgb(71, 119, 153)',
       color: 'rgb(235, 223, 90)',
     })
-    expect(container.querySelector('.ft-display-name')).toHaveTextContent(/^Fragment$/)
+    expect(container.querySelector('.ft-display-name-text')).toHaveTextContent(/^Fragment$/)
     expect(bar.queryByRole('link')).not.toBeInTheDocument()
     expect(bar.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument()
   })
@@ -216,7 +218,7 @@ describe('the fragment call', () => {
       expect(bar.queryByRole('button', { name: 'greeet' })).not.toBeInTheDocument()
       expect(bar.getByText('greeet')).toHaveStyle({ color: 'rgb(192, 57, 43)' })
       expect(bar.getByText(/names no registered fragment/)).toBeInTheDocument()
-      expect(container.querySelector('.ft-display-name')).toHaveTextContent(/^Fragment$/)
+      expect(container.querySelector('.ft-display-name-text')).toHaveTextContent(/^Fragment$/)
     })
 
     it('shows "invalid node" for a name that is not a string', () => {
@@ -258,7 +260,11 @@ describe('the fragment call', () => {
     expect(latest(written)).toEqual({ call: { $greet: { name: 'Ada' } } })
     cleanup()
     editor({ fragment: 'greet', parameters: '$data.form' })
-    expect(screen.queryByRole('button', { name: /^To (shorthand|full)$/ })).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^To (shorthand|canonical)$/ })
+    ).not.toBeInTheDocument()
+    // Still canonical, though it has no other form
+    expect(screen.getByText('Canonical')).toBeInTheDocument()
   })
 
   it('summarises itself when collapsed', () => {

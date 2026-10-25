@@ -40,7 +40,7 @@ In the sketches, `✎ ＋ ✕` stands for JER's edit tools, `▾` for its chevro
 
 ### Collapsed
 
-A collapsed node shows only JER's header row, as in v1: the chevron, the key, and the brackets with a summary between them in place of the item count, such as `total: { Operator: plus }`, `greeting: { Fragment: greet }` or `label: { Shorthand: $if }`. A collapsed row with issues beneath it, plain collections included, colours its summary by the most severe of them, with a count where there is more than one ("Where issues attach" in the design). The summaries for each kind are sketched in section I of the mockups.
+A collapsed node shows only JER's header row, as in v1: the chevron, the key, and the brackets with a summary between them in place of the item count, such as `total: { Operator: plus }`, `greeting: { Fragment: greet }` or `label: { Operator: $if }` for a shorthand node. A collapsed row with issues beneath it, plain collections included, colours its summary by the most severe of them, with a count where there is more than one ("Where issues attach" in the design). The summaries for each kind are sketched in section I of the mockups.
 
 ---
 
@@ -147,7 +147,7 @@ A representation, not an editing form. The values inside are editable as what th
 
 - **`['label']`, the node itself.** A collection row with the **Shorthand** component.
   - JER draws the header row. Its ✎ opens the node as raw JSON; its ＋ adds a key to the node object itself, which is where a sibling `fallback` or `//` goes.
-  - Inside the inner block, the Shorthand component draws the DisplayBar, then the child rows. The DisplayBar's pencil opens a full node's toolbar, which edits the node lifted to full form and lowers each change back (topic 2 of the design, "Two editors per node"). It shows the `$if` button in italics and one conversion button, which steps through the forms: "To positional" here, since the node is named; "To full" on a positional node; and "To full" on a node with no positional form, such as a fragment call.
+  - Inside the inner block, the Shorthand component draws the DisplayBar, then the child rows. The DisplayBar's pencil opens a full node's toolbar, which edits the node lifted to full form and lowers each change back (topic 2 of the design, "Two editors per node"). It shows the `$if` button in italics and one conversion button, which steps through the forms: "To positional" here, since the node is named; "To canonical" on a positional node; and "To canonical" on a node with no positional form, such as a fragment call.
 - **`['label', '$if']`, the payload.** A flattened payload, so the parameters appear directly beneath the DisplayBar, as they would on a full node. Having no edit tools of its own, it offers no ＋, so adding a parameter means converting to full form. Each parameter row keeps its own ✎ and ✕, and its type dropdown is filtered by the parameter's declared type, looked up by its key.
   - `['label', '$if', 'condition']`: a **Reference**.
   - `['label', '$if', 'then']` and `['label', '$if', 'else']`: plain JER.
@@ -157,7 +157,7 @@ Nothing is filtered here: the `$if` row is flattened rather than removed, becaus
 **Variants:**
 
 - **With sibling modifiers:** `{ $if: { … }, fallback: 'n/a' }`. The `fallback` row is a child of the node object, a sibling of the `$if` row, so it renders after the flattened parameters, with modifier styling.
-- **With a comment inside the payload:** `{ $if: { '//': 'why', condition: … } }`. This only comes from hand-written JSON, since the editor puts comments on the node. The `//` row is a **Comment** among the parameters, and "To full" moves it onto the node, as `./format` does.
+- **With a comment inside the payload:** `{ $if: { '//': 'why', condition: … } }`. This only comes from hand-written JSON, since the editor puts comments on the node. The `//` row is a **Comment** among the parameters, and "To canonical" moves it onto the node, as `./format` does.
 - **Symbolic alias:** `{ '$?': { condition: …, then: … } }`. The button shows `$?`.
 
 ---
@@ -170,7 +170,7 @@ Nothing is filtered here: the `$if` row is flattened rather than removed, becaus
 
 ```
 ▾ greeting:                                     ✎ ＋ ✕
-    [ $greet ▶ ]  Greeting                  [To full]
+    [ $greet ▶ ]  Greeting                  [To canonical]
     name: $data.user ▶                          ✎ ✕
     title: Dr                                   ✎ ✕
 ```
@@ -205,7 +205,7 @@ The most compact form, and the one "To shorthand" produces wherever it is allowe
 
 ```
 ▾ sum:                                          ✎ ＋ ✕
-    [ $plus ▶ ]  Plus (+)      [To full]
+    [ $plus ▶ ]  Plus (+)      [To canonical]
     ▾ [                                         ✎ ＋ ✕
         1                                       ✎ ✕
         $data.tax ▶                             ✎ ✕
@@ -231,22 +231,22 @@ The `$name` row holds one value rather than a list, so it is **unlabelled**: it 
 
   ```
   ▾ x:                                          ✎ ＋ ✕
-      [ $not ▶ ]  true  ✎ ✕          Logical NOT (!)  [To full]
+      [ $not ▶ ]  true  ✎ ✕          Logical NOT (!)  [To canonical]
   ```
 
 - **A reference:** `{ $not: '$data.disabled' }`. `['x', '$not']` is a **Reference** row, unlabelled.
 
   ```
-      [ $not ▶ ]  $data.disabled ▶  ✎ ✕   Logical NOT (!)  [To full]
+      [ $not ▶ ]  $data.disabled ▶  ✎ ✕   Logical NOT (!)  [To canonical]
   ```
 
 - **A reference to a whole list:** `{ $min: '$data.scores' }`. The same structure, but the single value binds to `min`'s rest parameter as a whole, so it is "the list of values", not the first of several.
 - **A node:** `{ $not: { $greaterThan: ['$data.age', 18] } }`. `['x', '$not']` is a **Shorthand** node row, unlabelled. It is a collection row spanning several lines, so it goes beneath the button, not beside it. It keeps its JER header row (chevron and edit tools) without a key label, then its own DisplayBar and argument array.
 
   ```
-      [ $not ▶ ]  Logical NOT (!)            [To full]
+      [ $not ▶ ]  Logical NOT (!)            [To canonical]
       ▾                                         ✎ ＋ ✕
-          [ $greaterThan ▶ ]  Greater than (>)  [To full]
+          [ $greaterThan ▶ ]  Greater than (>)  [To canonical]
           ▾ [ … ]
   ```
 
@@ -299,7 +299,7 @@ Evaluating it returns the content unchanged.
 
 ```
 ▾ template:                                     ✎ ＋ ✕
-    [ $literal ▶ ]  Literal (quoted)            [To full]
+    [ $literal ▶ ]  Literal (quoted)            [To canonical]
     ▾ {                                         ✎ ＋ ✕
         $plus: [                                ✎ ＋ ✕
           1                                     ✎ ✕
@@ -360,7 +360,7 @@ A plain object or array that is not a node itself but contains nodes or referenc
     [ Evaluate ▶ ]
     title: $data.name ▶                         ✎ ✕
     ▾ total:                                    ✎ ＋ ✕
-        [ $plus ▶ ]  Plus (+)   [To full]
+        [ $plus ▶ ]  Plus (+)   [To canonical]
         1                                       ✎ ✕
         2                                       ✎ ✕
 ```
@@ -419,7 +419,7 @@ The `vars` key on an operator node, a fragment call, a shorthand node (as a sibl
     fallback: null                              ✎ ✕
   ┃ ▾ vars:                                     ✎ ＋ ✕
   ┃     country:                                ✎ ＋ ✕
-  ┃       [ $http ▶ ]  https://…    HTTP request  [To full]
+  ┃       [ $http ▶ ]  https://…    HTTP request  [To canonical]
   ┃     limit: 5                                ✎ ✕
 ```
 

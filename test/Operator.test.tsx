@@ -57,6 +57,15 @@ describe('the operator node', () => {
     )
   })
 
+  it('has a Canonical badge, to the left of the display name', () => {
+    const { container } = editor({ operator: 'plus', values: [1, 2] })
+    const top = displayBar(container).querySelector('.ft-display-name')!
+    expect([...top.children].map(({ textContent }) => textContent)).toEqual([
+      'Canonical',
+      'Plus (+)',
+    ])
+  })
+
   it('shows an alias as written', () => {
     const { container } = editor({ operator: '+', values: [1, 2] })
     expect(within(displayBar(container)).getByRole('button', { name: '+' })).toBeInTheDocument()
@@ -94,7 +103,9 @@ describe('the operator node', () => {
     const { container } = editor({ operator: 'reverse', value: 'abc' })
     const bar = within(displayBar(container))
     expect(bar.getByRole('button', { name: 'reverse' })).toBeInTheDocument()
-    expect(displayBar(container).querySelector('.ft-display-name')).not.toBeInTheDocument()
+    expect(displayBar(container).querySelector('.ft-display-name-text')).not.toBeInTheDocument()
+    // The badge alone is at the top right
+    expect(displayBar(container).querySelector('.ft-display-name')).toHaveTextContent(/^Canonical$/)
   })
 
   it("takes the host's display overrides", () => {

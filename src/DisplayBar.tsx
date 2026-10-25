@@ -16,11 +16,13 @@ import { type EvaluateControl } from './useEvaluation'
 // refuses it; its pencil stays, so a valid operator or fragment can be picked.
 // A modifier-click on the button, with json-edit-react's clipboard modifier
 // (Cmd or Ctrl, as a click on Copy copies the path), writes an operator's
-// other spelling. A shorthand node's name is in italics, and its single value
-// can sit on the button's line. The conversion button sits beneath the display
-// name, in the node's colours, shown while it is hovered, so it doesn't
-// compete with the pencil. One that gives a reference shows while the header
-// is hovered anywhere. The
+// other spelling. A shorthand node's single value can sit on the button's
+// line. The conversion button sits beneath the display name, in the node's
+// colours, shown while it is hovered, so it doesn't compete with the pencil.
+// One that gives a reference shows while the header is hovered anywhere. A
+// full node, which reads much as a shorthand one does, has a "Canonical"
+// badge to the left of the display name, a dot where the header is narrow.
+// The
 // node's other issues, and those on rows it holds that no nearer node does,
 // are listed at the top of the button's card, which then shows sooner, and a
 // "!" badge on the button's corner, in the colour of the most severe, shows
@@ -53,6 +55,7 @@ interface DisplayBarProps {
   flagged?: readonly Issue[] // the node's other issues and its rows', for its card
   editorTheme: EditorTheme
   shorthand?: boolean
+  canonical?: boolean // a full node, which shows the badge
   inline?: React.ReactNode // after the button, on its line
   conversion?: { label: string; toReference?: boolean; onConvert: () => void }
   onEdit?: () => void // opens the toolbar; absent where the node can't be edited
@@ -73,6 +76,7 @@ export const DisplayBar = ({
   flagged = [],
   editorTheme,
   shorthand = false,
+  canonical = false,
   inline,
   conversion,
   onEdit,
@@ -112,7 +116,28 @@ export const DisplayBar = ({
         )}
         {inline && <div className="ft-display-bar-value">{inline}</div>}
       </span>
-      {display?.displayName !== undefined && <DisplayName display={display} />}
+      {display && (display.displayName !== undefined || canonical) && (
+        <DisplayName
+          display={display}
+          badge={
+            canonical && (
+              <span
+                className="ft-canonical-badge"
+                title={strings.FT_CANONICAL}
+                // As variables, so the stylesheet can make it a dot
+                style={
+                  {
+                    '--ft-canonical-badge': editorTheme.canonicalBadge,
+                    '--ft-canonical-badge-text': editorTheme.canonicalBadgeText,
+                  } as React.CSSProperties
+                }
+              >
+                {strings.FT_CANONICAL}
+              </span>
+            )
+          }
+        />
+      )}
       {conversion && display && (
         <span className="ft-convert-area">
           <button
@@ -211,19 +236,30 @@ const NameOrButton = ({
     </HoverCard>
   )
 
-// The display name at a header's top right, linked to its documentation. An
-// operator with no display name shows nothing there, since its button already
-// shows its name.
-export const DisplayName = ({ display }: { display: HeaderDisplay }) => (
+// The display name at a header's top right, linked to its documentation,
+// after a full node's badge. An operator with no display name shows only the
+// badge there, since its button already shows its name.
+export const DisplayName = ({
+  display,
+  badge,
+}: {
+  display: HeaderDisplay
+  badge?: React.ReactNode
+}) => (
   <span className="ft-display-name">
-    {display.docUrl ? (
-      <a href={display.docUrl} target="_blank" rel="noreferrer">
-        {display.displayName}
-      </a>
-    ) : (
-      display.displayName
+    {badge}
+    {display.displayName !== undefined && (
+      <span className="ft-display-name-text">
+        {display.docUrl ? (
+          <a href={display.docUrl} target="_blank" rel="noreferrer">
+            {display.displayName}
+          </a>
+        ) : (
+          display.displayName
+        )}
+        {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
+      </span>
     )}
-    {display.suffix && <span className="ft-display-name-suffix">{display.suffix}</span>}
   </span>
 )
 

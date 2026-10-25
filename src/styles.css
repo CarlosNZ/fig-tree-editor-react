@@ -521,11 +521,52 @@ button.ft-message-path:hover {
   position: absolute;
   top: -0.3em;
   right: 0;
+  display: flex;
+  /* The display name's small caps sit low in their line, so the badge lines
+     up on their baseline rather than their line's centre */
+  align-items: baseline;
+  gap: 0.6em;
   font-family: sans-serif;
   font-size: 0.7em;
   font-variant: small-caps;
   font-weight: 600;
   color: gray;
+}
+
+/* A full node's badge, to the left of the display name, centred on its
+   capitals: the line leaves room below for descenders the badge has none of,
+   so its top padding is the larger, and its capitals are smaller than the
+   display name's, so it's raised by half the difference */
+.ft-canonical-badge {
+  position: relative;
+  top: -0.15em;
+  padding: 0.13em 0.45em 0.06em;
+  line-height: normal;
+  border-radius: 0.4em;
+  background-color: var(--ft-canonical-badge);
+  color: var(--ft-canonical-badge-text);
+  font-size: 0.8em;
+  font-variant: normal;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Where the header is narrow, the badge becomes a dot in its text's colour,
+   then the suffix goes. With its text hidden, the dot's baseline is its
+   bottom edge, so it's raised to sit centred on the display name's capitals. */
+@container (max-width: 28em) {
+  .ft-canonical-badge {
+    top: -0.15em;
+    width: 0.6em;
+    height: 0.6em;
+    padding: 0;
+    overflow: hidden;
+    border-radius: 50%;
+    background-color: var(--ft-canonical-badge-text);
+    color: transparent;
+  }
 }
 
 @container (max-width: 24em) {
@@ -865,11 +906,6 @@ button.ft-message-path:hover {
   min-width: 0;
 }
 
-/* A shorthand node's name is in italics */
-.ft-shorthand .ft-name {
-  font-style: italic;
-}
-
 /* A shorthand's single value, on the button's line. json-edit-react indents
    the row with an inline margin, which the line has no use for. */
 .ft-display-bar-value {
@@ -903,11 +939,9 @@ button.ft-message-path:hover {
 }
 
 /* The conversion button, beneath the display name, where v1 had it: 1em
-   below the header's top, lined up with the display name on the right. On a
-   full node it shows only while it is hovered itself, so it doesn't compete
-   with the pencil. A shorthand node has no pencil, so its button shows while
-   the header is hovered anywhere but the Evaluate button and its card: it is
-   the way back to the full form and its pencil. "To reference" shows while
+   below the header's top, lined up with the display name on the right. It
+   shows only while it is hovered
+   itself, so it doesn't compete with the pencil. "To reference" shows while
    the header is hovered anywhere, as the pencil does: a `get` that can be a
    reference is one the author will usually want shorter. */
 .ft-convert-area {

@@ -279,7 +279,7 @@ describe('evaluating', () => {
       expect(reference().closest('.ft-reference')).toHaveAttribute('data-node-run', 'value')
       expect(ran(y)).toBeUndefined()
       expect(border(x).borderColor).toBe(toRgb(defaultEditorTheme.runValue))
-      expect(border(y).borderColor).toBe(toRgb(defaultEditorTheme.shorthandBorder))
+      expect(border(y).borderColor).toBe(toRgb(defaultEditorTheme.nodeBorder))
     })
 
     it("shows a `$error` reference's ✓ in the ▶'s place, where its fallback ran", async () => {
@@ -327,9 +327,7 @@ describe('evaluating', () => {
       await done(reports, 1)
       expect(ran(nodeButton('$plus'))).toBe('value')
       expect(ran(nodeButton('$subtract'))).toBeUndefined()
-      expect(border(nodeButton('$subtract')).borderColor).toBe(
-        toRgb(defaultEditorTheme.shorthandBorder)
-      )
+      expect(border(nodeButton('$subtract')).borderColor).toBe(toRgb(defaultEditorTheme.nodeBorder))
       // The stylesheet dims a node by its mark
       const node = (button: HTMLElement) => button.closest('.ft-node')!
       expect(node(nodeButton('$subtract'))).toHaveAttribute('data-node-run', 'skipped')
@@ -417,7 +415,7 @@ describe('evaluating', () => {
       })
       const summary = [
         ...container.querySelectorAll<HTMLElement>('.jer-collection-item-count'),
-      ].find(({ textContent }) => textContent?.includes('Shorthand: $multiply'))!
+      ].find(({ textContent }) => textContent?.includes('Operator: $multiply'))!
       expect(summary.style.color).toBe(toRgb(defaultEditorTheme.runValue))
     })
 

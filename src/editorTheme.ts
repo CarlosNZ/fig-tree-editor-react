@@ -36,7 +36,8 @@ export interface EditorTheme {
   runCancelled: string
   runSkipped: string // never ran: no border or icon, since the node is dimmed
   nodeBorder: string // the border around a node's rows
-  shorthandBorder: string // a shorthand node's dotted border
+  canonicalBadge: string // a full node's "Canonical" badge
+  canonicalBadgeText: string
   fragmentBackground: string // a fragment with no colours of its own
   fragmentText: string
 }
@@ -59,7 +60,8 @@ export const defaultEditorTheme: EditorTheme = {
   runCancelled: '#262626',
   runSkipped: '#a3a3a3',
   nodeBorder: '#dbdbdb',
-  shorthandBorder: '#BCBFC5', //#9ca3af
+  canonicalBadge: '#e3edf6',
+  canonicalBadgeText: '#3f6a93',
   fragmentBackground: '#477799',
   fragmentText: '#ebdf5a',
 }
@@ -206,14 +208,14 @@ const editorThemeLayer = ({
         (nodeForm(nodeData) !== undefined && !nodeData.collapsed) || openLines(nodeData)
           ? { display: 'none' }
           : null,
-      // A collapsed node is its summary alone, with no border. A shorthand
-      // node's border is dotted, and a broken node's is in the error colour,
-      // whatever its form (topic 3). After an evaluation, a node that
-      // took part has its border in the colour of how it ran (topic 7, "How
-      // it ran, in the tree"), but one that never ran keeps its own, since
-      // the stylesheet dims it. No broken node takes part, since its errors
-      // block the evaluation. Any other collection's rows are pulled back as
-      // a node's box is.
+      // A collapsed node is its summary alone, with no border. A node's
+      // border is the same in either form, and a broken node's is in the
+      // error colour (topic 3). After an evaluation, a node that took part has
+      // its border in the colour of how it ran (topic 7, "How it ran, in the
+      // tree"), but one that never ran keeps its own, since the stylesheet
+      // dims it. No broken node takes part, since its errors block the
+      // evaluation. Any other collection's rows are pulled back as a node's
+      // box is.
       collectionInner: (nodeData) => {
         if (comment(nodeData) === 'lines') return { marginLeft: `-${indent / 2}em` }
         const form = nodeForm(nodeData)
@@ -221,15 +223,10 @@ const editorThemeLayer = ({
         const broken =
           brokenIssue(issues, classification, nodeData.path, nodeData.value) !== undefined
         const ran = run?.get(toPathString(nodeData.path))?.status
-        const shorthand = form === 'shorthand'
         return {
           ...NODE_BORDER,
-          borderStyle: shorthand ? 'dotted' : 'solid',
-          borderColor: broken
-            ? editorTheme.error
-            : shorthand
-              ? editorTheme.shorthandBorder
-              : editorTheme.nodeBorder,
+          borderStyle: 'solid',
+          borderColor: broken ? editorTheme.error : editorTheme.nodeBorder,
           ...(ran !== undefined &&
             ran !== 'skipped' && { borderColor: runColour(ran, editorTheme) }),
         }

@@ -19,23 +19,23 @@ describe('the conversion button', () => {
     const positional = { $if: ['$data.ok', 'Yes', 'No'] }
     expect(convert(full)).toEqual({ label: 'To shorthand', result: named })
     expect(convert(named)).toEqual({ label: 'To positional', result: positional })
-    expect(convert(positional)).toEqual({ label: 'To full', result: full })
+    expect(convert(positional)).toEqual({ label: 'To canonical', result: full })
   })
 
   it('goes from named back to full where the node has no positional form', () => {
     expect(convert({ $if: { condition: true, else: 'No' } })).toEqual({
-      label: 'To full',
+      label: 'To canonical',
       result: { operator: 'if', condition: true, else: 'No' },
     })
     expect(convert({ $greet: { name: 'Ada' } })).toEqual({
-      label: 'To full',
+      label: 'To canonical',
       result: { fragment: 'greet', parameters: { name: 'Ada' } },
     })
   })
 
   it('takes a single value to full', () => {
     expect(convert({ $not: true })).toEqual({
-      label: 'To full',
+      label: 'To canonical',
       result: { operator: 'not', value: true },
     })
   })
@@ -56,7 +56,7 @@ describe('the conversion button', () => {
   it('takes a dynamic fragment shorthand back to full', () => {
     const node = { $buildObject: [{ key: 'name', value: 'Ada' }] }
     expect(convert({ $greet: node })).toEqual({
-      label: 'To full',
+      label: 'To canonical',
       result: {
         fragment: 'greet',
         parameters: { operator: 'buildObject', entries: [{ key: 'name', value: 'Ada' }] },

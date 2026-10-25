@@ -41,7 +41,7 @@ The build plan's remaining work (what is left of step 7, the definition editor's
 ## Look and styling
 
 - **Where a node's badge sits on its header's line** (plan, 10.1, "Revisit later").
-- **Never-ran's grey** is close to a shorthand node's dashed grey, and a green ✓ is faint on a green operator's button (plan, 10.7, "Revisit later").
+- **A green ✓ is faint** on a green operator's button (plan, 10.7, "Revisit later").
 - **One custom property for the editor's sans-serif face,** which a host could set (plan, 9.4).
 - **`editorTheme` values for `@json-edit-react/themes`' dark themes** (design, topic 8).
 - **The theme's other kinds' styles,** each with the component that needs it (TO-DO in `src/editorTheme.ts`).
