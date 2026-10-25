@@ -64,11 +64,14 @@ export const nodeConversion = (
   }
 }
 
-// A reference's full `get` node, for its "To get node" button, or null where
+// A reference's `get` node, for its "To get node" button, in shorthand with a
+// named payload, so `default` and `from` are added beside `path`. Null where
 // it has none: `$index`, `$error`, and a name an `as` gives, which `toGet`
-// can't see
-export const getNodeFor = (reference: string, referenceNames: ReferenceNames) =>
-  toGet(reference, { referenceNames })
+// can't see.
+export const getNodeFor = (reference: string, figTree: FigTree, referenceNames: ReferenceNames) => {
+  const node = toGet(reference, { referenceNames })
+  return node && (lowerNode(node, figTree, 'named') ?? node)
+}
 
 // A shorthand node's toolbar (Shorthand.tsx) edits the node lifted to full
 // form, and lowers each change back to shorthand, `named` or `positional`.

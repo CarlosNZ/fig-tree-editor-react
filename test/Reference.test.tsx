@@ -152,11 +152,11 @@ describe('a reference', () => {
   })
 
   describe('"To get node"', () => {
-    it("replaces the reference with its `get` node, through the host's onUpdate", () => {
+    it("replaces the reference with its shorthand `get` node, through the host's onUpdate", () => {
       const onUpdate = vi.fn()
       const { written } = host({ name: '$data.user.name' }, { onUpdate })
       fireEvent.click(screen.getByRole('button', { name: 'To get node' }))
-      expect(latest(written)).toEqual({ name: { operator: 'get', path: 'user.name' } })
+      expect(latest(written)).toEqual({ name: { $get: { path: 'user.name' } } })
       expect(onUpdate).toHaveBeenCalledOnce()
     })
 
@@ -208,7 +208,7 @@ describe('a reference', () => {
       expect(latest(written)).toMatchObject({ x: { $not: { value: '$d.ok' } } })
       const toGet = screen.getAllByRole('button', { name: 'To get node' }).at(-1)!
       fireEvent.click(toGet)
-      expect(latest(written)).toMatchObject({ y: { operator: 'get', path: 'row.a', from: '$v' } })
+      expect(latest(written)).toMatchObject({ y: { $get: { path: 'row.a', from: '$v' } } })
     })
   })
 

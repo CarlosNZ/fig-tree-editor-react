@@ -1,3 +1,4 @@
+import { type FigTree } from 'fig-tree-evaluator'
 import { type CustomButtonDefinition, type JsonData, type NodeData } from 'json-edit-react'
 import { rowAt, type Classification } from './classify'
 import { getNodeFor, type ReferenceNames } from './conversions'
@@ -15,17 +16,19 @@ import { strings } from './strings'
 // and a name an `as` gives), or where the row can't be edited.
 export const toGetNodeButton = ({
   classification,
+  figTree,
   editorTheme,
   referenceNames,
 }: {
   classification: Classification
+  figTree: FigTree
   editorTheme: EditorTheme
   referenceNames: ReferenceNames
 }): CustomButtonDefinition => {
   const referenceAt = ({ path, value }: NodeData) => {
     const kind = rowAt(classification, path)?.kind
     if (kind?.kind !== 'reference') return null
-    const node = getNodeFor(value as string, referenceNames)
+    const node = getNodeFor(value as string, figTree, referenceNames)
     return node ? { node: node as JsonData, colour: namespaceColour(kind, editorTheme) } : null
   }
 

@@ -382,10 +382,15 @@ export const FigTreeEditor = ({
   // then the host's
   const customButtons = useMemo(
     () => [
-      toGetNodeButton({ classification, editorTheme: mergedEditorTheme, referenceNames }),
+      toGetNodeButton({
+        classification,
+        figTree,
+        editorTheme: mergedEditorTheme,
+        referenceNames,
+      }),
       ...(hostButtons ?? []),
     ],
-    [classification, mergedEditorTheme, referenceNames, hostButtons]
+    [classification, figTree, mergedEditorTheme, referenceNames, hostButtons]
   )
 
   // Memoised on what the definitions are: json-edit-react passes both to every

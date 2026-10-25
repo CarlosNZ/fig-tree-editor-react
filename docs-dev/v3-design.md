@@ -246,7 +246,7 @@ A misspelled parameter (`{ operator: 'if', thn: 'x' }`) is not a kind: the node 
 - **"To shorthand" and "To canonical" convert the node and its whole subtree,** as `./format`'s `toShorthand` (with `arguments: 'named'`) and `toCanonical` do.
 - **"To positional" also converts the whole subtree,** as `./format`'s `toShorthand` with `arguments: 'positional'` does, so every conversion the button makes is subtree-wide.
 - **A shorthand node's toolbar converts the node alone,** with `./format`'s `recursive: false` (F2 in [v3-upstream.md](v3-upstream.md)): it lifts the node to full form, and lowers each change back, leaving the children as they are ("Two editors per node", topic 2).
-- **A bare reference can be turned into a `get` node** (`toGet`), so the author can add `default` or `from`. A `get` node can be turned back into a reference (`toReference`) wherever that returns a value; `null` means the affordance is not offered.
+- **A bare reference can be turned into a `get` node** (`toGet`), so the author can add `default` or `from`. The node is shorthand with a named payload, `{ $get: { path: 'user.name' } }`, so they are added beside `path` as labelled rows. A `get` node can be turned back into a reference (`toReference`) wherever that returns a value; `null` means the affordance is not offered.
 - Conversions are not offered inside quoted subtrees.
 
 ### Sub-tree evaluation — **Agreed** (direction; the mechanics are in topic 7, "Sub-tree evaluation")
