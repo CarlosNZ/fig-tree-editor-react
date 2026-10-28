@@ -434,7 +434,7 @@ Worked through on mockups: [FigTree Node Mockups](https://claude.ai/artifact/Wcf
 - **Comments** render as a note beneath the header, with json-edit-react's edit tools on hover like any row.
 - **Row order:** the node's parameters, then `fallback` and `noCache`, then `vars` last. The vars block takes the `$vars` reference colour and is set slightly apart from the rows above it. The fill-in step orders keys to match.
 - **Fragment display name:** as on an operator, the button shows the name as written (`getCapital`) and the top right shows the display name from the fragment's `FragmentMetadata` ("Capital city · fragment"), so neither repeats the other. The "· fragment" suffix shows where there is room, and is hidden when the editor is narrow. **A fragment with no display name** shows "Fragment" alone at the top right, as in v1, rather than falling back to its name, which the button already shows. Nothing extra is shown while the toolbar is open, although the picker then shows only the display name (topic 6). Rejected: "Fragment | getCapital" in place of the display name, and "Capital city | getCapital", both of which repeat the button.
-- **Fragment default colour:** a generic colour for every fragment whose metadata defines none: v1's default for now, to be tweaked later, yellow text (`#ebdf5a`) on dark steel blue (`#477799`), for every fragment whose metadata carries no colours. Every operator button is a light shade of its category's hue, so a dark button stands apart by treatment without borrowing any category's hue. Deriving a colour from the fragment's name (hashing the name to a hue, then making a light background and dark text as the catalog's palette does) would tell fragments apart, but an arbitrary hue can land on an operator category's colour and suggest a category the fragment does not belong to, and renaming a fragment would change its colour. A host that wants fragments told apart gives them `FragmentListing` colours.
+- **Fragment default colour:** a generic colour for every fragment whose listing gives none: `./catalog`'s `fragmentColors`, yellow text (`#ebdf5a`) on dark steel blue (`#38607e`), a darker blue than v1's `#477799` so the pair reaches 4.5:1 (fig-tree-evaluator#284). Every operator button is a light shade of its category's hue, so a dark button stands apart by treatment without borrowing any category's hue. Deriving a colour from the fragment's name (hashing the name to a hue, then making a light background and dark text as the catalog's palette does) would tell fragments apart, but an arbitrary hue can land on an operator category's colour and suggest a category the fragment does not belong to, and renaming a fragment would change its colour. A host that wants fragments told apart gives them colours in their listings.
 
 ### Collapsed nodes — **Agreed**
 
@@ -484,7 +484,7 @@ type Slot = {
 | `fallback: X`                                                 | modifier: what its node's own position admits, since it stands in for the node's value                                        |
 | `noCache: X`                                                  | modifier: `true`, literal only                                                                                                |
 | `vars: { price: X }`                                          | var: `any`. A separate role from `modifier`, since vars are names that make a scope (topic 5)                                 |
-| `as: X`                                                       | parameter, structural: `string`, literal only                                                                                 |
+| `as: X`                                                       | parameter, `literal` mode: `string`, literal only                                                                             |
 | the root                                                      | root: `any`. A host prop for an expected result type would fit here (topic 8, do later)                                       |
 | `body: { name: X }`, `{ title: X, total: {…} }`               | data: `any`. Plain data inside an evaluated position is evaluated too (deep evaluation), so it can hold a reference or a node |
 
@@ -592,7 +592,7 @@ The searchable list opened from a full node's toolbar (A3 and section J in the m
 - **Rejected: alphabetical by display name,** which breaks the canonical sequences (`and`, `or`, `not`, `if`; `plus`, `subtract`, `multiply`, `divide`) and scatters related operators.
 - **Rejected: core operators first, then host operators,** which goes against the first-class principle (topic 1) when the host already controls the order.
 
-**Host operators** have no marking and no group of their own; `category` is required on every definition, so they sit where authors look. Display data is `./catalog`'s `getCatalog`, which merges an operator's listings field by field, lowest first: `./catalog`'s `operatorListings` (`literal` included), the editor's own (`literal`'s description, and the shades below for a host operator), the definition's `metadata` read as an `OperatorListing`, then the host's `operatorListings` prop (topic 8, "Display overrides"). An operator's description and its parameters' (`parameterDescriptions`) are part of its listing, since no operator definition carries text (fig-tree-evaluator#243). A host operator with no display name shows its canonical name, and one with no colours takes a light shade of its category's colour (topic 8).
+**Host operators** have no marking and no group of their own; `category` is required on every definition, so they sit where authors look. Display data is `./catalog`'s `getCatalog`, which merges an operator's listings field by field, lowest first: `./catalog`'s `operatorListings` (`literal` included), the editor's own (`literal`'s description, and the shades below for a host operator), then the host's `operatorListings` prop (topic 8, "Display overrides"). An operator's description and its parameters' (`parameterDescriptions`) are part of its listing, since no operator definition carries text (fig-tree-evaluator#243). A host operator with no display name shows its canonical name, and one with no colours takes a light shade of its category's colour (topic 8).
 
 **Search** matches the display name, which carries the alias ("Plus (+)"), the canonical name, and the category name (typing "math" shows the whole group, as `Select` does with group labels). It does not match descriptions: "number" appears in most math descriptions, so they would bury the entry being looked for. Groups stay while searching, with empty ones hidden. After each keystroke the first match in list order that can be chosen is highlighted, so a symbol or name then Enter picks it; the list order already puts the likely operator first (`>` gives Greater than, `=` gives Equal).
 
@@ -645,7 +645,7 @@ Each change has a case in `Select`'s test suite (plan, 1.7).
 
 **The starting-value rule.** One function gives the value of everything the editor creates: a parameter added from the picker or ＋, a required parameter fill-in completes, an element added with ＋, a row switched to Value (topic 2), and the parameters of a new node's default operator ("The type dropdown"). For a declared parameter of an operator or fragment, it is `./catalog`'s rule:
 
-1. **Its seed**, from the layered display data ("The operator picker"): `operatorListings` for core operators, the definition's `metadata` for host operators, `FragmentListing` for fragments, then the host's `operatorListings` (topic 8).
+1. **Its seed**, from the layered display data ("The operator picker"): `operatorListings` for core operators, the fragment definition's `listing` for fragments, then the host's `operatorListings` (topic 8).
 2. **Otherwise a value for its declared type:** a literal union's first member; for a union, the type seed of its first non-null member; otherwise the type's `typeSeeds` entry.
 
 The runtime `default` is deliberately not a step, because a parameter is usually added to change it. For the same reason, **a boolean or literal union never starts at its effective default** (`hostDefault ?? default`): where the rule gives exactly that value, a boolean starts as its negation and a literal union at its first member that is not the default. With the core metadata this changes `regex.mode` (`'test'` to `'extract'`), `http.method` (`'get'` to `'post'`) and `sql.shape` (`'rows'` to `'firstRow'`), and any parameter whose `hostDefault` equals its starting value. The result is still a legal value, so fig-tree's drift tests hold, and the rule is documented on `OperatorListing.seeds` as the editor's to implement.
@@ -718,7 +718,7 @@ Mocked up as section K of the mockups.
 | Takes       | the slot's `admits`                                                                                           | "a number or null"; "one of 'test', 'extract', 'match'"; "anything"                                                                                                                                                                                                                                                                                                                                                                              |
 | Elements    | `constraints`                                                                                                 | "exactly 2"; "all numbers or all strings"; "each an object with `key` and `value`"                                                                                                                                                                                                                                                                                                                                                               |
 | Default     | `default`, `hostDefault`                                                                                      | "Default: 0"; with a host override, "Default here: 2 (set by this application; FigTree's is 0)"; `get.from`'s sentinel as "the evaluation data"                                                                                                                                                                                                                                                                                                  |
-| Evaluated   | `evaluation`, when not eager                                                                                  | lazy: "only when needed"; per element: "once for each element of `input`, with `$element` and `$index` available" (the `as` names where set); race: "all at once; stops as soon as the answer is known"; lazy elements: "each only when needed, in order"; lazy entries: "only the matching entry"; structural: "a name, not an expression, so it can't be computed"                                                                             |
+| Evaluated   | `evaluationMode`, when not eager                                                                              | lazy: "only when needed"; per element: "once for each element of `input`, with `$element` and `$index` available" (the `as` names where set); race: "all at once; stops as soon as the answer is known"; lazy elements: "each only when needed, in order"; lazy entries: "only the matching entry"; literal: "a name, not an expression, so it can't be computed"                                                                                |
 | If null     | the catalog's `nullOutcome` and `elementNullOutcome`, `truthiness`; a fragment argument's type and `required` | propagate: "the result is null"; error: "an error"; unset: "means 'not set', so the default applies"; a value at a truthiness position: "counts as false"; elements: "a null element makes the result null", "null elements are accepted" (or, with truthiness, "a null element counts as false"), or "a null element is an error"; `convert.value`'s conditional policy: "if `to` is 'boolean', null gives false; otherwise the result is null" |
 | Replacement | `replacesNullAt`                                                                                              | on the replacement: "Used in place of a null in `values`"; on its target, the null line adds "unless `nullValueDefault` is set" to the null it replaces: a null element where the target declares an `elementNullPolicy`, else the target's own null"                                                                                                                                                                                            |
 
@@ -894,7 +894,7 @@ The rest is set aside, to be revisited further into the work (Carl, September 20
 - **`$params`:** the Parameter entry in the type dropdown ("The type dropdown", topic 4) and its scope, the declared parameters; and renaming a declared parameter, which F8 would serve.
 - **The fragment picker in this mode:** never offering the fragment being defined, or any fragment whose use would close a cycle.
 - **Evaluation:** of the whole body and of sub-trees, with test arguments, through F10.
-- **Display:** the fragment's own `FragmentListing`, if the wrapper is edited.
+- **Display:** the fragment's own `listing`, if the wrapper is edited.
 
 **Until it is picked up,** nothing in Phases 4 to 10 depends on it: the Parameter entry is not offered, and a `$params` reference carries `validate()`'s `unresolved-param` error, as it would in any expression.
 
@@ -905,9 +905,9 @@ The searchable list of registered fragments in a full fragment call's toolbar. I
 **One flat list, in `getFragments()` order.** That is the order of the host's `fragments` object: `updateOptions()` appends new names at the end, and a replaced fragment keeps its place. Fragments have no category, so there are no groups. The host controls the order, as it controls the order of operators within a group, and a host that wants them alphabetical sorts them before registering them.
 
 - Rejected: alphabetical by label. A host can always sort its own fragments, but it cannot undo a sort the editor imposes, such as putting the most-used fragments first or related ones together.
-- Do later: groups from a host-supplied key, for example a `category` string in each fragment's `FragmentListing`, if hosts with long lists want them. `FragmentListing` is fig-tree's type, exported from its root, so that is an upstream addition.
+- Do later: groups from a host-supplied key, for example a `category` key in each fragment's listing `metadata`, if hosts with long lists want them.
 
-**Each entry shows the display name, with the description beneath.** The display name is `FragmentListing.displayName`, and falls back to the fragment's name where there is none. The name is not added to the label.
+**Each entry shows the display name, with the description beneath.** The display name is the listing's `displayName`, and falls back to the fragment's name where there is none. The name is not added to the label.
 
 - Rejected: "Display name (name)" as the label, following "Plus (+)".
 - Rejected: the name as the label, as in v1, which throws away the host's display name where it helps most.
@@ -1421,15 +1421,15 @@ gives `{ operator: '+', values: [1, 2, 3] }` at `round.value` and `round.decimal
 **The host's display layer is two props, named and shaped after fig-tree's own exports:**
 
 ```ts
-operatorListings?: OperatorListingMap // keyed by canonical name
+operatorListings?: ListingMap // keyed by canonical name
 categoryListings?: { [category in OperatorCategory]?: Partial<CategoryListing> }
 ```
 
-- **They are the top layer** of topic 4's display data: `./catalog` (`literal` included), the editor's own, a host operator's `metadata` read as an `OperatorListing`, then these. Each field is merged over the layers beneath, `seeds` and `parameterDescriptions` per parameter, so overriding one seed keeps the rest, and colours replace the pair beneath only as a pair. `literal` is overridden like any operator.
-- **The same rule as fig-tree's,** since the layering is `getCatalog`'s own: an override holds only what it changes, so one kept as stored data never falls behind the package's listings when fig-tree changes them. The editor adds its layers as listing maps, and `literal`, which `getOperators()` leaves out, to the operators `getCatalog` reads. Categories take `categoryListings` over the package's field by field, and fragments are read from their `metadata` as before, since `getCatalog`'s display name falls back to the name where the editor shows "Fragment".
+- **They are the top layer** of topic 4's display data: an entry's own (`./catalog`'s for core operators and `literal`, a fragment definition's `listing`), the editor's own, then these. Each field is merged over the layers beneath, `seeds` and `parameterDescriptions` per parameter, so overriding one seed keeps the rest, and colours replace the pair beneath only as a pair. `literal` is overridden like any operator.
+- **The same rule as fig-tree's,** since the layering is `getCatalog`'s own: an override holds only what it changes, so one kept as stored data never falls behind the package's listings when fig-tree changes them. The editor adds its layers as listing maps, and reads `literal`, which `getOperators()` leaves out, from `Catalog.literal`. Categories take `categoryListings` over the package's field by field. `getCatalog`'s display name falls back to the name, so the editor checks the layers for one itself, and shows "Fragment" on a fragment with none.
 - **What a host uses them for:** its own operators' descriptions and parameter descriptions, its own display names (and translations of them, "Wording"), `docUrl`s into its own documentation, colours, and seeds that suit its data (an `http.url` on its own server). `categoryListings` relabels or reorders the picker's groups.
 - **Plain data** in fig-tree's shapes, so a host can type them with fig-tree's own types and keep them in a stored preference, as with `defaultOperators`.
-- **Fragments have no override prop.** A fragment's display is the `FragmentListing` in its own `metadata` (exported from fig-tree's root: the operator's listing less its text, which a fragment definition carries itself), which the host already controls. The editor reads each of its fields as optional, since it is a convention fig-tree never checks: a fragment with no display name shows "Fragment" (topic 3).
+- **Fragments have no override prop of their own.** A fragment's display is the `listing` on its definition, which the host already controls, and `getCatalog` merges the listing maps over it, so `operatorListings` reaches a fragment by its name too. A fragment with no display name shows "Fragment" (topic 3).
 - Rejected: v1's name, `operatorDisplay`; and one prop holding both (`displayHints={{ operators, categories }}`), a wrapper that gains nothing over two props named after what they mirror.
 
 **A host operator with no colours takes a light shade of its category's colour,** so it sits with its category's siblings, as topic 1's first-class principle wants. `categoryListings` gives each category its hue at full strength, with white text, and every operator button is a light shade of that hue, so the category's own colours would make a dark button, which reads as a fragment (topic 3, "Fragment default colour"). The shade is derived in CSS, the background as `color-mix(in srgb, <category colour> 18%, white)` and the text as `color-mix(in srgb, <category colour>, black 65%)`, with a test that the pair reaches 4.5:1 for each core category; the exact proportions are settled when built.
@@ -1463,8 +1463,6 @@ interface EditorTheme {
   runSkipped: string // never ran
   canonicalBadge: string // a full node's badge (topic 3)
   canonicalBadgeText: string
-  fragmentBackground: string // a fragment with no colours of its own (topic 3)
-  fragmentText: string
 }
 ```
 
@@ -1532,7 +1530,7 @@ interface FigTreeEditorProps extends Omit<
   onEvaluate?: (evaluation: Evaluation) => void
   defaultOperators?: OperatorDefault | Partial<Record<SlotType, OperatorDefault>>
   defaultFragment?: string
-  operatorListings?: OperatorListingMap
+  operatorListings?: ListingMap
   categoryListings?: { [category in OperatorCategory]?: Partial<CategoryListing> }
   editorTheme?: Partial<EditorTheme>
   referenceNames?: 'canonical' | 'alias' // $data or $d, wherever the editor writes a reference

@@ -3,20 +3,18 @@ import { type CustomKeyProps } from 'json-edit-react'
 import { type DefinitionFields } from './definitionShape'
 import { DisplayName, nameSize } from './DisplayBar'
 import { readListing } from './displayData'
-import { type EditorTheme } from './editorTheme'
 import { fragmentHeader } from './Fragment'
 import { strings } from './strings'
 
 export interface FragmentNameConfig {
   fragmentName: string | undefined
   setFragmentName: ((name: string | undefined) => void) | undefined
-  editorTheme: EditorTheme
 }
 
 // The definition editor's root label (fragment-editor-design.md, "The
 // definition editor"): the fragment's button as a call to it shows in the
 // expression editor, its name in its colours, with its display name at the
-// row's top right, read from the definition's `metadata` as it is edited.
+// row's top right, read from the definition's `listing` as it is edited.
 // There is no ▶, since nothing runs from here.
 //
 // A click turns the button into an input, in the same colours, that renames
@@ -28,15 +26,15 @@ export const FragmentNameKey = ({
   nodeData,
   componentProps,
 }: CustomKeyProps<FragmentNameConfig>) => {
-  const { fragmentName, setFragmentName, editorTheme } = componentProps!
+  const { fragmentName, setFragmentName } = componentProps!
   const [draft, setDraft] = useState<string | null>(null)
   // Set once the input saves or cancels, so the blur its removal can bring
   // doesn't save again
   const settled = useRef(false)
 
-  const { metadata } = nodeData.value as DefinitionFields
-  const header = fragmentHeader(readListing(metadata), editorTheme)
-  const colours = { backgroundColor: header.backgroundColor, color: header.textColor }
+  const { listing } = nodeData.value as DefinitionFields
+  const header = fragmentHeader(readListing(listing))
+  const colours = { backgroundColor: header.colors.background, color: header.colors.text }
 
   const finish = (name: string | null) => {
     if (settled.current) return

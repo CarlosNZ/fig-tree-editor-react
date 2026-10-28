@@ -19,7 +19,7 @@ import { type SubTree } from './subTree'
 //
 // In fragment mode the sub-tree is a fragment body: it is registered, with
 // the definition's declarations, on an instance derived from the host's, and
-// evaluated as a call to it with the definition's samples
+// evaluated as a call to it with the samples in the definition's listing
 // (fragment-editor-design.md, "Evaluation"). The trace is the call's, with
 // the body's entries under `expression`.
 
@@ -134,7 +134,7 @@ const asDraftCall = (
   figTree: FigTree,
   path: Path,
   subTree: SubTree,
-  { parameters = {}, samples = {} }: FragmentDefinition,
+  { parameters = {}, listing: { samples = {} } = {} }: FragmentDefinition,
   fragmentName = strings.FT_DRAFT_NAME
 ): Target => {
   const draft = draftName(figTree)

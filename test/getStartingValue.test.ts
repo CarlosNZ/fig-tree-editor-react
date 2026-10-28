@@ -75,7 +75,7 @@ const hostFigTree = new FigTree({
     tally: {
       expression: { $plus: '$params.values' },
       parameters: { values: { type: 'array' } },
-      metadata: { seeds: { values: [10, 20] } },
+      listing: { seeds: { values: [10, 20] } },
     },
   },
 })

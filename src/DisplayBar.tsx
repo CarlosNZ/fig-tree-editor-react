@@ -38,10 +38,7 @@ import { type EvaluateControl } from './useEvaluation'
 // leaves.
 
 // What the header shows of an operator or fragment
-export interface HeaderDisplay extends Pick<
-  OperatorDisplay,
-  'displayName' | 'docUrl' | 'backgroundColor' | 'textColor'
-> {
+export interface HeaderDisplay extends Pick<OperatorDisplay, 'displayName' | 'docUrl' | 'colors'> {
   suffix?: string // after the display name, where there is room
 }
 
@@ -148,7 +145,7 @@ export const DisplayBar = ({
                 : 'ft-convert-button'
             }
             onClick={conversion.onConvert}
-            style={{ backgroundColor: display.backgroundColor, color: display.textColor }}
+            style={{ backgroundColor: display.colors.background, color: display.colors.text }}
           >
             {conversion.label}
           </button>
@@ -214,7 +211,7 @@ const NameOrButton = ({
         onClick={onClick}
         aria-disabled={disabled || undefined}
         aria-busy={running || undefined}
-        style={{ backgroundColor: display.backgroundColor, color: display.textColor }}
+        style={{ backgroundColor: display.colors.background, color: display.colors.text }}
       >
         <span className="ft-name" style={{ fontSize: nameSize(label) }}>
           {label}

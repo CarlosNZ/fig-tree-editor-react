@@ -13,7 +13,7 @@ The build plan's remaining work (what is left of step 7, the definition editor's
 - **A `get` whose path is the parameter alone** (`{ path: 'x', from: '$params' }`) declared with its own position's type, as `$params.x` is (TO-DO in `src/declareParameters.ts`).
 - **A picker for a declaration's `elementShape` constraint,** whose fields are declarations of their own, nested ("The definition editor").
 - **Revealing a row from the definition editor's messages,** as the expression editor's do ("The definition editor").
-- **Open:** whether `getFragments()` or `getCatalog` reports `samples`; a declared `returns`, checked against the inferred one ("The definition's shape", "Open").
+- **Open:** a declared `returns`, checked against the inferred one ("The definition's shape", "Open").
 
 ## Expression editor
 
@@ -33,6 +33,7 @@ The build plan's remaining work (what is left of step 7, the definition editor's
 - **The operator picker:** a ranked best match, category swatches on group headers, the canonical name as a second label, descriptions cut to one line (design, topic 4). Needs a scoring hook in `Select`.
 - **The fragment picker:** groups from a host-supplied key, and a line listing a fragment's parameters (design, topic 6).
 - **Defaults in the add-parameter picker,** somewhere other than the hover card (design, topic 4; plan, 6.2).
+- **`Catalog.issues`,** what `getCatalog` skips from the host's `operatorListings` and `categoryListings` and from fragment definitions' listings (spec `v3-listings.md`, "Checking the layers"): shown somewhere, perhaps in the messages area, or reported to the host (plan, end of Phase 10).
 - **Host props:** `customNodeDefinitions` from the host, `hiddenOperators` and `hiddenFragments`, an expected result type at the root, `evaluate(path?)` on the handle (design, topic 8).
 - **Translations,** the editor's strings among json-edit-react's `translations` (design, topic 8).
 - **The fill-in step as a pure function,** if a host needs to normalise stored expressions outside the editor (design, topic 8).

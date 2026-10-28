@@ -156,7 +156,7 @@ describe('evaluating a row of a fragment body', () => {
   ): FragmentDefinition => ({
     expression,
     parameters: { n: { type: 'number' }, unit: { type: 'string', default: 'kg' } },
-    samples: { n: 2 },
+    listing: { samples: { n: 2 } },
     ...rest,
   })
   const inFragment = (
@@ -183,7 +183,7 @@ describe('evaluating a row of a fragment body', () => {
   it('reads the samples as a caller writes them', async () => {
     const body = { $plus: ['$params.n', 1] }
     const evaluation = await evaluate(body, [], {
-      fragment: definition(body, { samples: { n: '$data.n' } }),
+      fragment: definition(body, { listing: { samples: { n: '$data.n' } } }),
       data: { n: 5 },
     })
     expect(evaluation.result).toBe(6)
@@ -205,7 +205,7 @@ describe('evaluating a row of a fragment body', () => {
   it('is refused, with no trace, where a required parameter has no sample, read or not', async () => {
     const evaluation = await inFragment({ x: 1 }, ['x'], {
       parameters: { n: {}, m: { required: true }, o: { default: 1 }, p: { required: false } },
-      samples: { m: null },
+      listing: { samples: { m: null } },
     })
     expect(evaluation).toMatchObject({ status: 'failed', failure: { path: ['x'] } })
     expect(evaluation.failure?.message).toBe('No samples for `n`, `m`, which are required')
@@ -214,7 +214,7 @@ describe('evaluating a row of a fragment body', () => {
 
   it('fails at the evaluated row where the call refuses a sample, naming the fragment', async () => {
     const body = { x: '$params.n' }
-    const fragment = definition(body, { samples: { n: 'two' } })
+    const fragment = definition(body, { listing: { samples: { n: 'two' } } })
     const named = await evaluate(body, ['x'], { fragment, fragmentName: 'weigh' })
     expect(named.failure).toMatchObject({ path: ['x'] })
     expect(named.failure?.message).toMatch(/^'weigh\.n': expected number/)

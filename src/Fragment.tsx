@@ -1,11 +1,11 @@
 import { type CustomComponentProps } from 'json-edit-react'
+import { fragmentColors } from 'fig-tree-evaluator/catalog'
 import { brokenIssue, issuesAt } from './attachIssues'
 import { rowAt, type RowKind } from './classify'
 import { type ComponentConfig } from './customNodeDefinitions'
 import { type CardLine } from './HoverCard'
 import { DisplayBar, type HeaderDisplay } from './DisplayBar'
 import { type FragmentDisplay } from './displayData'
-import { type EditorTheme } from './editorTheme'
 import { withoutFilteredRows } from './nodeRows'
 import { NodeToolbar } from './NodeToolbar'
 import { cacheLine } from './parameterCard'
@@ -66,7 +66,7 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
       ) : (
         <DisplayBar
           name={kind.name}
-          display={fragmentHeader(display, editorTheme)}
+          display={fragmentHeader(display)}
           card={[
             display?.description,
             cacheLine(path, kind, {
@@ -89,17 +89,17 @@ export const Fragment = (props: CustomComponentProps<ComponentConfig>) => {
   )
 }
 
-// A fragment's header (topic 3, "Kinds"): its `FragmentMetadata`, where it
-// has one. The button's name already shows the fragment's name, so a fragment
-// with no display name shows "Fragment" alone, and one with no colours takes
-// the editor's fragment colours, as does a call to no registered fragment.
+// A fragment's header (topic 3, "Kinds"): its listing, where it has one. The
+// button's name already shows the fragment's name, so a fragment with no
+// display name shows "Fragment" alone, and one with no colours takes
+// `./catalog`'s `fragmentColors`, as does a call to no registered fragment.
 export const fragmentHeader = (
-  display: Omit<FragmentDisplay, 'seeds'> | undefined,
-  editorTheme: EditorTheme
+  display:
+    | (Pick<FragmentDisplay, 'displayName' | 'docUrl'> & Partial<Pick<FragmentDisplay, 'colors'>>)
+    | undefined
 ): HeaderDisplay => ({
   displayName: display?.displayName ?? strings.FT_FRAGMENT,
   suffix: display?.displayName === undefined ? undefined : strings.FT_FRAGMENT_SUFFIX,
   docUrl: display?.docUrl,
-  backgroundColor: display?.backgroundColor ?? editorTheme.fragmentBackground,
-  textColor: display?.textColor ?? editorTheme.fragmentText,
+  colors: display?.colors ?? fragmentColors,
 })

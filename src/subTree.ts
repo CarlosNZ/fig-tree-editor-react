@@ -175,8 +175,8 @@ const iteratorParts = (node: Path, row: Path, { classification, operators }: Sub
   const operator =
     kind?.kind === 'operator' ? operators.find(({ name }) => name === kind.operator) : undefined
   const over = Object.entries(operator?.parameters ?? {}).find(
-    ([name, { evaluation }]) =>
-      evaluation === 'perElement' && rows.has(name) && isWithin(row, rows.get(name)!)
+    ([name, { evaluationMode }]) =>
+      evaluationMode === 'perElement' && rows.has(name) && isWithin(row, rows.get(name)!)
   )?.[1].over
   const input = over === undefined ? undefined : rows.get(over)
   return input === undefined ? null : { input, as: rows.get('as') }

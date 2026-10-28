@@ -452,7 +452,9 @@ describe('marking how a run went', () => {
   describe('in a fragment body', () => {
     const parameters = { n: { type: 'number' as const } }
     const inFragment = (expression: unknown, path: Path) =>
-      evaluate(expression, path, { fragment: { expression, parameters, samples: { n: 0 } } })
+      evaluate(expression, path, {
+        fragment: { expression, parameters, listing: { samples: { n: 0 } } },
+      })
 
     it('marks the rows by their runs, and nothing for the call around the body', async () => {
       const { marks } = await inFragment(
@@ -486,7 +488,7 @@ describe('marking how a run went', () => {
     it("gives a failed call's message as the editor words it", async () => {
       const expression = { a: { $plus: [1, 1] } }
       const { marks } = await evaluate(expression, ['a'], {
-        fragment: { expression, parameters, samples: { n: 'two' } },
+        fragment: { expression, parameters, listing: { samples: { n: 'two' } } },
         fragmentName: 'weigh',
       })
       const [run] = at(marks, ['a']).runs

@@ -9,10 +9,9 @@ const figTree = new FigTree({
   fragments: {
     today: {
       expression: 'Monday',
-      description: "Today's name",
-      metadata: { displayName: 'Day of the week' },
+      listing: { displayName: 'Day of the week', description: "Today's name" },
     },
-    count: { expression: 3, description: 'How many' },
+    count: { expression: 3, listing: { description: 'How many' } },
     anything: { expression: { operator: 'get', path: 'x' } },
   },
 })

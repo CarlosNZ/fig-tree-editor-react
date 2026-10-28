@@ -673,7 +673,7 @@ describe('evaluating in fragment mode', () => {
   const definition = {
     expression: { x: { $plus: ['$params.n', 1] }, y: { $plus: ['$params.n', '$params.m'] } },
     parameters: { n: { type: 'number' as const }, m: { type: 'number' as const, default: 10 } },
-    samples: { n: 2 },
+    listing: { samples: { n: 2 } },
   }
 
   it('evaluates a row of the body as a call with the samples, and marks how it ran', async () => {

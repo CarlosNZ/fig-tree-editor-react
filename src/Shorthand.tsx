@@ -74,7 +74,7 @@ export const Shorthand = (props: CustomComponentProps<ComponentConfig>) => {
     if (kind.kind === 'fragment') {
       const fragment = displayData.fragments[kind.name!]
       return {
-        display: fragmentHeader(fragment, editorTheme),
+        display: fragmentHeader(fragment),
         card: [fragment?.description, cache()].filter(
           (line): line is CardLine => line !== undefined
         ),

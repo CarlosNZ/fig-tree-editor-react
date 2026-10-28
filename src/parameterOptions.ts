@@ -2,7 +2,7 @@ import { type FragmentInfo, type OperatorInfo } from 'fig-tree-evaluator'
 import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { takesNoCache } from './caching'
 import { type Classification, type RowKind } from './classify'
-import { type DisplayData, type OperatorDisplay } from './displayData'
+import { type DisplayData, type FragmentDisplay, type OperatorDisplay } from './displayData'
 import { parameterOrder } from './fillAndTidy'
 import { getStartingValue } from './getStartingValue'
 import { type Path } from './paths'
@@ -95,7 +95,7 @@ export const addableKeys = (
       const declared = kind.malformed === undefined && fragment
       return {
         parameters: declared
-          ? argumentsOf(node, kind, fragment).filter(
+          ? argumentsOf(node, kind, fragment, context.displayData?.fragments[fragment.name]).filter(
               (entry) => kind.form === 'full' || entry !== DYNAMIC_ARGUMENTS
             )
           : [],
@@ -122,16 +122,17 @@ export const addableKeys = (
 const argumentsOf = (
   node: Record<string, unknown>,
   kind: FragmentKind,
-  fragment: FragmentInfo
+  fragment: FragmentInfo,
+  display: FragmentDisplay | undefined
 ): AddableKey[] => {
   if (kind.arguments === 'dynamic' || kind.arguments === 'invalid') return [STATIC_ARGUMENTS]
   const present = isObject(node.parameters) ? node.parameters : {}
   const entries = Object.entries(fragment.parameters)
     .filter(([key]) => !(key in present))
-    .map(([key, { required, description }]): AddableKey => ({
+    .map(([key, { required }]): AddableKey => ({
       key,
       required,
-      description,
+      description: display?.parameterDescriptions[key],
       argument: true,
     }))
   return [

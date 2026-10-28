@@ -294,7 +294,7 @@ const skippedReason = (row: Row | undefined): NotRunReason => {
   const slot = row?.slot
   if (slot?.role === 'modifier' && slot.parameter === 'fallback') return { kind: 'fallbackUnused' }
   if (slot?.role === 'var') return { kind: 'unread' }
-  const evaluation = evaluationOf(slot?.declaration)
+  const evaluation = evaluationModeOf(slot?.declaration)
   return evaluation !== undefined && LAZY.includes(evaluation)
     ? { kind: 'whenNeeded' }
     : { kind: 'notEvaluated' }
@@ -302,12 +302,14 @@ const skippedReason = (row: Row | undefined): NotRunReason => {
 
 const cancelledReason = (row: Row | undefined, { failure }: Evaluation): NotRunReason => {
   if (failure?.error.code === 'timeout') return { kind: 'timeout' }
-  return evaluationOf(row?.slot?.declaration) === 'race' ? { kind: 'race' } : { kind: 'stopped' }
+  return evaluationModeOf(row?.slot?.declaration) === 'race'
+    ? { kind: 'race' }
+    : { kind: 'stopped' }
 }
 
-const evaluationOf = (declaration: object | undefined) =>
-  declaration !== undefined && 'evaluation' in declaration
-    ? (declaration.evaluation as string | undefined)
+const evaluationModeOf = (declaration: object | undefined) =>
+  declaration !== undefined && 'evaluationMode' in declaration
+    ? (declaration.evaluationMode as string | undefined)
     : undefined
 
 // A row with no runs: inside the nearest row above it that ran or was passed

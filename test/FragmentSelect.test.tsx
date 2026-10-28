@@ -10,8 +10,7 @@ const figTree = new FigTree({
   fragments: {
     greet: {
       expression: 'Hello',
-      description: 'Says hello',
-      metadata: { displayName: 'Greeting' },
+      listing: { displayName: 'Greeting', description: 'Says hello' },
     },
     shout: { expression: 'HEY' },
   },

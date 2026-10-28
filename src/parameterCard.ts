@@ -7,7 +7,7 @@ import {
 import { cacheStatus, type CacheContext } from './caching'
 import { type Row, type RowKind } from './classify'
 import { describeType } from './describeType'
-import { type NullOutcomes, type OperatorDisplay } from './displayData'
+import { type FragmentDisplay, type NullOutcomes, type OperatorDisplay } from './displayData'
 import { type Path } from './paths'
 import { strings } from './strings'
 
@@ -17,8 +17,8 @@ import { strings } from './strings'
 // takes, its description, then a line for each of these that applies: its
 // elements' constraints, its default, when it's evaluated, what null does
 // there, and what it stands in for. Modifiers and the vars block get their
-// own description. An operator's parameter takes its description from the
-// operator's display data, and a fragment's argument from its declaration.
+// own description. A parameter takes its description from its owner's
+// display data, an operator's or a fragment's.
 //
 // Names in a line are in backticks, which the card shows as code.
 
@@ -41,7 +41,7 @@ export const hasCard = (row: Row | undefined) => {
 export const parameterCard = (
   row: Row | undefined,
   operator: OperatorInfo | undefined, // the owner's, for what replaces a null
-  display?: OperatorDisplay // the owner's, for its parameters' descriptions
+  display?: OperatorDisplay | FragmentDisplay // the owner's, for its parameters' descriptions
 ): string[] | null => {
   if (row?.kind?.kind === 'vars') return [title('vars'), strings.FT_MODIFIER_VARS]
   const slot = row?.slot
@@ -58,9 +58,7 @@ export const parameterCard = (
   const as = iterator?.kind === 'iterator' ? iterator.as : undefined
   return [
     title(name, declaration.required, slot.admits),
-    operator === undefined
-      ? (declaration as FragmentParameter).description
-      : display?.parameterDescriptions[name],
+    display?.parameterDescriptions[name],
     elementsLine(declaration),
     defaultLine(declaration),
     evaluatedLine(declaration, as),
@@ -68,7 +66,8 @@ export const parameterCard = (
       name,
       declaration,
       operator,
-      display?.nullOutcomes[name] ?? argumentOutcomes(declaration)
+      (display && 'nullOutcomes' in display ? display.nullOutcomes[name] : undefined) ??
+        argumentOutcomes(declaration)
     ),
     replacementLine(declaration),
   ].filter(isString)
@@ -113,8 +112,8 @@ const defaultLine = (declaration: Declaration) => {
 }
 
 const evaluatedLine = (declaration: Declaration, as: string | undefined) => {
-  if (!('evaluation' in declaration)) return undefined
-  switch (declaration.evaluation) {
+  if (!('evaluationMode' in declaration)) return undefined
+  switch (declaration.evaluationMode) {
     case 'eager':
       return undefined
     case 'perElement': {
@@ -129,7 +128,7 @@ const evaluatedLine = (declaration: Declaration, as: string | undefined) => {
       )
     }
     default:
-      return strings.FT_CARD_EVALUATED(strings.FT_CARD_EVALUATION[declaration.evaluation])
+      return strings.FT_CARD_EVALUATED(strings.FT_CARD_EVALUATION[declaration.evaluationMode])
   }
 }
 

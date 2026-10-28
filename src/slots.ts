@@ -63,7 +63,7 @@ export const parameterSlot = (
   slot(path, ownerPath, 'parameter', declaration?.type ?? 'any', {
     parameter,
     declaration,
-    literalOnly: declaration !== undefined && isStructural(declaration),
+    literalOnly: declaration !== undefined && isLiteralOnly(declaration),
   })
 
 export const elementSlot = (
@@ -135,5 +135,5 @@ export const elementAdmits = (declaration: ParameterInfo | FragmentParameter): E
   return nullable ? [...types, 'null'] : types
 }
 
-const isStructural = (declaration: ParameterInfo | FragmentParameter) =>
-  'evaluation' in declaration && declaration.evaluation === 'structural'
+const isLiteralOnly = (declaration: ParameterInfo | FragmentParameter) =>
+  'evaluationMode' in declaration && declaration.evaluationMode === 'literal'

@@ -32,6 +32,8 @@ export const strings = {
   FT_NOT_A_DEFINITION_FIELD: (key: string) => `'${key}' is not a field of a fragment definition`,
   FT_NOT_A_DECLARATION_FIELD: (key: string) => `'${key}' is not a field of a parameter declaration`,
   FT_NOT_A_CONSTRAINT: (key: string) => `'${key}' is not a constraint`,
+  FT_NOT_A_LISTING_FIELD: (key: string) => `'${key}' is not a field of a listing`,
+  FT_NOT_A_COLOR: (key: string) => `'${key}' is not a colour: use 'background' or 'text'`,
   FT_NOT_A_DECLARED_PARAMETER: (key: string) => `'${key}' is not a declared parameter`,
   FT_UNUSED_PARAMETER: (name: string) => `The body never reads '${name}'`,
   // The type selector's entries for a declaration's `type`
@@ -236,7 +238,7 @@ export const strings = {
     race: 'all at once; stops as soon as the answer is known',
     lazyElements: 'each only when needed, in order',
     lazyEntries: 'only the matching entry',
-    structural: "a name, not an expression, so it can't be computed",
+    literal: "a name, not an expression, so it can't be computed",
   },
   FT_CARD_IF_NULL: (what: string) => `If null: ${what}`,
   FT_CARD_NULL_FALSE: 'counts as false',

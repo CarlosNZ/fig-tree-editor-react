@@ -4,12 +4,12 @@ import { typeSeeds } from 'fig-tree-evaluator/catalog'
 import { describe, expect, it, vi } from 'vitest'
 import { FragmentDefinitionEditor } from '../src'
 import { figTree } from './fixtures'
-import { keyLabel } from './queries'
+import { keyLabel, keyLabels } from './queries'
 
 const definition: FragmentDefinition = {
   expression: { operator: 'plus', values: ['Hello, ', '$params.name'] },
   parameters: { name: { type: 'string' } },
-  description: 'Greets someone by name',
+  listing: { description: 'Greets someone by name' },
 }
 
 describe('FragmentDefinitionEditor', () => {
@@ -34,20 +34,49 @@ describe('FragmentDefinitionEditor', () => {
     fireEvent.click(screen.getAllByRole('button', { name: 'Add' })[0])
     const select = screen.getByRole('combobox')
     const options = [...select.querySelectorAll('option')].map(({ value }) => value)
-    expect(options.filter((value) => value !== '')).toEqual(['samples', 'metadata'])
+    expect(options.filter((value) => value !== '')).toEqual(['metadata'])
+    fireEvent.change(select, { target: { value: 'metadata' } })
+    expect(setDefinition).toHaveBeenCalledExactlyOnceWith({ ...definition, metadata: {} })
+  })
+
+  it("offers the listing the fields it doesn't have, starting samples for the required parameters", () => {
+    const setDefinition = vi.fn()
+    render(
+      <FragmentDefinitionEditor
+        figTree={figTree}
+        definition={definition}
+        setDefinition={setDefinition}
+      />
+    )
+    fireEvent.click(screen.getAllByRole('button', { name: 'Add' })[1])
+    const select = screen.getByRole('combobox')
+    const options = [...select.querySelectorAll('option')].map(({ value }) => value)
+    expect(options.filter((value) => value !== '')).toEqual([
+      'displayName',
+      'parameterDescriptions',
+      'docUrl',
+      'colors',
+      'seeds',
+      'samples',
+      'metadata',
+    ])
     fireEvent.change(select, { target: { value: 'samples' } })
     expect(setDefinition).toHaveBeenCalledExactlyOnceWith({
       ...definition,
-      samples: { name: typeSeeds.string },
+      listing: { ...definition.listing, samples: { name: typeSeeds.string } },
     })
   })
 
-  it("renames a parameter's sample and seed with it", () => {
+  it("renames a parameter's sample, seed and description with it", () => {
     const setDefinition = vi.fn()
     const withEntries = {
       ...definition,
-      samples: { name: 'Ada' },
-      metadata: { seeds: { name: 'World' } },
+      listing: {
+        ...definition.listing,
+        parameterDescriptions: { name: 'Who to greet' },
+        seeds: { name: 'World' },
+        samples: { name: 'Ada' },
+      },
     }
     render(
       <FragmentDefinitionEditor
@@ -56,7 +85,8 @@ describe('FragmentDefinitionEditor', () => {
         setDefinition={setDefinition}
       />
     )
-    fireEvent.doubleClick(keyLabel('name'))
+    // The declaration's, after the listing's entries for the parameter
+    fireEvent.doubleClick(keyLabels('name').at(-1)!)
     const input = screen.getByDisplayValue('name')
     fireEvent.change(input, { target: { value: 'who' } })
     fireEvent.keyDown(input, { key: 'Enter' })
@@ -65,8 +95,12 @@ describe('FragmentDefinitionEditor', () => {
     expect(setDefinition).toHaveBeenLastCalledWith({
       ...withEntries,
       parameters: { who: { type: 'string' } },
-      samples: { who: 'Ada' },
-      metadata: { seeds: { who: 'World' } },
+      listing: {
+        ...definition.listing,
+        parameterDescriptions: { who: 'Who to greet' },
+        seeds: { who: 'World' },
+        samples: { who: 'Ada' },
+      },
     })
   })
 
@@ -74,7 +108,7 @@ describe('FragmentDefinitionEditor', () => {
     const pasted: FragmentDefinition = {
       expression: { $plus: ['$params.a', '$params.b'] },
       parameters: { a: { type: 'number' }, b: { type: 'number', default: 1 } },
-      samples: { a: 2 },
+      listing: { samples: { a: 2 } },
     }
     const paste = (value: unknown) => {
       fireEvent.click(screen.getAllByRole('button', { name: 'Edit' })[0])
@@ -159,8 +193,7 @@ describe('FragmentDefinitionEditor', () => {
       const unread: FragmentDefinition = {
         expression: '$params.name',
         parameters: { name: { type: 'string' }, formal: { type: 'boolean' } },
-        samples: { name: 'Ada', formal: true },
-        metadata: { seeds: { formal: false } },
+        listing: { seeds: { formal: false }, samples: { name: 'Ada', formal: true } },
       }
       render(
         <FragmentDefinitionEditor
@@ -176,8 +209,7 @@ describe('FragmentDefinitionEditor', () => {
       expect(setDefinition).toHaveBeenCalledExactlyOnceWith({
         expression: '$params.name',
         parameters: { name: { type: 'string' } },
-        samples: { name: 'Ada' },
-        metadata: { seeds: {} },
+        listing: { seeds: {}, samples: { name: 'Ada' } },
       })
     })
 
@@ -201,7 +233,7 @@ describe('FragmentDefinitionEditor', () => {
         nickname: { type: ['string', 'null'] },
         mood: { type: { literal: ['happy', 'sad'] } },
       },
-      metadata: { backgroundColor: '#e8e0f8' },
+      listing: { colors: { background: '#e8e0f8', text: '#4b2a8a' } },
     }
 
     const chipTexts = () =>
@@ -280,15 +312,15 @@ describe('FragmentDefinitionEditor', () => {
   })
 
   describe("the root's name button", () => {
-    const withMetadata: FragmentDefinition = {
+    const withListing: FragmentDefinition = {
       ...definition,
-      metadata: { displayName: 'Greeting', backgroundColor: 'rgb(1, 2, 3)', textColor: 'white' },
+      listing: { displayName: 'Greeting', colors: { background: 'rgb(1, 2, 3)', text: 'white' } },
     }
     const renderNamed = (fragmentName: string | undefined, setFragmentName = vi.fn()) => {
       render(
         <FragmentDefinitionEditor
           figTree={figTree}
-          definition={withMetadata}
+          definition={withListing}
           setDefinition={vi.fn()}
           fragmentName={fragmentName}
           setFragmentName={setFragmentName}
@@ -360,7 +392,7 @@ describe('FragmentDefinitionEditor', () => {
       render(
         <FragmentDefinitionEditor
           figTree={figTree}
-          definition={withMetadata}
+          definition={withListing}
           setDefinition={vi.fn()}
           fragmentName="greeting"
         />

@@ -24,9 +24,9 @@ export const FragmentSelect = ({ figTree, selected, onSelect }: FragmentSelectPr
 
   // Read on every render, since `updateOptions()` changes the registry
   // without changing the instance
-  const options = figTree.getFragments().map(({ name, description, metadata }) => ({
-    label: readListing(metadata).displayName ?? name,
-    description,
+  const options = figTree.getFragments().map(({ name, listing }) => ({
+    label: readListing(listing).displayName ?? name,
+    description: readListing(listing).description,
     keywords: name,
     value: name,
   }))

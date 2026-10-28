@@ -36,10 +36,8 @@ describe('useFragmentEditor', () => {
     act(() => result.current.startFromExpression({ operator: 'plus', values: [1, 2] }))
     expect(result.current.draft.definition).toEqual({
       expression: { operator: 'plus', values: [1, 2] },
+      listing: { description: strings.FT_DESCRIPTION_SEED, samples: {} },
       parameters: {},
-      description: strings.FT_DESCRIPTION_SEED,
-      samples: {},
-      metadata: {},
     })
     expect(result.current.selectProps.selected).toBeNull()
     expect(result.current.canSave).toBe(false)
@@ -64,7 +62,9 @@ describe('useFragmentEditor', () => {
     expect(result.current.editorProps.fragmentName).toBe('greet')
     expect(result.current.canSave).toBe(false)
 
-    act(() => result.current.definitionProps.setDefinition({ ...greet, description: 'Hi' }))
+    act(() =>
+      result.current.definitionProps.setDefinition({ ...greet, listing: { description: 'Hi' } })
+    )
     expect(result.current.canSave).toBe(true)
     act(() => result.current.undo())
     expect(result.current.canSave).toBe(false)
@@ -87,7 +87,9 @@ describe('useFragmentEditor', () => {
     const confirmDiscard = vi.fn(() => false)
     const { result } = setup({ confirmDiscard })
     act(() => result.current.selectProps.onSelect('greet'))
-    act(() => result.current.definitionProps.setDefinition({ ...greet, description: 'Hi' }))
+    act(() =>
+      result.current.definitionProps.setDefinition({ ...greet, listing: { description: 'Hi' } })
+    )
 
     await act(() => Promise.resolve(result.current.selectProps.onSelect('shout')))
     expect(confirmDiscard).toHaveBeenCalledOnce()
@@ -115,7 +117,9 @@ describe('useFragmentEditor', () => {
     const { result } = setup()
     act(() => result.current.selectProps.onSelect('greet'))
     expect(result.current.hasUnsavedEdits).toBe(false)
-    act(() => result.current.definitionProps.setDefinition({ ...greet, description: 'Hi' }))
+    act(() =>
+      result.current.definitionProps.setDefinition({ ...greet, listing: { description: 'Hi' } })
+    )
     expect(result.current.hasUnsavedEdits).toBe(true)
 
     act(() => result.current.discard())
@@ -145,11 +149,13 @@ describe('useFragmentEditor', () => {
   it("renames a registered fragment at once, leaving the draft's edits unsaved", () => {
     const { result, figTree, registered } = setup()
     act(() => result.current.selectProps.onSelect('greet'))
-    act(() => result.current.definitionProps.setDefinition({ ...greet, description: 'Hi' }))
+    act(() =>
+      result.current.definitionProps.setDefinition({ ...greet, listing: { description: 'Hi' } })
+    )
     act(() => result.current.definitionProps.setFragmentName('hello'))
 
     expect(registered()).toEqual(['shout', 'hello'])
-    expect(figTree.getFragments().find(({ name }) => name === 'hello')?.description).toBeUndefined()
+    expect(figTree.getFragments().find(({ name }) => name === 'hello')?.listing).toBeUndefined()
     expect(Object.keys(result.current.fragments)).toEqual(['shout', 'hello'])
     expect(result.current.selectProps.selected).toBe('hello')
     expect(result.current.canSave).toBe(true)

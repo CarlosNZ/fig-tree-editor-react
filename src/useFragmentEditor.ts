@@ -226,14 +226,13 @@ const emptyDraft = (): FragmentDraft => {
   return { definition: empty, registered: false, baseline: empty }
 }
 
-// A new fragment's definition, with every field there to fill in: the
-// description seeded, and the rest empty
+// A new fragment's definition, with the fields an author fills in there: the
+// listing's description seeded and its samples empty, and no parameters. The
+// rest of the listing, and the host's `metadata`, are added from the tree.
 const newDefinition = (expression: unknown): FragmentDefinition => ({
   expression,
-  description: strings.FT_DESCRIPTION_SEED,
+  listing: { description: strings.FT_DESCRIPTION_SEED, samples: {} },
   parameters: {},
-  samples: {},
-  metadata: {},
 })
 
 // An update to the instance's fragments that leaves them `next`: each of

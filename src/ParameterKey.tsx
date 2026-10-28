@@ -46,7 +46,11 @@ export const ParameterKey = ({
   const card = parameterCard(
     row,
     operator,
-    operator === undefined ? undefined : displayData.operators[operator.name]
+    operator !== undefined
+      ? displayData.operators[operator.name]
+      : owner?.kind === 'fragment'
+        ? displayData.fragments[owner.name ?? '']
+        : undefined
   )
 
   // The card sits inside the key span, which stays the row's flex item with

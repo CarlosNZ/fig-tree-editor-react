@@ -1,14 +1,16 @@
 import {
   OPERATOR_CATEGORIES,
+  type CatalogFragment,
   type CatalogOperator,
-  type CatalogParameter,
+  type CatalogOperatorParameter,
   type CategoryListing,
+  type CategoryOverrides,
+  type ColorPair,
   type FragmentInfo,
-  type FragmentMetadata,
+  type Listing,
+  type ListingMap,
   type OperatorCategory,
   type OperatorInfo,
-  type OperatorListing,
-  type OperatorListingMap,
 } from 'fig-tree-evaluator'
 import {
   categoryListings as coreCategoryListings,
@@ -21,50 +23,42 @@ import { strings } from './strings'
 // colours, the seeds the starting-value rule reads, and what a null does at
 // each parameter.
 //
-// An operator's comes from `./catalog`'s `getCatalog`, which merges its
-// listings field by field, `seeds` and `parameterDescriptions` per parameter,
-// lowest first: the package's own, then the editor's (`literal`'s
-// description, and a host operator's colours), then an operator's own
-// `metadata` read as an `OperatorListing`, then the host's `operatorListings`
-// prop. Categories take the host's `categoryListings` prop over the
-// package's, field by field. An operator's display name is only one a
-// listing gives it, so a host operator with none shows only its name, on the
-// header's button, and the picker falls back to the name itself.
+// Operators, `literal` and fragments come from `./catalog`'s `getCatalog`,
+// which merges listings field by field, `seeds` and `parameterDescriptions`
+// per parameter, lowest first: an entry's own (the package's for a core
+// operator and `literal`, a fragment definition's `listing`), then the
+// editor's (`literal`'s description, and a host operator's colours), then
+// the host's `operatorListings` prop, which reaches fragments too.
+// Categories take the host's `categoryListings` prop over the package's,
+// field by field. A display name is only one a listing gives, so an entry
+// with none shows only its name, on the header's button: the pickers fall
+// back to the name itself, and a fragment's header says "Fragment".
 
-export type OperatorListingsProp = OperatorListingMap
-export type CategoryListingsProp = { [category in OperatorCategory]?: Partial<CategoryListing> }
+export type OperatorListingsProp = ListingMap
+export type CategoryListingsProp = CategoryOverrides
 
 export interface OperatorDisplay {
   displayName?: string
   description?: string
   parameterDescriptions: Record<string, string>
   docUrl?: string
-  backgroundColor: string
-  textColor: string
+  colors: ColorPair
   seeds: Record<string, unknown> // every declared parameter's starting value
   nullOutcomes: Record<string, NullOutcomes> // every declared parameter's
 }
 
 // What a null does at a parameter, and at one of its elements, as the
 // engine resolves it
-export type NullOutcomes = Pick<CatalogParameter, 'nullOutcome' | 'elementNullOutcome'>
+export type NullOutcomes = Pick<CatalogOperatorParameter, 'nullOutcome' | 'elementNullOutcome'>
 
 export interface CategoryDisplay extends CategoryListing {
   category: OperatorCategory
 }
 
-// A fragment's display is its definition's `metadata`, a `FragmentMetadata`
-// by a convention fig-tree never checks, so every field may be missing. Its
-// fallbacks (the "Fragment" label, `editorTheme`'s fragment colours) apply
-// where it is drawn, which is why the editor reads it itself rather than
-// through `getCatalog`, whose display name falls back to the name.
-export interface FragmentDisplay extends Omit<FragmentMetadata, 'seeds'> {
-  description?: string // the definition's own
-  seeds: Record<string, unknown>
-}
+export type FragmentDisplay = Omit<OperatorDisplay, 'nullOutcomes'>
 
 export interface DisplayData {
-  operators: Record<string, OperatorDisplay> // by canonical name
+  operators: Record<string, OperatorDisplay> // by canonical name, `literal` included
   categories: CategoryDisplay[] // in `order`
   fragments: Record<string, FragmentDisplay>
 }
@@ -75,16 +69,6 @@ interface Registry {
   operatorListings?: OperatorListingsProp
   categoryListings?: CategoryListingsProp
 }
-
-// fig-tree evaluates `literal` without listing it among `getOperators()`, so
-// the editor adds it to what `getCatalog` reads, with Data & objects, since
-// it produces data verbatim. Only its name, category and parameter types are
-// read there.
-const LITERAL = {
-  name: 'literal',
-  category: 'data',
-  parameters: { value: { type: 'any' } },
-} as unknown as OperatorInfo
 
 export const buildDisplayData = ({
   operators,
@@ -98,66 +82,76 @@ export const buildDisplayData = ({
     ...defined(categoryListings[category]),
   })).sort((a, b) => a.order - b.order)
   const categoryColour = (category: OperatorCategory) =>
-    categories.find((entry) => entry.category === category)!.backgroundColor
-
-  const shown = operators.some(({ name }) => name === LITERAL.name)
-    ? operators
-    : [...operators, LITERAL]
+    categories.find((entry) => entry.category === category)!.colors.background
 
   // `./catalog` gives `literal` no description. An operator it has no
   // listing for takes shades of its category's colour, as the host's
   // categories have it, under any colours of its own.
-  const editorListings: OperatorListingMap = {
+  const editorListings: ListingMap = {
     literal: { description: strings.FT_LITERAL_DESCRIPTION },
   }
-  for (const { name, category } of shown)
-    if (!Object.prototype.hasOwnProperty.call(coreOperatorListings, name))
+  for (const { name, category } of operators)
+    if (own(coreOperatorListings, name) === undefined)
       editorListings[name] = {
-        backgroundColor: lightShade(categoryColour(category)),
-        textColor: darkShade(categoryColour(category)),
+        colors: {
+          background: lightShade(categoryColour(category)),
+          text: darkShade(categoryColour(category)),
+        },
       }
-  const metadataListings: OperatorListingMap = Object.fromEntries(
-    shown.flatMap(({ name, metadata }) =>
-      metadata === undefined ? [] : [[name, readOperatorListing(metadata)]]
-    )
-  )
 
   const catalog = getCatalog(
-    { getOperators: () => shown, getFragments: () => [] },
-    editorListings,
-    metadataListings,
-    operatorListings
+    { getOperators: () => operators, getFragments: () => fragments },
+    { listings: [editorListings, operatorListings] }
   )
 
   // `getCatalog` falls back to the name where no listing has a display name
-  const listingLayers = [coreOperatorListings, metadataListings, operatorListings]
-  const hasDisplayName = (name: string) =>
-    listingLayers.some(
-      (layer) =>
-        Object.prototype.hasOwnProperty.call(layer, name) && layer[name].displayName !== undefined
-    )
+  const hasDisplayName = (name: string, base: Listing | undefined) =>
+    [base, own(operatorListings, name)].some((listing) => typeof listing?.displayName === 'string')
+  const fragmentListings = new Map(fragments.map(({ name, listing }) => [name, listing]))
 
+  const { literal } = catalog
   return {
-    operators: Object.fromEntries(
-      catalog.operators.map((operator) => [
-        operator.name,
-        operatorDisplay(operator, hasDisplayName(operator.name)),
-      ])
-    ),
+    operators: {
+      ...Object.fromEntries(
+        catalog.operators.map((operator) => [
+          operator.name,
+          {
+            ...entryDisplay(
+              operator,
+              hasDisplayName(operator.name, own(coreOperatorListings, operator.name))
+            ),
+            nullOutcomes: nullOutcomesOf(operator),
+          },
+        ])
+      ),
+      // `literal` is grammar, not an operator, so it has a catalog entry of
+      // its own, and its content is plain data
+      literal: {
+        ...entryDisplay(literal, true),
+        nullOutcomes: { value: { nullOutcome: 'value' } },
+      },
+    },
     categories,
     fragments: Object.fromEntries(
-      fragments.map(({ name, description, metadata }) => {
-        const { seeds = {}, ...listing } = readListing(metadata)
-        return [name, { ...listing, seeds, ...(description !== undefined && { description }) }]
-      })
+      catalog.fragments.map((fragment) => [
+        fragment.name,
+        entryDisplay(fragment, hasDisplayName(fragment.name, fragmentListings.get(fragment.name))),
+      ])
     ),
   }
 }
 
-const operatorDisplay = (
-  { displayName, description, docUrl, backgroundColor, textColor, parameters }: CatalogOperator,
+type CatalogEntry = Pick<
+  CatalogOperator | CatalogFragment,
+  'displayName' | 'description' | 'docUrl' | 'colors'
+> & {
+  parameters: Record<string, { description?: string; seed: unknown }>
+}
+
+const entryDisplay = (
+  { displayName, description, docUrl, colors, parameters }: CatalogEntry,
   hasDisplayName: boolean
-): OperatorDisplay => {
+): FragmentDisplay => {
   const entries = Object.entries(parameters)
   return {
     ...(hasDisplayName && { displayName }),
@@ -168,17 +162,18 @@ const operatorDisplay = (
       )
     ),
     docUrl,
-    backgroundColor,
-    textColor,
+    colors,
     seeds: Object.fromEntries(entries.map(([key, { seed }]) => [key, seed])),
-    nullOutcomes: Object.fromEntries(
-      entries.map(([key, { nullOutcome, elementNullOutcome }]) => [
-        key,
-        { nullOutcome, ...(elementNullOutcome !== undefined && { elementNullOutcome }) },
-      ])
-    ),
   }
 }
+
+const nullOutcomesOf = ({ parameters }: CatalogOperator) =>
+  Object.fromEntries(
+    Object.entries(parameters).map(([key, { nullOutcome, elementNullOutcome }]) => [
+      key,
+      { nullOutcome, ...(elementNullOutcome !== undefined && { elementNullOutcome }) },
+    ])
+  )
 
 // A host operator with no colours of its own takes a light shade of its
 // category's colour, so it sits with its category's siblings. Derived in CSS,
@@ -186,36 +181,25 @@ const operatorDisplay = (
 export const lightShade = (colour: string) => `color-mix(in srgb, ${colour} 18%, white)`
 export const darkShade = (colour: string) => `color-mix(in srgb, ${colour}, black 65%)`
 
-const LISTING_FIELDS = ['displayName', 'docUrl', 'backgroundColor', 'textColor'] as const
-
-// `metadata` is the definition's own record, so only fields of the right type
-// are read from it
-export const readListing = (metadata: Record<string, unknown> | undefined) => {
-  const listing: FragmentMetadata = {}
-  if (!metadata) return listing
-  for (const field of LISTING_FIELDS) {
-    const value = metadata[field]
-    if (typeof value === 'string') listing[field] = value
+// A fragment's listing as its definition gives it, where `getCatalog` hasn't
+// read it: registration never looks inside a listing, so only fields of the
+// right type are read, and the colours only as a pair
+export const readListing = (listing: unknown) => {
+  const read: Pick<Listing, 'displayName' | 'description' | 'docUrl' | 'colors'> = {}
+  if (!isRecord(listing)) return read
+  for (const field of ['displayName', 'description', 'docUrl'] as const) {
+    const value = listing[field]
+    if (typeof value === 'string') read[field] = value
   }
-  const { seeds } = metadata
-  if (isRecord(seeds)) listing.seeds = seeds
-  return listing
+  const { colors } = listing
+  if (isRecord(colors) && typeof colors.background === 'string' && typeof colors.text === 'string')
+    read.colors = { background: colors.background, text: colors.text }
+  return read
 }
 
-// An operator's listing also carries its text, which a fragment's takes from
-// its definition
-const readOperatorListing = (metadata: Record<string, unknown>) => {
-  const listing: OperatorListing = readListing(metadata)
-  const { description, parameterDescriptions } = metadata
-  if (typeof description === 'string') listing.description = description
-  if (isRecord(parameterDescriptions))
-    listing.parameterDescriptions = Object.fromEntries(
-      Object.entries(parameterDescriptions).filter(
-        (entry): entry is [string, string] => typeof entry[1] === 'string'
-      )
-    )
-  return listing
-}
+// The entry a map holds itself, not one it inherits
+const own = (map: ListingMap, name: string): Listing | undefined =>
+  Object.prototype.hasOwnProperty.call(map, name) ? map[name] : undefined
 
 // Without the fields a host set to `undefined`, which would otherwise erase
 // the layers beneath

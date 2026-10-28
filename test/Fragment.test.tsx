@@ -7,19 +7,18 @@ import { FigTreeEditor } from '../src'
 import { figTree as withRequests, type EditorProps } from './fixtures'
 import { keyLabel } from './queries'
 
-// A registry with one fragment carrying `FragmentHints`, and two without, one
-// of them taking no arguments
+// A registry with one fragment carrying a listing, and two without, one of
+// them taking no arguments
 const figTree = new FigTree({
   fragments: {
     getCapital: {
       expression: { $plus: ['Capital of ', '$params.country'] },
       parameters: { country: { type: 'string' }, fields: { type: 'string', required: false } },
-      description: "Gets a country's capital city",
-      metadata: {
+      listing: {
         displayName: 'Capital city',
+        description: "Gets a country's capital city",
         docUrl: 'https://example.com/capital',
-        backgroundColor: 'black',
-        textColor: 'white',
+        colors: { background: 'black', text: 'white' },
       },
     },
     greet: {
@@ -91,11 +90,11 @@ describe('the fragment call', () => {
     )
   })
 
-  it('shows "Fragment" alone, in the editor\'s colours, where it has no hints', () => {
+  it('shows "Fragment" alone, in `fragmentColors`, where it has no listing', () => {
     const { container } = editor({ fragment: 'greet', parameters: { name: 'Ada' } })
     const bar = within(displayBar(container))
     expect(bar.getByRole('button', { name: 'greet' })).toHaveStyle({
-      backgroundColor: 'rgb(71, 119, 153)',
+      backgroundColor: 'rgb(56, 96, 126)',
       color: 'rgb(235, 223, 90)',
     })
     expect(container.querySelector('.ft-display-name-text')).toHaveTextContent(/^Fragment$/)
@@ -103,10 +102,10 @@ describe('the fragment call', () => {
     expect(bar.queryByRole('tooltip', { hidden: true })).not.toBeInTheDocument()
   })
 
-  it("takes the host's fragment colours", () => {
+  it("takes the host's listing over the fragment's own", () => {
     const { container } = editor(
       { fragment: 'greet' },
-      { editorTheme: { fragmentBackground: 'purple', fragmentText: 'white' } }
+      { operatorListings: { greet: { colors: { background: 'purple', text: 'white' } } } }
     )
     expect(within(displayBar(container)).getByRole('button', { name: 'greet' })).toHaveStyle({
       backgroundColor: 'rgb(128, 0, 128)',

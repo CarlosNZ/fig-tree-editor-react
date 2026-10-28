@@ -304,11 +304,11 @@ export const classify = (expression: unknown, registry: Registry): Classificatio
     const declaration = operator?.parameters[name]
     const slot = parameterSlot(path, nodePath, name, declaration)
     const context =
-      declaration?.evaluation === 'perElement'
+      declaration?.evaluationMode === 'perElement'
         ? { ...inner, scope: [...inner.scope, { kind: 'iterator' as const, path: nodePath, as }] }
         : inner
     // A `lazyEntries` map's values are each a slot, and its keys are data
-    if (declaration?.evaluation === 'lazyEntries' && isObject(value) && !isNode(value)) {
+    if (declaration?.evaluationMode === 'lazyEntries' && isObject(value) && !isNode(value)) {
       Object.assign(row(path), { slot, scope: context.scope })
       plainObject(value, path, context, (_, entryPath) =>
         entrySlot(entryPath, nodePath, name, declaration)
@@ -552,7 +552,7 @@ export const bindings = (scope: readonly ScopeEntry[]) =>
 // `_`, as fig-tree's compiler requires of the token after a `$`. An illegal
 // one is `validate()`'s to report (`invalid-as`), and binds nothing.
 const asName = (operator: OperatorInfo | undefined, node: Record<string, unknown>) => {
-  if (operator?.parameters.as?.evaluation !== 'structural') return undefined
+  if (operator?.parameters.as?.evaluationMode !== 'literal') return undefined
   const { as } = node
   return typeof as === 'string' && recognizeReference(as).kind === 'plain' && /^[\p{L}_]/u.test(as)
     ? as

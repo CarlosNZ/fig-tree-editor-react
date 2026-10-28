@@ -1,5 +1,8 @@
 import { FigTree, coreOperators, defineOperator, type OperatorCategory } from 'fig-tree-evaluator'
-import { categoryListings as coreCategoryListings } from 'fig-tree-evaluator/catalog'
+import {
+  categoryListings as coreCategoryListings,
+  fragmentColors,
+} from 'fig-tree-evaluator/catalog'
 import { describe, expect, it } from 'vitest'
 import {
   buildDisplayData,
@@ -56,8 +59,7 @@ describe('display data', () => {
           nullValueDefault: expect.any(String) as string,
         },
         docUrl: 'https://github.com/CarlosNZ/fig-tree-evaluator',
-        backgroundColor: '#d7edd4',
-        textColor: '#193e1e',
+        colors: { background: '#d7edd4', text: '#193e1e' },
         seeds: expect.objectContaining({ values: [1, 2, 3] }) as Record<string, unknown>,
         nullOutcomes: {
           values: { nullOutcome: 'error', elementNullOutcome: 'propagate' },
@@ -73,38 +75,55 @@ describe('display data', () => {
       expect(literal?.description).toBe(strings.FT_LITERAL_DESCRIPTION)
     })
 
-    it("reads a host operator's metadata as its listing", () => {
-      const operator = hostOperator('shout', 'string', {
+    it("shows a host operator by the host's listing", () => {
+      const operator = hostOperator('shout', 'string')
+      const { operators } = displayData(
+        { operators: [coreOperators, operator] },
+        {
+          operatorListings: {
+            shout: {
+              displayName: 'Shout',
+              description: 'A host operator',
+              parameterDescriptions: { value: 'What to shout' },
+              docUrl: 'https://example.com/shout',
+              colors: { background: '#ffeecc', text: '#332200' },
+              seeds: { value: 'hello' },
+            },
+          },
+        }
+      )
+      expect(operators.shout).toEqual({
         displayName: 'Shout',
         description: 'A host operator',
         parameterDescriptions: { value: 'What to shout' },
         docUrl: 'https://example.com/shout',
-        backgroundColor: '#ffeecc',
-        textColor: '#332200',
-        seeds: { value: 'hello' },
-      })
-      expect(displayData({ operators: [coreOperators, operator] }).operators.shout).toEqual({
-        displayName: 'Shout',
-        description: 'A host operator',
-        parameterDescriptions: { value: 'What to shout' },
-        docUrl: 'https://example.com/shout',
-        backgroundColor: '#ffeecc',
-        textColor: '#332200',
+        colors: { background: '#ffeecc', text: '#332200' },
         seeds: { value: 'hello', other: 'Replace me' },
         nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 
-    it('ignores metadata fields of the wrong type', () => {
+    it("never reads a host operator's metadata as its listing", () => {
       const operator = hostOperator('shout', 'string', {
-        displayName: 42,
-        seeds: ['hello'],
-        parameterDescriptions: { value: 'What to shout', other: 42 },
+        displayName: 'Shout',
+        seeds: { value: 'hello' },
       })
-      const { displayName, seeds, parameterDescriptions } = displayData({ operators: [operator] })
-        .operators.shout
+      const { displayName, seeds } = displayData({ operators: [operator] }).operators.shout
       expect(displayName).toBeUndefined()
       expect(seeds).toEqual({ value: 'Replace me', other: 'Replace me' })
+    })
+
+    it('ignores listing fields of the wrong type', () => {
+      const operator = hostOperator('shout', 'string')
+      const { displayName, parameterDescriptions } = displayData(
+        { operators: [operator] },
+        {
+          operatorListings: {
+            shout: { displayName: 42, parameterDescriptions: { value: 'What to shout' } },
+          } as unknown as OperatorListingsProp,
+        }
+      ).operators.shout
+      expect(displayName).toBeUndefined()
       expect(parameterDescriptions).toEqual({ value: 'What to shout' })
     })
 
@@ -115,57 +134,58 @@ describe('display data', () => {
         description: undefined,
         parameterDescriptions: {},
         docUrl: undefined,
-        backgroundColor: lightShade(string.backgroundColor),
-        textColor: darkShade(string.backgroundColor),
+        colors: {
+          background: lightShade(string.colors.background),
+          text: darkShade(string.colors.background),
+        },
         seeds: { value: 'Replace me', other: 'Replace me' },
         nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 
     it("takes a host operator's colours only as a pair", () => {
-      const operator = hostOperator('shout', 'string', { backgroundColor: '#ffeecc' })
+      const operator = hostOperator('shout', 'string')
       const { operators } = displayData(
         { operators: [operator] },
-        { operatorListings: { shout: { textColor: '#332200' } } }
+        {
+          operatorListings: {
+            shout: { colors: { text: '#332200' } },
+          } as unknown as OperatorListingsProp,
+        }
       )
-      expect(operators.shout?.backgroundColor).toBe(
-        lightShade(coreCategoryListings.string.backgroundColor)
-      )
-      expect(operators.shout?.textColor).toBe(
-        darkShade(coreCategoryListings.string.backgroundColor)
-      )
+      expect(operators.shout?.colors).toEqual({
+        background: lightShade(coreCategoryListings.string.colors.background),
+        text: darkShade(coreCategoryListings.string.colors.background),
+      })
     })
 
     it("derives the shades from the host's category colour", () => {
       const operator = hostOperator('shout', 'string')
       const { operators } = displayData(
         { operators: [operator] },
-        { categoryListings: { string: { backgroundColor: 'tomato' } } }
+        { categoryListings: { string: { colors: { background: 'tomato', text: 'white' } } } }
       )
-      expect(operators.shout?.backgroundColor).toBe(lightShade('tomato'))
+      expect(operators.shout?.colors.background).toBe(lightShade('tomato'))
     })
 
     it("layers the host's listings over the rest, seeds and parameter text per parameter", () => {
-      const operator = hostOperator('shout', 'string', {
-        displayName: 'Shout',
-        seeds: { value: 'hello', other: 'world' },
-        parameterDescriptions: { value: 'What to shout', other: 'More' },
-      })
+      const operator = hostOperator('shout', 'string')
       const { operators } = displayData(
         { operators: [coreOperators, operator] },
         {
           operatorListings: {
             plus: { displayName: 'Add', seeds: { expect: 'number' } },
             shout: {
+              displayName: 'Shout',
               description: 'Says it loudly',
-              seeds: { other: 'there' },
-              parameterDescriptions: { other: 'Even more' },
+              seeds: { value: 'hello', other: 'there' },
+              parameterDescriptions: { value: 'What to shout', other: 'Even more' },
             },
           },
         }
       )
       expect(operators.plus?.displayName).toBe('Add')
-      expect(operators.plus?.backgroundColor).toBe('#d7edd4')
+      expect(operators.plus?.colors.background).toBe('#d7edd4')
       expect(operators.plus?.seeds).toMatchObject({ values: [1, 2, 3], expect: 'number' })
       expect(operators.shout?.displayName).toBe('Shout')
       expect(operators.shout?.description).toBe('Says it loudly')
@@ -222,22 +242,48 @@ describe('display data', () => {
   })
 
   describe('fragments', () => {
-    it("reads each fragment's listing from its metadata, every field optional, and its description", () => {
+    it("reads each fragment's listing, every field optional, with `fragmentColors` where it gives none", () => {
       const { fragments } = displayData({
         fragments: {
           greet: {
             expression: { $plus: ['Hello ', '$params.name'] },
             parameters: { name: { type: 'string' } },
-            description: 'Says hello',
-            metadata: { displayName: 'Greeting', seeds: { name: 'World' } },
+            listing: {
+              displayName: 'Greeting',
+              description: 'Says hello',
+              parameterDescriptions: { name: 'Who to greet' },
+              colors: { background: '#e8e0f8', text: '#4b2a8a' },
+              seeds: { name: 'World' },
+            },
           },
           plain: { expression: 1 },
         },
       })
       expect(fragments).toEqual({
-        greet: { displayName: 'Greeting', description: 'Says hello', seeds: { name: 'World' } },
-        plain: { seeds: {} },
+        greet: {
+          displayName: 'Greeting',
+          description: 'Says hello',
+          parameterDescriptions: { name: 'Who to greet' },
+          docUrl: undefined,
+          colors: { background: '#e8e0f8', text: '#4b2a8a' },
+          seeds: { name: 'World' },
+        },
+        plain: {
+          description: undefined,
+          parameterDescriptions: {},
+          docUrl: undefined,
+          colors: fragmentColors,
+          seeds: {},
+        },
       })
+    })
+
+    it("layers the host's listings over a fragment's own", () => {
+      const { fragments } = displayData(
+        { fragments: { plain: { expression: 1 } } },
+        { operatorListings: { plain: { displayName: 'Plain' } } }
+      )
+      expect(fragments.plain?.displayName).toBe('Plain')
     })
   })
 
@@ -268,8 +314,8 @@ describe('display data', () => {
 
     it.each(Object.entries(coreCategoryListings))(
       'reach 4.5:1 in the %s category',
-      (_, { backgroundColor }) => {
-        const ratio = contrast(mix(lightShade(backgroundColor)), mix(darkShade(backgroundColor)))
+      (_, { colors: { background } }) => {
+        const ratio = contrast(mix(lightShade(background)), mix(darkShade(background)))
         expect(ratio).toBeGreaterThanOrEqual(4.5)
       }
     )

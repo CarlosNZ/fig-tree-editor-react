@@ -38,8 +38,6 @@ export interface EditorTheme {
   nodeBorder: string // the border around a node's rows
   canonicalBadge: string // a full node's "Canonical" badge
   canonicalBadgeText: string
-  fragmentBackground: string // a fragment with no colours of its own
-  fragmentText: string
 }
 
 export const defaultEditorTheme: EditorTheme = {
@@ -62,8 +60,6 @@ export const defaultEditorTheme: EditorTheme = {
   nodeBorder: '#dbdbdb',
   canonicalBadge: '#e3edf6',
   canonicalBadgeText: '#3f6a93',
-  fragmentBackground: '#477799',
-  fragmentText: '#ebdf5a',
 }
 
 export const mergeEditorTheme = (theme: Partial<EditorTheme> = {}): EditorTheme => ({

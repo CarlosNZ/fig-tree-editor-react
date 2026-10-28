@@ -32,8 +32,8 @@ import { type EditorMessage } from './status'
 import { strings } from './strings'
 import { UNUSED_PARAM, unusedParameters } from './unusedParameters'
 
-// The rest of a fragment definition beside its body: the parameter
-// declarations, description, samples and metadata (fragment-editor-design.md,
+// The rest of a fragment definition beside its body: its listing, the
+// parameter declarations and its metadata (fragment-editor-design.md,
 // "The definition editor"). The body is the expression editor's, so it isn't
 // shown here, and every change reaches `setDefinition` with it kept, as a
 // complete definition. The rest are json-edit-react's props, less those the
@@ -144,10 +144,7 @@ export const FragmentDefinitionEditor = ({
   }))
 
   const customNodeDefinitions = useMemo(
-    () => [
-      rootNameDefinition({ fragmentName, setFragmentName, editorTheme: EDITOR_THEME }),
-      ...definitionNodes,
-    ],
+    () => [rootNameDefinition({ fragmentName, setFragmentName }), ...definitionNodes],
     [fragmentName, setFragmentName]
   )
 
@@ -194,13 +191,14 @@ const EDITOR_THEME = mergeEditorTheme()
 
 const JSON_EDIT_REACT_INDENT = 2
 
-// The definition less its body, with its description first, under the name
+// The definition less its body, with its listing first, so its description
+// sits under the name
 const withoutBody = ({
   expression: _body,
-  description,
+  listing,
   ...fields
 }: FragmentDefinition): DefinitionFields =>
-  description === undefined ? fields : { description, ...fields }
+  listing === undefined ? fields : { listing, ...fields }
 
 const isPastedDefinition = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value) && 'expression' in value

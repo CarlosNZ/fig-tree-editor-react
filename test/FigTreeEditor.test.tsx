@@ -420,7 +420,7 @@ describe('FigTreeEditor', () => {
     const definition = {
       expression: { a: 1 },
       parameters: { name: { type: 'string' as const } },
-      description: 'A test fragment',
+      listing: { description: 'A test fragment' },
     }
 
     it("shows the definition's body, and writes an edit back with the rest kept", () => {
@@ -535,7 +535,7 @@ describe('FigTreeEditor', () => {
         ...definition,
         expression: { $plus: ['$params.name', '$params.greeting'] },
         parameters: { ...definition.parameters, greeting: { type: expect.anything() as unknown } },
-        samples: { greeting: 1 },
+        listing: { ...definition.listing, samples: { greeting: 1 } },
       })
     })
 
@@ -567,7 +567,7 @@ describe('FigTreeEditor', () => {
         ...definition,
         expression: body,
         parameters: { ...definition.parameters, gone: { type: 'any' } },
-        samples: { gone: 'Replace me' },
+        listing: { ...definition.listing, samples: { gone: 'Replace me' } },
       })
     })
 

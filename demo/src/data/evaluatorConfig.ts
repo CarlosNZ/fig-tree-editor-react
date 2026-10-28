@@ -1,8 +1,4 @@
-import {
-  defineOperator,
-  type FragmentDefinition,
-  type OperatorListingMap,
-} from 'fig-tree-evaluator'
+import { defineOperator, type FragmentDefinition, type ListingMap } from 'fig-tree-evaluator'
 
 const fragments: Record<string, FragmentDefinition> = {
   getCapital: {
@@ -15,9 +11,11 @@ const fragments: Record<string, FragmentDefinition> = {
       },
     },
     parameters: { country: { type: 'string' } },
-    samples: { country: 'Japan' },
-    description: "Gets a country's capital city",
-    metadata: { displayName: 'Capital city' },
+    listing: {
+      displayName: 'Capital city',
+      description: "Gets a country's capital city",
+      samples: { country: 'Japan' },
+    },
   },
   getFlag: {
     expression: {
@@ -29,9 +27,11 @@ const fragments: Record<string, FragmentDefinition> = {
       },
     },
     parameters: { country: { type: 'string', default: 'New Zealand' } },
-    samples: { country: 'France' },
-    description: "Gets a country's flag",
-    metadata: { textColor: 'white', backgroundColor: 'black' },
+    listing: {
+      description: "Gets a country's flag",
+      colors: { background: 'black', text: 'white' },
+      samples: { country: 'France' },
+    },
   },
 }
 
@@ -65,7 +65,7 @@ const customOperators = [
 
 // How the editor presents the custom operators: their text, which no
 // operator definition carries
-const operatorListings: OperatorListingMap = {
+const operatorListings: ListingMap = {
   reverse: {
     description: 'Reverses a string, or an array',
     parameterDescriptions: { value: 'The string or array' },

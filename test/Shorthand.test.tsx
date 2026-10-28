@@ -8,14 +8,17 @@ import { FigTreeEditor } from '../src'
 import { keyLabel } from './queries'
 import { type EditorProps } from './fixtures'
 
-// The core and HTTP operators, with one fragment carrying `FragmentHints` and
-// one without
+// The core and HTTP operators, with one fragment carrying a listing and one
+// without
 const fragments = {
   getCapital: {
     expression: { $plus: ['Capital of ', '$params.country'] },
     parameters: { country: { type: 'string' as const } },
-    description: "Gets a country's capital city",
-    metadata: { displayName: 'Capital city', backgroundColor: 'black', textColor: 'white' },
+    listing: {
+      displayName: 'Capital city',
+      description: "Gets a country's capital city",
+      colors: { background: 'black', text: 'white' },
+    },
   },
   greet: {
     expression: { $plus: ['Hello ', '$params.name'] },
@@ -337,11 +340,11 @@ describe('the shorthand node', () => {
       expect(keyLabel('country')).toBeInTheDocument()
     })
 
-    it('shows "Fragment" alone, in the editor\'s colours, where it has no hints', () => {
+    it('shows "Fragment" alone, in `fragmentColors`, where it has no listing', () => {
       const { container } = editor({ $greet: { name: 'Ada' } })
       const bar = displayBar(container)
       expect(within(bar).getByRole('button', { name: '$greet' })).toHaveStyle({
-        backgroundColor: 'rgb(71, 119, 153)',
+        backgroundColor: 'rgb(56, 96, 126)',
       })
       expect(bar.querySelector('.ft-display-name-text')).toHaveTextContent(/^Fragment$/)
     })

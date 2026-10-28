@@ -21,31 +21,32 @@ const FIELD = 2
 const PARAMETER = 3
 const PARAMETER_FIELD = 4
 
-const FRAGMENT_FIELDS = ['expression', 'parameters', 'description', 'samples', 'metadata']
-const PARAMETER_FIELDS = ['type', 'required', 'default', 'description', 'metadata', 'constraints']
+const FRAGMENT_FIELDS = ['expression', 'parameters', 'listing', 'metadata']
+const PARAMETER_FIELDS = ['type', 'required', 'default', 'constraints']
 
 // One parameter, used in the expression, with a default so the fragment runs
-// without arguments. The metadata is what fig-tree-editor-react shows it as.
+// without arguments. The listing is what fig-tree-editor-react shows it as.
 const newFragment = (name: string): FragmentDefinition => ({
   expression: { operator: 'plus', values: ['Hello, ', '$params.name', '!'] },
-  parameters: { name: { type: 'string', default: 'World', description: 'Who to greet' } },
-  description: 'Greets someone by name',
-  metadata: { displayName: name, backgroundColor: '#e8e0f8', textColor: '#4b2a8a' },
+  parameters: { name: { type: 'string', default: 'World' } },
+  listing: {
+    displayName: name,
+    description: 'Greets someone by name',
+    parameterDescriptions: { name: 'Who to greet' },
+    colors: { background: '#e8e0f8', text: '#4b2a8a' },
+  },
 })
 
 const NEW_FIELDS: Record<string, unknown> = {
   expression: null,
   parameters: {},
-  description: '',
-  samples: {},
+  listing: {},
   metadata: {},
 }
 
 const NEW_PARAMETER_FIELDS: Record<string, unknown> = {
   type: 'string',
   required: false,
-  description: '',
-  metadata: {},
   constraints: {},
 }
 
@@ -79,17 +80,12 @@ const defaultValue: DefaultValueFunction = ({ level, path, value }, newKey) => {
 
 const allowTypeSelection: TypeFilterFunction = ({ level, key, path }) => {
   if (level < FIELD) return false
-  if (level === FIELD) {
-    if (key === 'expression') return true
-    if (key === 'description') return ['string']
-    return false
-  }
+  if (level === FIELD) return key === 'expression'
   if (level === PARAMETER && inParameters(path)) return false
   if (level === PARAMETER_FIELD && inParameters(path)) {
     // A type is a name, a list of names, or `{ literal: [...] }`
     if (key === 'type') return ['string', 'array', 'object']
     if (key === 'required') return ['boolean']
-    if (key === 'description') return ['string']
     if (key === 'default') return true
     return false
   }

@@ -13,10 +13,14 @@ export const initialFragmentDefinition: FragmentDefinition = {
     ],
   },
   parameters: {
-    name: { type: 'string', description: 'Who to greet' },
-    formal: { type: 'boolean', default: false, description: 'Whether the greeting is formal' },
+    name: { type: 'string' },
+    formal: { type: 'boolean', default: false },
   },
-  description: 'Greets someone by name, formally or not',
-  samples: { name: 'Ada' },
-  metadata: { displayName: 'Greeting', backgroundColor: '#e8e0f8', textColor: '#4b2a8a' },
+  listing: {
+    displayName: 'Greeting',
+    description: 'Greets someone by name, formally or not',
+    parameterDescriptions: { name: 'Who to greet', formal: 'Whether the greeting is formal' },
+    colors: { background: '#e8e0f8', text: '#4b2a8a' },
+    samples: { name: 'Ada' },
+  },
 }

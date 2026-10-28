@@ -10,7 +10,7 @@ The expression editor is already most of a fragment editor: a fragment body is a
 
 - `$params` references in the tree;
 - values for those parameters, so the body can be evaluated;
-- the rest of the definition: the parameter declarations, the description and the display metadata.
+- the rest of the definition: the parameter declarations, and the listing (the description and how the fragment is shown).
 
 **What Conforma does.** The body is edited in the expression editor. Beside it, a separate JSON editor holds test parameters, and an "Evaluate with params" button evaluates the body as a call to the fragment with those arguments would.
 
@@ -30,7 +30,7 @@ The expression editor is already most of a fragment editor: a fragment body is a
 **Separate components, placed by the host.** The fragment editor is not one layout. The host places each part where it likes:
 
 - the expression editor, `FigTreeEditor`, in fragment mode, editing the body;
-- a definition editor, a json-edit-react editor configured for the rest of the definition (parameter declarations, description, metadata and sample values).
+- a definition editor, a json-edit-react editor configured for the rest of the definition (its listing, with the sample values, and the parameter declarations).
 
 The sample values start inside the definition editor, since they live in the definition ("The definition's shape"). They move to a component of their own only if the definition editor turns out too cluttered.
 
@@ -70,6 +70,8 @@ The sample values start inside the definition editor, since they live in the def
 
 ## The definition's shape — **Agreed**
 
+_fig-tree's listings (fig-tree-evaluator#284, spec `v3-listings.md`) settled the shape, replacing the editor's earlier one, which kept `description` and `samples` at the root of the definition, a parameter's description in its declaration, and the display fields in `metadata`._
+
 ```ts
 interface FragmentDefinition {
   expression: unknown
@@ -78,42 +80,36 @@ interface FragmentDefinition {
       type?: ExpectedType
       required?: boolean // defaults to true unless there's a default
       default?: unknown // a constant, type-checked at registration
-      description?: string
       constraints?: Constraints
-      metadata?: Record<string, unknown> // opaque
     }
   }
-  description?: string
-  samples?: { [parameter: string]: unknown }
-  metadata?: FragmentMetadata
+  listing?: Listing
+  metadata?: Record<string, unknown> // the host's own, opaque
 }
 
-interface FragmentMetadata {
+// The same type as an operator's listing. Every field is optional.
+interface Listing {
   displayName?: string
+  description?: string
+  parameterDescriptions?: { [parameter: string]: string }
   docUrl?: string
-  backgroundColor?: string // a pair with textColor
-  textColor?: string
+  colors?: ColorPair // { background, text }, given as a pair
   seeds?: { [parameter: string]: unknown }
+  samples?: { [parameter: string]: unknown }
+  metadata?: Record<string, unknown> // the host's own, for tools
 }
 ```
 
-**`FragmentMetadata`** is fig-tree's `FragmentListing` renamed: the definition's `metadata` _is_ the fragment's display metadata, by convention, and `getCatalog` reads it as such. The engine never reads it.
+**The listing is everything about the fragment the engine never reads:** its text, its colours, the seeds a new call starts with and the samples its body is tried with. Registration checks only that it is a plain object; `getCatalog` checks its fields by type, and skips a wrong one with a `Catalog.issues` entry. A fragment with no colours of its own is drawn in `./catalog`'s `fragmentColors`.
 
-**`samples` sits at the root of the definition,** not in `metadata`: sample values are part of authoring and testing the fragment, not of how it is presented. They are keyed by parameter name, as `seeds` is.
-
-**Registration type-checks `samples`** against the declarations, as it does `default`s (F20 in [v3-upstream.md](v3-upstream.md)), so a sample a call would reject is reported where it is written, not at every ▶. The call to a draft checks every sample, read or not.
+**`metadata` is opaque,** on the definition and in the listing alike. Neither the engine nor the editor reads it; `getCatalog` merges the listing's over the definition's.
 
 **`samples` and `seeds` are different things.** A seed is what a new call starts with, often an empty value (`""`); a sample is a realistic value to test the body with (`"NZ"`). They are kept apart.
 
-**Each parameter's `metadata` stays opaque.** Nothing needs a convention for it yet.
-
-**`description` stays at the root of the definition,** not in `metadata`, though the engine never reads it and an operator's description is in its listing. Each parameter's description belongs in its declaration, beside the type and `required` it explains, not in a map keyed by name that would have to follow a renamed parameter as `samples` and `seeds` do. The fragment's own description sits at the root of the definition in the same way.
-
-The changes are fig-tree's: the rename, `samples` among the wrapper's allowed keys, and their type check ("Upstream changes").
+**A parameter's description is in the listing's `parameterDescriptions`,** keyed by name, so it follows a renamed or removed parameter as `samples` and `seeds` do.
 
 ### Open
 
-- Should `getFragments()` or `getCatalog` report `samples`? The definition editor gets the definition from `useFragmentEditor`, which keeps the definitions, so it does not need them to.
 - A declared `returns`, which registration would check against the inferred one. Inference covers the editor's needs, so this can wait.
 
 ---
@@ -124,11 +120,11 @@ The changes are fig-tree's: the rename, `samples` among the wrapper's allowed ke
 
 **Its type is what the reference's position admits** (the slot's `admits`), so `$params.country` typed into `plus.values` is declared `['number', 'string']`, and one typed into `if.condition` what `condition` admits. Where the position says nothing about the parameter's own value, the type is `any`: a drill, whose position admits the drilled value; a template token, whose value is turned into text; a `get`, unless its path is the parameter alone; and plain data. Where one edit adds the same new name at several positions (a pasted body), they must all agree on a type, otherwise it is `any`. A parameter added by hand in the definition editor also starts as `any`. An existing declaration's type is never changed.
 
-**Nothing removes a declaration on its own.** When the last reference to a parameter goes, its declaration stays, flagged as unused in the definition editor, with a quick fix to remove it (and its `samples` and `metadata.seeds` entries). fig-tree has no such warning, so the editor works it out from the names `getDependencies()` finds the body reading. Where the body's reads can't be listed (a bare `$params`, or a computed path from it), it may read any parameter, so none is flagged.
+**Nothing removes a declaration on its own.** When the last reference to a parameter goes, its declaration stays, flagged as unused in the definition editor, with a quick fix to remove it (and its entries in the listing's `samples`, `seeds` and `parameterDescriptions`). fig-tree has no such warning, so the editor works it out from the names `getDependencies()` finds the body reading. Where the body's reads can't be listed (a bare `$params`, or a computed path from it), it may read any parameter, so none is flagged.
 
 **A typo is visible, not silent.** `$params.contry` adds a second declaration beside `country`, which becomes unused, so both show in the definition editor.
 
-**Renaming is done on the declaration,** and rewrites the body's references to it, through F8 (the rename helper in [v3-upstream.md](v3-upstream.md)). Retyping a reference in the body only adds a new declaration. Renaming or removing a parameter also renames or removes its entries in `samples` and `metadata.seeds`.
+**Renaming is done on the declaration,** and rewrites the body's references to it, through F8 (the rename helper in [v3-upstream.md](v3-upstream.md)). Retyping a reference in the body only adds a new declaration. Renaming or removing a parameter also renames or removes its entries in the listing's `samples`, `seeds` and `parameterDescriptions`.
 
 **A declaration is added on an edit in the expression editor,** not as a standing rule, and in the same write as the edit. The edit declares the parameters it brings into the body: those read after it and not before. A reference left undeclared some other way (its declaration removed or renamed in the definition editor, or a body the host changed) is an `unresolved-param` error, with a quick fix to declare it, typed as an edit's would be. The issue names the parameter (F21 in [v3-upstream.md](v3-upstream.md)). As a standing rule, removing a declaration still in use would put it straight back.
 
@@ -194,10 +190,10 @@ Evaluating through a call makes F10, an `evaluate()` option for `$params` values
 ## The definition editor — **Proposed**
 
 - A json-edit-react editor held to the definition's shape: the keys it allows, at each level, are the shape's, and `expression` is not shown.
-- It edits the parameter declarations, `description`, `samples`, and `metadata` (display name, documentation link, colours as a pair, seeds), since these are how the fragment appears where it is called.
+- It edits the listing (display name, description, parameter descriptions, documentation link, colours as a pair, seeds and samples), the parameter declarations, and the host's `metadata`, which it leaves free. The listing is shown first, so the description sits under the name.
 - The sample values are keyed by the declared parameters only. An optional parameter left without one is unset.
-- **A new required parameter gets a sample,** its starting value, as a new `samples` field gives each required parameter, unless it has one already. This holds however it is declared: by hand, by an edit in the expression editor, by the quick fix, or in a definition pasted or edited as JSON, where `samples` is added if it isn't there. A declaration starts required, so a parameter just declared has a sample, and a ▶ isn't refused for want of one. A parameter declared optional gets none, so it stays unset, and a sample is never removed or changed when its declaration's type or `required` changes later.
-- **Its own components,** from `@json-edit-react/components`: a colour picker for `backgroundColor` and `textColor`, without opacity, and chips for `type`.
+- **A new required parameter gets a sample,** its starting value, as a new `samples` field gives each required parameter, unless it has one already. This holds however it is declared: by hand, by an edit in the expression editor, by the quick fix, or in a definition pasted or edited as JSON, where `listing.samples` is added if it isn't there. A declaration starts required, so a parameter just declared has a sample, and a ▶ isn't refused for want of one. A parameter declared optional gets none, so it stays unset, and a sample is never removed or changed when its declaration's type or `required` changes later.
+- **Its own components,** from `@json-edit-react/components`: a colour picker for the listing's `colors.background` and `colors.text`, without opacity, and chips for `type`. New colours start as `fragmentColors`.
 - **A declaration's `type` has three entries in the type selector,** one for each form it takes: **Single**, a basic type picked from a list (an enum); **Multiple**, a union shown as chips picked from the basic types, `any` left out since a union with it is `any`; and **Literal**, a literal union of strings shown as chips typed freely. Switching from Single to Multiple keeps the type as the union's one member. A switch to Single takes the list's first type (`any`), since json-edit-react's switch to an enum reads the value before the definition's `toStandardType`; with that changed, it would keep the union's first member, or `string` from a literal union.
 - **Its root row is a preview of a call's header,** in place of the root's name: the fragment's button as a call to it shows in the expression editor, labelled with the fragment's name in its colours, with its display name at the top right. A click on the button turns it into an input that renames the fragment: Enter or leaving it saves, Escape cancels, and clearing it leaves the fragment unnamed, unless it is registered ("Authoring state", "A rename saves at once"). An unnamed fragment's button says "Fragment — click to rename". The button has no ▶, since nothing runs from it. It is json-edit-react's `keyComponent` for the root, so the rest of the root row (its chevron, its edit tools, pasting a whole definition) is json-edit-react's own. Without `setFragmentName` the button is a preview only.
 - **A declaration's `constraints` are offered only where its type is an array:** `array`, or a union of `array` with `null`, which skips the constraints. Each constraint requires an array, so on any other type, `any` included, they would refuse every value but `null`, and registration doesn't check the pair. A change of type that leaves the constraints unfit drops them, in the same change, as does any change that arrives with them unfit (a paste, a raw-JSON edit). Inside, the keys are the three constraints: `length`, a number, starting at 2; `homogeneous`, chips picked from the basic types, `any` left out, starting as `['string']` since it can't be empty; and `elementShape`, plain JSON. A picker for `elementShape`, whose fields are declarations of their own, nested, comes later.
@@ -228,11 +224,11 @@ const fragmentEditor = useFragmentEditor({
 
 It also returns `undo`, `redo`, `canUndo` and `canRedo`, `startFromExpression(expression)`, `hasUnsavedEdits` with `discard()`, `draft`, and `fragments` with `setFragments(fragments)`.
 
-- **The hook holds the fragments.** An instance never returns a fragment's body (`getFragments()` leaves out `expression` and `samples`), so whatever loads a fragment into the editors must keep the definitions itself. The hook registers `initialFragments` on the instance when it is first rendered, and from then on is the only thing that changes the instance's fragments. `fragments` is the current record, and `setFragments` replaces it whole, for a host's own fragments editor such as the demo's Config panel. A host persists them through `onFragmentsChange`, called with the whole record after each change that registers.
+- **The hook holds the fragments.** An instance never returns a fragment's body (`getFragments()` leaves out `expression`), so whatever loads a fragment into the editors must keep the definitions itself. The hook registers `initialFragments` on the instance when it is first rendered, and from then on is the only thing that changes the instance's fragments. `fragments` is the current record, and `setFragments` replaces it whole, for a host's own fragments editor such as the demo's Config panel. A host persists them through `onFragmentsChange`, called with the whole record after each change that registers.
 - **And the draft:** the definition being edited, its name, the version last saved, whether it has been edited since it was started or loaded, and its undo history. The components stay controlled, with plain props: the hook only builds them, so a host can still wire them by hand. Rejected: a context provider the components read from, which hides the wiring.
 - **The picker, `FragmentSelect`,** is the editor's `Select`, listing `figTree.getFragments()` as the toolbar's fragment picker does. Its placeholder, "Select fragment", shows while the draft is not a registered fragment. Its name keeps it apart from the toolbar's `FragmentPicker`.
 - **Picking a fragment** loads its definition into both editors, and its name, and clears the undo history, so undo never brings back another fragment's body. A draft with unsaved edits is discarded only once `confirmDiscard` resolves true, so a host can open its own dialog.
-- **Switching to fragment mode** is the host's, which calls `startFromExpression(expression)`. It starts a new, unnamed fragment with the expression as its body and every other field there to fill in: `parameters`, `samples` and `metadata` empty, and `description` seeded ("Set fragment description..."), unless the draft has edits not yet saved, which keeps it. A draft started from the expression and never edited is replaced, so switching back and forth picks up the expression's changes.
+- **Switching to fragment mode** is the host's, which calls `startFromExpression(expression)`. It starts a new, unnamed fragment with the expression as its body and the fields an author fills in there: no `parameters`, and a listing with `samples` empty and `description` seeded ("Set fragment description..."), unless the draft has edits not yet saved, which keeps it. A draft started from the expression and never edited is replaced, so switching back and forth picks up the expression's changes.
 - **Discarding.** `hasUnsavedEdits` is true when the draft has been edited since it was started, loaded or last saved, or is named but never registered. `discard()` drops those edits: a registered fragment goes back to its saved version, and a draft never registered is replaced by an empty one. The undo history is cleared, as on picking a fragment. Either way the next `startFromExpression` takes the expression. When to offer it is the host's.
 - **Saving.** `canSave` is true when the draft has a name, and is unregistered or differs from its saved version. They are compared by value, so undoing back to the saved version disables it again, and a fragment just loaded starts with it disabled. `save()` registers the draft under its name.
 - **A rename saves at once,** so there is only ever one name. A registered fragment's saved version moves to the new name, in one `updateOptions()` with the old name `null`, and the draft's unsaved edits stay unsaved. A draft never registered is only named, and Save registers it. A registered fragment can't be left unnamed, so clearing its name cancels the rename.
@@ -245,7 +241,7 @@ It also returns `undo`, `redo`, `canUndo` and `canRedo`, `startFromExpression(ex
 
 _How the three blocks affect each other in the editor as built, checked against the code, for going through point by point. Where it differs from the sections above, this records the code, not the decision._
 
-**The pieces.** The body (`expression`) is edited in `FigTreeEditor`. The declarations (`parameters`) and the samples (`samples`, keyed by declared names only) are edited in `FragmentDefinitionEditor`. `metadata.seeds` comes in only as the starting value for a new sample. Both editors write one `FragmentDefinition`, held by `useFragmentEditor`. The links between the blocks are in [declareParameters.ts](../src/declareParameters.ts) (declarations from the body), `followParameters` and `addSamples` in [definitionShape.ts](../src/definitionShape.ts) (samples and seeds following declarations), and [unusedParameters.ts](../src/unusedParameters.ts).
+**The pieces.** The body (`expression`) is edited in `FigTreeEditor`. The declarations (`parameters`) and the samples (`listing.samples`, keyed by declared names only) are edited in `FragmentDefinitionEditor`. `listing.seeds` comes in only as the starting value for a new sample. Both editors write one `FragmentDefinition`, held by `useFragmentEditor`. The links between the blocks are in [declareParameters.ts](../src/declareParameters.ts) (declarations from the body), `followParameters` and `addSamples` in [definitionShape.ts](../src/definitionShape.ts) (samples and seeds following declarations), and [unusedParameters.ts](../src/unusedParameters.ts).
 
 **Two rules run through everything:**
 
