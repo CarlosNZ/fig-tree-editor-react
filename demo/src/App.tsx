@@ -30,6 +30,7 @@ import {
 } from '@fig-tree-editor-react'
 import { useJsonEditorConfirm } from '@json-edit-react/utils'
 import { version as figTreeVersion } from 'fig-tree-evaluator'
+import logo from './assets/figtree-logo.svg'
 import { OptionsModal } from './OptionsModal'
 import { getLocalStorage, setLocalStorage, truncate } from './helpers'
 import {
@@ -241,13 +242,9 @@ function App() {
             <HStack align="flex-end" mt={2} gap={4} flexWrap="wrap">
               <Flex gap={6} align="flex-start">
                 <img
-                  src="https://raw.githubusercontent.com/CarlosNZ/fig-tree-evaluator/main/images/FigTreeEvaluator_logo_1000.png"
-                  alt="logo"
-                  style={
-                    isMobile
-                      ? { maxHeight: '4em' }
-                      : { maxHeight: '6em', transform: 'translateY(-10px)' }
-                  }
+                  src={logo}
+                  alt="FigTree Evaluator logo"
+                  style={{ height: isMobile ? '3em' : '4.5em' }}
                 />
                 <Box mb={isMobile ? -2 : 8}>
                   <Heading as="h1" size="2xl" variant="other" mb={2}>

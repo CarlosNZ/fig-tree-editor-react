@@ -1,5 +1,7 @@
+import logo from '../assets/figtree-logo.svg'
+
 export const defaultBlurb = `
-<img src="https://raw.githubusercontent.com/CarlosNZ/fig-tree-evaluator/main/images/FigTreeEvaluator_logo_1000.png" width="250" />
+<img src="${logo}" alt="FigTree Evaluator" width="300" />
 
 # Welcome to the FigTree Playground
 
