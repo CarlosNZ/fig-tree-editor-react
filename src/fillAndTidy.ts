@@ -63,6 +63,7 @@ export const fillAndTidy = (expression: unknown, context: FillContext): FillResu
   const isSuggested = suggestedKeys(context.issues)
 
   const seedsOf = (name: string) => context.displayData.operators[name]?.seeds ?? {}
+  const fragmentSeedsOf = (name: string) => context.displayData.fragments[name]?.seeds ?? {}
 
   // ── The walk ──────────────────────────────────────────────────────────
 
@@ -148,7 +149,7 @@ export const fillAndTidy = (expression: unknown, context: FillContext): FillResu
           parameters ?? {},
           argumentsPath,
           fragment.parameters,
-          fragmentSeeds(fragment)
+          fragmentSeedsOf(fragment.name)
         ),
         ['//'],
         Object.keys(fragment.parameters)
@@ -171,7 +172,7 @@ export const fillAndTidy = (expression: unknown, context: FillContext): FillResu
     if (fragment !== undefined && kind.arguments === 'static') {
       const payloadPath = [...path, key]
       const args = order(
-        fillParameters(payload, payloadPath, fragment.parameters, fragmentSeeds(fragment)),
+        fillParameters(payload, payloadPath, fragment.parameters, fragmentSeedsOf(fragment.name)),
         ['//'],
         Object.keys(fragment.parameters)
       )
@@ -274,11 +275,6 @@ const leadingPositions = (operator: OperatorInfo) =>
   (operator.positionalParams ?? []).filter((name) => !name.startsWith('...'))
 
 // ── Helpers ───────────────────────────────────────────────────────────────
-
-const fragmentSeeds = (fragment: FragmentInfo) => {
-  const seeds = fragment.metadata?.seeds
-  return isObject(seeds) ? seeds : {}
-}
 
 const isLiteralContent = (key: string, form: 'full' | 'shorthand') =>
   form === 'full' ? key === 'value' : key === '$literal'

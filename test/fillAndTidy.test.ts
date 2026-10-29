@@ -1,3 +1,4 @@
+import { FigTree, type ListingMap } from 'fig-tree-evaluator'
 import { describe, expect, it } from 'vitest'
 import { classify } from '../src/classify'
 import { buildDisplayData } from '../src/displayData'
@@ -68,6 +69,33 @@ describe('fillAndTidy', () => {
       expect(tidied({ $greet: {} })).toEqual({ $greet: { name: 'Replace me' } })
       const dynamic = { fragment: 'greet', parameters: '$data.form' }
       expect(tidied(dynamic)).toBe(dynamic)
+    })
+
+    it("seeds a fragment's arguments from its listing, under the host's", () => {
+      const withSeeds = new FigTree({
+        fragments: {
+          welcome: {
+            expression: { $plus: ['Welcome ', '$params.name'] },
+            parameters: { name: { type: 'string' } },
+            listing: { seeds: { name: 'Ada' } },
+          },
+        },
+      })
+      const fill = (expression: unknown, operatorListings?: ListingMap) => {
+        const own = { operators: registry.operators, fragments: withSeeds.getFragments() }
+        return fillAndTidy(expression, {
+          ...own,
+          displayData: buildDisplayData({ ...own, operatorListings }),
+          issues: withSeeds.validate(expression).issues,
+        }).expression
+      }
+      expect(fill({ fragment: 'welcome' })).toEqual({
+        fragment: 'welcome',
+        parameters: { name: 'Ada' },
+      })
+      expect(fill({ $welcome: {} }, { welcome: { seeds: { name: 'Grace' } } })).toEqual({
+        $welcome: { name: 'Grace' },
+      })
     })
 
     it('gives a literal its content', () => {
