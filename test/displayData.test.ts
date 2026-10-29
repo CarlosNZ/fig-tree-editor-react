@@ -11,7 +11,6 @@ import {
   type CategoryListingsProp,
   type OperatorListingsProp,
 } from '../src/displayData'
-import { strings } from '../src/strings'
 
 const hostOperator = (
   name: string,
@@ -25,12 +24,6 @@ const hostOperator = (
     parameters: { value: { type: 'any' }, other: { type: 'any' } },
     evaluate: ({ value }) => value,
   })
-
-// What a null does at `hostOperator`'s two eager `any` parameters
-const SHOUT_NULL_OUTCOMES = {
-  value: { nullOutcome: 'propagate' },
-  other: { nullOutcome: 'propagate' },
-}
 
 const displayData = (
   options: ConstructorParameters<typeof FigTree>[0] = {},
@@ -61,18 +54,13 @@ describe('display data', () => {
         docUrl: 'https://github.com/CarlosNZ/fig-tree-evaluator',
         colors: { background: '#d7edd4', text: '#193e1e' },
         seeds: expect.objectContaining({ values: [1, 2, 3] }) as Record<string, unknown>,
-        nullOutcomes: {
-          values: { nullOutcome: 'error', elementNullOutcome: 'propagate' },
-          expect: { nullOutcome: 'unset' },
-          nullValueDefault: { nullOutcome: 'none' },
-        },
       })
     })
 
-    it("includes `literal`, which fig-tree does not register, with the editor's description", () => {
+    it('includes `literal`, which fig-tree does not register, as the catalog lists it', () => {
       const { literal } = displayData().operators
       expect(literal?.displayName).toBe('Literal')
-      expect(literal?.description).toBe(strings.FT_LITERAL_DESCRIPTION)
+      expect(literal?.description).toMatch(/nothing inside it is evaluated/)
     })
 
     it("shows a host operator by the host's listing", () => {
@@ -99,7 +87,6 @@ describe('display data', () => {
         docUrl: 'https://example.com/shout',
         colors: { background: '#ffeecc', text: '#332200' },
         seeds: { value: 'hello', other: 'Replace me' },
-        nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 
@@ -139,7 +126,6 @@ describe('display data', () => {
           text: darkShade(string.colors.background),
         },
         seeds: { value: 'Replace me', other: 'Replace me' },
-        nullOutcomes: SHOUT_NULL_OUTCOMES,
       })
     })
 

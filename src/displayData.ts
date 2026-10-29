@@ -2,7 +2,6 @@ import {
   OPERATOR_CATEGORIES,
   type CatalogFragment,
   type CatalogOperator,
-  type CatalogOperatorParameter,
   type CategoryListing,
   type CategoryOverrides,
   type ColorPair,
@@ -17,18 +16,16 @@ import {
   getCatalog,
   operatorListings as coreOperatorListings,
 } from 'fig-tree-evaluator/catalog'
-import { strings } from './strings'
 
 // How operators, categories and fragments are shown: names, text, links,
-// colours, the seeds the starting-value rule reads, and what a null does at
-// each parameter.
+// colours, and the seeds the starting-value rule reads.
 //
 // Operators, `literal` and fragments come from `./catalog`'s `getCatalog`,
-// which merges listings field by field, `seeds` and `parameterDescriptions`
-// per parameter, lowest first: an entry's own (the package's for a core
-// operator and `literal`, a fragment definition's `listing`), then the
-// editor's (`literal`'s description, and a host operator's colours), then
-// the host's `operatorListings` prop, which reaches fragments too.
+// which lists `literal` as an operator, and merges listings field by field,
+// `seeds` and `parameterDescriptions` per parameter, lowest first: an
+// entry's own (the package's for a core operator and `literal`, a fragment
+// definition's `listing`), then the editor's (a host operator's colours),
+// then the host's `operatorListings` prop, which reaches fragments too.
 // Categories take the host's `categoryListings` prop over the package's,
 // field by field. A display name is only one a listing gives, so an entry
 // with none shows only its name, on the header's button: the pickers fall
@@ -44,18 +41,13 @@ export interface OperatorDisplay {
   docUrl?: string
   colors: ColorPair
   seeds: Record<string, unknown> // every declared parameter's starting value
-  nullOutcomes: Record<string, NullOutcomes> // every declared parameter's
 }
-
-// What a null does at a parameter, and at one of its elements, as the
-// engine resolves it
-export type NullOutcomes = Pick<CatalogOperatorParameter, 'nullOutcome' | 'elementNullOutcome'>
 
 export interface CategoryDisplay extends CategoryListing {
   category: OperatorCategory
 }
 
-export type FragmentDisplay = Omit<OperatorDisplay, 'nullOutcomes'>
+export type FragmentDisplay = OperatorDisplay
 
 export interface DisplayData {
   operators: Record<string, OperatorDisplay> // by canonical name, `literal` included
@@ -84,12 +76,10 @@ export const buildDisplayData = ({
   const categoryColour = (category: OperatorCategory) =>
     categories.find((entry) => entry.category === category)!.colors.background
 
-  // `./catalog` gives `literal` no description. An operator it has no
-  // listing for takes shades of its category's colour, as the host's
-  // categories have it, under any colours of its own.
-  const editorListings: ListingMap = {
-    literal: { description: strings.FT_LITERAL_DESCRIPTION },
-  }
+  // An operator `./catalog` has no listing for takes shades of its
+  // category's colour, as the host's categories have it, under any colours
+  // of its own
+  const editorListings: ListingMap = {}
   for (const { name, category } of operators)
     if (own(coreOperatorListings, name) === undefined)
       editorListings[name] = {
@@ -109,28 +99,16 @@ export const buildDisplayData = ({
     [base, own(operatorListings, name)].some((listing) => typeof listing?.displayName === 'string')
   const fragmentListings = new Map(fragments.map(({ name, listing }) => [name, listing]))
 
-  const { literal } = catalog
   return {
-    operators: {
-      ...Object.fromEntries(
-        catalog.operators.map((operator) => [
-          operator.name,
-          {
-            ...entryDisplay(
-              operator,
-              hasDisplayName(operator.name, own(coreOperatorListings, operator.name))
-            ),
-            nullOutcomes: nullOutcomesOf(operator),
-          },
-        ])
-      ),
-      // `literal` is grammar, not an operator, so it has a catalog entry of
-      // its own, and its content is plain data
-      literal: {
-        ...entryDisplay(literal, true),
-        nullOutcomes: { value: { nullOutcome: 'value' } },
-      },
-    },
+    operators: Object.fromEntries(
+      catalog.operators.map((operator) => [
+        operator.name,
+        entryDisplay(
+          operator,
+          hasDisplayName(operator.name, own(coreOperatorListings, operator.name))
+        ),
+      ])
+    ),
     categories,
     fragments: Object.fromEntries(
       catalog.fragments.map((fragment) => [
@@ -151,7 +129,7 @@ type CatalogEntry = Pick<
 const entryDisplay = (
   { displayName, description, docUrl, colors, parameters }: CatalogEntry,
   hasDisplayName: boolean
-): FragmentDisplay => {
+): OperatorDisplay => {
   const entries = Object.entries(parameters)
   return {
     ...(hasDisplayName && { displayName }),
@@ -166,14 +144,6 @@ const entryDisplay = (
     seeds: Object.fromEntries(entries.map(([key, { seed }]) => [key, seed])),
   }
 }
-
-const nullOutcomesOf = ({ parameters }: CatalogOperator) =>
-  Object.fromEntries(
-    Object.entries(parameters).map(([key, { nullOutcome, elementNullOutcome }]) => [
-      key,
-      { nullOutcome, ...(elementNullOutcome !== undefined && { elementNullOutcome }) },
-    ])
-  )
 
 // A host operator with no colours of its own takes a light shade of its
 // category's colour, so it sits with its category's siblings. Derived in CSS,

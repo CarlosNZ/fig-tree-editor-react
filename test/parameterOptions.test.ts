@@ -46,10 +46,12 @@ const fragmentInfo = (name: string, parameters: FragmentInfo['parameters']): Fra
   caches: false,
 })
 const shout = fragmentInfo('shout', {
-  loud: { type: 'boolean', required: false },
-  text: { type: 'string', required: true },
+  loud: { type: 'boolean', required: false, nullBehavior: 'omit' },
+  text: { type: 'string', required: true, nullBehavior: 'error' },
 })
-const odd = fragmentInfo('odd', { fallback: { type: 'string', required: true } })
+const odd = fragmentInfo('odd', {
+  fallback: { type: 'string', required: true, nullBehavior: 'error' },
+})
 
 describe('addableKeys', () => {
   it("offers a full operator node's absent parameters, then its absent modifiers", () => {

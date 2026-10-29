@@ -51,7 +51,7 @@ type FragmentKind = Extract<RowKind, { kind: 'fragment' }>
 
 // `literal`'s one parameter, which the editor supplies since fig-tree
 // registers no declaration for it (design, topic 1, "Kinds")
-const LITERAL_VALUE: FragmentParameter = { type: 'any', required: true }
+const LITERAL_VALUE: FragmentParameter = { type: 'any', required: true, nullBehavior: 'accept' }
 
 export const fillAndTidy = (expression: unknown, context: FillContext): FillResult => {
   const operators = new Map<string, OperatorInfo>()

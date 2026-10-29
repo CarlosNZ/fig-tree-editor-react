@@ -56,7 +56,7 @@ describe('a literal', () => {
       expect(within(bar).getByRole('button', { name })).toBeInTheDocument()
       expect(within(bar).getByRole('link', { name: 'Literal' })).toBeInTheDocument()
       expect(within(bar).getByRole('tooltip', { hidden: true })).toHaveTextContent(
-        strings.FT_LITERAL_DESCRIPTION
+        'nothing inside it is evaluated'
       )
       unmount()
     }

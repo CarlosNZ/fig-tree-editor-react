@@ -164,7 +164,6 @@ export const strings = {
   // The host's picker of the registered fragment to edit
   FT_FRAGMENT_SELECT_PLACEHOLDER: 'Select fragment',
   FT_NO_FRAGMENTS: 'No fragments registered',
-  FT_LITERAL_DESCRIPTION: 'Its content, as plain data: nothing inside it is evaluated',
 
   // The type dropdown's own entries, which json-edit-react shows as they are
   FT_TYPE_OPTION: 'Option', // a literal union's values
@@ -243,8 +242,8 @@ export const strings = {
   FT_CARD_IF_NULL: (what: string) => `If null: ${what}`,
   FT_CARD_NULL_FALSE: 'counts as false',
   FT_CARD_NULL_ELEMENT_FALSE: 'a null element counts as false',
-  FT_CARD_NULL_UNSET: "means 'not set', so the default applies",
-  FT_CARD_NULL_UNSET_ONLY: "means 'not set'", // an optional parameter with no default
+  FT_CARD_NULL_OMITTED: "means 'not set', so the default applies",
+  FT_CARD_NULL_OMITTED_ONLY: "means 'not set'", // an optional parameter with no default
   FT_CARD_NULL_PROPAGATES: 'the result is null',
   FT_CARD_NULL_VALUE: 'null is used as a value',
   FT_CARD_NULL_ERROR: 'an error',

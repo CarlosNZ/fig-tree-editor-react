@@ -32,14 +32,23 @@ describe('getStartingValue', () => {
   })
 
   it('moves a boolean off its effective default, instance defaults included', () => {
-    const declaration = { type: 'boolean' as const, required: false, default: true }
+    const declaration = {
+      type: 'boolean' as const,
+      required: false,
+      default: true,
+      nullBehavior: 'omit' as const,
+    }
     expect(getStartingValue('flag', declaration, {})).toBe(false)
     expect(getStartingValue('flag', { ...declaration, hostDefault: false }, {})).toBe(true)
   })
 
   it('never shares a seed object with the display data', () => {
     const seeds = { branches: { a: 1 } }
-    const value = getStartingValue('branches', { type: 'object', required: true }, seeds)
+    const value = getStartingValue(
+      'branches',
+      { type: 'object', required: true, nullBehavior: 'error' },
+      seeds
+    )
     expect(value).toEqual(seeds.branches)
     expect(value).not.toBe(seeds.branches)
   })

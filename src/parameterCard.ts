@@ -1,4 +1,5 @@
 import {
+  type ConditionalNullBehavior,
   type ExpectedType,
   type FragmentParameter,
   type OperatorInfo,
@@ -7,7 +8,7 @@ import {
 import { cacheStatus, type CacheContext } from './caching'
 import { type Row, type RowKind } from './classify'
 import { describeType } from './describeType'
-import { type FragmentDisplay, type NullOutcomes, type OperatorDisplay } from './displayData'
+import { type OperatorDisplay } from './displayData'
 import { type Path } from './paths'
 import { strings } from './strings'
 
@@ -41,7 +42,7 @@ export const hasCard = (row: Row | undefined) => {
 export const parameterCard = (
   row: Row | undefined,
   operator: OperatorInfo | undefined, // the owner's, for what replaces a null
-  display?: OperatorDisplay | FragmentDisplay // the owner's, for its parameters' descriptions
+  display?: OperatorDisplay // the owner's, an operator's or a fragment's, for the descriptions
 ): string[] | null => {
   if (row?.kind?.kind === 'vars') return [title('vars'), strings.FT_MODIFIER_VARS]
   const slot = row?.slot
@@ -62,13 +63,7 @@ export const parameterCard = (
     elementsLine(declaration),
     defaultLine(declaration),
     evaluatedLine(declaration, as),
-    nullLine(
-      name,
-      declaration,
-      operator,
-      (display && 'nullOutcomes' in display ? display.nullOutcomes[name] : undefined) ??
-        argumentOutcomes(declaration)
-    ),
+    nullLine(name, declaration, operator),
     replacementLine(declaration),
   ].filter(isString)
 }
@@ -132,88 +127,83 @@ const evaluatedLine = (declaration: Declaration, as: string | undefined) => {
   }
 }
 
-// What a null does, at the parameter and at one of its elements, as the
-// catalog's `nullOutcome` and `elementNullOutcome` report it. A null that is
-// only a value goes unsaid, except at a truthiness position, where it counts
-// as false. A replacement's rescue is added where it applies: at a parameter
+// What a null does, at the parameter and at one of its elements, as its
+// `nullBehavior` and `elementNullBehavior` report it. A null that is only
+// accepted goes unsaid, except at a truthiness position, where it counts as
+// false, and so does a null at a replacement, which replaces nothing. The
+// elements are said only where the type takes nothing but arrays and
+// objects. A replacement's rescue is added where it applies: at a parameter
 // declaring an element policy it replaces null elements only, so it is said
 // of a null element that makes the result null, and elsewhere of the
 // parameter's own null.
-const nullLine = (
-  name: string,
-  declaration: Declaration,
-  operator: OperatorInfo | undefined,
-  outcomes: NullOutcomes
-) => {
+const nullLine = (name: string, declaration: Declaration, operator: OperatorInfo | undefined) => {
+  if ('replacesNullAt' in declaration && declaration.replacesNullAt?.length) return undefined
   const replacer = Object.entries(operator?.parameters ?? {}).find(([, parameter]) =>
     parameter.replacesNullAt?.includes(name)
   )?.[0]
   const unless = (phrase: string) =>
     replacer === undefined ? phrase : strings.FT_CARD_UNLESS(phrase, code(replacer))
-  const { nullOutcome, elementNullOutcome } = outcomes
+  const { nullBehavior, type } = declaration
+  const elementNullBehavior = takesOnlyContainers(type)
+    ? declaration.elementNullBehavior
+    : undefined
   const truthiness = 'truthiness' in declaration && declaration.truthiness
   const rescuesElements =
     'elementNullPolicy' in declaration && declaration.elementNullPolicy !== undefined
 
   const elements = {
     propagate: unless(strings.FT_CARD_NULL_ELEMENT_PROPAGATES),
-    value: truthiness ? strings.FT_CARD_NULL_ELEMENT_FALSE : strings.FT_CARD_NULL_ELEMENTS_ACCEPTED,
+    accept: truthiness
+      ? strings.FT_CARD_NULL_ELEMENT_FALSE
+      : strings.FT_CARD_NULL_ELEMENTS_ACCEPTED,
     error: strings.FT_CARD_NULL_ELEMENT_ERROR,
   }
   const whole = (): string | undefined => {
-    if (typeof nullOutcome === 'object') return conditional(nullOutcome)
+    if (typeof nullBehavior === 'object') return conditional(nullBehavior)
     const rescued = (phrase: string) => (rescuesElements ? phrase : unless(phrase))
-    switch (nullOutcome) {
+    switch (nullBehavior) {
       case 'propagate':
         return rescued(strings.FT_CARD_NULL_PROPAGATES)
       case 'error':
         return rescued(strings.FT_CARD_NULL_ERROR)
-      case 'unset':
+      case 'omit':
         return hasDefault(declaration)
-          ? strings.FT_CARD_NULL_UNSET
-          : strings.FT_CARD_NULL_UNSET_ONLY
-      case 'value':
+          ? strings.FT_CARD_NULL_OMITTED
+          : strings.FT_CARD_NULL_OMITTED_ONLY
+      case 'accept':
         return truthiness ? strings.FT_CARD_NULL_FALSE : undefined
-      case 'none':
-        return undefined
     }
   }
 
   const parts = [
     whole(),
-    elementNullOutcome === undefined ? undefined : elements[elementNullOutcome],
+    elementNullBehavior === undefined ? undefined : elements[elementNullBehavior],
   ].filter(isString)
   return parts.length === 0 ? undefined : strings.FT_CARD_IF_NULL(parts.join('; '))
 }
 
-// A fragment's argument, which the catalog doesn't cover: its null is a value
-// where its type names null, else it unsets an optional argument and is an
-// error at a required one
-const argumentOutcomes = (declaration: Declaration): NullOutcomes => ({
-  nullOutcome: takesNull(declaration.type) ? 'value' : declaration.required ? 'error' : 'unset',
-})
-
 // "if `to` is 'boolean', null is used as a value; otherwise the result is
-// null": the cases that differ from the commonest policy, then the rest
-type Conditional = { selector: string; table: { value: unknown; policy: 'propagate' | 'value' }[] }
-const conditional = ({ selector, table }: Conditional) => {
-  const propagating = table.filter(({ policy }) => policy === 'propagate')
+// null": the cases that differ from the commonest behaviour, then the rest
+const conditional = ({ selector, table }: ConditionalNullBehavior) => {
+  const propagating = table.filter(({ behavior }) => behavior === 'propagate')
   const [common, other] =
-    propagating.length * 2 >= table.length ? ['propagate', 'value'] : ['value', 'propagate']
+    propagating.length * 2 >= table.length
+      ? (['propagate', 'accept'] as const)
+      : (['accept', 'propagate'] as const)
   const cases = table
-    .filter(({ policy }) => policy === other)
+    .filter(({ behavior }) => behavior === other)
     .map(({ value }) => formatValue(value))
   return strings.FT_CARD_NULL_CONDITIONAL(
     code(selector),
     orList(cases),
-    policyWords[other as 'propagate' | 'value'],
-    policyWords[common as 'propagate' | 'value']
+    behaviorWords[other],
+    behaviorWords[common]
   )
 }
 
-const policyWords = {
+const behaviorWords = {
   propagate: strings.FT_CARD_NULL_PROPAGATES,
-  value: strings.FT_CARD_NULL_VALUE,
+  accept: strings.FT_CARD_NULL_VALUE,
 }
 
 const replacementLine = (declaration: Declaration) => {
@@ -251,14 +241,12 @@ export const cacheLine = (path: Path, kind: RowKind | undefined, context: CacheC
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+const takesOnlyContainers = (type: ExpectedType) =>
+  [type].flat().every((member) => member === 'array' || member === 'object')
+
 const hasDefault = (declaration: Declaration) =>
   declaration.default !== undefined ||
   ('hostDefault' in declaration && declaration.hostDefault !== undefined)
-
-const takesNull = (type: ExpectedType) =>
-  type === 'any' ||
-  type === 'null' ||
-  (Array.isArray(type) && type.some((t) => t === 'any' || t === 'null'))
 
 // A value as it would be written. The one symbol a default can be is
 // `get.from`'s, the evaluation data, which `from: '$data'` writes.

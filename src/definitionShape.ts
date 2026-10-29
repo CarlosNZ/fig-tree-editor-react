@@ -146,16 +146,23 @@ const typeOf = (declaration: unknown): ExpectedType => {
 }
 
 // A declaration as registration normalises it: required unless it has a
-// default, where it doesn't say
+// default, where it doesn't say, and a null accepted where its type names
+// null, else left out where it's optional, else an error
 const toParameter = (declaration: unknown): FragmentParameter => {
   const authored = isRecord(declaration) ? declaration : {}
   const hasDefault = 'default' in authored
+  const type = typeOf(declaration)
+  const required = typeof authored.required === 'boolean' ? authored.required : !hasDefault
   return {
-    type: typeOf(declaration),
-    required: typeof authored.required === 'boolean' ? authored.required : !hasDefault,
+    type,
+    required,
+    nullBehavior: namesNull(type) ? 'accept' : required ? 'error' : 'omit',
     ...(hasDefault && { default: authored.default }),
   }
 }
+
+const namesNull = (type: ExpectedType) =>
+  [type].flat().some((member) => member === 'any' || member === 'null')
 
 // Constraints need an array, though `null` skips them, so they fit a type
 // whose members are all `array`, or `null`

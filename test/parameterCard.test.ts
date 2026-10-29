@@ -204,7 +204,7 @@ describe('parameterCard', () => {
   })
 
   it('has no description line where the declaration has none', () => {
-    const declaration = { type: 'string' as const, required: true }
+    const declaration = { type: 'string' as const, required: true, nullBehavior: 'error' as const }
     const card = parameterCard(
       { slot: parameterSlot(['a'], [], 'a', declaration), scope: [] },
       undefined
