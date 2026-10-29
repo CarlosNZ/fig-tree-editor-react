@@ -19,9 +19,14 @@
        it to the library's source so the demo is checked against the in-repo API
        (what `local` mode runs). react/react-dom are pinned to the demo's own
        @types copies: ../src resolves react from the repo-root copy otherwise,
-       and two copies clash on React's `unique symbol` ref types. */
+       and two copies clash on React's `unique symbol` ref types.
+       `@playground-data` is the data shared with the docs site's Playground
+       (vite.config.ts), and fig-tree-evaluator is pinned to the demo's copy,
+       which that data would otherwise resolve from the docs site's. */
     "paths": {
       "@fig-tree-editor-react": ["../src"],
+      "@playground-data/*": ["../../fig-tree-evaluator/docs-site/src/playground/*"],
+      "fig-tree-evaluator": ["./node_modules/fig-tree-evaluator"],
       "react": ["./node_modules/@types/react"],
       "react/*": ["./node_modules/@types/react/*"],
       "react-dom": ["./node_modules/@types/react-dom"],

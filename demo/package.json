@@ -14,7 +14,7 @@
     "start:pack": "concurrently --kill-others-on-fail \"pnpm serve\" \"VITE_FIG_SOURCE=pack vite --host\"",
     "dev": "pnpm start:local",
     "prebuild": "node ./scripts/getVersion.cjs",
-    "build": "rimraf dist && vite build && cp -r img dist/",
+    "build": "rimraf dist && vite build",
     "build:local": "VITE_FIG_SOURCE=local pnpm build",
     "build:build": "VITE_FIG_SOURCE=build pnpm build",
     "build:pack": "VITE_FIG_SOURCE=pack pnpm build",

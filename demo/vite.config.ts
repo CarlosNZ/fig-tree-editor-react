@@ -103,6 +103,16 @@ const jerAliases =
       ]
     : []
 
+// The demo's examples, their blurbs, fragments and custom operators are shared
+// with the docs site's Playground, so they live in the fig-tree-evaluator
+// checkout beside the repo (docs-site/src/playground/), imported as
+// `@playground-data`. The demo is a local tool, so it can depend on that
+// checkout whatever VITE_EVALUATOR_SOURCE says.
+const playgroundData = path.join(evaluatorRoot, 'docs-site/src/playground')
+
+if (!fs.existsSync(playgroundData))
+  throw new Error(`The demo's data needs a fig-tree-evaluator checkout at ${evaluatorRoot}`)
+
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
@@ -110,6 +120,8 @@ export default defineConfig({
   resolve: {
     alias: [
       { find: /^@fig-tree-editor-react$/, replacement: figTreeEditorSrcMap[provider] },
+      // A plain string, which `import.meta.glob` patterns can use
+      { find: '@playground-data', replacement: playgroundData },
       ...evaluatorAliases,
       ...jerAliases,
     ],
@@ -129,11 +141,13 @@ export default defineConfig({
   },
   server: {
     // Allow serving the library source / build / packed output that lives one
-    // level up from the demo (../src, ../build, ../pack-output), and the local
-    // fig-tree-evaluator and json-edit-react checkouts beside the repo.
+    // level up from the demo (../src, ../build, ../pack-output), the shared
+    // data, and the local fig-tree-evaluator and json-edit-react checkouts
+    // beside the repo.
     fs: {
       allow: [
         path.resolve(__dirname, '..'),
+        playgroundData,
         ...(evaluatorProvider === 'local' ? [evaluatorRoot] : []),
         ...(jerProvider === 'local' ? [jerRoot] : []),
       ],

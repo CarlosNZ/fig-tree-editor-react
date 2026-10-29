@@ -1,4 +1,5 @@
 import logo from '../assets/figtree-logo.svg'
+import operatorButton from '../assets/operator-button.png'
 
 export const defaultBlurb = `
 <img src="${logo}" alt="FigTree Evaluator" width="300" />
@@ -13,7 +14,7 @@ A typical use case is for evaluating **configuration** files, where you need to 
 
 Have a play with this demo to see the range of different operators, and how they can be built into powerful, complex expressions. Or use this site to build and test your own expressions.
 
-<img src="https://carlosnz.github.io/fig-tree-evaluator/img/operator-button.png" width="498"/>
+<img src="${operatorButton}" width="498"/>
 
 Click on any operator "button" to evaluate the expression at that level, and edit either individual nodes using the GUI, or via the JSON text editor.
 

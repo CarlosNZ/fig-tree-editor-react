@@ -77,7 +77,7 @@ function App() {
   const [modalOpen, setModalOpen] = useState(false)
   const [isMobile] = useMediaQuery('(max-width: 635px)')
   const [selectedDataIndex, setSelectedDataIndex] = useState<number>(
-    demoData.findIndex((data) => data.name === getLocalStorage('lastSelected'))
+    demoData.findIndex((data) => data.id === getLocalStorage('lastSelected'))
   )
   const modalContent = useRef('main')
   const [showInfo, setShowInfo] = useState(!getLocalStorage('visited')?.main)
@@ -194,7 +194,7 @@ function App() {
   const handleDemoSelect = (selected: number) => {
     setSelectedDataIndex(selected)
     const visited = getLocalStorage('visited')
-    if (!visited?.[demoData?.[selected]?.name]) setShowInfo(true)
+    if (!visited?.[demoData?.[selected]?.id]) setShowInfo(true)
 
     const { objectData, expression } = demoData[selected]
     void changeEditorMode('expression')
@@ -204,8 +204,8 @@ function App() {
       setObjectData(objectData)
       setLocalStorage('objectData', objectData)
     }
-    setLocalStorage('lastSelected', demoData[selected].name)
-    modalContent.current = demoData[selected].name
+    setLocalStorage('lastSelected', demoData[selected].id)
+    modalContent.current = demoData[selected].id
   }
 
   return (
@@ -223,7 +223,7 @@ function App() {
         />
         <ConfirmDialog {...dialog} />
         <InfoModal
-          selected={currentDemoData?.name ?? 'main'}
+          selected={currentDemoData?.id ?? 'main'}
           content={
             modalContent.current === 'main'
               ? defaultBlurb
@@ -478,7 +478,7 @@ function App() {
             Select an option
           </option>
           {demoData.map((data, index) => (
-            <option key={data.name} value={index}>
+            <option key={data.id} value={index}>
               {data.name}
             </option>
           ))}
